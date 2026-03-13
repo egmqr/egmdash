@@ -6,16 +6,16 @@
   <title>EGM Operations Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f4f7f6; padding: 20px; font-family: 'Segoe UI', sans-serif; }
+    body { background-color: #f4f7f6; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     .card { transition: 0.3s; border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: 100%; }
     .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
     .nav-tabs .nav-link { cursor: pointer; color: #555; font-weight: 600; border: none; }
-    .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; }
+    .nav-tabs .nav-link.active { color: #0d6efd; background: none; border-bottom: 3px solid #0d6efd; }
     .sticky-top-custom { position: sticky; top: 0; background: #f4f7f6; z-index: 1000; padding-bottom: 15px; }
     .section-title { font-size: 0.85rem; font-weight: bold; color: #adb5bd; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid #e9ecef; padding-bottom: 5px; }
     .highlight-card { border: 2px solid #0d6efd !important; }
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
-    .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.8rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+    .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.75rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 2px 6px; border-radius: 4px; }
     .card-upload-btn:hover { background-color: #0d6efd; color: white; }
   </style>
 </head>
@@ -29,7 +29,7 @@
     </div>
 
     <div class="row g-2 mb-4">
-      <div class="col-md-5"><input type="text" id="searchInput" class="form-control" placeholder="Search event..." onkeyup="filterContent()"></div>
+      <div class="col-md-5"><input type="text" id="searchInput" class="form-control" placeholder="Search event, ID, or contact..." onkeyup="filterContent()"></div>
       <div class="col-md-4">
         <select id="statusFilter" class="form-select" onchange="loadEvents()">
           <option value="">All Statuses</option>
@@ -51,10 +51,13 @@
   </div>
 
   <div id="events-view"><div id="events-list" class="row mt-3"></div></div>
+
   <div id="payments-view" style="display:none;">
     <div class="table-responsive mt-3">
       <table class="table table-hover bg-white rounded border overflow-hidden">
-        <thead class="table-dark"><tr><th>Event ID</th><th>Type</th><th>Details</th><th>Status</th></tr></thead>
+        <thead class="table-dark">
+          <tr><th>Event ID</th><th>Type</th><th>Details</th><th>Status & Ref</th></tr>
+        </thead>
         <tbody id="p-body"></tbody>
       </table>
     </div>
@@ -64,18 +67,64 @@
 <div class="modal fade" id="addEventModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content shadow-lg border-0">
-      <div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Create New Entry</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header border-0 bg-light">
+        <h5 class="fw-bold mb-0">Create New Entry</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <div class="modal-body p-4">
         <form id="eventForm">
           <div class="section-title">1. Event Information</div>
           <div class="row mb-3">
             <div class="col-md-8"><label class="small fw-bold">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
-            <div class="col-md-4"><label class="small fw-bold">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+            <div class="col-md-4"><label class="small fw-bold">Status</label>
+              <select name="eventStatus" class="form-select">
+                <option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="small fw-bold d-block mb-2">Services</label>
+            <div class="row px-3">
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Photo Studio"> Photo Studio</div>
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Video Docu"> Video Docu</div>
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Prints"> Prints</div>
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="QR"> QR</div>
+            </div>
           </div>
           <div class="row mb-3">
             <div class="col-md-4"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div>
             <div class="col-md-4"><label class="small fw-bold">Start Time</label><input type="time" name="startTime" class="form-control"></div>
             <div class="col-md-4"><label class="small fw-bold">Call Time</label><input type="time" name="callTime" class="form-control"></div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6"><label class="small fw-bold">Contact Person</label><input type="text" name="contactPerson" class="form-control"></div>
+            <div class="col-md-6"><label class="small fw-bold">Contact Number</label><input type="text" name="contactNumber" class="form-control"></div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-8"><label class="small fw-bold">Manpower</label><input type="text" name="manpower" class="form-control"></div>
+            <div class="col-md-4 d-flex align-items-center mt-4">
+              <div class="form-check"><input class="form-check-input" type="checkbox" name="avp" id="avpCheck"><label class="form-check-label fw-bold" for="avpCheck">AVP Required</label></div>
+            </div>
+          </div>
+          <div class="mb-4"><label class="small fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+
+          <div class="section-title">2. Financial Setup</div>
+          <div class="mb-3">
+            <label class="small fw-bold">Payment Method</label>
+            <select name="paymentType" id="pTypeSelect" class="form-select" onchange="toggleBilling()">
+              <option value="">-- Choose Method --</option>
+              <option value="Cash AR">Cash AR</option><option value="Online Transfer">Online Transfer</option>
+              <option value="Billing">Billing</option><option value="Check">Check</option>
+            </select>
+          </div>
+          <div id="billingBox" class="bg-light p-3 rounded mb-3 border" style="display: none;">
+            <div class="mb-2"><label class="small fw-bold">Email Thread</label><input type="text" name="emailThread" class="form-control form-control-sm"></div>
+            <div class="row">
+              <div class="col-md-6"><label class="small fw-bold">Status</label><select name="billingStatus" class="form-select form-select-sm"><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+              <div class="col-md-6"><label class="small fw-bold">Ref #</label><input type="text" name="billingRef" class="form-control form-control-sm"></div>
+            </div>
           </div>
           <button type="submit" class="btn btn-primary w-100 py-3 fw-bold">SUBMIT ENTRY</button>
         </form>
@@ -86,7 +135,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // !!! YOUR API URL !!!
   const API_URL = 'https://script.google.com/macros/s/AKfycbzF7krw73_v_HEaaVpQr0deoITQyz1Fw7VDbhTEkdM8qTiqVGFfqzWWWO2VynQocA-B/exec';
 
   let rawEvents = [];
@@ -96,17 +144,7 @@
     const url = new URL(API_URL);
     Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
     try {
-      const options = { method };
-      if (body) {
-        options.body = JSON.stringify(body);
-        options.mode = 'no-cors'; // Useful for POST redirects, though we handle JSON differently now
-      }
-      
-      // We use a standard fetch for JSON responses
-      const res = await fetch(url, {
-        method: method,
-        body: body ? JSON.stringify(body) : null
-      });
+      const res = await fetch(url, { method, body: body ? JSON.stringify(body) : null });
       const data = await res.json();
       document.getElementById('loader').style.display = 'none';
       return data;
@@ -116,21 +154,31 @@
     }
   }
 
+  function toggleBilling() {
+    const val = document.getElementById('pTypeSelect').value;
+    document.getElementById('billingBox').style.display = val === 'Billing' ? 'block' : 'none';
+  }
+
   async function loadEvents(idFilter = null) {
     const res = await callApi({ action: 'getEvents' });
     if (!res) return;
     rawEvents = res;
-    renderEvents(res, idFilter);
+    const dFilter = document.getElementById('dateFilter').value;
+    const sFilter = document.getElementById('statusFilter').value;
+    let filtered = res;
+    if(dFilter) filtered = filtered.filter(e => e['Event Date'] === dFilter);
+    if(sFilter) filtered = filtered.filter(e => e['Event Status'] === sFilter);
+    renderEvents(filtered, idFilter);
   }
 
   function renderEvents(data, highlightId) {
     let html = '';
     data.forEach(e => {
       const highlight = highlightId && e['Event ID'] === highlightId ? 'highlight-card' : '';
-      const permitLink = e['Permits'] ? `<a href="${e['Permits']}" target="_blank" class="badge bg-info text-dark text-decoration-none">View Permit</a>` : `<span class="badge bg-light text-muted" id="status-link-${e['Event ID']}">No Permit</span>`;
+      const permitLink = e['Permits'] ? `<a href="${e['Permits']}" target="_blank" class="badge bg-info text-dark text-decoration-none">View Permit</a>` : `<span class="badge bg-light text-muted">No Permit</span>`;
 
       html += `
-        <div class="col-md-6 col-lg-4 mb-4 event-card" id="card-${e['Event ID']}">
+        <div class="col-md-6 col-lg-4 mb-4 event-card" id="card-${e['Event ID']}" data-search="${e['Event Name']} ${e['Event ID']} ${e['Contact Person']}">
           <div class="card shadow-sm ${highlight}">
             <div class="card-body">
               <div class="d-flex justify-content-between mb-2">
@@ -138,14 +186,22 @@
                 <span class="badge ${e['Event Status'] === 'Confirmed' ? 'bg-success' : 'bg-warning text-dark'}">${e['Event Status']}</span>
               </div>
               <h5 class="fw-bold text-primary mb-3">${e['Event Name'] || 'Unnamed'}</h5>
+              
               <div class="small">
                 <p class="mb-1">📅 <strong>Date:</strong> ${e['Event Date'] || 'TBA'}</p>
                 <p class="mb-1">🕒 <strong>Start:</strong> ${e['Event Start Time'] || '--'} | <strong>Call:</strong> ${e['Call Time'] || '--'}</p>
+                <p class="mb-1">🛠️ <strong>Services:</strong> ${e['Services'] || 'None'}</p>
+                <p class="mb-1">👥 <strong>Crew:</strong> ${e['Manpower'] || 'Unassigned'}</p>
+                <hr class="my-2">
+                <p class="mb-1">👤 <strong>Contact:</strong> ${e['Contact Person'] || '-'}</p>
+                <p class="mb-1 text-muted">📞 ${e['Contact Number'] || '-'}</p>
+                <p class="mb-2">📝 <strong>Notes:</strong> ${e['Event Notes'] || 'None'}</p>
               </div>
+              
               <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
-                <div id="permit-container-${e['Event ID']}">${permitLink}</div>
+                <div id="p-cont-${e['Event ID']}">${permitLink}</div>
                 <div>
-                  <label class="card-upload-btn mb-0" id="upload-label-${e['Event ID']}" onclick="triggerCardUpload('${e['Event ID']}')">Upload</label>
+                  <label class="card-upload-btn mb-0" id="up-lab-${e['Event ID']}" onclick="triggerCardUpload('${e['Event ID']}')">Upload</label>
                   <input type="file" id="file-${e['Event ID']}" style="display:none" onchange="handleCardUpload(this, '${e['Event ID']}')">
                 </div>
               </div>
@@ -153,7 +209,8 @@
           </div>
         </div>`;
     });
-    document.getElementById('events-list').innerHTML = html;
+    document.getElementById('events-list').innerHTML = html || '<p class="text-center w-100 py-5">No results.</p>';
+    if(highlightId) setTimeout(() => document.getElementById(`card-${highlightId}`)?.scrollIntoView({behavior:'smooth', block:'center'}), 200);
   }
 
   function triggerCardUpload(id) { document.getElementById(`file-${id}`).click(); }
@@ -161,35 +218,22 @@
   async function handleCardUpload(input, id) {
     if (!input.files[0]) return;
     const file = input.files[0];
-    const label = document.getElementById(`upload-label-${id}`);
-    
-    label.innerHTML = "Processing...";
+    const label = document.getElementById(`up-lab-${id}`);
+    label.innerHTML = "Uploading...";
     label.style.pointerEvents = "none";
 
     const reader = new FileReader();
     reader.onload = async (e) => {
-      label.innerHTML = "Uploading...";
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'uploadPermit',
-            base64: e.target.result,
-            filename: file.name,
-            eventId: id
-          })
-        });
-        const res = await response.json();
-        
-        if (res.success) {
-          label.innerHTML = "Done!";
-          document.getElementById(`permit-container-${id}`).innerHTML = `<a href="${res.url}" target="_blank" class="badge bg-info text-dark text-decoration-none">View Permit</a>`;
-        } else {
-          alert("Error: " + res.error);
-          label.innerHTML = "Upload";
-        }
-      } catch (err) {
-        alert("Upload Failed. Check script deployment settings (Anyone).");
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'uploadPermit', base64: e.target.result, filename: file.name, eventId: id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        label.innerHTML = "Done!";
+        document.getElementById(`p-cont-${id}`).innerHTML = `<a href="${data.url}" target="_blank" class="badge bg-info text-dark text-decoration-none">View Permit</a>`;
+      } else {
+        alert("Upload Failed: " + data.error);
         label.innerHTML = "Upload";
       }
       label.style.pointerEvents = "auto";
@@ -203,7 +247,13 @@
     let filtered = idFilter ? res.filter(p => p['Event ID'] === idFilter) : res;
     let html = '';
     filtered.forEach(p => {
-      html += `<tr><td>${p['Event ID']}</td><td>${p['Payment Type']}</td><td>${p['Email Thread Title'] || '-'}</td><td>${p['Billing Status'] || 'Received'}</td></tr>`;
+      let stat = p['Payment Type'] === 'Billing' ? `<span class="badge bg-warning text-dark">${p['Billing Status'] || '-'}</span><br><small>${p['Billing Reference'] || ''}</small>` : `<span class="badge bg-success">Received</span>`;
+      html += `<tr>
+        <td><a href="javascript:void(0);" onclick="switchTab('events', '${p['Event ID']}')" class="fw-bold text-decoration-none">${p['Event ID']} 🔗</a></td>
+        <td>${p['Payment Type']}</td>
+        <td class="small">${p['Email Thread Title'] || '-'}</td>
+        <td>${stat}</td>
+      </tr>`;
     });
     document.getElementById('p-body').innerHTML = html;
   }
@@ -211,7 +261,25 @@
   function switchTab(t, id = null) {
     document.getElementById('events-view').style.display = t === 'events' ? 'block' : 'none';
     document.getElementById('payments-view').style.display = t === 'payments' ? 'block' : 'none';
+    document.getElementById('e-tab').classList.toggle('active', t === 'events');
+    document.getElementById('p-tab').classList.toggle('active', t === 'payments');
     t === 'events' ? loadEvents(id) : loadPayments(id);
+  }
+
+  document.getElementById('eventForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const fData = new FormData(e.target);
+    const formObject = Object.fromEntries(fData.entries());
+    formObject.services = fData.getAll('services');
+    const res = await callApi({}, 'POST', { action: 'addNewEvent', formObject });
+    if(res && res.success) location.reload();
+  };
+
+  function filterContent() {
+    const val = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('.event-card').forEach(c => {
+      c.style.display = c.getAttribute('data-search').toLowerCase().includes(val) ? "block" : "none";
+    });
   }
 
   window.onload = () => loadEvents();
