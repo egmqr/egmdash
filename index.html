@@ -248,6 +248,13 @@
         <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
     </div>
     
+    <div class="section-title text-secondary"><i class="bi bi-list-check me-1"></i> Logistics & Contact</div>
+    <div class="row g-2 mb-4">
+        <div class="col-12 col-md-6"><label class="form-label-sm">Services</label><input type="text" name="services" class="form-control form-control-sm" placeholder="e.g. Photo, Video, Drone"></div>
+        <div class="col-6 col-md-3"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
+    </div>
+
     <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
     <div class="mb-4 p-3 bg-light rounded border shadow-sm">
         <div class="row px-2 g-2" id="newCrewContainer">
@@ -319,6 +326,13 @@
         <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
     </div>
     
+    <div class="section-title text-secondary"><i class="bi bi-list-check me-1"></i> Logistics & Contact</div>
+    <div class="row g-2 mb-4">
+        <div class="col-12 col-md-6"><label class="form-label-sm">Services</label><input type="text" name="services" class="form-control form-control-sm" placeholder="e.g. Photo, Video, Drone"></div>
+        <div class="col-6 col-md-3"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
+    </div>
+
     <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
     <div class="mb-4 p-3 bg-light rounded border shadow-sm">
         <div class="row px-2 g-2" id="editCrewContainer">
@@ -895,6 +909,11 @@
     form.elements['callTime'].value = to24Hour(e['Call Time']);
     form.elements['startTime'].value = to24Hour(e['Event Start Time']);
     form.elements['endTime'].value = to24Hour(e['Event End Time']);
+    
+    // Fill Logistics
+    form.elements['services'].value = e['Services'] || '';
+    form.elements['contactPerson'].value = e['Contact Person'] || '';
+    form.elements['contactNumber'].value = e['Contact Number'] || '';
     
     const crew = (e['Manpower'] || '').split(',').map(s=>s.trim()).filter(s=>s);
     const mInputs = form.elements['manpower'];
