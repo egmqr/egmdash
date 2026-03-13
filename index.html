@@ -281,7 +281,7 @@
     </div>
   </div>
 
-  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
+  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
   <select name="paymentType" id="pTypeSelect" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
   
   <div id="billingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
@@ -676,6 +676,10 @@
             t=document.getElementById('fPayType').value, 
             s=document.getElementById('fBillStatus').value;
       let filtered = rawEvents;
+      
+      // BASE FILTER: Ignore rows with blank Payment Type
+      filtered = filtered.filter(e => e['Payment Type'] && e['Payment Type'].trim() !== '');
+      
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
       if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
       if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
@@ -690,14 +694,6 @@
     const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
     if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No shooting events found matching your criteria.</div></div>'; return; }
     
-    // Create accurate local timezone strings for Today and Tomorrow
-    const todayDate = new Date();
-    const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
-    
-    const tomorrowDate = new Date(todayDate);
-    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-    const tomorrowStr = tomorrowDate.getFullYear() + '-' + String(tomorrowDate.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrowDate.getDate()).padStart(2, '0');
-
     dates.forEach(ds => {
       const evs = shootingEvents.filter(e => e['Event Date'] === ds);
       if(evs.length || isDefault) {
@@ -705,15 +701,7 @@
         if(ds && ds.includes('-')) {
             const dParts = ds.split('-');
             const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
-            const formattedDate = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-            
-            if (ds === todayStr) {
-                displayHeader = "Today, " + formattedDate;
-            } else if (ds === tomorrowStr) {
-                displayHeader = "Tomorrow, " + formattedDate;
-            } else {
-                displayHeader = formattedDate;
-            }
+            displayHeader = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
         }
         
         html += `<div class="col-12 mt-4"><h5 class="fw-bold border-bottom border-2 pb-2" style="color: #0f172a;"><i class="bi bi-calendar3 me-2 text-primary"></i>${displayHeader}</h5></div>`;
