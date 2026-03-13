@@ -126,7 +126,7 @@
         <li class="nav-item"><a class="nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
         <li class="nav-item"><a class="nav-link" id="p-tab" onclick="handleTabClick('payments')"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
       </ul>
-      <button class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
+      <button id="filterToggleBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
         <i class="bi bi-sliders"></i> <span class="d-none d-sm-inline">Filters</span>
       </button>
     </div>
@@ -220,19 +220,26 @@
 
 <div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-calendar-plus me-2"></i> New Event Entry</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4"><form id="eventForm">
   
-  <div class="row g-2 mb-4">
-    <div class="col-9 col-md-10"><label class="form-label-sm">Event Name</label><input type="text" name="eventName" class="form-control fw-bold" required></div>
-    <div class="col-3 col-md-2 d-flex align-items-end">
-        <input type="checkbox" class="btn-check" name="avp" id="newAvpCheck" value="true" onchange="toggleModalLogistics(this.checked, 'logisticsFields')" autocomplete="off">
-        <label class="btn btn-outline-primary w-100 fw-bold shadow-sm" for="newAvpCheck">AVP</label>
+  <div class="row g-2 mb-3 align-items-center">
+    <div class="col-8 col-md-10">
+        <label class="form-label-sm">Event Name</label>
+        <input type="text" name="eventName" class="form-control fw-bold" required>
     </div>
-    
-    <div class="col-12 col-md-5"><label class="form-label-sm mt-1">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-    <div class="col-12 col-md-4"><label class="form-label-sm mt-1">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
-    <div class="col-12 col-md-3"><label class="form-label-sm mt-1">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+    <div class="col-4 col-md-2 mt-4 pt-1">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="avp" id="newAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'new')">
+            <label class="form-check-label fw-bold text-primary small" for="newAvpCheck">AVP</label>
+        </div>
+    </div>
   </div>
 
-  <div id="logisticsFields">
+  <div class="row g-2 mb-4" id="newAvpHiddenFields">
+    <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
+    <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+    <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+  </div>
+
+  <div id="newLogisticsFields">
     <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
     <div class="row g-2 mb-4">
         <div class="col-6 col-md-3"><label class="form-label-sm">Event Date</label><input type="date" name="eventDate" class="form-control form-control-sm"></div>
@@ -284,16 +291,23 @@
   <form id="editForm">
   <input type="hidden" id="editEventId" name="eventId">
   
-  <div class="row g-2 mb-4">
-    <div class="col-9 col-md-10"><label class="form-label-sm">Event Name</label><input type="text" name="eventName" class="form-control fw-bold" required></div>
-    <div class="col-3 col-md-2 d-flex align-items-end">
-        <input type="checkbox" class="btn-check" name="avp" id="editAvpCheck" value="true" onchange="toggleModalLogistics(this.checked, 'editLogisticsFields')" autocomplete="off">
-        <label class="btn btn-outline-primary w-100 fw-bold shadow-sm" for="editAvpCheck">AVP</label>
+  <div class="row g-2 mb-3 align-items-center">
+    <div class="col-8 col-md-10">
+        <label class="form-label-sm">Event Name</label>
+        <input type="text" name="eventName" class="form-control fw-bold" required>
     </div>
-    
-    <div class="col-12 col-md-5"><label class="form-label-sm mt-1">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-    <div class="col-12 col-md-4"><label class="form-label-sm mt-1">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
-    <div class="col-12 col-md-3"><label class="form-label-sm mt-1">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+    <div class="col-4 col-md-2 mt-4 pt-1">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="avp" id="editAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'edit')">
+            <label class="form-check-label fw-bold text-primary small" for="editAvpCheck">AVP</label>
+        </div>
+    </div>
+  </div>
+
+  <div class="row g-2 mb-4" id="editAvpHiddenFields">
+    <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
+    <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+    <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
   </div>
 
   <div id="editLogisticsFields">
@@ -408,7 +422,6 @@
           bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
           
           if (pendingAuthAction) {
-              // Wait slightly for the auth modal to finish hiding before showing another modal
               setTimeout(() => {
                   pendingAuthAction();
                   pendingAuthAction = null;
@@ -537,7 +550,12 @@
   }
 
   function toggleBilling(s, b) { document.getElementById(b).style.display = document.getElementById(s).value === 'Billing'?'block':'none'; }
-  function toggleModalLogistics(isAvp, boxId) { document.getElementById(boxId).style.display = isAvp ? 'none' : 'block'; }
+  
+  // Hides both the Logistics details AND the Location/Status block when AVP is checked
+  function toggleAvpFields(isAvp, prefix) { 
+      document.getElementById(prefix + 'AvpHiddenFields').style.display = isAvp ? 'none' : ''; 
+      document.getElementById(prefix + 'LogisticsFields').style.display = isAvp ? 'none' : 'block'; 
+  }
 
   function processFetchedData(res) {
       rawPayments = res.payments || [];
@@ -794,8 +812,19 @@
     document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
     document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
     
-    document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar') ? 'block':'none';
+    document.getElementById('eventFilters').style.display = t==='events'?'block':'none';
     document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
+    
+    // Hide filter button completely on calendar
+    if (t === 'calendar') {
+        document.getElementById('filterToggleBtn').style.display = 'none';
+        const filterCollapse = document.getElementById('filterCollapse');
+        if (filterCollapse.classList.contains('show')) {
+            new bootstrap.Collapse(filterCollapse, {toggle: false}).hide();
+        }
+    } else {
+        document.getElementById('filterToggleBtn').style.display = 'flex';
+    }
     
     document.getElementById('e-tab').classList.toggle('active', t==='events');
     document.getElementById('c-tab').classList.toggle('active', t==='calendar');
@@ -826,13 +855,11 @@
       }
   }
 
-  // Hide the Edit Modal, show the Auth Modal, and reopen Edit Modal upon success
   function unlockEditModal() {
       const editModalEl = document.getElementById('editEventModal');
       const editModal = bootstrap.Modal.getInstance(editModalEl);
       editModal.hide();
       
-      // setTimeout safely avoids Bootstrap's overlapping backdrop bugs
       setTimeout(() => {
           requireAuth(() => {
               setEditFormState(false);
@@ -860,7 +887,7 @@
     
     const isAvp = e['AVP Required'] === 'TRUE';
     form.elements['avp'].checked = isAvp;
-    toggleModalLogistics(isAvp, 'editLogisticsFields');
+    toggleAvpFields(isAvp, 'edit');
     
     form.elements['eventDate'].value = toInputDate(e['Event Date']);
     form.elements['callTime'].value = to24Hour(e['Call Time']);
@@ -962,7 +989,7 @@
         bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
         e.target.reset(); 
         document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
-        toggleModalLogistics(false, 'logisticsFields'); 
+        toggleAvpFields(false, 'new'); 
         fetchAllData(); 
     } else alert("Error: " + (res?res.error:"Unknown"));
   };
