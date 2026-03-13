@@ -121,8 +121,9 @@
 </div></div></div></div>
 
 <div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h6 class="fw-bold mb-0 text-uppercase">New Entry</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4"><form id="eventForm">
-  <div class="row g-3 mb-3">
-    <div class="col-12 col-md-8"><label class="small fw-bold text-muted">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
+  <div class="row g-2 mb-3">
+    <div class="col-12"><label class="small fw-bold text-muted">Event Name</label><input type="text" name="eventName" class="form-control fw-bold" required></div>
+    <div class="col-12 col-md-8"><label class="small fw-bold text-muted">Venue</label><input type="text" name="eventVenue" class="form-control"></div>
     <div class="col-12 col-md-4"><label class="small fw-bold text-muted">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
   </div>
   
@@ -171,8 +172,9 @@
 
 <div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h6 class="fw-bold mb-0 text-uppercase">Edit Event</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4"><form id="editForm">
   <input type="hidden" id="editEventId" name="eventId">
-  <div class="row g-3 mb-3">
-    <div class="col-12 col-md-8"><label class="small fw-bold text-muted">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
+  <div class="row g-2 mb-3">
+    <div class="col-12"><label class="small fw-bold text-muted">Event Name</label><input type="text" name="eventName" class="form-control fw-bold" required></div>
+    <div class="col-12 col-md-8"><label class="small fw-bold text-muted">Venue</label><input type="text" name="eventVenue" class="form-control"></div>
     <div class="col-12 col-md-4"><label class="small fw-bold text-muted">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
   </div>
   
@@ -403,7 +405,7 @@
     if(currentTab === 'events') {
       const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
       let filtered = rawEvents;
-      if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n));
+      if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n) || (e['Event Venue'] && e['Event Venue'].toLowerCase().includes(n)));
       if(dF) filtered = filtered.filter(e => e['Event Date'] >= dF);
       if(dT) filtered = filtered.filter(e => e['Event Date'] <= dT);
       if(c) filtered = filtered.filter(e => e['Manpower'].includes(c));
@@ -417,7 +419,6 @@
       let filtered = rawEvents;
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
       
-      // Filter by GR or Invoice
       if(grInv) filtered = filtered.filter(e => 
           (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || 
           (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv))
@@ -444,7 +445,6 @@
             displayHeader = dObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
         }
         
-        // Made the Date headers bigger (h5) and primary color
         html += `<div class="col-12 mt-4"><h5 class="fw-bold border-bottom pb-2 text-primary">📅 ${displayHeader}</h5></div>`;
         
         if(!evs.length) html += `<div class="col-12 mb-3"><div class="p-3 bg-white rounded border border-light text-center text-muted small fst-italic shadow-sm">No events for this day.</div></div>`;
@@ -455,7 +455,6 @@
                  if(key.toLowerCase().startsWith('file0') && e[key]) {
                     const parts = e[key].split('|');
                     if(parts.length === 3) {
-                       // Wrapped the delete button in requireAuth()
                        filesHtml += `<span class="file-badge mb-1 me-1">${parts[0]} <a href="${parts[1]}" target="_blank">View</a> <span class="file-delete-btn" title="Delete File" onclick="requireAuth(() => deleteFile('${e['Event ID']}', '${parts[2]}'))">&times;</span></span>`;
                     }
                  }
@@ -466,7 +465,8 @@
                         <span class="badge bg-dark px-2 py-1">ID: ${e['Event ID']} <span onclick="requireAuth(() => openEditModal('${e['Event ID']}'))" class="edit-trigger ms-1 fs-6 align-middle">✏️</span></span>
                         <span class="badge ${e['Event Status']==='Confirmed'?'bg-success':'bg-warning text-dark'} px-2 py-1">${e['Event Status']}</span>
                     </div>
-                    <h5 class="fw-bold text-primary mb-3 lh-sm mt-1">${e['Event Name']}</h5>
+                    <h5 class="fw-bold text-primary mb-1 lh-sm mt-1">${e['Event Name']}</h5>
+                    <p class="small text-muted mb-3"><i class="fw-bold">📍 ${e['Event Venue'] || 'No Venue Set'}</i></p>
                     <div class="small">
                         <p class="mb-1">🕒 <strong class="text-muted">Times:</strong> <br class="d-sm-none"> ${formatAMPM(e['Call Time'])} (Call) | ${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</p>
                         <p class="mb-1">🛠️ <strong class="text-muted">Services:</strong> ${e['Services'] || 'None'}</p>
@@ -537,6 +537,7 @@
     
     form.elements['eventId'].value = id;
     form.elements['eventName'].value = e['Event Name'] || '';
+    form.elements['eventVenue'].value = e['Event Venue'] || '';
     form.elements['eventStatus'].value = e['Event Status'] || '';
     
     const isAvp = e['AVP Required'] === 'TRUE';
