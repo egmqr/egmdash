@@ -60,6 +60,34 @@
     .file-delete-btn { cursor: pointer; color: #ef4444; font-weight: bold; padding-left: 6px; border-left: 1px solid #cbd5e1; flex-shrink: 0; font-size: 1.1rem; line-height: 1;}
     .file-delete-btn:hover { color: #b91c1c; }
 
+    /* Custom Calendar Grid */
+    .calendar-container { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; }
+    .calendar-header-row { display: grid; grid-template-columns: repeat(7, 1fr); background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    .calendar-header-cell { text-align: center; font-weight: 700; font-size: 0.75rem; color: #64748b; padding: 12px 5px; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #f1f5f9; }
+    .calendar-header-cell:last-child { border-right: none; }
+    
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: #e2e8f0; gap: 1px; } /* Gap acts as borders */
+    .calendar-day { background: #fff; min-height: 110px; padding: 6px; display: flex; flex-direction: column; gap: 4px; transition: 0.2s;}
+    .calendar-day:hover { background-color: #f8fafc; }
+    .calendar-day.empty { background: #f8fafc; cursor: default; }
+    .calendar-day.today { background: #eff6ff; }
+    
+    .date-number { font-weight: 600; font-size: 0.85rem; color: #475569; align-self: flex-end; margin-bottom: 4px; }
+    .calendar-day.today .date-number { background: #2563eb; color: #fff; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    
+    .cal-event-pill { font-size: 0.7rem; font-weight: 500; padding: 4px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-align: left; transition: 0.2s; border: 1px solid transparent; margin-bottom: 2px; line-height: 1.2;}
+    .cal-event-pill:hover { opacity: 0.8; transform: scale(0.98); }
+    .cal-status-confirmed { background-color: #dcfce7; color: #047857; border-color: #a7f3d0; }
+    .cal-status-pencil { background-color: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+    .cal-status-cancelled { background-color: #fee2e2; color: #b91c1c; border-color: #fca5a5; text-decoration: line-through; opacity: 0.7; }
+
+    @media (max-width: 767px) {
+        .calendar-day { min-height: 80px; padding: 3px; }
+        .date-number { font-size: 0.75rem; margin-bottom: 2px;}
+        .cal-event-pill { font-size: 0.6rem; padding: 3px 4px; }
+        .calendar-header-cell { font-size: 0.65rem; padding: 8px 2px; }
+    }
+
     /* Overlays & Loaders */
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;}
     .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
@@ -93,7 +121,8 @@
 
     <div class="d-flex justify-content-between align-items-center pb-2">
       <ul class="nav nav-pills" id="appTabs">
-        <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-grid-1x2-fill me-1"></i> Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-card-list me-1"></i> List</a></li>
+        <li class="nav-item"><a class="nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
         <li class="nav-item"><a class="nav-link" id="p-tab" onclick="handleTabClick('payments')"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
       </ul>
       <button class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
@@ -104,7 +133,7 @@
     <div class="collapse mt-2" id="filterCollapse">
       <div class="filter-panel" id="eventFilters">
         <div class="row g-2 align-items-end">
-          <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+          <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event/Venue</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">From Date</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">To Date</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">Crew Member</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Crew</option></select></div>
@@ -131,10 +160,34 @@
   </div>
   
   <div class="px-2 px-md-0">
+      
       <div id="events-view">
           <h4 class="fw-bold mb-4 mt-2" style="color: #1e293b; letter-spacing: -0.5px;">Upcoming Events</h4>
           <div id="events-list" class="row g-3"></div>
       </div>
+
+      <div id="calendar-view" style="display:none;">
+          <div class="d-flex justify-content-between align-items-center mb-3 mt-2 px-1">
+              <button class="btn btn-light border btn-sm px-3 shadow-sm fw-bold" onclick="changeCalendarMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+              <h5 class="fw-bold mb-0" id="calendarMonthYear" style="color: #1e293b; letter-spacing: -0.5px;">Month Year</h5>
+              <button class="btn btn-light border btn-sm px-3 shadow-sm fw-bold" onclick="changeCalendarMonth(1)"><i class="bi bi-chevron-right"></i></button>
+          </div>
+          
+          <div class="calendar-container">
+              <div class="calendar-header-row">
+                  <div class="calendar-header-cell">Sun</div>
+                  <div class="calendar-header-cell">Mon</div>
+                  <div class="calendar-header-cell">Tue</div>
+                  <div class="calendar-header-cell">Wed</div>
+                  <div class="calendar-header-cell">Thu</div>
+                  <div class="calendar-header-cell">Fri</div>
+                  <div class="calendar-header-cell text-primary">Sat</div>
+              </div>
+              <div id="calendarDays" class="calendar-grid">
+                  </div>
+          </div>
+      </div>
+
       <div id="payments-view" style="display:none;">
           <div class="table-custom bg-white shadow-sm">
               <div class="table-responsive">
@@ -302,13 +355,19 @@
 <script>
   let pendingAuthAction = null;
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
+  
   let rawEvents = [], rawPayments = [], currentTab = 'events';
+  let filteredEventsCache = []; // Store active filters for the calendar
+  let currentCalendarDate = new Date(); // Keep track of the month being viewed
+  
   const baseCrew = ["Edgar","Francis","Mael","Lexie","Athan","Jovert","May","Tina","Jops","Grace","Jun","Tatalino","Joram","Roy","Smile"];
 
   // --- Auth Functions ---
   function isAuthenticated() {
       const exp = localStorage.getItem('egm_auth_exp');
-      return exp && parseInt(exp) > Date.now();
+      if (exp && parseInt(exp) > Date.now()) return true;
+      localStorage.removeItem('egm_auth_token');
+      return false;
   }
 
   function requireAuth(actionFunction) {
@@ -332,13 +391,14 @@
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>VERIFYING...';
       btn.disabled = true;
 
-      const res = await callApi({ action: 'verifyPassword', password: pass }, 'POST'); // Auth isn't silent
+      const res = await callApi({ action: 'verifyPassword', password: pass }, 'POST'); 
 
       btn.innerHTML = originalText;
       btn.disabled = false;
 
       if (res && res.success) {
           localStorage.setItem('egm_auth_exp', Date.now() + 3600000); // 1 hr
+          localStorage.setItem('egm_auth_token', pass); // For API backdoor protection
           bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
           if (pendingAuthAction) {
               pendingAuthAction();
@@ -429,11 +489,14 @@
     if(!isSilent) document.getElementById('loader').style.display='block';
     
     let u = new URL(API_URL); 
-    let reqObj = { method: method };
+    let reqObj = { method: method, headers: { "Content-Type": "text/plain;charset=utf-8" } };
 
     if(method === 'GET') {
         Object.keys(payload).forEach(k => u.searchParams.append(k, payload[k]));
     } else {
+        if (payload.action !== 'verifyPassword') {
+            payload.password = localStorage.getItem('egm_auth_token') || '';
+        }
         reqObj.body = JSON.stringify(payload);
     }
 
@@ -470,21 +533,17 @@
       applyFilters();
   }
 
-  // OPTIMIZED FETCH: Loads local cache instantly, then syncs quietly in the background
   async function fetchAllData() {
     const cachedData = localStorage.getItem('egm_dashboard_data');
     let isSilent = false;
 
     if (cachedData) {
-        // INSTANT LOAD from local device memory
         processFetchedData(JSON.parse(cachedData));
         isSilent = true; 
         document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
     }
 
-    // Background check to Server Cache
     const res = await callApi({action:'getAllData'}, 'GET', isSilent);
-    
     document.getElementById('bgSyncIndicator').style.display = 'none';
 
     if(res && res.events) {
@@ -499,7 +558,7 @@
   }
 
   function applyFilters() {
-    if(currentTab === 'events') {
+    if(currentTab === 'events' || currentTab === 'calendar') {
       const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
       let filtered = rawEvents;
       if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n) || (e['Event Venue'] && e['Event Venue'].toLowerCase().includes(n)));
@@ -507,7 +566,11 @@
       if(dT) filtered = filtered.filter(e => e['Event Date'] <= dT);
       if(c) filtered = filtered.filter(e => e['Manpower'].includes(c));
       if(s) filtered = filtered.filter(e => e['Event Status'] === s);
+      
+      filteredEventsCache = filtered; // Save for calendar re-renders
+      
       renderEvents(filtered, !n && !dF && !dT && !c && !s);
+      renderCalendar(filtered);
     } else {
       const q=document.getElementById('fPaySearch').value.toLowerCase(), 
             grInv=document.getElementById('fGrInv').value.toLowerCase(),
@@ -515,18 +578,14 @@
             s=document.getElementById('fBillStatus').value;
       let filtered = rawEvents;
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
-      
-      if(grInv) filtered = filtered.filter(e => 
-          (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || 
-          (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv))
-      );
-
+      if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
       if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
       if(s) filtered = filtered.filter(e => e['Billing Status'] === s);
       renderPayments(filtered);
     }
   }
 
+  // --- Views Rendering ---
   function renderEvents(data, isDefault) {
     let html = '', dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.toISOString().split('T')[0]}) : [...new Set(data.map(e=>e['Event Date']))].sort();
     const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
@@ -610,6 +669,66 @@
     document.getElementById('events-list').innerHTML = html;
   }
 
+  // --- Calendar Generator Logic ---
+  function changeCalendarMonth(dir) {
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir);
+      renderCalendar(filteredEventsCache); 
+  }
+
+  function renderCalendar(data) {
+      const year = currentCalendarDate.getFullYear();
+      const month = currentCalendarDate.getMonth();
+      const today = new Date();
+      
+      document.getElementById('calendarMonthYear').innerText = currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      let html = '';
+      
+      // Empty cells before the 1st of the month
+      for(let i=0; i<firstDay; i++) {
+          html += `<div class="calendar-day empty"></div>`;
+      }
+      
+      // Days of the month
+      for(let d=1; d<=daysInMonth; d++) {
+          const currentDateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          const isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
+          const dayClass = isToday ? 'calendar-day today' : 'calendar-day';
+          
+          const dayEvents = data.filter(e => e['Event Date'] === currentDateStr && e['AVP Required'] !== 'TRUE');
+          
+          let eventsHtml = '';
+          dayEvents.forEach(e => {
+              let pillClass = 'cal-status-pencil';
+              if(e['Event Status'] === 'Confirmed') pillClass = 'cal-status-confirmed';
+              else if(e['Event Status'] === 'Cancelled') pillClass = 'cal-status-cancelled';
+              
+              const timePrefix = e['Call Time'] ? `${to24Hour(e['Call Time'])} ` : '';
+              
+              eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="requireAuth(() => openEditModal('${e['Event ID']}'))" title="${e['Event Name']}">
+                  <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
+              </div>`;
+          });
+          
+          html += `<div class="${dayClass}">
+                      <div class="date-number">${d}</div>
+                      ${eventsHtml}
+                   </div>`;
+      }
+      
+      // Empty cells to complete the grid (optional styling perfection)
+      const totalCells = firstDay + daysInMonth;
+      const remaining = (7 - (totalCells % 7)) % 7;
+      for(let i=0; i<remaining; i++) {
+          html += `<div class="calendar-day empty"></div>`;
+      }
+      
+      document.getElementById('calendarDays').innerHTML = html;
+  }
+
   function renderPayments(data) {
     let html = '';
     if (data.length === 0) {
@@ -645,18 +764,25 @@
 
   function handleTabClick(tabName) {
       if(tabName === 'payments') { requireAuth(() => switchTab('payments')); } 
-      else { switchTab('events'); }
+      else { switchTab(tabName); }
   }
 
   function switchTab(t) {
     currentTab = t;
     document.getElementById('events-view').style.display = t==='events'?'block':'none';
+    document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
     document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
-    document.getElementById('eventFilters').style.display = t==='events'?'block':'none';
+    
+    // Show Event filters for both List and Calendar views
+    document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar') ? 'block':'none';
     document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
+    
     document.getElementById('e-tab').classList.toggle('active', t==='events');
+    document.getElementById('c-tab').classList.toggle('active', t==='calendar');
     document.getElementById('p-tab').classList.toggle('active', t==='payments');
-    applyFilters();
+    
+    // When switching to calendar, make sure it renders the current month properly
+    applyFilters(); 
   }
 
   function openEditModal(id) {
