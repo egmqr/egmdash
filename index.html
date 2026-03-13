@@ -48,7 +48,7 @@
 
     <div class="filter-panel" id="eventFilters">
       <div class="row g-2 align-items-end">
-        <div class="col-md-3"><span class="form-label-sm">Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+        <div class="col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
         <div class="col-md-2"><span class="form-label-sm">From</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
         <div class="col-md-2"><span class="form-label-sm">To</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
         <div class="col-md-2"><span class="form-label-sm">Crew</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Edgar</option><option>Francis</option><option>Mael</option><option>Lexie</option><option>Athan</option><option>Jovert</option><option>May</option><option>Tina</option><option>Jops</option><option>Grace</option><option>Jun</option><option>Tatalino</option><option>Joram</option><option>Roy</option><option>Smile</option></select></div>
@@ -59,7 +59,7 @@
 
     <div class="filter-panel" id="paymentFilters" style="display:none;">
       <div class="row g-2 align-items-end">
-        <div class="col-md-4"><span class="form-label-sm">Search ID/Event</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+        <div class="col-md-4"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
         <div class="col-md-3"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
         <div class="col-md-3"><span class="form-label-sm">Billing Status</span><select id="fBillStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Statuses</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
         <div class="col-md-2"><button class="btn btn-outline-secondary btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
@@ -70,7 +70,15 @@
   <div id="loader" class="loader text-center"><div class="spinner-border text-primary"></div><div class="mt-2 fw-bold">Syncing...</div></div>
   <div id="events-view"><div id="events-list" class="row"></div></div>
   <div id="payments-view" style="display:none;"><div class="table-responsive"><table class="table table-hover bg-white border">
-    <thead class="table-dark"><tr><th>ID</th><th>Type</th><th>Details</th><th>Status & Ref</th></tr></thead>
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Event Name</th>
+            <th>Payment Type</th>
+            <th>Email Thread</th>
+            <th>Status & Ref</th>
+        </tr>
+    </thead>
     <tbody id="p-body"></tbody>
   </table></div></div>
 </div>
@@ -104,7 +112,13 @@
 
   <div class="section-title mt-3">Payment Setup</div>
   <select name="paymentType" id="pTypeSelect" class="form-select mb-2" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
-  <div id="billingBox" style="display:none;" class="p-2 border rounded mb-3"><div class="row"><div class="col-6"><select name="billingStatus" class="form-select form-select-sm mb-1"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div><div class="col-6"><input type="text" name="billingRef" placeholder="Ref #" class="form-control form-control-sm"></div></div></div>
+  <div id="billingBox" style="display:none;" class="p-2 border rounded mb-3">
+    <div class="mb-2"><input type="text" name="emailThread" placeholder="Email Thread Title" class="form-control form-control-sm"></div>
+    <div class="row">
+        <div class="col-6"><select name="billingStatus" class="form-select form-select-sm mb-1"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+        <div class="col-6"><input type="text" name="billingRef" placeholder="Ref #" class="form-control form-control-sm"></div>
+    </div>
+  </div>
   <div class="mb-4"><label class="small fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
   <button type="submit" class="btn btn-primary w-100 py-2 fw-bold" id="submitBtn">CREATE ENTRY</button>
 </form></div></div></div></div>
@@ -133,10 +147,7 @@
   }
 
   function toggleBilling(s, b) { document.getElementById(b).style.display = document.getElementById(s).value === 'Billing'?'block':'none'; }
-
-  function toggleModalLogistics(isAvp) {
-    document.getElementById('logisticsFields').style.display = isAvp ? 'none' : 'block';
-  }
+  function toggleModalLogistics(isAvp) { document.getElementById('logisticsFields').style.display = isAvp ? 'none' : 'block'; }
 
   async function fetchAllData() {
     const [eRes, pRes] = await Promise.all([callApi({action:'getEvents'}), callApi({action:'getPayments'})]);
@@ -144,7 +155,13 @@
       rawPayments = pRes || [];
       rawEvents = eRes.map(ev => {
         const pay = rawPayments.find(p => p['Event ID'] === ev['Event ID']);
-        return {...ev, 'Payment Type': pay?pay['Payment Type']:'', 'Billing Status': pay?pay['Billing Status']:'', 'Billing Reference': pay?pay['Billing Reference']:''};
+        return {
+            ...ev, 
+            'Payment Type': pay?pay['Payment Type']:'', 
+            'Billing Status': pay?pay['Billing Status']:'', 
+            'Billing Reference': pay?pay['Billing Reference']:'',
+            'Email Thread': pay?pay['Email Thread Title']:''
+        };
       });
       applyFilters();
     }
@@ -159,7 +176,7 @@
     if(currentTab === 'events') {
       const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
       let filtered = rawEvents;
-      if(n) filtered = filtered.filter(e => e['Event Name'].toLowerCase().includes(n));
+      if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n));
       if(dF) filtered = filtered.filter(e => e['Event Date'] >= dF);
       if(dT) filtered = filtered.filter(e => e['Event Date'] <= dT);
       if(c) filtered = filtered.filter(e => e['Manpower'].includes(c));
@@ -177,15 +194,11 @@
 
   function renderEvents(data, isDefault) {
     let html = '', dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.toISOString().split('T')[0]}) : [...new Set(data.map(e=>e['Event Date']))].sort();
-    
-    // FILTER OUT AVP ONLY FOR THE DASHBOARD VIEW
     const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
-
     if(!dates.length) { document.getElementById('events-list').innerHTML='<p class="text-center text-muted mt-5">No shooting events found.</p>'; return; }
     
     dates.forEach(ds => {
       const evs = shootingEvents.filter(e => e['Event Date'] === ds);
-      
       if(evs.length || isDefault) {
         let displayHeader = ds;
         if(ds && ds.includes('-')) {
@@ -194,14 +207,11 @@
             displayHeader = dObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
         }
         html += `<div class="col-12 mt-3"><h6 class="fw-bold border-bottom pb-1 text-uppercase small text-secondary">📅 ${displayHeader}</h6></div>`;
-        
-        if(!evs.length) {
-            html += `<div class="col-12 mb-3"><div class="p-3 bg-white rounded border border-light text-center text-muted small fst-italic">No events for this day.</div></div>`;
-        } else {
+        if(!evs.length) html += `<div class="col-12 mb-3"><div class="p-3 bg-white rounded border border-light text-center text-muted small fst-italic">No events for this day.</div></div>`;
+        else {
             evs.forEach(e => {
               const permitLink = e['Permits'] ? `<a href="${e['Permits']}" target="_blank" class="badge bg-info text-dark text-decoration-none">Permit</a>` : `<span class="badge bg-light text-muted">No Permit</span>`;
-              html += `
-                <div class="col-md-6 col-lg-4 mb-3"><div class="card p-3 shadow-sm">
+              html += `<div class="col-md-6 col-lg-4 mb-3"><div class="card p-3 shadow-sm">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="badge bg-dark">ID: ${e['Event ID']} <span onclick="openEditModal('${e['Event ID']}')" class="edit-trigger ms-1">✏️</span></span>
                         <span class="badge ${e['Event Status']==='Confirmed'?'bg-success':'bg-warning text-dark'}">${e['Event Status']}</span>
@@ -234,7 +244,13 @@
       const isAvp = p['AVP Required'] === 'TRUE';
       const nameDisplay = isAvp ? `${p['Event Name']} <span class="badge badge-avp">AVP</span>` : p['Event Name'];
       let badge = p['Payment Type']==='Billing' ? `<span class="badge bg-warning text-dark">${p['Billing Status']||'Pending'}</span>` : `<span class="badge bg-success">Received</span>`;
-      html += `<tr><td>${p['Event ID']}</td><td>${p['Payment Type']||'-'}</td><td>${nameDisplay}</td><td>${badge} <br><small class="text-muted">${p['Billing Reference']||''}</small></td></tr>`;
+      html += `<tr>
+        <td class="fw-bold">${p['Event ID']}</td>
+        <td>${nameDisplay}</td>
+        <td>${p['Payment Type']||'-'}</td>
+        <td>${p['Email Thread']||'-'}</td>
+        <td>${badge} <br><small class="text-muted">${p['Billing Reference']||''}</small></td>
+      </tr>`;
     });
     document.getElementById('p-body').innerHTML = html;
   }
@@ -279,6 +295,7 @@
     btn.disabled = true; ov.style.display='flex';
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
+    obj.services = fd.getAll('services');
     const res = await callApi({}, 'POST', {action:'addNewEvent', formObject:obj});
     ov.style.display='none'; btn.disabled=false;
     if(res && res.success) { 
