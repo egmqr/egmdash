@@ -48,6 +48,8 @@
     .card-icon { width: 20px; display: inline-block; text-align: center; margin-right: 6px; font-size: 1rem; }
     .edit-trigger { cursor: pointer; transition: 0.2s; color: #94a3b8; }
     .edit-trigger:hover { color: #2563eb; }
+    .map-link { color: #dc3545; text-decoration: none; border-bottom: 1px dashed rgba(220, 53, 69, 0.5); transition: 0.2s; }
+    .map-link:hover { color: #b02a37; border-bottom-color: #b02a37; }
     
     /* File Upload & Badges */
     .card-upload-btn { cursor: pointer; color: #2563eb; font-size: 0.75rem; font-weight: 700; border: 1px dashed #93c5fd; background-color: #eff6ff; padding: 8px 12px; border-radius: 8px; display: block; text-align: center; transition: 0.2s; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px;}
@@ -161,8 +163,9 @@
 <div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-calendar-plus me-2"></i> New Event Entry</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4"><form id="eventForm">
   <div class="row g-2 mb-3">
     <div class="col-12"><label class="form-label-sm">Event Name</label><input type="text" name="eventName" class="form-control fw-bold" required></div>
-    <div class="col-12 col-md-8"><label class="form-label-sm">Venue / Location</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-    <div class="col-12 col-md-4"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+    <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
+    <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+    <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
   </div>
   
   <div class="mb-4 px-3 py-2 bg-light rounded border">
@@ -218,8 +221,9 @@
   <input type="hidden" id="editEventId" name="eventId">
   <div class="row g-2 mb-3">
     <div class="col-12"><label class="form-label-sm">Event Name</label><input type="text" name="eventName" class="form-control fw-bold" required></div>
-    <div class="col-12 col-md-8"><label class="form-label-sm">Venue / Location</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-    <div class="col-12 col-md-4"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+    <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
+    <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+    <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
   </div>
   
   <div class="mb-4 px-3 py-2 bg-light rounded border">
@@ -516,6 +520,11 @@
               if(e['Event Status'] === 'Confirmed') statusBadgeClass = 'badge-soft-success';
               else if(e['Event Status'] === 'Cancelled') statusBadgeClass = 'badge-soft-warning';
 
+              let venueDisplay = `<span class="fw-medium">${e['Event Venue'] || 'No Venue Set'}</span>`;
+              if (e['Event Venue Link']) {
+                  venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
+              }
+
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
                     <div class="d-flex justify-content-between mb-3 align-items-center">
                         <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']} <span onclick="requireAuth(() => openEditModal('${e['Event ID']}'))" class="edit-trigger ms-2"><i class="bi bi-pencil-square"></i></span></span>
@@ -523,7 +532,7 @@
                     </div>
                     
                     <h5 class="fw-bold mb-1 lh-sm" style="color: #1e293b;">${e['Event Name']}</h5>
-                    <p class="small text-muted mb-4"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> <span class="fw-medium">${e['Event Venue'] || 'No Venue Set'}</span></p>
+                    <p class="small text-muted mb-4"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> ${venueDisplay}</p>
                     
                     <div class="small text-secondary">
                         <div class="d-flex mb-2 align-items-start">
@@ -621,6 +630,7 @@
     form.elements['eventId'].value = id;
     form.elements['eventName'].value = e['Event Name'] || '';
     form.elements['eventVenue'].value = e['Event Venue'] || '';
+    form.elements['venueLink'].value = e['Event Venue Link'] || '';
     form.elements['eventStatus'].value = e['Event Status'] || '';
     
     const isAvp = e['AVP Required'] === 'TRUE';
