@@ -2,30 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>EGM Operations Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f4f7f6; padding: 20px; font-family: 'Segoe UI', sans-serif; }
+    body { background-color: #f4f7f6; padding: 10px; font-family: 'Segoe UI', sans-serif; font-size: 0.9rem; }
+    @media (min-width: 768px) { body { padding: 20px; font-size: 1rem; } }
+    
     .card { transition: 0.3s; border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: 100%; }
-    .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-    .nav-tabs .nav-link { cursor: pointer; color: #555; font-weight: 600; border: none; }
-    .nav-tabs .nav-link.active { color: #0d6efd; background: none; border-bottom: 3px solid #0d6efd; }
-    .sticky-top-custom { position: sticky; top: 0; background: #f4f7f6; z-index: 1000; padding-bottom: 10px; }
-    .filter-panel { background: white; padding: 12px; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 15px; }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+    
+    /* Mobile Priority Nav Pills */
+    .nav-pills { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; gap: 8px; padding-bottom: 5px; border-bottom: none; }
+    .nav-pills::-webkit-scrollbar { display: none; }
+    .nav-pills .nav-link { white-space: nowrap; border-radius: 20px; background: #e9ecef; border: none; padding: 6px 16px; font-weight: 600; color: #555; font-size: 0.85rem; }
+    .nav-pills .nav-link.active { background: #0d6efd; color: white; }
+    
+    /* Sticky Mobile Header */
+    .sticky-header { position: sticky; top: 0; background: #f4f7f6; z-index: 1000; padding-top: 10px; margin-top: -10px; margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px;}
+    @media (min-width: 768px) { .sticky-header { padding-top: 20px; margin-top: -20px; margin-left: -20px; margin-right: -20px; padding-left: 20px; padding-right: 20px; margin-bottom: 25px; } }
+
+    .filter-panel { background: white; padding: 12px; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
     .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.85); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
     .form-label-sm { font-size: 0.7rem; font-weight: bold; color: #6c757d; margin-bottom: 2px; display: block; text-transform: uppercase; }
-    .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.75rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 4px 8px; border-radius: 4px; display: inline-block; transition: 0.2s;}
-    .card-upload-btn:hover { background-color: #f8f9fa; }
-    .section-title { font-size: 0.8rem; font-weight: bold; color: #adb5bd; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #eee; }
+    .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.75rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 6px 8px; border-radius: 6px; display: block; text-align: center; transition: 0.2s; margin-top: 10px;}
+    .card-upload-btn:hover { background-color: #e9ecef; }
+    .section-title { font-size: 0.8rem; font-weight: bold; color: #adb5bd; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;}
     .edit-trigger { cursor: pointer; transition: 0.2s; }
     .edit-trigger:hover { color: #0d6efd; }
     .badge-avp { background-color: #6f42c1; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 5px; }
-    .file-badge { font-size: 0.75rem; padding: 6px 10px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #dee2e6; background-color: #fff; color: #495057; border-radius: 6px; }
-    .file-badge a { color: #0d6efd; text-decoration: none; }
+    .file-badge { font-size: 0.75rem; padding: 6px 10px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #dee2e6; background-color: #fff; color: #495057; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .file-badge a { color: #0d6efd; text-decoration: none; font-weight: 600; }
     .file-badge a:hover { text-decoration: underline; }
-    .file-delete-btn { cursor: pointer; color: #dc3545; font-weight: bold; padding-left: 5px; border-left: 1px solid #dee2e6; }
+    .file-delete-btn { cursor: pointer; color: #dc3545; font-weight: bold; padding-left: 5px; border-left: 1px solid #dee2e6; flex-shrink: 0;}
     .file-delete-btn:hover { color: #a52a2a; }
   </style>
 </head>
@@ -36,152 +46,167 @@
   <h4 class="mt-3 fw-bold" id="overlayText">Processing...</h4>
 </div>
 
-<div class="container-fluid" style="max-width: 1400px; margin: auto;">
-  <div class="sticky-top-custom">
-    <div class="d-flex justify-content-between align-items-center mb-2 pt-2">
-      <h3 class="fw-bold mb-0">EGM <span class="text-primary">Ops</span></h3>
-      <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#addEventModal">+ New Entry</button>
+<div class="container-fluid" style="max-width: 1400px; margin: auto; padding: 0;">
+  
+  <div class="sticky-header">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="fw-bold mb-0">EGM <span class="text-primary">Ops</span></h4>
+      <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#addEventModal">+ New Entry</button>
     </div>
 
-    <ul class="nav nav-tabs border-0 mb-3">
-      <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="switchTab('events')">Events Dashboard</a></li>
-      <li class="nav-item"><a class="nav-link" id="p-tab" onclick="switchTab('payments')">Payment Monitoring</a></li>
-    </ul>
+    <div class="d-flex justify-content-between align-items-center pb-2">
+      <ul class="nav nav-pills" id="appTabs">
+        <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="switchTab('events')">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="switchTab('payments')">Payments</a></li>
+      </ul>
+      <button class="btn btn-outline-secondary btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
+        <span class="d-none d-sm-inline">Filters</span> 🎛️
+      </button>
+    </div>
 
-    <div class="filter-panel" id="eventFilters">
-      <div class="row g-2 align-items-end">
-        <div class="col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
-        <div class="col-md-2"><span class="form-label-sm">From</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
-        <div class="col-md-2"><span class="form-label-sm">To</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
-        <div class="col-md-2"><span class="form-label-sm">Crew</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Edgar</option><option>Francis</option><option>Mael</option><option>Lexie</option><option>Athan</option><option>Jovert</option><option>May</option><option>Tina</option><option>Jops</option><option>Grace</option><option>Jun</option><option>Tatalino</option><option>Joram</option><option>Roy</option><option>Smile</option></select></div>
-        <div class="col-md-2"><span class="form-label-sm">Status</span><select id="fStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
-        <div class="col-md-1"><button class="btn btn-outline-secondary btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
+    <div class="collapse mt-2" id="filterCollapse">
+      <div class="filter-panel" id="eventFilters">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">From</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">To</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">Crew</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Edgar</option><option>Francis</option><option>Mael</option><option>Lexie</option><option>Athan</option><option>Jovert</option><option>May</option><option>Tina</option><option>Jops</option><option>Grace</option><option>Jun</option><option>Tatalino</option><option>Joram</option><option>Roy</option><option>Smile</option></select></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">Status</span><select id="fStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+          <div class="col-12 col-md-1 mt-3 mt-md-0"><button class="btn btn-secondary btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
+        </div>
       </div>
-    </div>
 
-    <div class="filter-panel" id="paymentFilters" style="display:none;">
-      <div class="row g-2 align-items-end">
-        <div class="col-md-4"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
-        <div class="col-md-3"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
-        <div class="col-md-3"><span class="form-label-sm">Billing Status</span><select id="fBillStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Statuses</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
-        <div class="col-md-2"><button class="btn btn-outline-secondary btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
+      <div class="filter-panel" id="paymentFilters" style="display:none;">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-4"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+          <div class="col-6 col-md-3"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
+          <div class="col-6 col-md-3"><span class="form-label-sm">Billing Status</span><select id="fBillStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Statuses</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+          <div class="col-12 col-md-2 mt-3 mt-md-0"><button class="btn btn-secondary btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div id="loader" class="loader text-center"><div class="spinner-border text-primary"></div><div class="mt-2 fw-bold">Syncing...</div></div>
-  <div id="events-view"><div id="events-list" class="row"></div></div>
-  <div id="payments-view" style="display:none;"><div class="table-responsive"><table class="table table-hover bg-white border">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>Event Name</th>
-            <th>Payment Type</th>
-            <th>Email Thread</th>
-            <th>Status & Date</th>
-            <th>GR & Invoice</th>
-        </tr>
-    </thead>
-    <tbody id="p-body"></tbody>
-  </table></div></div>
+  <div id="loader" class="loader text-center"><div class="spinner-border text-primary"></div><div class="mt-2 fw-bold small">Syncing...</div></div>
+  
+  <div class="px-2 px-md-0">
+      <div id="events-view"><div id="events-list" class="row g-3"></div></div>
+      <div id="payments-view" style="display:none;">
+          <div class="table-responsive rounded shadow-sm border bg-white">
+              <table class="table table-hover mb-0 align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="small py-3">ID</th>
+                        <th class="small py-3">Event Name</th>
+                        <th class="small py-3">Payment Type</th>
+                        <th class="small py-3">Email Thread</th>
+                        <th class="small py-3">Status & Date</th>
+                        <th class="small py-3">GR & Invoice</th>
+                    </tr>
+                </thead>
+                <tbody id="p-body" class="small"></tbody>
+              </table>
+          </div>
+      </div>
+  </div>
 </div>
 
-<div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h5 class="fw-bold mb-0">New Entry</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><form id="eventForm">
-  <div class="row mb-3">
-    <div class="col-md-8"><label class="small fw-bold">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
-    <div class="col-md-4"><label class="small fw-bold">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+<div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h6 class="fw-bold mb-0 text-uppercase">New Entry</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4"><form id="eventForm">
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-md-8"><label class="small fw-bold text-muted">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
+    <div class="col-12 col-md-4"><label class="small fw-bold text-muted">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
   </div>
   
-  <div class="mb-3 px-3 py-2 bg-light rounded border">
-    <div class="form-check fw-bold text-primary">
+  <div class="mb-3 px-3 py-2 bg-light rounded border border-light">
+    <div class="form-check fw-bold text-primary small">
         <input class="form-check-input" type="checkbox" name="avp" id="newAvpCheck" value="true" onchange="toggleModalLogistics(this.checked, 'logisticsFields')">
-        <label class="form-check-label" for="newAvpCheck">AVP Required (Hides Logistics Details)</label>
+        <label class="form-check-label pt-1" for="newAvpCheck">AVP Required (Hides Logistics)</label>
     </div>
   </div>
 
   <div id="logisticsFields">
-    <div class="row mb-3">
-        <div class="col-md-3"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div>
-        <div class="col-md-3"><label class="small fw-bold">Call</label><input type="time" name="callTime" class="form-control"></div>
-        <div class="col-md-3"><label class="small fw-bold">Start</label><input type="time" name="startTime" class="form-control"></div>
-        <div class="col-md-3"><label class="small fw-bold">End</label><input type="time" name="endTime" class="form-control"></div>
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-3"><label class="small fw-bold text-muted">Date</label><input type="date" name="eventDate" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="small fw-bold text-muted">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="small fw-bold text-muted">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="small fw-bold text-muted">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
     </div>
-    <div class="mb-3 p-3 bg-light rounded border shadow-sm">
-        <label class="small fw-bold text-primary mb-2 d-block">Crew Assignment</label>
-        <div class="row px-2">
+    <div class="mb-3 p-3 bg-light rounded border border-light shadow-sm">
+        <label class="small fw-bold text-primary mb-2 d-block text-uppercase">Crew Assignment</label>
+        <div class="row px-2 g-2">
             <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
         </div>
     </div>
   </div>
 
-  <div class="section-title mt-3">Payment Setup</div>
-  <select name="paymentType" id="pTypeSelect" class="form-select mb-2" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
-  <div id="billingBox" style="display:none;" class="p-2 border rounded mb-3">
-    <div class="mb-2"><input type="text" name="emailThread" placeholder="Email Thread Title" class="form-control form-control-sm"></div>
+  <div class="section-title mt-4">Payment Setup</div>
+  <select name="paymentType" id="pTypeSelect" class="form-select form-select-sm mb-2 fw-bold" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
+  <div id="billingBox" style="display:none;" class="p-3 border rounded bg-light mb-3">
+    <div class="mb-2"><label class="small fw-bold text-muted">Email Thread Title</label><input type="text" name="emailThread" class="form-control form-control-sm"></div>
     <div class="row g-2 mb-2">
-        <div class="col-6"><select name="billingStatus" class="form-select form-select-sm"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
-        <div class="col-6"><input type="date" name="billingStatusDate" class="form-control form-control-sm" title="Status Date"></div>
+        <div class="col-12 col-md-6"><label class="small fw-bold text-muted">Billing Status</label><select name="billingStatus" class="form-select form-select-sm"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+        <div class="col-12 col-md-6"><label class="small fw-bold text-muted">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
     </div>
     <div class="row g-2">
-        <div class="col-6"><input type="text" name="grNumber" placeholder="GR Number" class="form-control form-control-sm"></div>
-        <div class="col-6"><input type="text" name="invoiceNumber" placeholder="Invoice Number" class="form-control form-control-sm"></div>
+        <div class="col-12 col-md-6"><label class="small fw-bold text-muted">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div>
+        <div class="col-12 col-md-6"><label class="small fw-bold text-muted">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
     </div>
   </div>
-  <div class="mb-4"><label class="small fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
-  <button type="submit" class="btn btn-primary w-100 py-2 fw-bold" id="submitBtn">CREATE ENTRY</button>
+  <div class="mb-4"><label class="small fw-bold text-muted">Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2"></textarea></div>
+  <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="submitBtn">CREATE ENTRY</button>
 </form></div></div></div></div>
 
-<div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h5 class="fw-bold mb-0">Edit Event</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><form id="editForm">
+<div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h6 class="fw-bold mb-0 text-uppercase">Edit Event</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4"><form id="editForm">
   <input type="hidden" id="editEventId" name="eventId">
-  <div class="row mb-3">
-    <div class="col-md-8"><label class="small fw-bold">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
-    <div class="col-md-4"><label class="small fw-bold">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-md-8"><label class="small fw-bold text-muted">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
+    <div class="col-12 col-md-4"><label class="small fw-bold text-muted">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
   </div>
   
-  <div class="mb-3 px-3 py-2 bg-light rounded border">
-    <div class="form-check fw-bold text-primary">
+  <div class="mb-3 px-3 py-2 bg-light rounded border border-light">
+    <div class="form-check fw-bold text-primary small">
         <input class="form-check-input" type="checkbox" name="avp" id="editAvpCheck" value="true" onchange="toggleModalLogistics(this.checked, 'editLogisticsFields')">
-        <label class="form-check-label" for="editAvpCheck">AVP Required (Hides Logistics Details)</label>
+        <label class="form-check-label pt-1" for="editAvpCheck">AVP Required (Hides Logistics)</label>
     </div>
   </div>
 
   <div id="editLogisticsFields">
-    <div class="row mb-3">
-        <div class="col-md-3"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div>
-        <div class="col-md-3"><label class="small fw-bold">Call</label><input type="time" name="callTime" class="form-control"></div>
-        <div class="col-md-3"><label class="small fw-bold">Start</label><input type="time" name="startTime" class="form-control"></div>
-        <div class="col-md-3"><label class="small fw-bold">End</label><input type="time" name="endTime" class="form-control"></div>
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-3"><label class="small fw-bold text-muted">Date</label><input type="date" name="eventDate" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="small fw-bold text-muted">Call</label><input type="time" name="callTime" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="small fw-bold text-muted">Start</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="small fw-bold text-muted">End</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
     </div>
     <div class="mb-3 p-3 bg-light rounded border shadow-sm">
-        <label class="small fw-bold text-primary mb-2 d-block">Crew Assignment</label>
-        <div class="row px-2">
+        <label class="small fw-bold text-primary mb-2 d-block text-uppercase">Crew Assignment</label>
+        <div class="row px-2 g-2">
             <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
         </div>
     </div>
   </div>
 
-  <div class="section-title mt-3">Payment Info</div>
-  <select id="editPaymentType" name="paymentType" class="form-select mb-2" onchange="toggleBilling('editPaymentType', 'editBillingBox')"><option value="">-- Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
-  <div id="editBillingBox" style="display:none;" class="p-2 border rounded mb-3">
-    <div class="mb-2"><input type="text" name="emailThread" placeholder="Email Thread Title" class="form-control form-control-sm"></div>
+  <div class="section-title mt-4">Payment Info</div>
+  <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-2 fw-bold" onchange="toggleBilling('editPaymentType', 'editBillingBox')"><option value="">-- Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
+  <div id="editBillingBox" style="display:none;" class="p-3 border rounded bg-light mb-3">
+    <div class="mb-2"><label class="small fw-bold text-muted">Email Thread Title</label><input type="text" name="emailThread" class="form-control form-control-sm"></div>
     <div class="row g-2 mb-2">
-        <div class="col-6"><select id="editBillingStatus" name="billingStatus" class="form-select form-select-sm"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
-        <div class="col-6"><input type="date" name="billingStatusDate" class="form-control form-control-sm" title="Status Date"></div>
+        <div class="col-12 col-md-6"><label class="small fw-bold text-muted">Billing Status</label><select id="editBillingStatus" name="billingStatus" class="form-select form-select-sm"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+        <div class="col-12 col-md-6"><label class="small fw-bold text-muted">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
     </div>
     <div class="row g-2">
-        <div class="col-6"><input type="text" name="grNumber" placeholder="GR Number" class="form-control form-control-sm"></div>
-        <div class="col-6"><input type="text" name="invoiceNumber" placeholder="Invoice Number" class="form-control form-control-sm"></div>
+        <div class="col-12 col-md-6"><label class="small fw-bold text-muted">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div>
+        <div class="col-12 col-md-6"><label class="small fw-bold text-muted">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
     </div>
   </div>
-  <div class="mb-4"><label class="small fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
-  <button type="submit" class="btn btn-warning w-100 py-2 fw-bold" id="editSubmitBtn">SAVE CHANGES</button>
+  <div class="mb-4"><label class="small fw-bold text-muted">Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2"></textarea></div>
+  <button type="submit" class="btn btn-warning w-100 py-3 fw-bold shadow-sm" id="editSubmitBtn">SAVE CHANGES</button>
 </form></div></div></div></div>
 
-<div class="modal fade" id="uploadFileModal" tabindex="-1"><div class="modal-dialog modal-sm"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h6 class="fw-bold mb-0">Upload File</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3">
+<div class="modal fade" id="uploadFileModal" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h6 class="fw-bold mb-0 text-uppercase">Upload Document</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
   <input type="hidden" id="uploadEventId">
   <div class="mb-3">
-    <label class="small fw-bold">File Label</label>
-    <select id="uploadLabel" class="form-select form-select-sm">
+    <label class="small fw-bold text-muted mb-1">Select Label</label>
+    <select id="uploadLabel" class="form-select form-select-sm fw-bold">
         <option>Permit</option>
         <option>Shot List</option>
         <option>Receipt</option>
@@ -189,10 +214,10 @@
         <option>Other</option>
     </select>
   </div>
-  <div class="mb-3">
+  <div class="mb-4">
     <input type="file" id="uploadFileInput" class="form-control form-control-sm">
   </div>
-  <button class="btn btn-primary btn-sm w-100 fw-bold" onclick="submitFileUpload()">UPLOAD NOW</button>
+  <button class="btn btn-primary btn-sm w-100 py-2 fw-bold" onclick="submitFileUpload()">UPLOAD FILE</button>
 </div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -295,8 +320,8 @@
             const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
             displayHeader = dObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
         }
-        html += `<div class="col-12 mt-3"><h6 class="fw-bold border-bottom pb-1 text-uppercase small text-secondary">📅 ${displayHeader}</h6></div>`;
-        if(!evs.length) html += `<div class="col-12 mb-3"><div class="p-3 bg-white rounded border border-light text-center text-muted small fst-italic">No events for this day.</div></div>`;
+        html += `<div class="col-12 mt-3"><h6 class="fw-bold border-bottom pb-2 text-uppercase text-secondary" style="font-size: 0.85rem;">📅 ${displayHeader}</h6></div>`;
+        if(!evs.length) html += `<div class="col-12 mb-3"><div class="p-3 bg-white rounded border border-light text-center text-muted small fst-italic shadow-sm">No events for this day.</div></div>`;
         else {
             evs.forEach(e => {
               let filesHtml = '';
@@ -309,23 +334,23 @@
                  }
               });
 
-              html += `<div class="col-md-6 col-lg-4 mb-3"><div class="card p-3 shadow-sm">
+              html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4 shadow-sm">
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="badge bg-dark">ID: ${e['Event ID']} <span onclick="openEditModal('${e['Event ID']}')" class="edit-trigger ms-1">✏️</span></span>
-                        <span class="badge ${e['Event Status']==='Confirmed'?'bg-success':'bg-warning text-dark'}">${e['Event Status']}</span>
+                        <span class="badge bg-dark px-2 py-1">ID: ${e['Event ID']} <span onclick="openEditModal('${e['Event ID']}')" class="edit-trigger ms-1 fs-6 align-middle">✏️</span></span>
+                        <span class="badge ${e['Event Status']==='Confirmed'?'bg-success':'bg-warning text-dark'} px-2 py-1">${e['Event Status']}</span>
                     </div>
-                    <h5 class="fw-bold text-primary mb-3">${e['Event Name']}</h5>
+                    <h5 class="fw-bold text-primary mb-3 lh-sm mt-1">${e['Event Name']}</h5>
                     <div class="small">
-                        <p class="mb-1">🕒 <strong>Times:</strong> ${formatAMPM(e['Call Time'])} (Call) | ${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</p>
-                        <p class="mb-1">🛠️ <strong>Services:</strong> ${e['Services'] || 'None'}</p>
-                        <p class="mb-1">👥 <strong>Crew:</strong> ${e['Manpower'] || '-'}</p>
-                        <hr class="my-2">
-                        <p class="mb-1">👤 <strong>Contact:</strong> ${e['Contact Person']} (${e['Contact Number']})</p>
-                        <p class="mb-0 text-muted" style="font-size: 0.75rem;">📝 <strong>Notes:</strong> ${e['Event Notes'] || 'None'}</p>
+                        <p class="mb-1">🕒 <strong class="text-muted">Times:</strong> <br class="d-sm-none"> ${formatAMPM(e['Call Time'])} (Call) | ${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</p>
+                        <p class="mb-1">🛠️ <strong class="text-muted">Services:</strong> ${e['Services'] || 'None'}</p>
+                        <p class="mb-1">👥 <strong class="text-muted">Crew:</strong> ${e['Manpower'] || '-'}</p>
+                        <hr class="my-2 opacity-25">
+                        <p class="mb-1">👤 <strong class="text-muted">Contact:</strong> <br class="d-sm-none"> ${e['Contact Person']} (${e['Contact Number']})</p>
+                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">📝 <strong>Notes:</strong> ${e['Event Notes'] || 'None'}</p>
                     </div>
-                    <div class="mt-3 pt-2 border-top">
-                        <div class="d-flex flex-wrap mb-2">${filesHtml}</div>
-                        <label class="card-upload-btn w-100 text-center" onclick="openUploadModal('${e['Event ID']}')">+ Upload Document</label>
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-flex flex-wrap">${filesHtml}</div>
+                        <label class="card-upload-btn w-100" onclick="openUploadModal('${e['Event ID']}')">+ Add Document</label>
                     </div>
                 </div></div>`;
             });
@@ -344,14 +369,14 @@
       let dateStr = p['Billing Status Date'] ? new Date(p['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
 
       html += `<tr>
-        <td class="fw-bold">${p['Event ID']}</td>
-        <td>${nameDisplay}</td>
-        <td>${p['Payment Type']||'-'}</td>
-        <td>${p['Email Thread']||'-'}</td>
-        <td>${badge} <br><small class="text-muted">${dateStr}</small></td>
-        <td>
-            <small class="d-block text-muted" style="font-size: 0.75rem;">GR: <span class="text-dark fw-bold">${p['GR Number']||'-'}</span></small>
-            <small class="d-block text-muted" style="font-size: 0.75rem;">INV: <span class="text-dark fw-bold">${p['Invoice Number']||'-'}</span></small>
+        <td class="fw-bold text-nowrap">${p['Event ID']}</td>
+        <td style="min-width: 150px;">${nameDisplay}</td>
+        <td class="text-nowrap">${p['Payment Type']||'-'}</td>
+        <td style="min-width: 150px;">${p['Email Thread']||'-'}</td>
+        <td class="text-nowrap">${badge} <br><span class="text-muted fw-bold" style="font-size: 0.8rem;">${dateStr}</span></td>
+        <td class="text-nowrap">
+            <span class="d-block text-muted" style="font-size: 0.8rem;">GR: <span class="text-dark fw-bold">${p['GR Number']||'-'}</span></span>
+            <span class="d-block text-muted" style="font-size: 0.8rem;">INV: <span class="text-dark fw-bold">${p['Invoice Number']||'-'}</span></span>
         </td>
       </tr>`;
     });
