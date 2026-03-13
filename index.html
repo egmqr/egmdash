@@ -67,11 +67,8 @@
     .calendar-header-cell { text-align: center; font-weight: 700; font-size: 0.75rem; color: #64748b; padding: 12px 5px; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #f1f5f9; }
     .calendar-header-cell:last-child { border-right: none; }
     
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: #e2e8f0; gap: 1px; } /* Gap acts as borders */
-    
-    /* ADDED min-width: 0 and overflow: hidden to prevent grid stretching */
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: #e2e8f0; gap: 1px; } 
     .calendar-day { background: #fff; min-height: 110px; padding: 6px; display: flex; flex-direction: column; gap: 4px; transition: 0.2s; min-width: 0; overflow: hidden; }
-    
     .calendar-day:hover { background-color: #f8fafc; }
     .calendar-day.empty { background: #f8fafc; cursor: default; }
     .calendar-day.today { background: #eff6ff; }
@@ -79,9 +76,7 @@
     .date-number { font-weight: 600; font-size: 0.85rem; color: #475569; align-self: flex-end; margin-bottom: 4px; }
     .calendar-day.today .date-number { background: #2563eb; color: #fff; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
     
-    /* Ensured width is 100% so text properly cuts off with ellipsis */
     .cal-event-pill { width: 100%; font-size: 0.7rem; font-weight: 500; padding: 4px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-align: left; transition: 0.2s; border: 1px solid transparent; margin-bottom: 2px; line-height: 1.2; display: block; }
-    
     .cal-event-pill:hover { opacity: 0.8; transform: scale(0.98); }
     .cal-status-confirmed { background-color: #dcfce7; color: #047857; border-color: #a7f3d0; }
     .cal-status-pencil { background-color: #f1f5f9; color: #475569; border-color: #cbd5e1; }
@@ -382,8 +377,8 @@
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
   
   let rawEvents = [], rawPayments = [], currentTab = 'events';
-  let filteredEventsCache = []; // Store active filters for the calendar
-  let currentCalendarDate = new Date(); // Keep track of the month being viewed
+  let filteredEventsCache = []; 
+  let currentCalendarDate = new Date(); 
   
   const baseCrew = ["Edgar","Francis","Mael","Lexie","Athan","Jovert","May","Tina","Jops","Grace","Jun","Tatalino","Joram","Roy","Smile"];
 
@@ -423,7 +418,7 @@
 
       if (res && res.success) {
           localStorage.setItem('egm_auth_exp', Date.now() + 3600000); // 1 hr
-          localStorage.setItem('egm_auth_token', pass); // For API backdoor protection
+          localStorage.setItem('egm_auth_token', pass); 
           bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
           
           if (pendingAuthAction) {
@@ -816,19 +811,22 @@
     document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
     document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
     
-    // Hide filter button on Calendar view, show on others
+    document.getElementById('eventFilters').style.display = (t==='events') ? 'block':'none';
+    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
+    
+    // FIX: Properly handle Bootstrap's !important d-flex class
+    const filterBtn = document.getElementById('filterToggleBtn');
     if (t === 'calendar') {
-        document.getElementById('filterToggleBtn').style.display = 'none';
+        filterBtn.classList.remove('d-flex');
+        filterBtn.classList.add('d-none');
         const filterCollapse = document.getElementById('filterCollapse');
         if (filterCollapse.classList.contains('show')) {
             new bootstrap.Collapse(filterCollapse, {toggle: false}).hide();
         }
     } else {
-        document.getElementById('filterToggleBtn').style.display = 'flex';
+        filterBtn.classList.remove('d-none');
+        filterBtn.classList.add('d-flex');
     }
-    
-    document.getElementById('eventFilters').style.display = t==='events'?'block':'none';
-    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
     
     document.getElementById('e-tab').classList.toggle('active', t==='events');
     document.getElementById('c-tab').classList.toggle('active', t==='calendar');
@@ -859,7 +857,6 @@
       }
   }
 
-  // Closes Edit modal, opens login, reopens Edit modal unlocked on success
   function unlockEditModal() {
       const editModalEl = document.getElementById('editEventModal');
       const editModal = bootstrap.Modal.getInstance(editModalEl);
