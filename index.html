@@ -12,13 +12,11 @@
     .card { transition: 0.3s; border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: 100%; }
     .card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
     
-    /* Mobile Priority Nav Pills */
     .nav-pills { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; gap: 8px; padding-bottom: 5px; border-bottom: none; }
     .nav-pills::-webkit-scrollbar { display: none; }
-    .nav-pills .nav-link { white-space: nowrap; border-radius: 20px; background: #e9ecef; border: none; padding: 6px 16px; font-weight: 600; color: #555; font-size: 0.85rem; }
+    .nav-pills .nav-link { white-space: nowrap; border-radius: 20px; background: #e9ecef; border: none; padding: 6px 16px; font-weight: 600; color: #555; font-size: 0.85rem; cursor: pointer; }
     .nav-pills .nav-link.active { background: #0d6efd; color: white; }
     
-    /* Sticky Mobile Header */
     .sticky-header { position: sticky; top: 0; background: #f4f7f6; z-index: 1000; padding-top: 10px; margin-top: -10px; margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px;}
     @media (min-width: 768px) { .sticky-header { padding-top: 20px; margin-top: -20px; margin-left: -20px; margin-right: -20px; padding-left: 20px; padding-right: 20px; margin-bottom: 25px; } }
 
@@ -51,13 +49,13 @@
   <div class="sticky-header">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="fw-bold mb-0">EGM <span class="text-primary">Ops</span></h4>
-      <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#addEventModal">+ New Entry</button>
+      <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm" onclick="requireAuth(() => new bootstrap.Modal(document.getElementById('addEventModal')).show())">+ New Entry</button>
     </div>
 
     <div class="d-flex justify-content-between align-items-center pb-2">
       <ul class="nav nav-pills" id="appTabs">
-        <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="switchTab('events')">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="switchTab('payments')">Payments</a></li>
+        <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="handleTabClick('events')">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="handleTabClick('payments')">Payments 🔒</a></li>
       </ul>
       <button class="btn btn-outline-secondary btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
         <span class="d-none d-sm-inline">Filters</span> 🎛️
@@ -110,6 +108,13 @@
       </div>
   </div>
 </div>
+
+<div class="modal fade" id="authModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content border-0"><div class="modal-header bg-dark text-white border-0"><h6 class="fw-bold mb-0 text-uppercase">Admin Access</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center">
+  <p class="small text-muted mb-3">Please enter the password to access this feature.</p>
+  <input type="password" id="authPassword" class="form-control text-center mb-2" placeholder="Password" onkeydown="if(event.key === 'Enter') submitAuth()">
+  <div id="authError" class="text-danger small fw-bold mb-3" style="display:none;">Incorrect Password!</div>
+  <button class="btn btn-primary w-100 fw-bold" onclick="submitAuth()">UNLOCK</button>
+</div></div></div></div>
 
 <div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h6 class="fw-bold mb-0 text-uppercase">New Entry</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4"><form id="eventForm">
   <div class="row g-3 mb-3">
@@ -222,9 +227,46 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+  // CHANGE THIS PASSWORD TO WHATEVER YOU PREFER
+  const ADMIN_PASSWORD = 'egmadmin';
+  let pendingAuthAction = null;
+
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
   let rawEvents = [], rawPayments = [], currentTab = 'events';
 
+  // --- Auth Functions ---
+  function isAuthenticated() {
+      const exp = localStorage.getItem('egm_auth_exp');
+      return exp && parseInt(exp) > Date.now();
+  }
+
+  function requireAuth(actionFunction) {
+      if (isAuthenticated()) {
+          actionFunction();
+      } else {
+          pendingAuthAction = actionFunction;
+          document.getElementById('authPassword').value = '';
+          document.getElementById('authError').style.display = 'none';
+          new bootstrap.Modal(document.getElementById('authModal')).show();
+      }
+  }
+
+  function submitAuth() {
+      const pass = document.getElementById('authPassword').value;
+      if (pass === ADMIN_PASSWORD) {
+          // Set expiration to 1 hour from now (3600000 ms)
+          localStorage.setItem('egm_auth_exp', Date.now() + 3600000);
+          bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
+          if (pendingAuthAction) {
+              pendingAuthAction();
+              pendingAuthAction = null;
+          }
+      } else {
+          document.getElementById('authError').style.display = 'block';
+      }
+  }
+
+  // --- Helper Functions ---
   function formatAMPM(t) { if(!t || t==='--' || t==='') return '--:--'; if(t.includes('AM')||t.includes('PM')) return t; let p=t.split(':'); if(p.length<2) return t; let h=parseInt(p[0],10), m=p[1], a=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+a; }
   
   function to24Hour(timeStr) {
@@ -251,6 +293,7 @@
     return [year, month, day].join('-');
   }
 
+  // --- API and Render ---
   async function callApi(p={}, m='GET', b=null) {
     if(!b && m==='GET') document.getElementById('loader').style.display='block';
     const u = new URL(API_URL); Object.keys(p).forEach(k => u.searchParams.append(k, p[k]));
@@ -336,7 +379,7 @@
 
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4 shadow-sm">
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="badge bg-dark px-2 py-1">ID: ${e['Event ID']} <span onclick="openEditModal('${e['Event ID']}')" class="edit-trigger ms-1 fs-6 align-middle">✏️</span></span>
+                        <span class="badge bg-dark px-2 py-1">ID: ${e['Event ID']} <span onclick="requireAuth(() => openEditModal('${e['Event ID']}'))" class="edit-trigger ms-1 fs-6 align-middle">✏️</span></span>
                         <span class="badge ${e['Event Status']==='Confirmed'?'bg-success':'bg-warning text-dark'} px-2 py-1">${e['Event Status']}</span>
                     </div>
                     <h5 class="fw-bold text-primary mb-3 lh-sm mt-1">${e['Event Name']}</h5>
@@ -381,6 +424,15 @@
       </tr>`;
     });
     document.getElementById('p-body').innerHTML = html;
+  }
+
+  // Handle Tab navigation with auth check for Payments
+  function handleTabClick(tabName) {
+      if(tabName === 'payments') {
+          requireAuth(() => switchTab('payments'));
+      } else {
+          switchTab('events');
+      }
   }
 
   function switchTab(t) {
