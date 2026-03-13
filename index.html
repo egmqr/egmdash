@@ -17,11 +17,8 @@
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
     .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.75rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 2px 6px; border-radius: 4px; }
     .card-upload-btn:hover { background-color: #0d6efd; color: white; }
-    .submit-overlay {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(255, 255, 255, 0.85); z-index: 3000;
-      justify-content: center; align-items: center; flex-direction: column;
-    }
+    .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.85); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
+    .filter-panel { background: white; padding: 15px; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 20px; }
   </style>
 </head>
 <body>
@@ -47,15 +44,56 @@
       <button class="btn btn-primary fw-bold px-4" data-bs-toggle="modal" data-bs-target="#addEventModal">+ New Entry</button>
     </div>
 
-    <div class="row g-2 mb-4">
-      <div class="col-md-5"><input type="text" id="searchInput" class="form-control" placeholder="Search event, ID, or contact..." onkeyup="applyFilters()"></div>
-      <div class="col-md-4">
-        <select id="statusFilter" class="form-select" onchange="applyFilters()">
-          <option value="">All Statuses</option>
-          <option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option>
-        </select>
+    <div class="filter-panel" id="filterPanel">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label class="small fw-bold text-muted mb-1">Event Name</label>
+          <input type="text" id="filterName" class="form-control form-control-sm" placeholder="Search event..." onkeyup="applyFilters()">
+        </div>
+        <div class="col-md-2">
+          <label class="small fw-bold text-muted mb-1">Date From</label>
+          <input type="date" id="filterDateFrom" class="form-control form-control-sm" onchange="applyFilters()">
+        </div>
+        <div class="col-md-2">
+          <label class="small fw-bold text-muted mb-1">Date To</label>
+          <input type="date" id="filterDateTo" class="form-control form-control-sm" onchange="applyFilters()">
+        </div>
+        <div class="col-md-4">
+          <label class="small fw-bold text-muted mb-1">Crew Member</label>
+          <select id="filterCrew" class="form-select form-select-sm" onchange="applyFilters()">
+            <option value="">All Crew</option>
+            <option>Edgar</option><option>Francis</option><option>Mael</option><option>Lexie</option>
+            <option>Athan</option><option>Jovert</option><option>May</option><option>Tina</option>
+            <option>Jops</option><option>Grace</option><option>Jun</option><option>Tatalino</option>
+            <option>Joram</option><option>Roy</option><option>Smile</option>
+          </select>
+        </div>
+        
+        <div class="col-md-3 mt-2">
+          <label class="small fw-bold text-muted mb-1">Event Status</label>
+          <select id="filterStatus" class="form-select form-select-sm" onchange="applyFilters()">
+            <option value="">All Statuses</option>
+            <option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option>
+          </select>
+        </div>
+        <div class="col-md-3 mt-2">
+          <label class="small fw-bold text-muted mb-1">Payment Type</label>
+          <select id="filterPayType" class="form-select form-select-sm" onchange="applyFilters()">
+            <option value="">All Types</option>
+            <option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option>
+          </select>
+        </div>
+        <div class="col-md-3 mt-2">
+          <label class="small fw-bold text-muted mb-1">Billing Status</label>
+          <select id="filterBillStatus" class="form-select form-select-sm" onchange="applyFilters()">
+            <option value="">All Statuses</option>
+            <option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option>
+          </select>
+        </div>
+        <div class="col-md-3 mt-2 d-flex align-items-end">
+          <button class="btn btn-outline-secondary btn-sm w-100 fw-bold" onclick="clearFilters()">Clear Filters</button>
+        </div>
       </div>
-      <div class="col-md-3"><input type="date" id="dateFilter" class="form-control" onchange="applyFilters()"></div>
     </div>
 
     <ul class="nav nav-tabs border-0">
@@ -174,7 +212,9 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
+  
   let rawEvents = [];
+  let rawPayments = [];
 
   function formatAMPM(timeStr) {
     if (!timeStr || timeStr === '--') return '--:--';
@@ -206,32 +246,62 @@
     document.getElementById('billingBox').style.display = val === 'Billing' ? 'block' : 'none';
   }
 
-  // Fetch all data from API once, then apply UI filters.
+  // Fetch both events and payments so we can filter events by payment data
   async function fetchAllData() {
-    const res = await callApi({ action: 'getEvents' });
-    if (res) {
-      rawEvents = res;
+    document.getElementById('loader').style.display = 'block';
+    
+    const [eventsRes, paymentsRes] = await Promise.all([
+      callApi({ action: 'getEvents' }),
+      callApi({ action: 'getPayments' })
+    ]);
+
+    if (eventsRes) {
+      rawPayments = paymentsRes || [];
+      // Combine payment info into event objects for easy filtering
+      rawEvents = eventsRes.map(event => {
+        const payment = rawPayments.find(p => p['Event ID'] === event['Event ID']);
+        return {
+          ...event,
+          'Payment Type': payment ? payment['Payment Type'] : '',
+          'Billing Status': payment ? payment['Billing Status'] : ''
+        };
+      });
       applyFilters();
     }
   }
 
+  function clearFilters() {
+    document.getElementById('filterName').value = '';
+    document.getElementById('filterDateFrom').value = '';
+    document.getElementById('filterDateTo').value = '';
+    document.getElementById('filterCrew').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterPayType').value = '';
+    document.getElementById('filterBillStatus').value = '';
+    applyFilters();
+  }
+
   function applyFilters() {
-    const dFilter = document.getElementById('dateFilter').value;
-    const sFilter = document.getElementById('statusFilter').value;
-    const searchVal = document.getElementById('searchInput').value.toLowerCase();
+    const fName = document.getElementById('filterName').value.toLowerCase();
+    const fDateFrom = document.getElementById('filterDateFrom').value;
+    const fDateTo = document.getElementById('filterDateTo').value;
+    const fCrew = document.getElementById('filterCrew').value;
+    const fStatus = document.getElementById('filterStatus').value;
+    const fPayType = document.getElementById('filterPayType').value;
+    const fBillStatus = document.getElementById('filterBillStatus').value;
     
     let filtered = rawEvents;
-    if (dFilter) filtered = filtered.filter(e => e['Event Date'] === dFilter);
-    if (sFilter) filtered = filtered.filter(e => e['Event Status'] === sFilter);
-    if (searchVal) {
-      filtered = filtered.filter(e => {
-        const searchStr = `${e['Event Name']} ${e['Event ID']} ${e['Contact Person']}`.toLowerCase();
-        return searchStr.includes(searchVal);
-      });
-    }
     
-    // Check if we are in the default "No Filters" state
-    const isDefaultView = !dFilter && !sFilter && !searchVal;
+    if (fName) filtered = filtered.filter(e => e['Event Name'].toLowerCase().includes(fName));
+    if (fDateFrom) filtered = filtered.filter(e => e['Event Date'] >= fDateFrom);
+    if (fDateTo) filtered = filtered.filter(e => e['Event Date'] <= fDateTo);
+    if (fCrew) filtered = filtered.filter(e => e['Manpower'].includes(fCrew));
+    if (fStatus) filtered = filtered.filter(e => e['Event Status'] === fStatus);
+    if (fPayType) filtered = filtered.filter(e => e['Payment Type'] === fPayType);
+    if (fBillStatus) filtered = filtered.filter(e => e['Billing Status'] === fBillStatus);
+    
+    const isDefaultView = !fName && !fDateFrom && !fDateTo && !fCrew && !fStatus && !fPayType && !fBillStatus;
+    
     renderGroupedEvents(filtered, null, isDefaultView);
   }
 
@@ -239,7 +309,7 @@
     let html = '';
     let targetDates = [];
 
-    // If default view, build exactly the next 5 days
+    // If default view, show exactly the next 5 days
     if (isDefaultView) {
       const today = new Date();
       for(let i = 0; i < 5; i++) {
@@ -251,7 +321,7 @@
         targetDates.push(`${yyyy}-${mm}-${dd}`);
       }
     } else {
-      // If filtering/searching, grab only the dates that have matching events
+      // If filtering, grab only the dates that have matching events
       targetDates = [...new Set(data.map(e => e['Event Date']))].sort();
       if (targetDates.length === 0) {
         document.getElementById('events-list').innerHTML = '<div class="col-12"><div class="p-4 text-center text-muted border rounded bg-white mt-3 fst-italic">No matching events found.</div></div>';
@@ -260,7 +330,6 @@
     }
 
     targetDates.forEach(dateStr => {
-      // Pretty Format the Date
       let displayDate = dateStr || 'No Date / TBA';
       if (dateStr && dateStr.includes('-')) {
         const parts = dateStr.split('-');
@@ -275,7 +344,6 @@
       const eventsForDate = data.filter(e => e['Event Date'] === dateStr);
 
       if (eventsForDate.length === 0 && isDefaultView) {
-        // Show empty message if it's the default 5-day view
         html += `<div class="col-12 mb-3"><div class="p-3 bg-white rounded border border-light text-center text-muted fst-italic">No events for this day.</div></div>`;
       } else if (eventsForDate.length > 0) {
         eventsForDate.forEach(e => {
@@ -341,12 +409,9 @@
     reader.readAsDataURL(input.files[0]);
   }
 
-  async function loadPayments(idFilter = null) {
-    const res = await callApi({ action: 'getPayments' });
-    if (!res) return;
-    let filtered = idFilter ? res.filter(p => p['Event ID'] === idFilter) : res;
+  function renderPaymentsTable(data) {
     let html = '';
-    filtered.forEach(p => {
+    data.forEach(p => {
       let stat = p['Payment Type'] === 'Billing' ? `<span class="badge bg-warning text-dark">${p['Billing Status'] || '-'}</span><br><small>${p['Billing Reference'] || ''}</small>` : `<span class="badge bg-success">Received</span>`;
       html += `<tr><td><a href="javascript:void(0);" onclick="switchTab('events', '${p['Event ID']}')" class="fw-bold text-decoration-none">${p['Event ID']} 🔗</a></td><td>${p['Payment Type']}</td><td>${p['Email Thread Title'] || '-'}</td><td>${stat}</td></tr>`;
     });
@@ -358,29 +423,26 @@
     document.getElementById('payments-view').style.display = t === 'payments' ? 'block' : 'none';
     document.getElementById('e-tab').classList.toggle('active', t === 'events');
     document.getElementById('p-tab').classList.toggle('active', t === 'payments');
-    
-    // Reset filters when switching tabs
-    document.getElementById('searchInput').value = '';
-    document.getElementById('statusFilter').value = '';
-    document.getElementById('dateFilter').value = '';
+    document.getElementById('filterPanel').style.display = t === 'events' ? 'block' : 'none';
     
     if(t === 'events') {
       if(id) {
-        // If coming from a specific payment link, filter to that ID
-        document.getElementById('searchInput').value = id;
+        clearFilters();
+        document.getElementById('filterName').value = id;
         applyFilters();
       } else {
-        fetchAllData();
+        applyFilters();
       }
     } else {
-      loadPayments(id);
+      let filteredPayments = rawPayments;
+      if (id) filteredPayments = filteredPayments.filter(p => p['Event ID'] === id);
+      renderPaymentsTable(filteredPayments);
     }
   }
 
   document.getElementById('eventForm').onsubmit = async function(e) {
     e.preventDefault();
     
-    // UI Feedback & Double Submit Prevention
     const submitBtn = document.getElementById('submitBtn');
     const overlay = document.getElementById('submitOverlay');
     submitBtn.disabled = true;
@@ -395,34 +457,28 @@
     
     const res = await callApi({}, 'POST', { action: 'addNewEvent', formObject });
     
-    // Restore UI State
     overlay.style.display = 'none';
     submitBtn.disabled = false;
     submitBtn.innerHTML = 'SUBMIT ENTRY';
 
     if(res && res.success) {
-      // Hide Modal
       const modalElement = document.getElementById('addEventModal');
       const modalInstance = bootstrap.Modal.getInstance(modalElement);
       modalInstance.hide();
       
-      // Reset Form
       e.target.reset();
       document.getElementById('billingBox').style.display = 'none';
       
-      // Show Success Toast
       const toastEl = document.getElementById('successToast');
       const toast = new bootstrap.Toast(toastEl, { delay: 3500 });
       toast.show();
       
-      // Fetch new data to update UI instantly without reloading page
       fetchAllData();
     } else {
       alert("Failed to save entry. Please try again.");
     }
   };
 
-  // Initial load
   window.onload = () => fetchAllData();
 </script>
 </body>
