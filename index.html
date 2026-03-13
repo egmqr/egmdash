@@ -157,7 +157,17 @@
     dates.forEach(ds => {
       const evs = data.filter(e => e['Event Date'] === ds);
       if(evs.length || isDefault) {
-        html += `<div class="col-12 mt-3"><h6 class="fw-bold border-bottom pb-1 text-uppercase small text-secondary">📅 ${ds}</h6></div>`;
+        
+        // FORMAT HEADER WITH DAY OF WEEK
+        let displayHeader = ds;
+        if(ds && ds.includes('-')) {
+            const dParts = ds.split('-');
+            const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
+            displayHeader = dObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        html += `<div class="col-12 mt-3"><h6 class="fw-bold border-bottom pb-1 text-uppercase small text-secondary">📅 ${displayHeader}</h6></div>`;
+        
         if(!evs.length) {
             html += `<div class="col-12 mb-3"><div class="p-3 bg-white rounded border border-light text-center text-muted small fst-italic">No events for this day.</div></div>`;
         } else {
