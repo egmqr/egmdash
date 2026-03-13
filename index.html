@@ -17,10 +17,10 @@
     .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.85); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
     .form-label-sm { font-size: 0.7rem; font-weight: bold; color: #6c757d; margin-bottom: 2px; display: block; text-transform: uppercase; }
     .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.75rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 2px 6px; border-radius: 4px; }
-    .card-upload-btn:hover { background-color: #0d6efd; color: white; }
     .section-title { font-size: 0.8rem; font-weight: bold; color: #adb5bd; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #eee; }
     .edit-trigger { cursor: pointer; transition: 0.2s; }
     .edit-trigger:hover { color: #0d6efd; }
+    .badge-avp { background-color: #6f42c1; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 5px; }
   </style>
 </head>
 <body>
@@ -76,16 +76,37 @@
 </div>
 
 <div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h5 class="fw-bold mb-0">New Entry</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><form id="eventForm">
-  <div class="row mb-3"><div class="col-md-8"><label class="small fw-bold">Event Name</label><input type="text" name="eventName" class="form-control" required></div><div class="col-md-4"><label class="small fw-bold">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div></div>
-  <div class="row mb-3"><div class="col-md-4"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div><div class="col-md-4"><label class="small fw-bold">Start</label><input type="time" name="startTime" class="form-control"></div><div class="col-md-4"><label class="small fw-bold">Call</label><input type="time" name="callTime" class="form-control"></div></div>
-  <div class="mb-3 p-3 bg-light rounded"><div class="d-flex justify-content-between align-items-center mb-2"><label class="small fw-bold text-primary mb-0">Crew Assignment</label><div class="form-check small fw-bold"><input class="form-check-input" type="checkbox" name="avp" value="true"> AVP Required</div></div><div class="row px-2">
-    <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
-  </div></div>
-  <div class="section-title">Payment Setup</div>
+  <div class="row mb-3">
+    <div class="col-md-8"><label class="small fw-bold">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
+    <div class="col-md-4"><label class="small fw-bold">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+  </div>
+  
+  <div class="mb-3 px-3 py-2 bg-light rounded border">
+    <div class="form-check fw-bold text-primary">
+        <input class="form-check-input" type="checkbox" name="avp" id="newAvpCheck" value="true" onchange="toggleModalLogistics(this.checked)">
+        <label class="form-check-label" for="newAvpCheck">AVP Required (Hides Logistics Details)</label>
+    </div>
+  </div>
+
+  <div id="logisticsFields">
+    <div class="row mb-3">
+        <div class="col-md-4"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div>
+        <div class="col-md-4"><label class="small fw-bold">Start</label><input type="time" name="startTime" class="form-control"></div>
+        <div class="col-md-4"><label class="small fw-bold">Call</label><input type="time" name="callTime" class="form-control"></div>
+    </div>
+    <div class="mb-3 p-3 bg-light rounded border shadow-sm">
+        <label class="small fw-bold text-primary mb-2 d-block">Crew Assignment</label>
+        <div class="row px-2">
+            <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+        </div>
+    </div>
+  </div>
+
+  <div class="section-title mt-3">Payment Setup</div>
   <select name="paymentType" id="pTypeSelect" class="form-select mb-2" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
   <div id="billingBox" style="display:none;" class="p-2 border rounded mb-3"><div class="row"><div class="col-6"><select name="billingStatus" class="form-select form-select-sm mb-1"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div><div class="col-6"><input type="text" name="billingRef" placeholder="Ref #" class="form-control form-control-sm"></div></div></div>
   <div class="mb-4"><label class="small fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
-  <button type="submit" class="btn btn-primary w-100 py-2 fw-bold" id="submitBtn">CREATE EVENT</button>
+  <button type="submit" class="btn btn-primary w-100 py-2 fw-bold" id="submitBtn">CREATE ENTRY</button>
 </form></div></div></div></div>
 
 <div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h5 class="fw-bold mb-0">Update Status</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><form id="editForm">
@@ -102,7 +123,7 @@
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
   let rawEvents = [], rawPayments = [], currentTab = 'events';
 
-  function formatAMPM(t) { if(!t || t==='--') return '--:--'; if(t.includes('AM')||t.includes('PM')) return t; let p=t.split(':'); if(p.length<2) return t; let h=parseInt(p[0],10), m=p[1], a=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+a; }
+  function formatAMPM(t) { if(!t || t==='--' || t==='') return '--:--'; if(t.includes('AM')||t.includes('PM')) return t; let p=t.split(':'); if(p.length<2) return t; let h=parseInt(p[0],10), m=p[1], a=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+a; }
 
   async function callApi(p={}, m='GET', b=null) {
     if(!b && m==='GET') document.getElementById('loader').style.display='block';
@@ -112,6 +133,10 @@
   }
 
   function toggleBilling(s, b) { document.getElementById(b).style.display = document.getElementById(s).value === 'Billing'?'block':'none'; }
+
+  function toggleModalLogistics(isAvp) {
+    document.getElementById('logisticsFields').style.display = isAvp ? 'none' : 'block';
+  }
 
   async function fetchAllData() {
     const [eRes, pRes] = await Promise.all([callApi({action:'getEvents'}), callApi({action:'getPayments'})]);
@@ -152,20 +177,22 @@
 
   function renderEvents(data, isDefault) {
     let html = '', dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.toISOString().split('T')[0]}) : [...new Set(data.map(e=>e['Event Date']))].sort();
-    if(!dates.length) { document.getElementById('events-list').innerHTML='<p class="text-center text-muted mt-5">No events found.</p>'; return; }
+    
+    // FILTER OUT AVP ONLY FOR THE DASHBOARD VIEW
+    const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
+
+    if(!dates.length) { document.getElementById('events-list').innerHTML='<p class="text-center text-muted mt-5">No shooting events found.</p>'; return; }
     
     dates.forEach(ds => {
-      const evs = data.filter(e => e['Event Date'] === ds);
+      const evs = shootingEvents.filter(e => e['Event Date'] === ds);
+      
       if(evs.length || isDefault) {
-        
-        // FORMAT HEADER WITH DAY OF WEEK
         let displayHeader = ds;
         if(ds && ds.includes('-')) {
             const dParts = ds.split('-');
             const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
             displayHeader = dObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
         }
-
         html += `<div class="col-12 mt-3"><h6 class="fw-bold border-bottom pb-1 text-uppercase small text-secondary">📅 ${displayHeader}</h6></div>`;
         
         if(!evs.length) {
@@ -204,8 +231,10 @@
   function renderPayments(data) {
     let html = '';
     data.forEach(p => {
+      const isAvp = p['AVP Required'] === 'TRUE';
+      const nameDisplay = isAvp ? `${p['Event Name']} <span class="badge badge-avp">AVP</span>` : p['Event Name'];
       let badge = p['Payment Type']==='Billing' ? `<span class="badge bg-warning text-dark">${p['Billing Status']||'Pending'}</span>` : `<span class="badge bg-success">Received</span>`;
-      html += `<tr><td>${p['Event ID']}</td><td>${p['Payment Type']||'-'}</td><td>${p['Event Name']}</td><td>${badge} <br><small class="text-muted">${p['Billing Reference']||''}</small></td></tr>`;
+      html += `<tr><td>${p['Event ID']}</td><td>${p['Payment Type']||'-'}</td><td>${nameDisplay}</td><td>${badge} <br><small class="text-muted">${p['Billing Reference']||''}</small></td></tr>`;
     });
     document.getElementById('p-body').innerHTML = html;
   }
@@ -252,7 +281,12 @@
     obj.manpower = fd.getAll('manpower');
     const res = await callApi({}, 'POST', {action:'addNewEvent', formObject:obj});
     ov.style.display='none'; btn.disabled=false;
-    if(res && res.success) { bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); e.target.reset(); fetchAllData(); }
+    if(res && res.success) { 
+        bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
+        e.target.reset(); 
+        toggleModalLogistics(false); 
+        fetchAllData(); 
+    }
   };
 
   document.getElementById('editForm').onsubmit = async (e) => {
