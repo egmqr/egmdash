@@ -6,480 +6,225 @@
   <title>EGM Operations Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f4f7f6; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f4f7f6; padding: 20px; font-family: 'Segoe UI', sans-serif; }
     .card { transition: 0.3s; border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: 100%; }
     .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
     .nav-tabs .nav-link { cursor: pointer; color: #555; font-weight: 600; border: none; }
     .nav-tabs .nav-link.active { color: #0d6efd; background: none; border-bottom: 3px solid #0d6efd; }
-    .sticky-top-custom { position: sticky; top: 0; background: #f4f7f6; z-index: 1000; padding-bottom: 15px; }
-    .section-title { font-size: 0.85rem; font-weight: bold; color: #adb5bd; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid #e9ecef; padding-bottom: 5px; }
-    .highlight-card { border: 2px solid #0d6efd !important; }
+    .sticky-top-custom { position: sticky; top: 0; background: #f4f7f6; z-index: 1000; padding-bottom: 10px; }
+    .filter-panel { background: white; padding: 12px; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 15px; }
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
-    .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.75rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 2px 6px; border-radius: 4px; }
-    .card-upload-btn:hover { background-color: #0d6efd; color: white; }
     .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.85); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
-    .filter-panel { background: white; padding: 15px; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 20px; }
+    .form-label-sm { font-size: 0.75rem; font-weight: bold; color: #6c757d; margin-bottom: 2px; display: block; }
+    .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.75rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 2px 6px; border-radius: 4px; }
+    .section-title { font-size: 0.8rem; font-weight: bold; color: #adb5bd; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #eee; }
   </style>
 </head>
 <body>
 
 <div id="submitOverlay" class="submit-overlay">
-  <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
-  <h4 class="mt-3 fw-bold text-dark">Saving Entry...</h4>
+  <div class="spinner-border text-primary" role="status"></div>
+  <h4 class="mt-3 fw-bold" id="overlayText">Processing...</h4>
 </div>
 
 <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 3050;">
-  <div id="successToast" class="toast align-items-center text-bg-success border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
-    <div class="d-flex">
-      <div class="toast-body fw-bold fs-6">✅ Entry successfully added!</div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-    </div>
-  </div>
+  <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert"><div class="d-flex"><div class="toast-body fw-bold" id="toastText">Success!</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>
 </div>
 
-<div class="container">
+<div class="container-fluid max-width-lg" style="max-width: 1400px; margin: auto;">
   <div class="sticky-top-custom">
-    <div class="d-flex justify-content-between align-items-center mb-3 pt-2">
-      <h2 class="fw-bold text-dark">EGM <span class="text-primary">Ops</span></h2>
-      <button class="btn btn-primary fw-bold px-4" data-bs-toggle="modal" data-bs-target="#addEventModal">+ New Entry</button>
+    <div class="d-flex justify-content-between align-items-center mb-2 pt-2">
+      <h3 class="fw-bold mb-0">EGM <span class="text-primary">Ops</span></h3>
+      <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#addEventModal">+ New Entry</button>
     </div>
 
-    <div class="filter-panel" id="filterPanel">
-      <div class="row g-2">
-        <div class="col-md-4">
-          <label class="small fw-bold text-muted mb-1">Event Name</label>
-          <input type="text" id="filterName" class="form-control form-control-sm" placeholder="Search event..." onkeyup="applyFilters()">
-        </div>
-        <div class="col-md-2">
-          <label class="small fw-bold text-muted mb-1">Date From</label>
-          <input type="date" id="filterDateFrom" class="form-control form-control-sm" onchange="applyFilters()">
-        </div>
-        <div class="col-md-2">
-          <label class="small fw-bold text-muted mb-1">Date To</label>
-          <input type="date" id="filterDateTo" class="form-control form-control-sm" onchange="applyFilters()">
-        </div>
-        <div class="col-md-4">
-          <label class="small fw-bold text-muted mb-1">Crew Member</label>
-          <select id="filterCrew" class="form-select form-select-sm" onchange="applyFilters()">
-            <option value="">All Crew</option>
-            <option>Edgar</option><option>Francis</option><option>Mael</option><option>Lexie</option>
-            <option>Athan</option><option>Jovert</option><option>May</option><option>Tina</option>
-            <option>Jops</option><option>Grace</option><option>Jun</option><option>Tatalino</option>
-            <option>Joram</option><option>Roy</option><option>Smile</option>
-          </select>
-        </div>
-        
-        <div class="col-md-3 mt-2">
-          <label class="small fw-bold text-muted mb-1">Event Status</label>
-          <select id="filterStatus" class="form-select form-select-sm" onchange="applyFilters()">
-            <option value="">All Statuses</option>
-            <option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option>
-          </select>
-        </div>
-        <div class="col-md-3 mt-2">
-          <label class="small fw-bold text-muted mb-1">Payment Type</label>
-          <select id="filterPayType" class="form-select form-select-sm" onchange="applyFilters()">
-            <option value="">All Types</option>
-            <option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option>
-          </select>
-        </div>
-        <div class="col-md-3 mt-2">
-          <label class="small fw-bold text-muted mb-1">Billing Status</label>
-          <select id="filterBillStatus" class="form-select form-select-sm" onchange="applyFilters()">
-            <option value="">All Statuses</option>
-            <option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option>
-          </select>
-        </div>
-        <div class="col-md-3 mt-2 d-flex align-items-end">
-          <button class="btn btn-outline-secondary btn-sm w-100 fw-bold" onclick="clearFilters()">Clear Filters</button>
-        </div>
-      </div>
-    </div>
-
-    <ul class="nav nav-tabs border-0">
+    <ul class="nav nav-tabs border-0 mb-3">
       <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="switchTab('events')">Events Dashboard</a></li>
       <li class="nav-item"><a class="nav-link" id="p-tab" onclick="switchTab('payments')">Payment Monitoring</a></li>
     </ul>
-  </div>
 
-  <div id="loader" class="loader text-center"><div class="spinner-border text-primary"></div><div class="mt-2 fw-bold">Syncing with Sheets...</div></div>
-
-  <div id="events-view"><div id="events-list" class="row mt-3"></div></div>
-  <div id="payments-view" style="display:none;">
-    <div class="table-responsive mt-3">
-      <table class="table table-hover bg-white rounded border overflow-hidden">
-        <thead class="table-dark"><tr><th>Event ID</th><th>Type</th><th>Details</th><th>Status & Ref</th></tr></thead>
-        <tbody id="p-body"></tbody>
-      </table>
+    <div class="filter-panel" id="eventFilters">
+      <div class="row g-2 align-items-end">
+        <div class="col"><span class="form-label-sm">Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+        <div class="col"><span class="form-label-sm">From</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
+        <div class="col"><span class="form-label-sm">To</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
+        <div class="col"><span class="form-label-sm">Crew</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Edgar</option><option>Francis</option><option>Mael</option><option>Lexie</option><option>Athan</option><option>Jovert</option><option>May</option><option>Tina</option><option>Jops</option><option>Grace</option><option>Jun</option><option>Tatalino</option><option>Joram</option><option>Roy</option><option>Smile</option></select></div>
+        <div class="col"><span class="form-label-sm">Status</span><select id="fStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+        <div class="col-auto"><button class="btn btn-outline-secondary btn-sm fw-bold" onclick="clearFilters()">Clear</button></div>
+      </div>
     </div>
-  </div>
-</div>
 
-<div class="modal fade" id="addEventModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content shadow-lg border-0">
-      <div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">Create New Entry</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body p-4">
-        <form id="eventForm">
-          <div class="section-title">1. Event Information</div>
-          <div class="row mb-3">
-            <div class="col-md-8"><label class="small fw-bold">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
-            <div class="col-md-4"><label class="small fw-bold">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
-          </div>
-          <div class="mb-3">
-            <label class="small fw-bold d-block mb-2">Services</label>
-            <div class="row px-3">
-              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
-              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Photo Studio"> Photo Studio</div>
-              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Video Docu"> Video Docu</div>
-              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
-              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Prints"> Prints</div>
-              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="QR"> QR</div>
-            </div>
-          </div>
-          <div class="row mb-3">
-            <div class="col-md-4"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div>
-            <div class="col-md-4"><label class="small fw-bold">Start Time</label><input type="time" name="startTime" class="form-control"></div>
-            <div class="col-md-4"><label class="small fw-bold">Call Time</label><input type="time" name="callTime" class="form-control"></div>
-          </div>
-          
-          <div class="mb-3 border rounded p-3 bg-light">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="small fw-bold text-primary mb-0">Crew / Manpower Assignment</label>
-                <div class="form-check m-0">
-                    <input class="form-check-input" type="checkbox" name="avp" id="avpCheck" value="true">
-                    <label class="form-check-label small fw-bold" for="avpCheck">AVP Required</label>
-                </div>
-            </div>
-            <div class="row px-3">
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div>
-              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
-            </div>
-          </div>
-
-          <div class="row mb-3">
-            <div class="col-md-6"><label class="small fw-bold">Contact Person</label><input type="text" name="contactPerson" class="form-control"></div>
-            <div class="col-md-6"><label class="small fw-bold">Contact Number</label><input type="text" name="contactNumber" class="form-control"></div>
-          </div>
-          <div class="mb-4"><label class="small fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
-          
-          <div class="section-title">2. Payment Financial Setup</div>
-          <div class="mb-3">
-            <label class="small fw-bold">Payment Method</label>
-            <select name="paymentType" id="pTypeSelect" class="form-select" onchange="toggleBilling()">
-              <option value="">-- Choose Method --</option>
-              <option value="Cash AR">Cash AR</option>
-              <option value="Online Transfer">Online Transfer</option>
-              <option value="Billing">Billing</option>
-              <option value="Check">Check</option>
-            </select>
-          </div>
-          <div id="billingBox" style="display:none;" class="p-3 bg-light rounded border mb-3">
-            <div class="mb-2"><label class="small fw-bold">Email Thread</label><input type="text" name="emailThread" placeholder="Email Thread" class="form-control form-control-sm"></div>
-            <div class="row">
-              <div class="col-md-6">
-                <label class="small fw-bold">Status</label>
-                <select name="billingStatus" class="form-select form-select-sm">
-                  <option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="small fw-bold">Ref #</label>
-                <input type="text" name="billingRef" placeholder="Ref #" class="form-control form-control-sm">
-              </div>
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary w-100 py-3 fw-bold" id="submitBtn">SUBMIT ENTRY</button>
-        </form>
+    <div class="filter-panel" id="paymentFilters" style="display:none;">
+      <div class="row g-2 align-items-end">
+        <div class="col"><span class="form-label-sm">Search ID/Event</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+        <div class="col"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
+        <div class="col"><span class="form-label-sm">Billing Status</span><select id="fBillStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Statuses</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+        <div class="col-auto"><button class="btn btn-outline-secondary btn-sm fw-bold" onclick="clearFilters()">Clear</button></div>
       </div>
     </div>
   </div>
+
+  <div id="loader" class="loader text-center"><div class="spinner-border text-primary"></div><div class="mt-2 fw-bold">Syncing...</div></div>
+  <div id="events-view"><div id="events-list" class="row"></div></div>
+  <div id="payments-view" style="display:none;"><div class="table-responsive"><table class="table table-hover bg-white border">
+    <thead class="table-dark"><tr><th>ID</th><th>Type</th><th>Details</th><th>Status & Ref</th></tr></thead>
+    <tbody id="p-body"></tbody>
+  </table></div></div>
 </div>
+
+<div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h5 class="fw-bold mb-0">New Entry</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><form id="eventForm">
+  <div class="row mb-3"><div class="col-md-8"><label class="small fw-bold">Event Name</label><input type="text" name="eventName" class="form-control" required></div><div class="col-md-4"><label class="small fw-bold">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div></div>
+  <div class="row mb-3"><div class="col-md-4"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div><div class="col-md-4"><label class="small fw-bold">Start</label><input type="time" name="startTime" class="form-control"></div><div class="col-md-4"><label class="small fw-bold">Call</label><input type="time" name="callTime" class="form-control"></div></div>
+  <div class="mb-3 p-3 bg-light rounded"><label class="small fw-bold text-primary mb-2 d-block">Crew Assignment</label><div class="row px-2">
+    <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+  </div></div>
+  <div class="section-title">Payment Initial Setup</div>
+  <select name="paymentType" id="pTypeSelect" class="form-select mb-2" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
+  <div id="billingBox" style="display:none;" class="p-2 border rounded mb-3"><input type="text" name="billingStatus" placeholder="Billing Status" class="form-control form-control-sm mb-1"><input type="text" name="billingRef" placeholder="Ref #" class="form-control form-control-sm"></div>
+  <button type="submit" class="btn btn-primary w-100 py-2 fw-bold" id="submitBtn">CREATE EVENT</button>
+</form></div></div></div></div>
+
+<div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h5 class="fw-bold mb-0">Edit Status</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><form id="editForm">
+  <input type="hidden" id="editEventId" name="eventId">
+  <div class="mb-3"><label class="small fw-bold">Event Status</label><select id="editEventStatus" name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+  <hr><div class="section-title">Payment Info</div>
+  <select id="editPaymentType" name="paymentType" class="form-select mb-2" onchange="toggleBilling('editPaymentType', 'editBillingBox')"><option value="">-- Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
+  <div id="editBillingBox" style="display:none;" class="p-2 border rounded mb-3">
+    <select id="editBillingStatus" name="billingStatus" class="form-select form-select-sm mb-1"><option value="">None</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select>
+    <input type="text" id="editBillingRef" name="billingRef" placeholder="Ref #" class="form-control form-control-sm">
+  </div>
+  <button type="submit" class="btn btn-warning w-100 py-2 fw-bold" id="editSubmitBtn">SAVE CHANGES</button>
+</form></div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
-  
-  let rawEvents = [];
-  let rawPayments = [];
+  let rawEvents = [], rawPayments = [], currentTab = 'events';
 
-  function formatAMPM(timeStr) {
-    if (!timeStr || timeStr === '--') return '--:--';
-    if (timeStr.toUpperCase().includes('AM') || timeStr.toUpperCase().includes('PM')) return timeStr;
-    const parts = timeStr.split(':');
-    if (parts.length < 2) return timeStr;
-    let hour = parseInt(parts[0], 10);
-    const minute = parts[1];
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    hour = hour % 12;
-    hour = hour ? hour : 12; 
-    return hour + ':' + minute + ' ' + ampm;
+  function formatAMPM(t) { if(!t || t==='--') return '--:--'; if(t.includes('AM')||t.includes('PM')) return t; let p=t.split(':'); if(p.length<2) return t; let h=parseInt(p[0],10), m=p[1], a=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+a; }
+
+  async function callApi(p={}, m='GET', b=null) {
+    if(!b && m==='GET') document.getElementById('loader').style.display='block';
+    const u = new URL(API_URL); Object.keys(p).forEach(k => u.searchParams.append(k, p[k]));
+    const r = await fetch(u, { method:m, body: b?JSON.stringify(b):null });
+    const d = await r.json(); document.getElementById('loader').style.display='none'; return d;
   }
 
-  async function callApi(params = {}, method = 'GET', body = null) {
-    if (!body && method === 'GET') document.getElementById('loader').style.display = 'block';
-    const url = new URL(API_URL);
-    Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-    try {
-      const res = await fetch(url, { method, body: body ? JSON.stringify(body) : null });
-      const data = await res.json();
-      document.getElementById('loader').style.display = 'none';
-      return data;
-    } catch (e) { document.getElementById('loader').style.display = 'none'; return null; }
-  }
+  function toggleBilling(s, b) { document.getElementById(b).style.display = document.getElementById(s).value === 'Billing'?'block':'none'; }
 
-  function toggleBilling() {
-    const val = document.getElementById('pTypeSelect').value;
-    document.getElementById('billingBox').style.display = val === 'Billing' ? 'block' : 'none';
-  }
-
-  // Fetch both events and payments so we can filter events by payment data
   async function fetchAllData() {
-    document.getElementById('loader').style.display = 'block';
-    
-    const [eventsRes, paymentsRes] = await Promise.all([
-      callApi({ action: 'getEvents' }),
-      callApi({ action: 'getPayments' })
-    ]);
-
-    if (eventsRes) {
-      rawPayments = paymentsRes || [];
-      // Combine payment info into event objects for easy filtering
-      rawEvents = eventsRes.map(event => {
-        const payment = rawPayments.find(p => p['Event ID'] === event['Event ID']);
-        return {
-          ...event,
-          'Payment Type': payment ? payment['Payment Type'] : '',
-          'Billing Status': payment ? payment['Billing Status'] : ''
-        };
+    const [eRes, pRes] = await Promise.all([callApi({action:'getEvents'}), callApi({action:'getPayments'})]);
+    if(eRes) {
+      rawPayments = pRes || [];
+      rawEvents = eRes.map(ev => {
+        const pay = rawPayments.find(p => p['Event ID'] === ev['Event ID']);
+        return {...ev, 'Payment Type': pay?pay['Payment Type']:'', 'Billing Status': pay?pay['Billing Status']:'', 'Billing Reference': pay?pay['Billing Reference']:''};
       });
       applyFilters();
     }
   }
 
   function clearFilters() {
-    document.getElementById('filterName').value = '';
-    document.getElementById('filterDateFrom').value = '';
-    document.getElementById('filterDateTo').value = '';
-    document.getElementById('filterCrew').value = '';
-    document.getElementById('filterStatus').value = '';
-    document.getElementById('filterPayType').value = '';
-    document.getElementById('filterBillStatus').value = '';
+    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fPayType','fBillStatus'].forEach(id => { let el=document.getElementById(id); if(el) el.value=''; });
     applyFilters();
   }
 
   function applyFilters() {
-    const fName = document.getElementById('filterName').value.toLowerCase();
-    const fDateFrom = document.getElementById('filterDateFrom').value;
-    const fDateTo = document.getElementById('filterDateTo').value;
-    const fCrew = document.getElementById('filterCrew').value;
-    const fStatus = document.getElementById('filterStatus').value;
-    const fPayType = document.getElementById('filterPayType').value;
-    const fBillStatus = document.getElementById('filterBillStatus').value;
-    
-    let filtered = rawEvents;
-    
-    if (fName) filtered = filtered.filter(e => e['Event Name'].toLowerCase().includes(fName));
-    if (fDateFrom) filtered = filtered.filter(e => e['Event Date'] >= fDateFrom);
-    if (fDateTo) filtered = filtered.filter(e => e['Event Date'] <= fDateTo);
-    if (fCrew) filtered = filtered.filter(e => e['Manpower'].includes(fCrew));
-    if (fStatus) filtered = filtered.filter(e => e['Event Status'] === fStatus);
-    if (fPayType) filtered = filtered.filter(e => e['Payment Type'] === fPayType);
-    if (fBillStatus) filtered = filtered.filter(e => e['Billing Status'] === fBillStatus);
-    
-    const isDefaultView = !fName && !fDateFrom && !fDateTo && !fCrew && !fStatus && !fPayType && !fBillStatus;
-    
-    renderGroupedEvents(filtered, null, isDefaultView);
+    if(currentTab === 'events') {
+      const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
+      let filtered = rawEvents;
+      if(n) filtered = filtered.filter(e => e['Event Name'].toLowerCase().includes(n));
+      if(dF) filtered = filtered.filter(e => e['Event Date'] >= dF);
+      if(dT) filtered = filtered.filter(e => e['Event Date'] <= dT);
+      if(c) filtered = filtered.filter(e => e['Manpower'].includes(c));
+      if(s) filtered = filtered.filter(e => e['Event Status'] === s);
+      renderEvents(filtered, !n && !dF && !dT && !c && !s);
+    } else {
+      const q=document.getElementById('fPaySearch').value.toLowerCase(), t=document.getElementById('fPayType').value, s=document.getElementById('fBillStatus').value;
+      let filtered = rawEvents;
+      if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
+      if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
+      if(s) filtered = filtered.filter(e => e['Billing Status'] === s);
+      renderPayments(filtered);
+    }
   }
 
-  function renderGroupedEvents(data, highlightId, isDefaultView) {
-    let html = '';
-    let targetDates = [];
-
-    // If default view, show exactly the next 5 days
-    if (isDefaultView) {
-      const today = new Date();
-      for(let i = 0; i < 5; i++) {
-        let d = new Date(today);
-        d.setDate(today.getDate() + i);
-        let yyyy = d.getFullYear();
-        let mm = String(d.getMonth() + 1).padStart(2, '0');
-        let dd = String(d.getDate()).padStart(2, '0');
-        targetDates.push(`${yyyy}-${mm}-${dd}`);
-      }
-    } else {
-      // If filtering, grab only the dates that have matching events
-      targetDates = [...new Set(data.map(e => e['Event Date']))].sort();
-      if (targetDates.length === 0) {
-        document.getElementById('events-list').innerHTML = '<div class="col-12"><div class="p-4 text-center text-muted border rounded bg-white mt-3 fst-italic">No matching events found.</div></div>';
-        return;
-      }
-    }
-
-    targetDates.forEach(dateStr => {
-      let displayDate = dateStr || 'No Date / TBA';
-      if (dateStr && dateStr.includes('-')) {
-        const parts = dateStr.split('-');
-        if (parts.length === 3) {
-          const dObj = new Date(parts[0], parts[1]-1, parts[2]);
-          displayDate = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-        }
-      }
-
-      html += `<div class="col-12 mt-4 mb-2"><h5 class="fw-bold text-dark border-bottom pb-2">📅 ${displayDate}</h5></div>`;
-
-      const eventsForDate = data.filter(e => e['Event Date'] === dateStr);
-
-      if (eventsForDate.length === 0 && isDefaultView) {
-        html += `<div class="col-12 mb-3"><div class="p-3 bg-white rounded border border-light text-center text-muted fst-italic">No events for this day.</div></div>`;
-      } else if (eventsForDate.length > 0) {
-        eventsForDate.forEach(e => {
-          const highlight = highlightId && e['Event ID'] === highlightId ? 'highlight-card' : '';
-          const permitLink = e['Permits'] ? `<a href="${e['Permits']}" target="_blank" class="badge bg-info text-dark text-decoration-none">View Permit</a>` : `<span class="badge bg-light text-muted">No Permit</span>`;
-
-          const formattedStart = formatAMPM(e['Event Start Time']);
-          const formattedCall = formatAMPM(e['Call Time']);
-
-          html += `
-            <div class="col-md-6 col-lg-4 mb-4 event-card" id="card-${e['Event ID']}">
-              <div class="card shadow-sm ${highlight}">
-                <div class="card-body">
-                  <div class="d-flex justify-content-between mb-2">
-                    <a href="javascript:void(0);" onclick="switchTab('payments', '${e['Event ID']}')" class="badge bg-dark text-decoration-none">${e['Event ID']} 🔗</a>
-                    <span class="badge ${e['Event Status'] === 'Confirmed' ? 'bg-success' : 'bg-warning text-dark'}">${e['Event Status']}</span>
-                  </div>
-                  <h5 class="fw-bold text-primary mb-3">${e['Event Name'] || 'Unnamed'}</h5>
-                  <div class="small">
-                    <p class="mb-1">🕒 <strong>Start:</strong> ${formattedStart} | <strong>Call:</strong> ${formattedCall}</p>
-                    <p class="mb-1">🛠️ <strong>Services:</strong> ${e['Services'] || 'None'}</p>
-                    <p class="mb-1">👥 <strong>Crew:</strong> ${e['Manpower'] || '-'}</p>
-                    <hr class="my-2">
-                    <p class="mb-1">👤 <strong>Contact:</strong> ${e['Contact Person'] || '-'}</p>
-                    <p class="mb-1 text-muted">📞 ${e['Contact Number'] || '-'}</p>
-                    <p class="mb-2">📝 <strong>Notes:</strong> ${e['Event Notes'] || 'None'}</p>
-                  </div>
-                  <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
-                    <div id="p-cont-${e['Event ID']}">${permitLink}</div>
-                    <div>
-                      <label class="card-upload-btn mb-0" id="up-lab-${e['Event ID']}" onclick="triggerUpload('${e['Event ID']}')">Upload</label>
-                      <input type="file" id="file-${e['Event ID']}" style="display:none" onchange="handleUpload(this, '${e['Event ID']}')">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>`;
+  function renderEvents(data, isDefault) {
+    let html = '', dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.toISOString().split('T')[0]}) : [...new Set(data.map(e=>e['Event Date']))].sort();
+    if(!dates.length) { document.getElementById('events-list').innerHTML='<p class="text-center text-muted mt-5">No events found.</p>'; return; }
+    dates.forEach(ds => {
+      const evs = data.filter(e => e['Event Date'] === ds);
+      if(evs.length || isDefault) {
+        html += `<div class="col-12 mt-3"><h6 class="fw-bold border-bottom pb-1">${ds}</h6></div>`;
+        if(!evs.length) html += `<div class="col-12 small text-muted fst-italic mb-3">No events today</div>`;
+        evs.forEach(e => {
+          html += `<div class="col-md-4 mb-3"><div class="card p-3">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="badge bg-dark">${e['Event ID']} <span onclick="openEditModal('${e['Event ID']}')" style="cursor:pointer">✏️</span></span>
+              <span class="badge ${e['Event Status']==='Confirmed'?'bg-success':'bg-warning text-dark'}">${e['Event Status']}</span>
+            </div>
+            <h6 class="fw-bold text-primary mb-1">${e['Event Name']}</h6>
+            <div class="small text-muted">🕒 ${formatAMPM(e['Event Start Time'])} | 👥 ${e['Manpower']}</div>
+          </div></div>`;
         });
       }
     });
-    
     document.getElementById('events-list').innerHTML = html;
   }
 
-  function triggerUpload(id) { document.getElementById(`file-${id}`).click(); }
-
-  async function handleUpload(input, id) {
-    if (!input.files[0]) return;
-    const label = document.getElementById(`up-lab-${id}`);
-    label.innerHTML = "Uploading...";
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'uploadPermit', base64: ev.target.result, filename: input.files[0].name, eventId: id })
-      });
-      const data = await response.json();
-      if (data.success) {
-        label.innerHTML = "Done!";
-        document.getElementById(`p-cont-${id}`).innerHTML = `<a href="${data.url}" target="_blank" class="badge bg-info text-dark text-decoration-none">View Permit</a>`;
-      } else { alert("Failed: " + data.error); label.innerHTML = "Upload"; }
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-
-  function renderPaymentsTable(data) {
+  function renderPayments(data) {
     let html = '';
     data.forEach(p => {
-      let stat = p['Payment Type'] === 'Billing' ? `<span class="badge bg-warning text-dark">${p['Billing Status'] || '-'}</span><br><small>${p['Billing Reference'] || ''}</small>` : `<span class="badge bg-success">Received</span>`;
-      html += `<tr><td><a href="javascript:void(0);" onclick="switchTab('events', '${p['Event ID']}')" class="fw-bold text-decoration-none">${p['Event ID']} 🔗</a></td><td>${p['Payment Type']}</td><td>${p['Email Thread Title'] || '-'}</td><td>${stat}</td></tr>`;
+      let badge = p['Payment Type']==='Billing' ? `<span class="badge bg-warning text-dark">${p['Billing Status']||'Pending'}</span>` : `<span class="badge bg-success">Received</span>`;
+      html += `<tr><td>${p['Event ID']}</td><td>${p['Payment Type']||'-'}</td><td>${p['Event Name']}</td><td>${badge} <br><small>${p['Billing Reference']||''}</small></td></tr>`;
     });
     document.getElementById('p-body').innerHTML = html;
   }
 
-  function switchTab(t, id = null) {
-    document.getElementById('events-view').style.display = t === 'events' ? 'block' : 'none';
-    document.getElementById('payments-view').style.display = t === 'payments' ? 'block' : 'none';
-    document.getElementById('e-tab').classList.toggle('active', t === 'events');
-    document.getElementById('p-tab').classList.toggle('active', t === 'payments');
-    document.getElementById('filterPanel').style.display = t === 'events' ? 'block' : 'none';
-    
-    if(t === 'events') {
-      if(id) {
-        clearFilters();
-        document.getElementById('filterName').value = id;
-        applyFilters();
-      } else {
-        applyFilters();
-      }
-    } else {
-      let filteredPayments = rawPayments;
-      if (id) filteredPayments = filteredPayments.filter(p => p['Event ID'] === id);
-      renderPaymentsTable(filteredPayments);
-    }
+  function switchTab(t) {
+    currentTab = t;
+    document.getElementById('events-view').style.display = t==='events'?'block':'none';
+    document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
+    document.getElementById('eventFilters').style.display = t==='events'?'block':'none';
+    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
+    document.getElementById('e-tab').classList.toggle('active', t==='events');
+    document.getElementById('p-tab').classList.toggle('active', t==='payments');
+    applyFilters();
   }
 
-  document.getElementById('eventForm').onsubmit = async function(e) {
+  function openEditModal(id) {
+    const e = rawEvents.find(ev => ev['Event ID'] === id);
+    if(!e) return;
+    document.getElementById('editEventId').value = id;
+    document.getElementById('editEventStatus').value = e['Event Status'];
+    document.getElementById('editPaymentType').value = e['Payment Type'];
+    document.getElementById('editBillingStatus').value = e['Billing Status'];
+    document.getElementById('editBillingRef').value = e['Billing Reference'];
+    toggleBilling('editPaymentType', 'editBillingBox');
+    new bootstrap.Modal(document.getElementById('editEventModal')).show();
+  }
+
+  document.getElementById('eventForm').onsubmit = async (e) => {
     e.preventDefault();
-    
-    const submitBtn = document.getElementById('submitBtn');
-    const overlay = document.getElementById('submitOverlay');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = 'Submitting...';
-    overlay.style.display = 'flex';
-
-    const fData = new FormData(e.target);
-    const formObject = Object.fromEntries(fData.entries());
-    
-    formObject.services = fData.getAll('services');
-    formObject.manpower = fData.getAll('manpower'); 
-    
-    const res = await callApi({}, 'POST', { action: 'addNewEvent', formObject });
-    
-    overlay.style.display = 'none';
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = 'SUBMIT ENTRY';
-
-    if(res && res.success) {
-      const modalElement = document.getElementById('addEventModal');
-      const modalInstance = bootstrap.Modal.getInstance(modalElement);
-      modalInstance.hide();
-      
-      e.target.reset();
-      document.getElementById('billingBox').style.display = 'none';
-      
-      const toastEl = document.getElementById('successToast');
-      const toast = new bootstrap.Toast(toastEl, { delay: 3500 });
-      toast.show();
-      
-      fetchAllData();
-    } else {
-      alert("Failed to save entry. Please try again.");
-    }
+    const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
+    btn.disabled = true; ov.style.display='flex';
+    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+    obj.manpower = fd.getAll('manpower');
+    const res = await callApi({}, 'POST', {action:'addNewEvent', formObject:obj});
+    ov.style.display='none'; btn.disabled=false;
+    if(res && res.success) { bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); fetchAllData(); }
   };
 
-  window.onload = () => fetchAllData();
+  document.getElementById('editForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('editSubmitBtn'), ov = document.getElementById('submitOverlay');
+    btn.disabled=true; ov.style.display='flex';
+    const res = await callApi({}, 'POST', {action:'updateStatus', updateData: Object.fromEntries(new FormData(e.target).entries())});
+    ov.style.display='none'; btn.disabled=false;
+    if(res && res.success) { bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); fetchAllData(); }
+  };
+
+  window.onload = fetchAllData;
 </script>
 </body>
 </html>
