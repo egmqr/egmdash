@@ -15,9 +15,12 @@
     .filter-panel { background: white; padding: 12px; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 15px; }
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
     .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.85); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
-    .form-label-sm { font-size: 0.75rem; font-weight: bold; color: #6c757d; margin-bottom: 2px; display: block; }
+    .form-label-sm { font-size: 0.7rem; font-weight: bold; color: #6c757d; margin-bottom: 2px; display: block; text-transform: uppercase; }
     .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.75rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 2px 6px; border-radius: 4px; }
+    .card-upload-btn:hover { background-color: #0d6efd; color: white; }
     .section-title { font-size: 0.8rem; font-weight: bold; color: #adb5bd; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #eee; }
+    .edit-trigger { cursor: pointer; transition: 0.2s; }
+    .edit-trigger:hover { color: #0d6efd; }
   </style>
 </head>
 <body>
@@ -31,7 +34,7 @@
   <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert"><div class="d-flex"><div class="toast-body fw-bold" id="toastText">Success!</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>
 </div>
 
-<div class="container-fluid max-width-lg" style="max-width: 1400px; margin: auto;">
+<div class="container-fluid" style="max-width: 1400px; margin: auto;">
   <div class="sticky-top-custom">
     <div class="d-flex justify-content-between align-items-center mb-2 pt-2">
       <h3 class="fw-bold mb-0">EGM <span class="text-primary">Ops</span></h3>
@@ -45,21 +48,21 @@
 
     <div class="filter-panel" id="eventFilters">
       <div class="row g-2 align-items-end">
-        <div class="col"><span class="form-label-sm">Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
-        <div class="col"><span class="form-label-sm">From</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
-        <div class="col"><span class="form-label-sm">To</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
-        <div class="col"><span class="form-label-sm">Crew</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Edgar</option><option>Francis</option><option>Mael</option><option>Lexie</option><option>Athan</option><option>Jovert</option><option>May</option><option>Tina</option><option>Jops</option><option>Grace</option><option>Jun</option><option>Tatalino</option><option>Joram</option><option>Roy</option><option>Smile</option></select></div>
-        <div class="col"><span class="form-label-sm">Status</span><select id="fStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
-        <div class="col-auto"><button class="btn btn-outline-secondary btn-sm fw-bold" onclick="clearFilters()">Clear</button></div>
+        <div class="col-md-3"><span class="form-label-sm">Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+        <div class="col-md-2"><span class="form-label-sm">From</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
+        <div class="col-md-2"><span class="form-label-sm">To</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
+        <div class="col-md-2"><span class="form-label-sm">Crew</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Edgar</option><option>Francis</option><option>Mael</option><option>Lexie</option><option>Athan</option><option>Jovert</option><option>May</option><option>Tina</option><option>Jops</option><option>Grace</option><option>Jun</option><option>Tatalino</option><option>Joram</option><option>Roy</option><option>Smile</option></select></div>
+        <div class="col-md-2"><span class="form-label-sm">Status</span><select id="fStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+        <div class="col-md-1"><button class="btn btn-outline-secondary btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
       </div>
     </div>
 
     <div class="filter-panel" id="paymentFilters" style="display:none;">
       <div class="row g-2 align-items-end">
-        <div class="col"><span class="form-label-sm">Search ID/Event</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
-        <div class="col"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
-        <div class="col"><span class="form-label-sm">Billing Status</span><select id="fBillStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Statuses</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
-        <div class="col-auto"><button class="btn btn-outline-secondary btn-sm fw-bold" onclick="clearFilters()">Clear</button></div>
+        <div class="col-md-4"><span class="form-label-sm">Search ID/Event</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+        <div class="col-md-3"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
+        <div class="col-md-3"><span class="form-label-sm">Billing Status</span><select id="fBillStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Statuses</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+        <div class="col-md-2"><button class="btn btn-outline-secondary btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
       </div>
     </div>
   </div>
@@ -75,24 +78,22 @@
 <div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h5 class="fw-bold mb-0">New Entry</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><form id="eventForm">
   <div class="row mb-3"><div class="col-md-8"><label class="small fw-bold">Event Name</label><input type="text" name="eventName" class="form-control" required></div><div class="col-md-4"><label class="small fw-bold">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div></div>
   <div class="row mb-3"><div class="col-md-4"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div><div class="col-md-4"><label class="small fw-bold">Start</label><input type="time" name="startTime" class="form-control"></div><div class="col-md-4"><label class="small fw-bold">Call</label><input type="time" name="callTime" class="form-control"></div></div>
-  <div class="mb-3 p-3 bg-light rounded"><label class="small fw-bold text-primary mb-2 d-block">Crew Assignment</label><div class="row px-2">
+  <div class="mb-3 p-3 bg-light rounded"><div class="d-flex justify-content-between align-items-center mb-2"><label class="small fw-bold text-primary mb-0">Crew Assignment</label><div class="form-check small fw-bold"><input class="form-check-input" type="checkbox" name="avp" value="true"> AVP Required</div></div><div class="row px-2">
     <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
   </div></div>
-  <div class="section-title">Payment Initial Setup</div>
+  <div class="section-title">Payment Setup</div>
   <select name="paymentType" id="pTypeSelect" class="form-select mb-2" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
-  <div id="billingBox" style="display:none;" class="p-2 border rounded mb-3"><input type="text" name="billingStatus" placeholder="Billing Status" class="form-control form-control-sm mb-1"><input type="text" name="billingRef" placeholder="Ref #" class="form-control form-control-sm"></div>
+  <div id="billingBox" style="display:none;" class="p-2 border rounded mb-3"><div class="row"><div class="col-6"><select name="billingStatus" class="form-select form-select-sm mb-1"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div><div class="col-6"><input type="text" name="billingRef" placeholder="Ref #" class="form-control form-control-sm"></div></div></div>
+  <div class="mb-4"><label class="small fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
   <button type="submit" class="btn btn-primary w-100 py-2 fw-bold" id="submitBtn">CREATE EVENT</button>
 </form></div></div></div></div>
 
-<div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h5 class="fw-bold mb-0">Edit Status</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><form id="editForm">
+<div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h5 class="fw-bold mb-0">Update Status</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4"><form id="editForm">
   <input type="hidden" id="editEventId" name="eventId">
   <div class="mb-3"><label class="small fw-bold">Event Status</label><select id="editEventStatus" name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
   <hr><div class="section-title">Payment Info</div>
   <select id="editPaymentType" name="paymentType" class="form-select mb-2" onchange="toggleBilling('editPaymentType', 'editBillingBox')"><option value="">-- Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
-  <div id="editBillingBox" style="display:none;" class="p-2 border rounded mb-3">
-    <select id="editBillingStatus" name="billingStatus" class="form-select form-select-sm mb-1"><option value="">None</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select>
-    <input type="text" id="editBillingRef" name="billingRef" placeholder="Ref #" class="form-control form-control-sm">
-  </div>
+  <div id="editBillingBox" style="display:none;" class="p-2 border rounded mb-3"><div class="row"><div class="col-6"><select id="editBillingStatus" name="billingStatus" class="form-select form-select-sm mb-1"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div><div class="col-6"><input type="text" id="editBillingRef" name="billingRef" placeholder="Ref #" class="form-control form-control-sm"></div></div></div>
   <button type="submit" class="btn btn-warning w-100 py-2 fw-bold" id="editSubmitBtn">SAVE CHANGES</button>
 </form></div></div></div></div>
 
@@ -125,7 +126,7 @@
   }
 
   function clearFilters() {
-    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fPayType','fBillStatus'].forEach(id => { let el=document.getElementById(id); if(el) el.value=''; });
+    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fPayType','fBillStatus'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
     applyFilters();
   }
 
@@ -152,21 +153,39 @@
   function renderEvents(data, isDefault) {
     let html = '', dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.toISOString().split('T')[0]}) : [...new Set(data.map(e=>e['Event Date']))].sort();
     if(!dates.length) { document.getElementById('events-list').innerHTML='<p class="text-center text-muted mt-5">No events found.</p>'; return; }
+    
     dates.forEach(ds => {
       const evs = data.filter(e => e['Event Date'] === ds);
       if(evs.length || isDefault) {
-        html += `<div class="col-12 mt-3"><h6 class="fw-bold border-bottom pb-1">${ds}</h6></div>`;
-        if(!evs.length) html += `<div class="col-12 small text-muted fst-italic mb-3">No events today</div>`;
-        evs.forEach(e => {
-          html += `<div class="col-md-4 mb-3"><div class="card p-3">
-            <div class="d-flex justify-content-between mb-2">
-              <span class="badge bg-dark">${e['Event ID']} <span onclick="openEditModal('${e['Event ID']}')" style="cursor:pointer">✏️</span></span>
-              <span class="badge ${e['Event Status']==='Confirmed'?'bg-success':'bg-warning text-dark'}">${e['Event Status']}</span>
-            </div>
-            <h6 class="fw-bold text-primary mb-1">${e['Event Name']}</h6>
-            <div class="small text-muted">🕒 ${formatAMPM(e['Event Start Time'])} | 👥 ${e['Manpower']}</div>
-          </div></div>`;
-        });
+        html += `<div class="col-12 mt-3"><h6 class="fw-bold border-bottom pb-1 text-uppercase small text-secondary">📅 ${ds}</h6></div>`;
+        if(!evs.length) {
+            html += `<div class="col-12 mb-3"><div class="p-3 bg-white rounded border border-light text-center text-muted small fst-italic">No events for this day.</div></div>`;
+        } else {
+            evs.forEach(e => {
+              const permitLink = e['Permits'] ? `<a href="${e['Permits']}" target="_blank" class="badge bg-info text-dark text-decoration-none">Permit</a>` : `<span class="badge bg-light text-muted">No Permit</span>`;
+              html += `
+                <div class="col-md-6 col-lg-4 mb-3"><div class="card p-3 shadow-sm">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="badge bg-dark">ID: ${e['Event ID']} <span onclick="openEditModal('${e['Event ID']}')" class="edit-trigger ms-1">✏️</span></span>
+                        <span class="badge ${e['Event Status']==='Confirmed'?'bg-success':'bg-warning text-dark'}">${e['Event Status']}</span>
+                    </div>
+                    <h5 class="fw-bold text-primary mb-3">${e['Event Name']}</h5>
+                    <div class="small">
+                        <p class="mb-1">🕒 <strong>Times:</strong> ${formatAMPM(e['Event Start Time'])} (Start) | ${formatAMPM(e['Call Time'])} (Call)</p>
+                        <p class="mb-1">🛠️ <strong>Services:</strong> ${e['Services'] || 'None'}</p>
+                        <p class="mb-1">👥 <strong>Crew:</strong> ${e['Manpower'] || '-'}</p>
+                        <hr class="my-2">
+                        <p class="mb-1">👤 <strong>Contact:</strong> ${e['Contact Person']} (${e['Contact Number']})</p>
+                        <p class="mb-0 text-muted" style="font-size: 0.75rem;">📝 <strong>Notes:</strong> ${e['Event Notes'] || 'None'}</p>
+                    </div>
+                    <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
+                        ${permitLink}
+                        <label class="card-upload-btn" onclick="document.getElementById('file-${e['Event ID']}').click()">Upload Permit</label>
+                        <input type="file" id="file-${e['Event ID']}" style="display:none" onchange="handleUpload(this, '${e['Event ID']}')">
+                    </div>
+                </div></div>`;
+            });
+        }
       }
     });
     document.getElementById('events-list').innerHTML = html;
@@ -176,7 +195,7 @@
     let html = '';
     data.forEach(p => {
       let badge = p['Payment Type']==='Billing' ? `<span class="badge bg-warning text-dark">${p['Billing Status']||'Pending'}</span>` : `<span class="badge bg-success">Received</span>`;
-      html += `<tr><td>${p['Event ID']}</td><td>${p['Payment Type']||'-'}</td><td>${p['Event Name']}</td><td>${badge} <br><small>${p['Billing Reference']||''}</small></td></tr>`;
+      html += `<tr><td>${p['Event ID']}</td><td>${p['Payment Type']||'-'}</td><td>${p['Event Name']}</td><td>${badge} <br><small class="text-muted">${p['Billing Reference']||''}</small></td></tr>`;
     });
     document.getElementById('p-body').innerHTML = html;
   }
@@ -190,6 +209,17 @@
     document.getElementById('e-tab').classList.toggle('active', t==='events');
     document.getElementById('p-tab').classList.toggle('active', t==='payments');
     applyFilters();
+  }
+
+  async function handleUpload(input, id) {
+    if (!input.files[0]) return;
+    const label = input.previousElementSibling; label.innerHTML = "Uploading...";
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const res = await callApi({}, 'POST', { action: 'uploadPermit', base64: ev.target.result, filename: input.files[0].name, eventId: id });
+      if (res.success) { label.innerHTML = "Done!"; fetchAllData(); } else { alert("Error: " + res.error); label.innerHTML = "Upload"; }
+    };
+    reader.readAsDataURL(input.files[0]);
   }
 
   function openEditModal(id) {
@@ -212,7 +242,7 @@
     obj.manpower = fd.getAll('manpower');
     const res = await callApi({}, 'POST', {action:'addNewEvent', formObject:obj});
     ov.style.display='none'; btn.disabled=false;
-    if(res && res.success) { bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); fetchAllData(); }
+    if(res && res.success) { bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); e.target.reset(); fetchAllData(); }
   };
 
   document.getElementById('editForm').onsubmit = async (e) => {
