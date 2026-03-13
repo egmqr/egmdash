@@ -31,7 +31,7 @@
     .nav-pills .nav-link.active { background: #2563eb; color: white; border-color: #2563eb; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
     
     /* Glassmorphism Sticky Header */
-    .sticky-header { position: sticky; top: 0; background: rgba(248, 250, 252, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; padding-top: 10px; padding-bottom: 10px; margin-top: -10px; margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px;}
+    .sticky-header { position: sticky; top: 0; background: rgba(248, 250, 252, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; padding-top: 10px; margin-top: -10px; margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px;}
     @media (min-width: 768px) { .sticky-header { padding-top: 20px; margin-top: -20px; margin-left: -20px; margin-right: -20px; padding-left: 20px; padding-right: 20px; margin-bottom: 25px; } }
 
     /* Buttons & Inputs */
@@ -281,7 +281,7 @@
     </div>
   </div>
 
-  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
+  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
   <select name="paymentType" id="pTypeSelect" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
   
   <div id="billingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
@@ -504,14 +504,23 @@
     return timeStr;
   }
   
+  // SECURE NORMALIZATION: Forces all incoming dates into strict YYYY-MM-DD
+  function normalizeDateStr(raw) {
+      if(!raw) return '';
+      let s = String(raw).trim();
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // Already correct
+      
+      let d = new Date(s);
+      if(isNaN(d)) return s; // Fallback if invalid
+      
+      let year = d.getFullYear();
+      let month = String(d.getMonth() + 1).padStart(2, '0');
+      let day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+  }
+
   function toInputDate(dStr) {
-    if(!dStr) return '';
-    let d = new Date(dStr);
-    if(isNaN(d)) return '';
-    let year = d.getFullYear();
-    let month = String(d.getMonth() + 1).padStart(2, '0');
-    let day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+      return normalizeDateStr(dStr);
   }
 
   // --- Custom Input Logic (Crew & Services) ---
@@ -620,9 +629,10 @@
         const pay = rawPayments.find(p => p['Event ID'] === ev['Event ID']);
         return {
             ...ev, 
+            'Event Date': normalizeDateStr(ev['Event Date']), // Fixes filtering & timezone sorting
             'Payment Type': pay?pay['Payment Type']:'', 
             'Billing Status': pay?pay['Billing Status']:'', 
-            'Billing Status Date': pay?pay['Billing Status Date']:'',
+            'Billing Status Date': normalizeDateStr(pay?pay['Billing Status Date']:''),
             'GR Number': pay?pay['GR Number']:'',
             'Invoice Number': pay?pay['Invoice Number']:'',
             'Email Thread': pay?pay['Email Thread Title']:''
@@ -657,11 +667,22 @@
   }
 
   function applyFilters() {
+    const todayDate = new Date();
+    const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
+
     if(currentTab === 'events' || currentTab === 'calendar') {
       const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
       let filtered = rawEvents;
+      
       if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n) || (e['Event Venue'] && e['Event Venue'].toLowerCase().includes(n)));
-      if(dF) filtered = filtered.filter(e => e['Event Date'] >= dF);
+      
+      // Smart Filter: Hide past events unless user sets a specific 'From Date'
+      if(dF) {
+          filtered = filtered.filter(e => e['Event Date'] >= dF);
+      } else {
+          filtered = filtered.filter(e => !e['Event Date'] || e['Event Date'] >= todayStr);
+      }
+      
       if(dT) filtered = filtered.filter(e => e['Event Date'] <= dT);
       if(c) filtered = filtered.filter(e => e['Manpower'].includes(c));
       if(s) filtered = filtered.filter(e => e['Event Status'] === s);
@@ -677,7 +698,6 @@
             s=document.getElementById('fBillStatus').value;
       let filtered = rawEvents;
       
-      // BASE FILTER: Ignore rows with blank Payment Type
       filtered = filtered.filter(e => e['Payment Type'] && e['Payment Type'].trim() !== '');
       
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
@@ -690,10 +710,21 @@
 
   // --- Views Rendering ---
   function renderEvents(data, isDefault) {
-    let html = '', dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(data.map(e=>e['Event Date']))].sort();
+    let html = '';
+    
+    // Create accurate local timezone strings for Today and Tomorrow
+    const todayDate = new Date();
+    const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
+    
+    const tomorrowDate = new Date();
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowStr = tomorrowDate.getFullYear() + '-' + String(tomorrowDate.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrowDate.getDate()).padStart(2, '0');
+
+    let dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(data.map(e=>e['Event Date']))].sort();
+    
     const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
     if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No shooting events found matching your criteria.</div></div>'; return; }
-    
+
     dates.forEach(ds => {
       const evs = shootingEvents.filter(e => e['Event Date'] === ds);
       if(evs.length || isDefault) {
@@ -701,7 +732,15 @@
         if(ds && ds.includes('-')) {
             const dParts = ds.split('-');
             const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
-            displayHeader = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+            const formattedDate = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+            
+            if (ds === todayStr) {
+                displayHeader = "Today, " + formattedDate;
+            } else if (ds === tomorrowStr) {
+                displayHeader = "Tomorrow, " + formattedDate;
+            } else {
+                displayHeader = formattedDate;
+            }
         }
         
         html += `<div class="col-12 mt-4"><h5 class="fw-bold border-bottom border-2 pb-2" style="color: #0f172a;"><i class="bi bi-calendar3 me-2 text-primary"></i>${displayHeader}</h5></div>`;
