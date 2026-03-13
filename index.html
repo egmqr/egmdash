@@ -85,11 +85,32 @@
             <div class="col-md-4"><label class="small fw-bold">Start Time</label><input type="time" name="startTime" class="form-control"></div>
             <div class="col-md-4"><label class="small fw-bold">Call Time</label><input type="time" name="callTime" class="form-control"></div>
           </div>
+          
+          <div class="mb-3 border rounded p-3 bg-light">
+            <label class="small fw-bold d-block mb-2 text-primary">Crew / Manpower Assignment</label>
+            <div class="row px-3">
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div>
+              <div class="col-6 col-md-3 form-check mb-1"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+            </div>
+          </div>
+
           <div class="row mb-3">
             <div class="col-md-6"><label class="small fw-bold">Contact Person</label><input type="text" name="contactPerson" class="form-control"></div>
             <div class="col-md-6"><label class="small fw-bold">Contact Number</label><input type="text" name="contactNumber" class="form-control"></div>
           </div>
-          <div class="mb-3"><label class="small fw-bold">Manpower</label><input type="text" name="manpower" class="form-control"></div>
           <div class="mb-4"><label class="small fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
           <div class="section-title">2. Payment</div>
           <div class="mb-3">
@@ -109,7 +130,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   // !!! PASTE YOUR WEB APP URL HERE !!!
-  const API_URL = 'https://script.google.com/macros/s/AKfycbzF7krw73_v_HEaaVpQr0deoITQyz1Fw7VDbhTEkdM8qTiqVGFfqzWWWO2VynQocA-B/exec';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
   
   let rawEvents = [];
 
@@ -162,7 +183,6 @@
       const highlight = highlightId && e['Event ID'] === highlightId ? 'highlight-card' : '';
       const permitLink = e['Permits'] ? `<a href="${e['Permits']}" target="_blank" class="badge bg-info text-dark text-decoration-none">View Permit</a>` : `<span class="badge bg-light text-muted">No Permit</span>`;
 
-      // Apply the AM/PM formatting here
       const formattedStart = formatAMPM(e['Event Start Time']);
       const formattedCall = formatAMPM(e['Call Time']);
 
@@ -247,7 +267,14 @@
 
   document.getElementById('eventForm').onsubmit = async function(e) {
     e.preventDefault();
-    const res = await callApi({}, 'POST', { action: 'addNewEvent', formObject: Object.fromEntries(new FormData(e.target).entries()) });
+    const fData = new FormData(e.target);
+    const formObject = Object.fromEntries(fData.entries());
+    
+    // Grab all checked boxes for both Services and Manpower
+    formObject.services = fData.getAll('services');
+    formObject.manpower = fData.getAll('manpower'); 
+    
+    const res = await callApi({}, 'POST', { action: 'addNewEvent', formObject });
     if(res && res.success) location.reload();
   };
 
