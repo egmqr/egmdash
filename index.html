@@ -68,7 +68,10 @@
     .calendar-header-cell:last-child { border-right: none; }
     
     .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: #e2e8f0; gap: 1px; } /* Gap acts as borders */
-    .calendar-day { background: #fff; min-height: 110px; padding: 6px; display: flex; flex-direction: column; gap: 4px; transition: 0.2s;}
+    
+    /* ADDED min-width: 0 and overflow: hidden to prevent grid stretching */
+    .calendar-day { background: #fff; min-height: 110px; padding: 6px; display: flex; flex-direction: column; gap: 4px; transition: 0.2s; min-width: 0; overflow: hidden; }
+    
     .calendar-day:hover { background-color: #f8fafc; }
     .calendar-day.empty { background: #f8fafc; cursor: default; }
     .calendar-day.today { background: #eff6ff; }
@@ -76,7 +79,9 @@
     .date-number { font-weight: 600; font-size: 0.85rem; color: #475569; align-self: flex-end; margin-bottom: 4px; }
     .calendar-day.today .date-number { background: #2563eb; color: #fff; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
     
-    .cal-event-pill { font-size: 0.7rem; font-weight: 500; padding: 4px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-align: left; transition: 0.2s; border: 1px solid transparent; margin-bottom: 2px; line-height: 1.2;}
+    /* Ensured width is 100% so text properly cuts off with ellipsis */
+    .cal-event-pill { width: 100%; font-size: 0.7rem; font-weight: 500; padding: 4px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-align: left; transition: 0.2s; border: 1px solid transparent; margin-bottom: 2px; line-height: 1.2; display: block; }
+    
     .cal-event-pill:hover { opacity: 0.8; transform: scale(0.98); }
     .cal-status-confirmed { background-color: #dcfce7; color: #047857; border-color: #a7f3d0; }
     .cal-status-pencil { background-color: #f1f5f9; color: #475569; border-color: #cbd5e1; }
@@ -551,9 +556,8 @@
 
   function toggleBilling(s, b) { document.getElementById(b).style.display = document.getElementById(s).value === 'Billing'?'block':'none'; }
   
-  // Hides both the Logistics details AND the Location/Status block when AVP is checked
   function toggleAvpFields(isAvp, prefix) { 
-      document.getElementById(prefix + 'AvpHiddenFields').style.display = isAvp ? 'none' : ''; 
+      document.getElementById(prefix + 'AvpHiddenFields').style.display = isAvp ? 'none' : 'flex'; 
       document.getElementById(prefix + 'LogisticsFields').style.display = isAvp ? 'none' : 'block'; 
   }
 
@@ -812,10 +816,7 @@
     document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
     document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
     
-    document.getElementById('eventFilters').style.display = t==='events'?'block':'none';
-    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
-    
-    // Hide filter button completely on calendar
+    // Hide filter button on Calendar view, show on others
     if (t === 'calendar') {
         document.getElementById('filterToggleBtn').style.display = 'none';
         const filterCollapse = document.getElementById('filterCollapse');
@@ -825,6 +826,9 @@
     } else {
         document.getElementById('filterToggleBtn').style.display = 'flex';
     }
+    
+    document.getElementById('eventFilters').style.display = t==='events'?'block':'none';
+    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
     
     document.getElementById('e-tab').classList.toggle('active', t==='events');
     document.getElementById('c-tab').classList.toggle('active', t==='calendar');
@@ -855,6 +859,7 @@
       }
   }
 
+  // Closes Edit modal, opens login, reopens Edit modal unlocked on success
   function unlockEditModal() {
       const editModalEl = document.getElementById('editEventModal');
       const editModal = bootstrap.Modal.getInstance(editModalEl);
