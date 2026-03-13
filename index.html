@@ -32,9 +32,9 @@
       <div class="col-md-4">
         <select id="statusFilter" class="form-select" onchange="loadEvents()">
           <option value="">All Statuses</option>
-          <option value="Pencil Booked">Pencil Booked</option>
-          <option value="Confirmed">Confirmed</option>
-          <option value="Cancelled">Cancelled</option>
+          <option>Pencil Booked</option>
+          <option>Confirmed</option>
+          <option>Cancelled</option>
         </select>
       </div>
       <div class="col-md-3"><input type="date" id="dateFilter" class="form-control" onchange="loadEvents()"></div>
@@ -51,9 +51,7 @@
     <div class="mt-2 fw-bold">Syncing with Sheets...</div>
   </div>
 
-  <div id="events-view">
-    <div id="events-list" class="row mt-3"></div>
-  </div>
+  <div id="events-view"><div id="events-list" class="row mt-3"></div></div>
 
   <div id="payments-view" style="display:none;">
     <div class="d-flex justify-content-end mb-2">
@@ -62,7 +60,7 @@
     <div class="table-responsive">
       <table class="table table-hover bg-white rounded border overflow-hidden">
         <thead class="table-dark">
-          <tr><th>Event ID</th><th>Payment Type</th><th>Details</th><th>Status & Ref</th></tr>
+          <tr><th>Event ID</th><th>Type</th><th>Details</th><th>Status & Ref</th></tr>
         </thead>
         <tbody id="p-body"></tbody>
       </table>
@@ -173,14 +171,11 @@
     const res = await callApi({ action: 'getEvents' });
     if (!res) return;
     rawEvents = res;
-    
     const dFilter = document.getElementById('dateFilter').value;
     const sFilter = document.getElementById('statusFilter').value;
-    
     let filtered = res;
     if(dFilter) filtered = filtered.filter(e => e['Event Date'] === dFilter);
     if(sFilter) filtered = filtered.filter(e => e['Event Status'] === sFilter);
-    
     renderEvents(filtered, idFilter);
   }
 
@@ -199,7 +194,6 @@
                 <span class="badge ${e['Event Status'] === 'Confirmed' ? 'bg-success' : 'bg-warning text-dark'}">${e['Event Status']}</span>
               </div>
               <h5 class="fw-bold text-primary mb-3">${e['Event Name'] || 'Unnamed'}</h5>
-              
               <div class="small">
                 <p class="mb-1">📅 <strong>Date:</strong> ${e['Event Date'] || 'TBA'}</p>
                 <p class="mb-1">🕒 <strong>Start:</strong> ${e['Event Start Time'] || '--'} | <strong>Call:</strong> ${e['Call Time'] || '--'}</p>
@@ -210,7 +204,6 @@
                 <p class="mb-1 text-muted">📞 ${e['Contact Number'] || '-'}</p>
                 <p class="mb-2">📝 <strong>Notes:</strong> ${e['Event Notes'] || 'None'}</p>
               </div>
-              
               <div class="mt-3 pt-2 border-top">${permitLink}</div>
             </div>
           </div>
@@ -226,16 +219,23 @@
     let filtered = idFilter ? res.filter(p => p['Event ID'] === idFilter) : res;
     let html = '';
     filtered.forEach(p => {
-      let det = p['Payment Type'] === 'Billing' ? p['Email Thread Title'] : '-';
-      let stat = p['Payment Type'] === 'Billing' ? `<span class="badge bg-warning text-dark">${p['Billing Status']}</span><br><small>${p['Billing Reference']}</small>` : `<span class="badge bg-success">Received</span>`;
+      // FIX: Standardized header checking and fallback to empty string
+      let thread = p['Email Thread Title'] || '-';
+      let bStatus = p['Billing Status'] || '-';
+      let bRef = p['Billing Reference'] || '';
+      
+      let stat = p['Payment Type'] === 'Billing' 
+        ? `<span class="badge bg-warning text-dark">${bStatus}</span><br><small>${bRef}</small>` 
+        : `<span class="badge bg-success">Received</span>`;
+        
       html += `<tr>
         <td><a href="javascript:void(0);" onclick="switchTab('events', '${p['Event ID']}')" class="fw-bold text-decoration-none">${p['Event ID']} 🔗</a></td>
-        <td>${p['Payment Type']}</td>
-        <td class="small">${det}</td>
+        <td>${p['Payment Type'] || '-'}</td>
+        <td class="small">${thread}</td>
         <td>${stat}</td>
       </tr>`;
     });
-    document.getElementById('p-body').innerHTML = html || '<tr><td colspan="4" class="text-center">No records.</td></tr>';
+    document.getElementById('p-body').innerHTML = html || '<tr><td colspan="4" class="text-center">No records found.</td></tr>';
   }
 
   function switchTab(t, id = null) {
@@ -253,7 +253,6 @@
     const fData = new FormData(e.target);
     const formObject = Object.fromEntries(fData.entries());
     formObject.services = fData.getAll('services');
-
     const res = await callApi({}, 'POST', { action: 'addNewEvent', formObject });
     if(res && res.success) { alert("Successfully Added!"); location.reload(); }
     else { alert("Error saving data."); btn.disabled = false; }
