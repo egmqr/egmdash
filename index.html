@@ -68,7 +68,7 @@
           <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">From</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">To</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
-          <div class="col-6 col-md-2"><span class="form-label-sm">Crew</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Edgar</option><option>Francis</option><option>Mael</option><option>Lexie</option><option>Athan</option><option>Jovert</option><option>May</option><option>Tina</option><option>Jops</option><option>Grace</option><option>Jun</option><option>Tatalino</option><option>Joram</option><option>Roy</option><option>Smile</option></select></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">Crew</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option></select></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">Status</span><select id="fStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All</option><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
           <div class="col-12 col-md-1 mt-3 mt-md-0"><button class="btn btn-secondary btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
         </div>
@@ -141,8 +141,12 @@
     </div>
     <div class="mb-3 p-3 bg-light rounded border border-light shadow-sm">
         <label class="small fw-bold text-primary mb-2 d-block text-uppercase">Crew Assignment</label>
-        <div class="row px-2 g-2">
+        <div class="row px-2 g-2" id="newCrewContainer">
             <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+        </div>
+        <div class="input-group input-group-sm mt-3">
+            <input type="text" id="newCustomCrewInput" class="form-control" placeholder="Add custom crew member...">
+            <button class="btn btn-outline-primary fw-bold" type="button" onclick="handleAddCustomCrew('newCustomCrewInput', 'newCrewContainer')">ADD</button>
         </div>
     </div>
   </div>
@@ -187,8 +191,12 @@
     </div>
     <div class="mb-3 p-3 bg-light rounded border shadow-sm">
         <label class="small fw-bold text-primary mb-2 d-block text-uppercase">Crew Assignment</label>
-        <div class="row px-2 g-2">
+        <div class="row px-2 g-2" id="editCrewContainer">
             <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+        </div>
+        <div class="input-group input-group-sm mt-3">
+            <input type="text" id="editCustomCrewInput" class="form-control" placeholder="Add custom crew member...">
+            <button class="btn btn-outline-primary fw-bold" type="button" onclick="handleAddCustomCrew('editCustomCrewInput', 'editCrewContainer')">ADD</button>
         </div>
     </div>
   </div>
@@ -233,6 +241,7 @@
   let pendingAuthAction = null;
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
   let rawEvents = [], rawPayments = [], currentTab = 'events';
+  const baseCrew = ["Edgar","Francis","Mael","Lexie","Athan","Jovert","May","Tina","Jops","Grace","Jun","Tatalino","Joram","Roy","Smile"];
 
   // --- Auth Functions ---
   function isAuthenticated() {
@@ -266,8 +275,7 @@
       btn.disabled = false;
 
       if (res && res.success) {
-          // Set expiration to 1 hour from now (3600000 ms)
-          localStorage.setItem('egm_auth_exp', Date.now() + 3600000);
+          localStorage.setItem('egm_auth_exp', Date.now() + 3600000); // 1 hr
           bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
           if (pendingAuthAction) {
               pendingAuthAction();
@@ -306,6 +314,53 @@
     return [year, month, day].join('-');
   }
 
+  // --- Custom Crew Logic ---
+  function handleAddCustomCrew(inputId, containerId) {
+      const input = document.getElementById(inputId);
+      addCustomCrewCheckbox(input.value, containerId, true);
+      input.value = '';
+  }
+
+  function addCustomCrewCheckbox(name, containerId, checkDefault = true) {
+      if(!name || name.trim() === '') return;
+      name = name.trim();
+      const container = document.getElementById(containerId);
+      
+      const existing = Array.from(container.querySelectorAll('input[name="manpower"]')).map(el => el.value.toLowerCase());
+      if(existing.includes(name.toLowerCase())) {
+         const cb = container.querySelector(`input[value="${name}"]`);
+         if(cb && checkDefault) cb.checked = true;
+         return;
+      }
+
+      const div = document.createElement('div');
+      div.className = 'col-4 col-md-3 form-check small custom-crew-cb text-primary fw-bold';
+      div.innerHTML = `<input class="form-check-input" type="checkbox" name="manpower" value="${name}" ${checkDefault ? 'checked' : ''}> ${name}`;
+      container.appendChild(div);
+  }
+
+  function updateCrewFilterDropdown(events) {
+      const select = document.getElementById('fCrew');
+      const currentVal = select.value;
+      let allCrew = new Set(baseCrew);
+      
+      events.forEach(e => {
+          if(e['Manpower']) {
+              e['Manpower'].split(',').forEach(c => {
+                  let trimmed = c.trim();
+                  if(trimmed) allCrew.add(trimmed);
+              });
+          }
+      });
+      
+      let html = '<option value="">All</option>';
+      Array.from(allCrew).sort().forEach(c => {
+          html += `<option value="${c}">${c}</option>`;
+      });
+      select.innerHTML = html;
+      select.value = currentVal; 
+  }
+
   // --- API and Render ---
   async function callApi(p={}, m='GET', b=null) {
     if(!b && m==='GET') document.getElementById('loader').style.display='block';
@@ -333,6 +388,7 @@
             'Email Thread': pay?pay['Email Thread Title']:''
         };
       });
+      updateCrewFilterDropdown(rawEvents);
       applyFilters();
     }
   }
@@ -439,13 +495,9 @@
     document.getElementById('p-body').innerHTML = html;
   }
 
-  // Handle Tab navigation with auth check for Payments
   function handleTabClick(tabName) {
-      if(tabName === 'payments') {
-          requireAuth(() => switchTab('payments'));
-      } else {
-          switchTab('events');
-      }
+      if(tabName === 'payments') { requireAuth(() => switchTab('payments')); } 
+      else { switchTab('events'); }
   }
 
   function switchTab(t) {
@@ -463,6 +515,9 @@
     const e = rawEvents.find(ev => ev['Event ID'] === id);
     if(!e) return;
     
+    // Clear previously injected custom crew checkboxes
+    document.querySelectorAll('#editCrewContainer .custom-crew-cb').forEach(el => el.remove());
+    
     const form = document.getElementById('editForm');
     form.reset();
     
@@ -479,9 +534,29 @@
     form.elements['startTime'].value = to24Hour(e['Event Start Time']);
     form.elements['endTime'].value = to24Hour(e['Event End Time']);
     
-    const crew = (e['Manpower'] || '').split(',').map(s=>s.trim());
+    const crew = (e['Manpower'] || '').split(',').map(s=>s.trim()).filter(s=>s);
     const mInputs = form.elements['manpower'];
-    if (mInputs) mInputs.forEach(input => { input.checked = crew.includes(input.value); });
+    
+    // Uncheck standard ones first
+    if (mInputs) {
+        if (mInputs.length) mInputs.forEach(i => i.checked = false);
+        else mInputs.checked = false;
+    }
+
+    // Check existing or create custom
+    crew.forEach(c => {
+        let found = false;
+        if (mInputs) {
+            if (mInputs.length) {
+                mInputs.forEach(i => { if(i.value.toLowerCase() === c.toLowerCase()) { i.checked = true; found = true; }});
+            } else {
+                if (mInputs.value.toLowerCase() === c.toLowerCase()) { mInputs.checked = true; found = true; }
+            }
+        }
+        if(!found) {
+            addCustomCrewCheckbox(c, 'editCrewContainer', true);
+        }
+    });
     
     form.elements['paymentType'].value = e['Payment Type'] || '';
     form.elements['emailThread'].value = e['Email Thread'] || '';
@@ -550,6 +625,8 @@
     if(res && res.success) { 
         bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
         e.target.reset(); 
+        // Clean up dynamically added crew to keep form fresh
+        document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
         toggleModalLogistics(false, 'logisticsFields'); 
         fetchAllData(); 
     } else alert("Error: " + (res?res.error:"Unknown"));
