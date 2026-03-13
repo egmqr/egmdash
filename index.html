@@ -78,7 +78,8 @@
             <th>Event Name</th>
             <th>Payment Type</th>
             <th>Email Thread</th>
-            <th>Status & Ref</th>
+            <th>Status & Date</th>
+            <th>GR & Invoice</th>
         </tr>
     </thead>
     <tbody id="p-body"></tbody>
@@ -117,9 +118,13 @@
   <select name="paymentType" id="pTypeSelect" class="form-select mb-2" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
   <div id="billingBox" style="display:none;" class="p-2 border rounded mb-3">
     <div class="mb-2"><input type="text" name="emailThread" placeholder="Email Thread Title" class="form-control form-control-sm"></div>
-    <div class="row">
-        <div class="col-6"><select name="billingStatus" class="form-select form-select-sm mb-1"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
-        <div class="col-6"><input type="text" name="billingRef" placeholder="Ref #" class="form-control form-control-sm"></div>
+    <div class="row g-2 mb-2">
+        <div class="col-6"><select name="billingStatus" class="form-select form-select-sm"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+        <div class="col-6"><input type="date" name="billingStatusDate" class="form-control form-control-sm" title="Status Date"></div>
+    </div>
+    <div class="row g-2">
+        <div class="col-6"><input type="text" name="grNumber" placeholder="GR Number" class="form-control form-control-sm"></div>
+        <div class="col-6"><input type="text" name="invoiceNumber" placeholder="Invoice Number" class="form-control form-control-sm"></div>
     </div>
   </div>
   <div class="mb-4"><label class="small fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
@@ -159,9 +164,13 @@
   <select id="editPaymentType" name="paymentType" class="form-select mb-2" onchange="toggleBilling('editPaymentType', 'editBillingBox')"><option value="">-- Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
   <div id="editBillingBox" style="display:none;" class="p-2 border rounded mb-3">
     <div class="mb-2"><input type="text" name="emailThread" placeholder="Email Thread Title" class="form-control form-control-sm"></div>
-    <div class="row">
-        <div class="col-6"><select id="editBillingStatus" name="billingStatus" class="form-select form-select-sm mb-1"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
-        <div class="col-6"><input type="text" name="billingRef" placeholder="Ref #" class="form-control form-control-sm"></div>
+    <div class="row g-2 mb-2">
+        <div class="col-6"><select id="editBillingStatus" name="billingStatus" class="form-select form-select-sm"><option value="">Status</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+        <div class="col-6"><input type="date" name="billingStatusDate" class="form-control form-control-sm" title="Status Date"></div>
+    </div>
+    <div class="row g-2">
+        <div class="col-6"><input type="text" name="grNumber" placeholder="GR Number" class="form-control form-control-sm"></div>
+        <div class="col-6"><input type="text" name="invoiceNumber" placeholder="Invoice Number" class="form-control form-control-sm"></div>
     </div>
   </div>
   <div class="mb-4"><label class="small fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
@@ -237,7 +246,9 @@
             ...ev, 
             'Payment Type': pay?pay['Payment Type']:'', 
             'Billing Status': pay?pay['Billing Status']:'', 
-            'Billing Reference': pay?pay['Billing Reference']:'',
+            'Billing Status Date': pay?pay['Billing Status Date']:'',
+            'GR Number': pay?pay['GR Number']:'',
+            'Invoice Number': pay?pay['Invoice Number']:'',
             'Email Thread': pay?pay['Email Thread Title']:''
         };
       });
@@ -330,12 +341,18 @@
       const isAvp = p['AVP Required'] === 'TRUE';
       const nameDisplay = isAvp ? `${p['Event Name']} <span class="badge badge-avp">AVP</span>` : p['Event Name'];
       let badge = p['Payment Type']==='Billing' ? `<span class="badge bg-warning text-dark">${p['Billing Status']||'Pending'}</span>` : `<span class="badge bg-success">Received</span>`;
+      let dateStr = p['Billing Status Date'] ? new Date(p['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
+
       html += `<tr>
         <td class="fw-bold">${p['Event ID']}</td>
         <td>${nameDisplay}</td>
         <td>${p['Payment Type']||'-'}</td>
         <td>${p['Email Thread']||'-'}</td>
-        <td>${badge} <br><small class="text-muted">${p['Billing Reference']||''}</small></td>
+        <td>${badge} <br><small class="text-muted">${dateStr}</small></td>
+        <td>
+            <small class="d-block text-muted" style="font-size: 0.75rem;">GR: <span class="text-dark fw-bold">${p['GR Number']||'-'}</span></small>
+            <small class="d-block text-muted" style="font-size: 0.75rem;">INV: <span class="text-dark fw-bold">${p['Invoice Number']||'-'}</span></small>
+        </td>
       </tr>`;
     });
     document.getElementById('p-body').innerHTML = html;
@@ -379,7 +396,9 @@
     form.elements['paymentType'].value = e['Payment Type'] || '';
     form.elements['emailThread'].value = e['Email Thread'] || '';
     form.elements['billingStatus'].value = e['Billing Status'] || '';
-    form.elements['billingRef'].value = e['Billing Reference'] || '';
+    form.elements['billingStatusDate'].value = toInputDate(e['Billing Status Date']);
+    form.elements['grNumber'].value = e['GR Number'] || '';
+    form.elements['invoiceNumber'].value = e['Invoice Number'] || '';
     form.elements['notes'].value = e['Event Notes'] || '';
     
     toggleBilling('editPaymentType', 'editBillingBox');
