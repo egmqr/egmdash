@@ -17,8 +17,6 @@
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
     .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.75rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 2px 6px; border-radius: 4px; }
     .card-upload-btn:hover { background-color: #0d6efd; color: white; }
-    
-    /* NEW: Submit Overlay */
     .submit-overlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(255, 255, 255, 0.85); z-index: 3000;
@@ -36,9 +34,7 @@
 <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 3050;">
   <div id="successToast" class="toast align-items-center text-bg-success border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="d-flex">
-      <div class="toast-body fw-bold fs-6">
-        ✅ Entry successfully added!
-      </div>
+      <div class="toast-body fw-bold fs-6">✅ Entry successfully added!</div>
       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
     </div>
   </div>
@@ -52,14 +48,14 @@
     </div>
 
     <div class="row g-2 mb-4">
-      <div class="col-md-5"><input type="text" id="searchInput" class="form-control" placeholder="Search event, ID, or contact..." onkeyup="filterContent()"></div>
+      <div class="col-md-5"><input type="text" id="searchInput" class="form-control" placeholder="Search event, ID, or contact..." onkeyup="applyFilters()"></div>
       <div class="col-md-4">
-        <select id="statusFilter" class="form-select" onchange="loadEvents()">
+        <select id="statusFilter" class="form-select" onchange="applyFilters()">
           <option value="">All Statuses</option>
           <option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option>
         </select>
       </div>
-      <div class="col-md-3"><input type="date" id="dateFilter" class="form-control" onchange="loadEvents()"></div>
+      <div class="col-md-3"><input type="date" id="dateFilter" class="form-control" onchange="applyFilters()"></div>
     </div>
 
     <ul class="nav nav-tabs border-0">
@@ -177,12 +173,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // Baked-in customized API URL
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
-  
   let rawEvents = [];
 
-  // Helper function to convert 24h time to 12h AM/PM
   function formatAMPM(timeStr) {
     if (!timeStr || timeStr === '--') return '--:--';
     if (timeStr.toUpperCase().includes('AM') || timeStr.toUpperCase().includes('PM')) return timeStr;
@@ -197,7 +190,7 @@
   }
 
   async function callApi(params = {}, method = 'GET', body = null) {
-    if (!body) document.getElementById('loader').style.display = 'block';
+    if (!body && method === 'GET') document.getElementById('loader').style.display = 'block';
     const url = new URL(API_URL);
     Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
     try {
@@ -213,57 +206,117 @@
     document.getElementById('billingBox').style.display = val === 'Billing' ? 'block' : 'none';
   }
 
-  async function loadEvents(idFilter = null) {
+  // Fetch all data from API once, then apply UI filters.
+  async function fetchAllData() {
     const res = await callApi({ action: 'getEvents' });
-    if (!res) return;
-    rawEvents = res;
-    const dFilter = document.getElementById('dateFilter').value;
-    const sFilter = document.getElementById('statusFilter').value;
-    let filtered = res;
-    if(dFilter) filtered = filtered.filter(e => e['Event Date'] === dFilter);
-    if(sFilter) filtered = filtered.filter(e => e['Event Status'] === sFilter);
-    renderEvents(filtered, idFilter);
+    if (res) {
+      rawEvents = res;
+      applyFilters();
+    }
   }
 
-  function renderEvents(data, highlightId) {
+  function applyFilters() {
+    const dFilter = document.getElementById('dateFilter').value;
+    const sFilter = document.getElementById('statusFilter').value;
+    const searchVal = document.getElementById('searchInput').value.toLowerCase();
+    
+    let filtered = rawEvents;
+    if (dFilter) filtered = filtered.filter(e => e['Event Date'] === dFilter);
+    if (sFilter) filtered = filtered.filter(e => e['Event Status'] === sFilter);
+    if (searchVal) {
+      filtered = filtered.filter(e => {
+        const searchStr = `${e['Event Name']} ${e['Event ID']} ${e['Contact Person']}`.toLowerCase();
+        return searchStr.includes(searchVal);
+      });
+    }
+    
+    // Check if we are in the default "No Filters" state
+    const isDefaultView = !dFilter && !sFilter && !searchVal;
+    renderGroupedEvents(filtered, null, isDefaultView);
+  }
+
+  function renderGroupedEvents(data, highlightId, isDefaultView) {
     let html = '';
-    data.forEach(e => {
-      const highlight = highlightId && e['Event ID'] === highlightId ? 'highlight-card' : '';
-      const permitLink = e['Permits'] ? `<a href="${e['Permits']}" target="_blank" class="badge bg-info text-dark text-decoration-none">View Permit</a>` : `<span class="badge bg-light text-muted">No Permit</span>`;
+    let targetDates = [];
 
-      const formattedStart = formatAMPM(e['Event Start Time']);
-      const formattedCall = formatAMPM(e['Call Time']);
+    // If default view, build exactly the next 5 days
+    if (isDefaultView) {
+      const today = new Date();
+      for(let i = 0; i < 5; i++) {
+        let d = new Date(today);
+        d.setDate(today.getDate() + i);
+        let yyyy = d.getFullYear();
+        let mm = String(d.getMonth() + 1).padStart(2, '0');
+        let dd = String(d.getDate()).padStart(2, '0');
+        targetDates.push(`${yyyy}-${mm}-${dd}`);
+      }
+    } else {
+      // If filtering/searching, grab only the dates that have matching events
+      targetDates = [...new Set(data.map(e => e['Event Date']))].sort();
+      if (targetDates.length === 0) {
+        document.getElementById('events-list').innerHTML = '<div class="col-12"><div class="p-4 text-center text-muted border rounded bg-white mt-3 fst-italic">No matching events found.</div></div>';
+        return;
+      }
+    }
 
-      html += `
-        <div class="col-md-6 col-lg-4 mb-4 event-card" id="card-${e['Event ID']}" data-search="${e['Event Name']} ${e['Event ID']} ${e['Contact Person']}">
-          <div class="card shadow-sm ${highlight}">
-            <div class="card-body">
-              <div class="d-flex justify-content-between mb-2">
-                <a href="javascript:void(0);" onclick="switchTab('payments', '${e['Event ID']}')" class="badge bg-dark text-decoration-none">${e['Event ID']} 🔗</a>
-                <span class="badge ${e['Event Status'] === 'Confirmed' ? 'bg-success' : 'bg-warning text-dark'}">${e['Event Status']}</span>
-              </div>
-              <h5 class="fw-bold text-primary mb-3">${e['Event Name'] || 'Unnamed'}</h5>
-              <div class="small">
-                <p class="mb-1">📅 <strong>Date:</strong> ${e['Event Date'] || 'TBA'}</p>
-                <p class="mb-1">🕒 <strong>Start:</strong> ${formattedStart} | <strong>Call:</strong> ${formattedCall}</p>
-                <p class="mb-1">🛠️ <strong>Services:</strong> ${e['Services'] || 'None'}</p>
-                <p class="mb-1">👥 <strong>Crew:</strong> ${e['Manpower'] || '-'}</p>
-                <hr class="my-2">
-                <p class="mb-1">👤 <strong>Contact:</strong> ${e['Contact Person'] || '-'}</p>
-                <p class="mb-1 text-muted">📞 ${e['Contact Number'] || '-'}</p>
-                <p class="mb-2">📝 <strong>Notes:</strong> ${e['Event Notes'] || 'None'}</p>
-              </div>
-              <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
-                <div id="p-cont-${e['Event ID']}">${permitLink}</div>
-                <div>
-                  <label class="card-upload-btn mb-0" id="up-lab-${e['Event ID']}" onclick="triggerUpload('${e['Event ID']}')">Upload</label>
-                  <input type="file" id="file-${e['Event ID']}" style="display:none" onchange="handleUpload(this, '${e['Event ID']}')">
+    targetDates.forEach(dateStr => {
+      // Pretty Format the Date
+      let displayDate = dateStr || 'No Date / TBA';
+      if (dateStr && dateStr.includes('-')) {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          const dObj = new Date(parts[0], parts[1]-1, parts[2]);
+          displayDate = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        }
+      }
+
+      html += `<div class="col-12 mt-4 mb-2"><h5 class="fw-bold text-dark border-bottom pb-2">📅 ${displayDate}</h5></div>`;
+
+      const eventsForDate = data.filter(e => e['Event Date'] === dateStr);
+
+      if (eventsForDate.length === 0 && isDefaultView) {
+        // Show empty message if it's the default 5-day view
+        html += `<div class="col-12 mb-3"><div class="p-3 bg-white rounded border border-light text-center text-muted fst-italic">No events for this day.</div></div>`;
+      } else if (eventsForDate.length > 0) {
+        eventsForDate.forEach(e => {
+          const highlight = highlightId && e['Event ID'] === highlightId ? 'highlight-card' : '';
+          const permitLink = e['Permits'] ? `<a href="${e['Permits']}" target="_blank" class="badge bg-info text-dark text-decoration-none">View Permit</a>` : `<span class="badge bg-light text-muted">No Permit</span>`;
+
+          const formattedStart = formatAMPM(e['Event Start Time']);
+          const formattedCall = formatAMPM(e['Call Time']);
+
+          html += `
+            <div class="col-md-6 col-lg-4 mb-4 event-card" id="card-${e['Event ID']}">
+              <div class="card shadow-sm ${highlight}">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between mb-2">
+                    <a href="javascript:void(0);" onclick="switchTab('payments', '${e['Event ID']}')" class="badge bg-dark text-decoration-none">${e['Event ID']} 🔗</a>
+                    <span class="badge ${e['Event Status'] === 'Confirmed' ? 'bg-success' : 'bg-warning text-dark'}">${e['Event Status']}</span>
+                  </div>
+                  <h5 class="fw-bold text-primary mb-3">${e['Event Name'] || 'Unnamed'}</h5>
+                  <div class="small">
+                    <p class="mb-1">🕒 <strong>Start:</strong> ${formattedStart} | <strong>Call:</strong> ${formattedCall}</p>
+                    <p class="mb-1">🛠️ <strong>Services:</strong> ${e['Services'] || 'None'}</p>
+                    <p class="mb-1">👥 <strong>Crew:</strong> ${e['Manpower'] || '-'}</p>
+                    <hr class="my-2">
+                    <p class="mb-1">👤 <strong>Contact:</strong> ${e['Contact Person'] || '-'}</p>
+                    <p class="mb-1 text-muted">📞 ${e['Contact Number'] || '-'}</p>
+                    <p class="mb-2">📝 <strong>Notes:</strong> ${e['Event Notes'] || 'None'}</p>
+                  </div>
+                  <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
+                    <div id="p-cont-${e['Event ID']}">${permitLink}</div>
+                    <div>
+                      <label class="card-upload-btn mb-0" id="up-lab-${e['Event ID']}" onclick="triggerUpload('${e['Event ID']}')">Upload</label>
+                      <input type="file" id="file-${e['Event ID']}" style="display:none" onchange="handleUpload(this, '${e['Event ID']}')">
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>`;
+            </div>`;
+        });
+      }
     });
+    
     document.getElementById('events-list').innerHTML = html;
   }
 
@@ -305,12 +358,23 @@
     document.getElementById('payments-view').style.display = t === 'payments' ? 'block' : 'none';
     document.getElementById('e-tab').classList.toggle('active', t === 'events');
     document.getElementById('p-tab').classList.toggle('active', t === 'payments');
-    t === 'events' ? loadEvents(id) : loadPayments(id);
-  }
-
-  function filterContent() {
-    const val = document.getElementById('searchInput').value.toLowerCase();
-    document.querySelectorAll('.event-card').forEach(c => c.style.display = c.getAttribute('data-search').toLowerCase().includes(val) ? "block" : "none");
+    
+    // Reset filters when switching tabs
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('dateFilter').value = '';
+    
+    if(t === 'events') {
+      if(id) {
+        // If coming from a specific payment link, filter to that ID
+        document.getElementById('searchInput').value = id;
+        applyFilters();
+      } else {
+        fetchAllData();
+      }
+    } else {
+      loadPayments(id);
+    }
   }
 
   document.getElementById('eventForm').onsubmit = async function(e) {
@@ -326,7 +390,6 @@
     const fData = new FormData(e.target);
     const formObject = Object.fromEntries(fData.entries());
     
-    // Grab all checked boxes for both Services and Manpower
     formObject.services = fData.getAll('services');
     formObject.manpower = fData.getAll('manpower'); 
     
@@ -339,7 +402,8 @@
 
     if(res && res.success) {
       // Hide Modal
-      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('addEventModal'));
+      const modalElement = document.getElementById('addEventModal');
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
       modalInstance.hide();
       
       // Reset Form
@@ -351,14 +415,15 @@
       const toast = new bootstrap.Toast(toastEl, { delay: 3500 });
       toast.show();
       
-      // Reload Data Smoothly (No Full Page Refresh)
-      loadEvents();
+      // Fetch new data to update UI instantly without reloading page
+      fetchAllData();
     } else {
       alert("Failed to save entry. Please try again.");
     }
   };
 
-  window.onload = () => loadEvents();
+  // Initial load
+  window.onload = () => fetchAllData();
 </script>
 </body>
 </html>
