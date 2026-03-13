@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EGM Operations Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f4f7f6; padding: 20px; font-family: 'Segoe UI', sans-serif; }
+    .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+    .sticky-top-custom { position: sticky; top: 0; background: #f4f7f6; z-index: 1000; padding-bottom: 15px; }
+    .nav-tabs .nav-link { cursor: pointer; font-weight: 600; color: #555; border: none; }
+    .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: none; }
+    .highlight-card { border: 2px solid #0d6efd !important; }
+    .loader { display: none; text-align: center; padding: 50px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="sticky-top-custom">
+    <div class="d-flex justify-content-between align-items-center mb-3 pt-2">
+      <h2 class="fw-bold">EGM <span class="text-primary">Ops</span></h2>
+      <button class="btn btn-primary fw-bold px-4" data-bs-toggle="modal" data-bs-target="#addEventModal">+ New Entry</button>
+    </div>
+
+    <div class="row g-2 mb-4">
+      <div class="col-md-5"><input type="text" id="searchInput" class="form-control" placeholder="Search..." onkeyup="filterContent()"></div>
+      <div class="col-md-4"><select id="statusFilter" class="form-select" onchange="loadEvents()"><option value="">All Statuses</option><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+      <div class="col-md-3"><input type="date" id="dateFilter" class="form-control" onchange="loadEvents()"></div>
+    </div>
+
+    <ul class="nav nav-tabs border-0">
+      <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="switchTab('events')">Events</a></li>
+      <li class="nav-item"><a class="nav-link" id="p-tab" onclick="switchTab('payments')">Payments</a></li>
+    </ul>
+  </div>
+
+  <div id="loader" class="loader"><div class="spinner-border text-primary"></div><p>Syncing with Google Sheets...</p></div>
+
+  <div id="events-view"><div id="events-list" class="row mt-3"></div></div>
+
+  <div id="payments-view" style="display:none;">
+    <div class="table-responsive mt-3">
+      <table class="table table-hover bg-white border">
+        <thead class="table-dark"><tr><th>Event ID</th><th>Type</th><th>Details</th><th>Status</th></tr></thead>
+        <tbody id="p-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="addEventModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">New Entry</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <form id="eventForm">
+            <div class="row mb-3">
+                <div class="col-md-8"><label class="small fw-bold">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
+                <div class="col-md-4"><label class="small fw-bold">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+            </div>
+            <div class="mb-3">
+                <label class="small fw-bold d-block">Services</label>
+                <div class="row px-3">
+                    <div class="col-6 col-md-4 form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
+                    <div class="col-6 col-md-4 form-check"><input class="form-check-input" type="checkbox" name="services" value="Video Doc"> Video Doc</div>
+                    <div class="col-6 col-md-4 form-check"><input class="form-check-input" type="checkbox" name="services" value="Prints"> Prints</div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div>
+                <div class="col-md-4"><label class="small fw-bold">Start</label><input type="time" name="startTime" class="form-control"></div>
+                <div class="col-md-4"><label class="small fw-bold">Call</label><input type="time" name="callTime" class="form-control"></div>
+            </div>
+            <div class="mb-3"><label class="small fw-bold">Payment Method</label><select name="paymentType" id="pType" class="form-select"><option value="Cash AR">Cash AR</option><option value="Billing">Billing</option></select></div>
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold">SUBMIT TO GOOGLE SHEETS</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // !!! REPLACE THIS WITH YOUR DEPLOYED GOOGLE WEB APP URL !!!
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzF7krw73_v_HEaaVpQr0deoITQyz1Fw7VDbhTEkdM8qTiqVGFfqzWWWO2VynQocA-B/exec';
+
+  let rawEvents = [];
+
+  async function callApi(params = {}, method = 'GET', body = null) {
+    document.getElementById('loader').style.display = 'block';
+    const url = new URL(API_URL);
+    Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+    
+    try {
+      const options = { method };
+      if (body) options.body = JSON.stringify(body);
+      
+      const response = await fetch(url, options);
+      const data = await response.json();
+      document.getElementById('loader').style.display = 'none';
+      return data;
+    } catch (e) {
+      console.error(e);
+      alert("Error connecting to Google Sheets.");
+      document.getElementById('loader').style.display = 'none';
+    }
+  }
+
+  async function loadEvents(highlightId = null) {
+    const res = await callApi({ action: 'getEvents' });
+    if (!res) return;
+    rawEvents = res;
+    
+    const dVal = document.getElementById('dateFilter').value;
+    const sVal = document.getElementById('statusFilter').value;
+    let filtered = res;
+    if(dVal) filtered = filtered.filter(e => e['Event Date'] === dVal);
+    if(sVal) filtered = filtered.filter(e => e['Event Status'] === sVal);
+    
+    renderEvents(filtered, highlightId);
+  }
+
+  function renderEvents(data, highlightId) {
+    let html = '';
+    data.forEach(e => {
+      const highlight = highlightId && e['Event ID'] === highlightId ? 'highlight-card' : '';
+      html += `
+        <div class="col-md-6 col-lg-4 mb-4 event-card" id="card-${e['Event ID']}" data-search="${e['Event Name']} ${e['Event ID']}">
+          <div class="card h-100 border-0 ${highlight}">
+            <div class="card-body">
+              <div class="d-flex justify-content-between mb-2">
+                <a href="javascript:void(0);" onclick="switchTab('payments', '${e['Event ID']}')" class="badge bg-dark text-decoration-none">${e['Event ID']} 🔗</a>
+                <span class="badge ${e['Event Status'] === 'Confirmed' ? 'bg-success' : 'bg-warning text-dark'}">${e['Event Status']}</span>
+              </div>
+              <h5 class="fw-bold text-primary">${e['Event Name'] || 'Unnamed'}</h5>
+              <p class="small mb-1">📅 ${e['Event Date'] || 'TBA'} | 🕒 ${e['Event Start Time'] || '--:--'}</p>
+              <p class="small mb-0 text-muted"><strong>Crew:</strong> ${e['Manpower'] || 'TBD'}</p>
+            </div>
+          </div>
+        </div>`;
+    });
+    document.getElementById('events-list').innerHTML = html;
+  }
+
+  async function loadPayments(idFilter = null) {
+    const res = await callApi({ action: 'getPayments' });
+    let filtered = idFilter ? res.filter(p => p['Event ID'] === idFilter) : res;
+    let html = '';
+    filtered.forEach(p => {
+      html += `<tr>
+        <td><a href="javascript:void(0);" onclick="switchTab('events', '${p['Event ID']}')" class="fw-bold text-decoration-none">${p['Event ID']} 🔗</a></td>
+        <td>${p['Payment Type']}</td>
+        <td class="small">${p['Email Thread Title'] || '-'}</td>
+        <td><span class="badge bg-info text-dark">${p['Billing Status'] || 'Standard'}</span></td>
+      </tr>`;
+    });
+    document.getElementById('p-body').innerHTML = html;
+  }
+
+  function switchTab(t, id = null) {
+    document.getElementById('events-view').style.display = t === 'events' ? 'block' : 'none';
+    document.getElementById('payments-view').style.display = t === 'payments' ? 'block' : 'none';
+    document.getElementById('e-tab').classList.toggle('active', t === 'events');
+    document.getElementById('p-tab').classList.toggle('active', t === 'payments');
+    t === 'events' ? loadEvents(id) : loadPayments(id);
+  }
+
+  document.getElementById('eventForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const fData = new FormData(e.target);
+    const formObject = Object.fromEntries(fData.entries());
+    formObject.services = fData.getAll('services');
+
+    const res = await callApi({}, 'POST', { action: 'addNewEvent', formObject });
+    if(res.success) { alert("Saved!"); location.reload(); }
+  };
+
+  function filterContent() {
+    const val = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('.event-card').forEach(c => {
+      c.style.display = c.getAttribute('data-search').toLowerCase().includes(val) ? "block" : "none";
+    });
+  }
+
+  window.onload = () => loadEvents();
+</script>
+</body>
+</html>
