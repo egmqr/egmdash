@@ -98,9 +98,10 @@
 
   <div id="logisticsFields">
     <div class="row mb-3">
-        <div class="col-md-4"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div>
-        <div class="col-md-4"><label class="small fw-bold">Start</label><input type="time" name="startTime" class="form-control"></div>
-        <div class="col-md-4"><label class="small fw-bold">Call</label><input type="time" name="callTime" class="form-control"></div>
+        <div class="col-md-3"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div>
+        <div class="col-md-3"><label class="small fw-bold">Call</label><input type="time" name="callTime" class="form-control"></div>
+        <div class="col-md-3"><label class="small fw-bold">Start</label><input type="time" name="startTime" class="form-control"></div>
+        <div class="col-md-3"><label class="small fw-bold">End</label><input type="time" name="endTime" class="form-control"></div>
     </div>
     <div class="mb-3 p-3 bg-light rounded border shadow-sm">
         <label class="small fw-bold text-primary mb-2 d-block">Crew Assignment</label>
@@ -218,7 +219,7 @@
                     </div>
                     <h5 class="fw-bold text-primary mb-3">${e['Event Name']}</h5>
                     <div class="small">
-                        <p class="mb-1">🕒 <strong>Times:</strong> ${formatAMPM(e['Event Start Time'])} (Start) | ${formatAMPM(e['Call Time'])} (Call)</p>
+                        <p class="mb-1">🕒 <strong>Times:</strong> ${formatAMPM(e['Call Time'])} (Call) | ${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</p>
                         <p class="mb-1">🛠️ <strong>Services:</strong> ${e['Services'] || 'None'}</p>
                         <p class="mb-1">👥 <strong>Crew:</strong> ${e['Manpower'] || '-'}</p>
                         <hr class="my-2">
