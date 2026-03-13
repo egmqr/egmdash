@@ -63,6 +63,8 @@
     /* Overlays & Loaders */
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;}
     .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
+    .bg-sync-indicator { font-size: 0.7rem; color: #94a3b8; display: none; align-items: center; gap: 5px; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     
     /* Tables */
     .table-custom { border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
@@ -81,7 +83,9 @@
   
   <div class="sticky-header">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="fw-bold mb-0" style="letter-spacing: -0.5px;">EGM <span class="text-primary">Ops</span></h4>
+      <h4 class="fw-bold mb-0 d-flex align-items-center" style="letter-spacing: -0.5px;">EGM <span class="text-primary ms-1">Ops</span> 
+          <span id="bgSyncIndicator" class="bg-sync-indicator ms-3"><div class="spinner-border spinner-border-sm" role="status" style="width: 0.8rem; height: 0.8rem; border-width: 0.15em;"></div> Syncing</span>
+      </h4>
       <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-1" onclick="requireAuth(() => new bootstrap.Modal(document.getElementById('addEventModal')).show())">
         <i class="bi bi-plus-lg"></i> New Entry
       </button>
@@ -123,7 +127,7 @@
 
   <div id="loader" class="loader text-center">
       <div class="spinner-border text-primary" role="status"></div>
-      <div class="mt-2 fw-bold small text-muted">Syncing data...</div>
+      <div class="mt-2 fw-bold small text-muted">Loading initially...</div>
   </div>
   
   <div class="px-2 px-md-0">
@@ -328,7 +332,7 @@
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>VERIFYING...';
       btn.disabled = true;
 
-      const res = await callApi({}, 'POST', { action: 'verifyPassword', password: pass });
+      const res = await callApi({ action: 'verifyPassword', password: pass }, 'POST'); // Auth isn't silent
 
       btn.innerHTML = originalText;
       btn.disabled = false;
@@ -420,21 +424,35 @@
       select.value = currentVal; 
   }
 
-  // --- API and Render ---
-  async function callApi(p={}, m='GET', b=null) {
-    if(!b && m==='GET') document.getElementById('loader').style.display='block';
-    const u = new URL(API_URL); Object.keys(p).forEach(k => u.searchParams.append(k, p[k]));
-    const r = await fetch(u, { method:m, body: b?JSON.stringify(b):null });
-    const d = await r.json(); document.getElementById('loader').style.display='none'; return d;
+  // --- API and Fetch Logic ---
+  async function callApi(payload, method='GET', isSilent=false) {
+    if(!isSilent) document.getElementById('loader').style.display='block';
+    
+    let u = new URL(API_URL); 
+    let reqObj = { method: method };
+
+    if(method === 'GET') {
+        Object.keys(payload).forEach(k => u.searchParams.append(k, payload[k]));
+    } else {
+        reqObj.body = JSON.stringify(payload);
+    }
+
+    try {
+        const r = await fetch(u, reqObj);
+        const d = await r.json(); 
+        if(!isSilent) document.getElementById('loader').style.display='none'; 
+        return d;
+    } catch(e) {
+        if(!isSilent) document.getElementById('loader').style.display='none';
+        console.error("API Call Failed", e);
+        return { success: false, error: e.toString() };
+    }
   }
 
   function toggleBilling(s, b) { document.getElementById(b).style.display = document.getElementById(s).value === 'Billing'?'block':'none'; }
   function toggleModalLogistics(isAvp, boxId) { document.getElementById(boxId).style.display = isAvp ? 'none' : 'block'; }
 
-  // OPTIMIZED FETCH: Calls `getAllData` payload in a single HTTP request!
-  async function fetchAllData() {
-    const res = await callApi({action:'getAllData'});
-    if(res && res.events) {
+  function processFetchedData(res) {
       rawPayments = res.payments || [];
       rawEvents = res.events.map(ev => {
         const pay = rawPayments.find(p => p['Event ID'] === ev['Event ID']);
@@ -450,6 +468,28 @@
       });
       updateCrewFilterDropdown(rawEvents);
       applyFilters();
+  }
+
+  // OPTIMIZED FETCH: Loads local cache instantly, then syncs quietly in the background
+  async function fetchAllData() {
+    const cachedData = localStorage.getItem('egm_dashboard_data');
+    let isSilent = false;
+
+    if (cachedData) {
+        // INSTANT LOAD from local device memory
+        processFetchedData(JSON.parse(cachedData));
+        isSilent = true; 
+        document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+    }
+
+    // Background check to Server Cache
+    const res = await callApi({action:'getAllData'}, 'GET', isSilent);
+    
+    document.getElementById('bgSyncIndicator').style.display = 'none';
+
+    if(res && res.events) {
+        localStorage.setItem('egm_dashboard_data', JSON.stringify(res));
+        processFetchedData(res);
     }
   }
 
@@ -504,7 +544,7 @@
         
         html += `<div class="col-12 mt-4"><h5 class="fw-bold border-bottom border-2 pb-2" style="color: #0f172a;"><i class="bi bi-calendar3 me-2 text-primary"></i>${displayHeader}</h5></div>`;
         
-        if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No event scheduled for this day.</div></div>`;
+        if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
             evs.forEach(e => {
               let filesHtml = '';
@@ -699,9 +739,9 @@
       bootstrap.Modal.getInstance(document.getElementById('uploadFileModal')).hide();
       ov.style.display = 'flex';
       
-      const res = await callApi({}, 'POST', { 
+      const res = await callApi({ 
          action: 'uploadFile', base64: ev.target.result, filename: file.name, eventId: eventId, label: label
-      });
+      }, 'POST');
       
       ov.style.display = 'none';
       if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
@@ -715,7 +755,7 @@
     document.getElementById('overlayText').innerText = "Deleting File...";
     ov.style.display = 'flex';
 
-    const res = await callApi({}, 'POST', { action: 'deleteFile', eventId: eventId, fileId: fileId });
+    const res = await callApi({ action: 'deleteFile', eventId: eventId, fileId: fileId }, 'POST');
     ov.style.display = 'none';
     if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
   }
@@ -727,7 +767,9 @@
     btn.disabled = true; ov.style.display='flex';
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
-    const res = await callApi({}, 'POST', {action:'addNewEvent', formObject:obj});
+    
+    const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
+    
     ov.style.display='none'; btn.disabled=false;
     if(res && res.success) { 
         bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
@@ -747,7 +789,8 @@
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
     
-    const res = await callApi({}, 'POST', {action:'editEvent', updateData: obj});
+    const res = await callApi({action:'editEvent', updateData: obj}, 'POST');
+    
     ov.style.display='none'; btn.disabled=false;
     if(res && res.success) { 
         bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
