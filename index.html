@@ -40,6 +40,7 @@
     .btn-primary:hover { background-color: #1d4ed8; border-color: #1d4ed8; }
     .form-control, .form-select { border-radius: 8px; border-color: #cbd5e1; }
     .form-control:focus, .form-select:focus { border-color: #2563eb; box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.1); }
+    .form-control:disabled, .form-select:disabled { background-color: #f1f5f9; opacity: 0.8; }
     
     .filter-panel { background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
     .form-label-sm { font-size: 0.65rem; font-weight: 700; color: #64748b; margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: 0.5px;}
@@ -276,7 +277,10 @@
 
 <div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-pencil-square me-2"></i> Event Details</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
     
-  <div id="editAuthWarning" class="alert alert-warning small py-2 mb-3 shadow-sm border-0" style="display:none;"><i class="bi bi-lock-fill me-1"></i> <strong>View-Only Mode.</strong> Admin login required to make changes.</div>
+  <div id="editAuthWarning" class="alert alert-warning small py-2 mb-3 shadow-sm border-0 align-items-center justify-content-between" style="display:none;">
+      <span><i class="bi bi-eye-fill me-1"></i> <strong>View-Only.</strong> Login to make changes.</span>
+      <button type="button" class="btn btn-dark btn-sm fw-bold py-1 px-2 shadow-sm" style="font-size: 0.7rem;" onclick="unlockEditModal()">LOGIN</button>
+  </div>
 
   <form id="editForm">
   <input type="hidden" id="editEventId" name="eventId">
@@ -311,7 +315,7 @@
         <div class="input-group input-group-sm mt-3">
             <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
             <input type="text" id="editCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
-            <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('editCustomCrewInput', 'editCrewContainer')">ADD</button>
+            <button id="editCrewAddBtn" class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('editCustomCrewInput', 'editCrewContainer')">ADD</button>
         </div>
     </div>
   </div>
@@ -571,7 +575,7 @@
       if(c) filtered = filtered.filter(e => e['Manpower'].includes(c));
       if(s) filtered = filtered.filter(e => e['Event Status'] === s);
       
-      filteredEventsCache = filtered; // Save for calendar re-renders
+      filteredEventsCache = filtered; 
       
       renderEvents(filtered, !n && !dF && !dT && !c && !s);
       renderCalendar(filtered);
@@ -712,7 +716,7 @@
               
               const timePrefix = e['Call Time'] ? `${to24Hour(e['Call Time'])} ` : '';
               
-              // REMOVED requireAuth FROM HERE SO CREW CAN VIEW DETAILS FREELY
+              // Calls openEditModal with fromCalendar flag = true
               eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Event ID']}', true)" title="${e['Event Name']}">
                   <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
               </div>`;
@@ -777,7 +781,6 @@
     document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
     document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
     
-    // Show Event filters for both List and Calendar views
     document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar') ? 'block':'none';
     document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
     
@@ -788,20 +791,46 @@
     applyFilters(); 
   }
 
-  // Modified to handle Read-Only mode for the Calendar clicks
+  // --- View-Only Logic for Modals ---
+  function setEditFormState(isReadOnly) {
+      const form = document.getElementById('editForm');
+      // Find all inputs, selects, textareas, and buttons
+      const elements = form.querySelectorAll('input, select, textarea, button');
+      
+      elements.forEach(el => {
+          // Keep our primary action buttons out of the blanket disable
+          if(el.id !== 'editSubmitBtn' && el.id !== 'editCrewAddBtn') {
+              el.disabled = isReadOnly;
+          }
+      });
+      
+      // Disable the Custom Crew Add button manually
+      document.getElementById('editCrewAddBtn').disabled = isReadOnly;
+      
+      // Toggle UI elements
+      if (isReadOnly) {
+          document.getElementById('editSubmitBtn').style.display = 'none';
+          document.getElementById('editAuthWarning').style.setProperty('display', 'flex', 'important');
+      } else {
+          document.getElementById('editSubmitBtn').style.display = 'block';
+          document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
+      }
+  }
+
+  function unlockEditModal() {
+      requireAuth(() => {
+          // Once authorized, remove the read-only state
+          setEditFormState(false);
+      });
+  }
+
   function openEditModal(id, fromCalendar = false) {
     const e = rawEvents.find(ev => ev['Event ID'] === id);
     if(!e) return;
-
-    // View-Only Logic: If clicked from calendar and user is NOT logged in, hide the save button.
-    if (fromCalendar && !isAuthenticated()) {
-        document.getElementById('editSubmitBtn').style.display = 'none';
-        document.getElementById('editAuthWarning').style.display = 'block';
-    } else {
-        document.getElementById('editSubmitBtn').style.display = 'block';
-        document.getElementById('editAuthWarning').style.display = 'none';
-    }
     
+    // If opened from calendar AND user is not logged in, trigger View-Only Mode
+    const isReadOnly = fromCalendar && !isAuthenticated();
+
     document.querySelectorAll('#editCrewContainer .custom-crew-cb').forEach(el => el.remove());
     
     const form = document.getElementById('editForm');
@@ -853,6 +882,10 @@
     form.elements['notes'].value = e['Event Notes'] || '';
     
     toggleBilling('editPaymentType', 'editBillingBox');
+    
+    // Apply View-Only or Editable state right before showing the modal
+    setEditFormState(isReadOnly);
+    
     new bootstrap.Modal(document.getElementById('editEventModal')).show();
   }
 
