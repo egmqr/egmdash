@@ -6,14 +6,16 @@
   <title>EGM Operations Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f4f7f6; padding: 20px; font-family: 'Segoe UI', sans-serif; }
-    .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; }
+    body { background-color: #f4f7f6; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .card { transition: 0.3s; border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: 100%; }
     .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+    .nav-tabs .nav-link { cursor: pointer; color: #555; font-weight: 600; border: none; }
+    .nav-tabs .nav-link.active { color: #0d6efd; background: none; border-bottom: 3px solid #0d6efd; }
     .sticky-top-custom { position: sticky; top: 0; background: #f4f7f6; z-index: 1000; padding-bottom: 15px; }
-    .nav-tabs .nav-link { cursor: pointer; font-weight: 600; color: #555; border: none; }
-    .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: none; }
+    .section-title { font-size: 0.85rem; font-weight: bold; color: #adb5bd; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid #e9ecef; padding-bottom: 5px; }
+    .event-id-link { cursor: pointer; text-decoration: none; font-weight: bold; }
     .highlight-card { border: 2px solid #0d6efd !important; }
-    .loader { display: none; text-align: center; padding: 50px; }
+    .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
@@ -21,30 +23,47 @@
 <div class="container">
   <div class="sticky-top-custom">
     <div class="d-flex justify-content-between align-items-center mb-3 pt-2">
-      <h2 class="fw-bold">EGM <span class="text-primary">Ops</span></h2>
+      <h2 class="fw-bold text-dark">EGM <span class="text-primary">Ops</span></h2>
       <button class="btn btn-primary fw-bold px-4" data-bs-toggle="modal" data-bs-target="#addEventModal">+ New Entry</button>
     </div>
 
     <div class="row g-2 mb-4">
-      <div class="col-md-5"><input type="text" id="searchInput" class="form-control" placeholder="Search..." onkeyup="filterContent()"></div>
-      <div class="col-md-4"><select id="statusFilter" class="form-select" onchange="loadEvents()"><option value="">All Statuses</option><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+      <div class="col-md-5"><input type="text" id="searchInput" class="form-control" placeholder="Search event, ID, or contact..." onkeyup="filterContent()"></div>
+      <div class="col-md-4">
+        <select id="statusFilter" class="form-select" onchange="loadEvents()">
+          <option value="">All Statuses</option>
+          <option value="Pencil Booked">Pencil Booked</option>
+          <option value="Confirmed">Confirmed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
       <div class="col-md-3"><input type="date" id="dateFilter" class="form-control" onchange="loadEvents()"></div>
     </div>
 
     <ul class="nav nav-tabs border-0">
-      <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="switchTab('events')">Events</a></li>
-      <li class="nav-item"><a class="nav-link" id="p-tab" onclick="switchTab('payments')">Payments</a></li>
+      <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="switchTab('events')">Events Dashboard</a></li>
+      <li class="nav-item"><a class="nav-link" id="p-tab" onclick="switchTab('payments')">Payment Monitoring</a></li>
     </ul>
   </div>
 
-  <div id="loader" class="loader"><div class="spinner-border text-primary"></div><p>Syncing with Google Sheets...</p></div>
+  <div id="loader" class="loader text-center">
+    <div class="spinner-border text-primary"></div>
+    <div class="mt-2 fw-bold">Syncing with Sheets...</div>
+  </div>
 
-  <div id="events-view"><div id="events-list" class="row mt-3"></div></div>
+  <div id="events-view">
+    <div id="events-list" class="row mt-3"></div>
+  </div>
 
   <div id="payments-view" style="display:none;">
-    <div class="table-responsive mt-3">
-      <table class="table table-hover bg-white border">
-        <thead class="table-dark"><tr><th>Event ID</th><th>Type</th><th>Details</th><th>Status</th></tr></thead>
+    <div class="d-flex justify-content-end mb-2">
+      <button class="btn btn-sm btn-outline-secondary" onclick="loadPayments()">Refresh All</button>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover bg-white rounded border overflow-hidden">
+        <thead class="table-dark">
+          <tr><th>Event ID</th><th>Payment Type</th><th>Details</th><th>Status & Ref</th></tr>
+        </thead>
         <tbody id="p-body"></tbody>
       </table>
     </div>
@@ -53,29 +72,67 @@
 
 <div class="modal fade" id="addEventModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header border-0 bg-light"><h5 class="fw-bold mb-0">New Entry</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header border-0 bg-light">
+        <h5 class="fw-bold mb-0">Create New Entry</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
         <form id="eventForm">
-            <div class="row mb-3">
-                <div class="col-md-8"><label class="small fw-bold">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
-                <div class="col-md-4"><label class="small fw-bold">Status</label><select name="eventStatus" class="form-select"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+          <div class="section-title">1. Event Information</div>
+          <div class="row mb-3">
+            <div class="col-md-8"><label class="small fw-bold">Event Name</label><input type="text" name="eventName" class="form-control" required></div>
+            <div class="col-md-4"><label class="small fw-bold">Status</label>
+              <select name="eventStatus" class="form-select">
+                <option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option>
+              </select>
             </div>
-            <div class="mb-3">
-                <label class="small fw-bold d-block">Services</label>
-                <div class="row px-3">
-                    <div class="col-6 col-md-4 form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
-                    <div class="col-6 col-md-4 form-check"><input class="form-check-input" type="checkbox" name="services" value="Video Doc"> Video Doc</div>
-                    <div class="col-6 col-md-4 form-check"><input class="form-check-input" type="checkbox" name="services" value="Prints"> Prints</div>
-                </div>
+          </div>
+          <div class="mb-3">
+            <label class="small fw-bold d-block mb-2">Services</label>
+            <div class="row px-3">
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Photo Studio"> Photo Studio</div>
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Video Docu"> Video Docu</div>
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="Prints"> Prints</div>
+              <div class="col-6 col-md-4 form-check mb-1"><input class="form-check-input" type="checkbox" name="services" value="QR"> QR</div>
             </div>
-            <div class="row mb-3">
-                <div class="col-md-4"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div>
-                <div class="col-md-4"><label class="small fw-bold">Start</label><input type="time" name="startTime" class="form-control"></div>
-                <div class="col-md-4"><label class="small fw-bold">Call</label><input type="time" name="callTime" class="form-control"></div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4"><label class="small fw-bold">Date</label><input type="date" name="eventDate" class="form-control"></div>
+            <div class="col-md-4"><label class="small fw-bold">Start Time</label><input type="time" name="startTime" class="form-control"></div>
+            <div class="col-md-4"><label class="small fw-bold">Call Time</label><input type="time" name="callTime" class="form-control"></div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6"><label class="small fw-bold">Contact Person</label><input type="text" name="contactPerson" class="form-control"></div>
+            <div class="col-md-6"><label class="small fw-bold">Contact Number</label><input type="text" name="contactNumber" class="form-control"></div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-8"><label class="small fw-bold">Manpower</label><input type="text" name="manpower" class="form-control"></div>
+            <div class="col-md-4 d-flex align-items-center mt-4">
+              <div class="form-check"><input class="form-check-input" type="checkbox" name="avp" id="avpCheck"><label class="form-check-label fw-bold" for="avpCheck">AVP Required</label></div>
             </div>
-            <div class="mb-3"><label class="small fw-bold">Payment Method</label><select name="paymentType" id="pType" class="form-select"><option value="Cash AR">Cash AR</option><option value="Billing">Billing</option></select></div>
-            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold">SUBMIT TO GOOGLE SHEETS</button>
+          </div>
+          <div class="mb-4"><label class="small fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+
+          <div class="section-title">2. Financial Initial Setup</div>
+          <div class="mb-3">
+            <label class="small fw-bold">Payment Method</label>
+            <select name="paymentType" id="pTypeSelect" class="form-select" onchange="toggleBilling()">
+              <option value="">-- Choose Method --</option>
+              <option value="Cash AR">Cash AR</option><option value="Online Transfer">Online Transfer</option>
+              <option value="Billing">Billing</option><option value="Check">Check</option>
+            </select>
+          </div>
+          <div id="billingBox" class="bg-light p-3 rounded mb-3 border" style="display: none;">
+            <div class="mb-2"><label class="small fw-bold">Email Thread</label><input type="text" name="emailThread" class="form-control form-control-sm"></div>
+            <div class="row">
+              <div class="col-md-6"><label class="small fw-bold">Status</label><select name="billingStatus" class="form-select form-select-sm"><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+              <div class="col-md-6"><label class="small fw-bold">Ref #</label><input type="text" name="billingRef" class="form-control form-control-sm"></div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 py-3 fw-bold">SUBMIT ENTRY</button>
         </form>
       </div>
     </div>
@@ -84,7 +141,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // !!! REPLACE THIS WITH YOUR DEPLOYED GOOGLE WEB APP URL !!!
+  // !!! REPLACE WITH YOUR GOOGLE WEB APP URL !!!
   const API_URL = 'https://script.google.com/macros/s/AKfycbzF7krw73_v_HEaaVpQr0deoITQyz1Fw7VDbhTEkdM8qTiqVGFfqzWWWO2VynQocA-B/exec';
 
   let rawEvents = [];
@@ -97,67 +154,88 @@
     try {
       const options = { method };
       if (body) options.body = JSON.stringify(body);
-      
-      const response = await fetch(url, options);
-      const data = await response.json();
+      const res = await fetch(url, options);
+      const data = await res.json();
       document.getElementById('loader').style.display = 'none';
       return data;
     } catch (e) {
-      console.error(e);
-      alert("Error connecting to Google Sheets.");
       document.getElementById('loader').style.display = 'none';
+      return null;
     }
   }
 
-  async function loadEvents(highlightId = null) {
+  function toggleBilling() {
+    const val = document.getElementById('pTypeSelect').value;
+    document.getElementById('billingBox').style.display = val === 'Billing' ? 'block' : 'none';
+  }
+
+  async function loadEvents(idFilter = null) {
     const res = await callApi({ action: 'getEvents' });
     if (!res) return;
     rawEvents = res;
     
-    const dVal = document.getElementById('dateFilter').value;
-    const sVal = document.getElementById('statusFilter').value;
-    let filtered = res;
-    if(dVal) filtered = filtered.filter(e => e['Event Date'] === dVal);
-    if(sVal) filtered = filtered.filter(e => e['Event Status'] === sVal);
+    const dFilter = document.getElementById('dateFilter').value;
+    const sFilter = document.getElementById('statusFilter').value;
     
-    renderEvents(filtered, highlightId);
+    let filtered = res;
+    if(dFilter) filtered = filtered.filter(e => e['Event Date'] === dFilter);
+    if(sFilter) filtered = filtered.filter(e => e['Event Status'] === sFilter);
+    
+    renderEvents(filtered, idFilter);
   }
 
   function renderEvents(data, highlightId) {
     let html = '';
     data.forEach(e => {
       const highlight = highlightId && e['Event ID'] === highlightId ? 'highlight-card' : '';
+      const permitLink = e['Permits'] ? `<a href="${e['Permits']}" target="_blank" class="badge bg-info text-dark text-decoration-none">View Permit</a>` : `<span class="badge bg-light text-muted">No Permit</span>`;
+
       html += `
         <div class="col-md-6 col-lg-4 mb-4 event-card" id="card-${e['Event ID']}" data-search="${e['Event Name']} ${e['Event ID']}">
-          <div class="card h-100 border-0 ${highlight}">
+          <div class="card shadow-sm ${highlight}">
             <div class="card-body">
               <div class="d-flex justify-content-between mb-2">
                 <a href="javascript:void(0);" onclick="switchTab('payments', '${e['Event ID']}')" class="badge bg-dark text-decoration-none">${e['Event ID']} 🔗</a>
                 <span class="badge ${e['Event Status'] === 'Confirmed' ? 'bg-success' : 'bg-warning text-dark'}">${e['Event Status']}</span>
               </div>
-              <h5 class="fw-bold text-primary">${e['Event Name'] || 'Unnamed'}</h5>
-              <p class="small mb-1">📅 ${e['Event Date'] || 'TBA'} | 🕒 ${e['Event Start Time'] || '--:--'}</p>
-              <p class="small mb-0 text-muted"><strong>Crew:</strong> ${e['Manpower'] || 'TBD'}</p>
+              <h5 class="fw-bold text-primary mb-3">${e['Event Name'] || 'Unnamed'}</h5>
+              
+              <div class="small">
+                <p class="mb-1">📅 <strong>Date:</strong> ${e['Event Date'] || 'TBA'}</p>
+                <p class="mb-1">🕒 <strong>Start:</strong> ${e['Event Start Time'] || '--'} | <strong>Call:</strong> ${e['Call Time'] || '--'}</p>
+                <p class="mb-1">🛠️ <strong>Services:</strong> ${e['Services'] || 'None'}</p>
+                <p class="mb-1">👥 <strong>Manpower:</strong> ${e['Manpower'] || 'TBD'}</p>
+                <hr class="my-2">
+                <p class="mb-1">👤 <strong>Contact:</strong> ${e['Contact Person'] || '-'}</p>
+                <p class="mb-1 text-muted">📞 ${e['Contact Number'] || '-'}</p>
+                <p class="mb-2">📝 <strong>Notes:</strong> ${e['Event Notes'] || 'None'}</p>
+              </div>
+              
+              <div class="mt-3 pt-2 border-top">${permitLink}</div>
             </div>
           </div>
         </div>`;
     });
-    document.getElementById('events-list').innerHTML = html;
+    document.getElementById('events-list').innerHTML = html || '<p class="text-center w-100 py-5">No events found.</p>';
+    if(highlightId) setTimeout(() => document.getElementById(`card-${highlightId}`)?.scrollIntoView({behavior:'smooth', block:'center'}), 200);
   }
 
   async function loadPayments(idFilter = null) {
     const res = await callApi({ action: 'getPayments' });
+    if (!res) return;
     let filtered = idFilter ? res.filter(p => p['Event ID'] === idFilter) : res;
     let html = '';
     filtered.forEach(p => {
+      let det = p['Payment Type'] === 'Billing' ? p['Email Thread Title'] : '-';
+      let stat = p['Payment Type'] === 'Billing' ? `<span class="badge bg-warning text-dark">${p['Billing Status']}</span><br><small>${p['Billing Reference']}</small>` : `<span class="badge bg-success">Received</span>`;
       html += `<tr>
         <td><a href="javascript:void(0);" onclick="switchTab('events', '${p['Event ID']}')" class="fw-bold text-decoration-none">${p['Event ID']} 🔗</a></td>
         <td>${p['Payment Type']}</td>
-        <td class="small">${p['Email Thread Title'] || '-'}</td>
-        <td><span class="badge bg-info text-dark">${p['Billing Status'] || 'Standard'}</span></td>
+        <td class="small">${det}</td>
+        <td>${stat}</td>
       </tr>`;
     });
-    document.getElementById('p-body').innerHTML = html;
+    document.getElementById('p-body').innerHTML = html || '<tr><td colspan="4" class="text-center">No records.</td></tr>';
   }
 
   function switchTab(t, id = null) {
@@ -170,12 +248,15 @@
 
   document.getElementById('eventForm').onsubmit = async function(e) {
     e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
     const fData = new FormData(e.target);
     const formObject = Object.fromEntries(fData.entries());
     formObject.services = fData.getAll('services');
 
     const res = await callApi({}, 'POST', { action: 'addNewEvent', formObject });
-    if(res.success) { alert("Saved!"); location.reload(); }
+    if(res && res.success) { alert("Successfully Added!"); location.reload(); }
+    else { alert("Error saving data."); btn.disabled = false; }
   };
 
   function filterContent() {
