@@ -690,6 +690,14 @@
     const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
     if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No shooting events found matching your criteria.</div></div>'; return; }
     
+    // Create accurate local timezone strings for Today and Tomorrow
+    const todayDate = new Date();
+    const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
+    
+    const tomorrowDate = new Date(todayDate);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowStr = tomorrowDate.getFullYear() + '-' + String(tomorrowDate.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrowDate.getDate()).padStart(2, '0');
+
     dates.forEach(ds => {
       const evs = shootingEvents.filter(e => e['Event Date'] === ds);
       if(evs.length || isDefault) {
@@ -697,7 +705,15 @@
         if(ds && ds.includes('-')) {
             const dParts = ds.split('-');
             const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
-            displayHeader = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+            const formattedDate = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+            
+            if (ds === todayStr) {
+                displayHeader = "Today, " + formattedDate;
+            } else if (ds === tomorrowStr) {
+                displayHeader = "Tomorrow, " + formattedDate;
+            } else {
+                displayHeader = formattedDate;
+            }
         }
         
         html += `<div class="col-12 mt-4"><h5 class="fw-bold border-bottom border-2 pb-2" style="color: #0f172a;"><i class="bi bi-calendar3 me-2 text-primary"></i>${displayHeader}</h5></div>`;
@@ -903,13 +919,12 @@
       const elements = form.querySelectorAll('input, select, textarea, button');
       
       elements.forEach(el => {
-          if(el.id !== 'editSubmitBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'editAvpCheck') {
+          if(el.id !== 'editSubmitBtn' && el.id !== 'editCrewAddBtn') {
               el.disabled = isReadOnly;
           }
       });
       
       document.getElementById('editCrewAddBtn').disabled = isReadOnly;
-      document.getElementById('editAvpCheck').disabled = isReadOnly;
       
       if (isReadOnly) {
           document.getElementById('editSubmitBtn').style.display = 'none';
