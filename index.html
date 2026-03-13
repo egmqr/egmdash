@@ -281,7 +281,7 @@
     </div>
   </div>
 
-  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
+  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
   <select name="paymentType" id="pTypeSelect" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
   
   <div id="billingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
@@ -504,14 +504,13 @@
     return timeStr;
   }
   
-  // SECURE NORMALIZATION: Forces all incoming dates into strict YYYY-MM-DD
   function normalizeDateStr(raw) {
       if(!raw) return '';
       let s = String(raw).trim();
-      if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // Already correct
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; 
       
       let d = new Date(s);
-      if(isNaN(d)) return s; // Fallback if invalid
+      if(isNaN(d)) return s; 
       
       let year = d.getFullYear();
       let month = String(d.getMonth() + 1).padStart(2, '0');
@@ -629,7 +628,7 @@
         const pay = rawPayments.find(p => p['Event ID'] === ev['Event ID']);
         return {
             ...ev, 
-            'Event Date': normalizeDateStr(ev['Event Date']), // Fixes filtering & timezone sorting
+            'Event Date': normalizeDateStr(ev['Event Date']),
             'Payment Type': pay?pay['Payment Type']:'', 
             'Billing Status': pay?pay['Billing Status']:'', 
             'Billing Status Date': normalizeDateStr(pay?pay['Billing Status Date']:''),
@@ -676,7 +675,6 @@
       
       if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n) || (e['Event Venue'] && e['Event Venue'].toLowerCase().includes(n)));
       
-      // Smart Filter: Hide past events unless user sets a specific 'From Date'
       if(dF) {
           filtered = filtered.filter(e => e['Event Date'] >= dF);
       } else {
@@ -725,6 +723,12 @@
     const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
     if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No shooting events found matching your criteria.</div></div>'; return; }
 
+    // Pre-sort dates sequentially so tomorrow always follows today
+    dates.sort((a,b) => {
+        if(!a) return 1; if(!b) return -1;
+        return a.localeCompare(b);
+    });
+
     dates.forEach(ds => {
       const evs = shootingEvents.filter(e => e['Event Date'] === ds);
       if(evs.length || isDefault) {
@@ -732,6 +736,8 @@
         if(ds && ds.includes('-')) {
             const dParts = ds.split('-');
             const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
+            
+            // Format strictly as e.g. "Saturday, Mar 14, 2026"
             const formattedDate = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
             
             if (ds === todayStr) {
@@ -743,7 +749,7 @@
             }
         }
         
-        html += `<div class="col-12 mt-4"><h5 class="fw-bold border-bottom border-2 pb-2" style="color: #0f172a;"><i class="bi bi-calendar3 me-2 text-primary"></i>${displayHeader}</h5></div>`;
+        html += `<div class="col-12 mt-4"><h5 class="fw-bold border-bottom border-2 pb-2 d-flex align-items-center" style="color: #0f172a;"><i class="bi bi-calendar3 me-2 text-primary fs-5"></i>${displayHeader}</h5></div>`;
         
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
