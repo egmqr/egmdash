@@ -249,10 +249,23 @@
     </div>
     
     <div class="section-title text-secondary"><i class="bi bi-list-check me-1"></i> Logistics & Contact</div>
-    <div class="row g-2 mb-4">
-        <div class="col-12 col-md-6"><label class="form-label-sm">Services</label><input type="text" name="services" class="form-control form-control-sm" placeholder="e.g. Photo, Video, Drone"></div>
-        <div class="col-6 col-md-3"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
-        <div class="col-6 col-md-3"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
+    </div>
+    
+    <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+        <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
+        <div class="row px-2 g-2" id="newServicesContainer">
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints"> Photo souvenir prints</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR"> Photo souvenir QR</div>
+        </div>
     </div>
 
     <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
@@ -327,10 +340,23 @@
     </div>
     
     <div class="section-title text-secondary"><i class="bi bi-list-check me-1"></i> Logistics & Contact</div>
-    <div class="row g-2 mb-4">
-        <div class="col-12 col-md-6"><label class="form-label-sm">Services</label><input type="text" name="services" class="form-control form-control-sm" placeholder="e.g. Photo, Video, Drone"></div>
-        <div class="col-6 col-md-3"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
-        <div class="col-6 col-md-3"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
+    </div>
+    
+    <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+        <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
+        <div class="row px-2 g-2" id="editServicesContainer">
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints"> Photo souvenir prints</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR"> Photo souvenir QR</div>
+        </div>
     </div>
 
     <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
@@ -488,7 +514,7 @@
     return [year, month, day].join('-');
   }
 
-  // --- Custom Crew Logic ---
+  // --- Custom Input Logic (Crew & Services) ---
   function handleAddCustomCrew(inputId, containerId) {
       const input = document.getElementById(inputId);
       addCustomCrewCheckbox(input.value, containerId, true);
@@ -502,7 +528,7 @@
       
       const existing = Array.from(container.querySelectorAll('input[name="manpower"]')).map(el => el.value.toLowerCase());
       if(existing.includes(name.toLowerCase())) {
-         const cb = container.querySelector(`input[value="${name}"]`);
+         const cb = container.querySelector(`input[name="manpower"][value="${name}"]`);
          if(cb && checkDefault) cb.checked = true;
          return;
       }
@@ -510,6 +536,24 @@
       const div = document.createElement('div');
       div.className = 'col-4 col-md-3 form-check small custom-crew-cb text-primary fw-bold';
       div.innerHTML = `<input class="form-check-input" type="checkbox" name="manpower" value="${name}" ${checkDefault ? 'checked' : ''}> ${name}`;
+      container.appendChild(div);
+  }
+  
+  function addCustomServiceCheckbox(name, containerId, checkDefault = true) {
+      if(!name || name.trim() === '') return;
+      name = name.trim();
+      const container = document.getElementById(containerId);
+      
+      const existing = Array.from(container.querySelectorAll('input[name="services"]')).map(el => el.value.toLowerCase());
+      if(existing.includes(name.toLowerCase())) {
+         const cb = container.querySelector(`input[name="services"][value="${name}"]`);
+         if(cb && checkDefault) cb.checked = true;
+         return;
+      }
+
+      const div = document.createElement('div');
+      div.className = 'col-6 col-md-4 form-check small custom-service-cb text-primary fw-bold';
+      div.innerHTML = `<input class="form-check-input" type="checkbox" name="services" value="${name}" ${checkDefault ? 'checked' : ''}> ${name}`;
       container.appendChild(div);
   }
 
@@ -679,6 +723,9 @@
               if (e['Event Venue Link']) {
                   venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
               }
+              
+              // Map services to badges
+              let servicesBadges = e['Services'] ? e['Services'].split(',').map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-1 fw-normal">${s.trim()}</span>`).join('') : '-';
 
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
                     <div class="d-flex justify-content-between mb-3 align-items-center">
@@ -698,7 +745,10 @@
                             </div>
                         </div>
                         
-                        <p class="mb-2 text-truncate"><i class="card-icon bi bi-tools text-secondary opacity-75"></i> <strong class="text-dark">Services:</strong> ${e['Services'] || '-'}</p>
+                        <div class="d-flex mb-2 align-items-start">
+                            <i class="card-icon bi bi-list-check text-secondary opacity-75 mt-1"></i>
+                            <div style="line-height: 1.4;"><strong class="text-dark">Services:</strong><br>${servicesBadges}</div>
+                        </div>
                         
                         <div class="d-flex mb-3 align-items-start">
                             <i class="card-icon bi bi-people-fill text-info opacity-75 mt-1"></i> 
@@ -825,10 +875,9 @@
     document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
     document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
     
-    document.getElementById('eventFilters').style.display = (t==='events') ? 'block':'none';
+    document.getElementById('eventFilters').style.display = t==='events'?'block':'none';
     document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
     
-    // FIX: Properly handle Bootstrap's !important d-flex class
     const filterBtn = document.getElementById('filterToggleBtn');
     if (t === 'calendar') {
         filterBtn.classList.remove('d-flex');
@@ -891,6 +940,7 @@
     const isReadOnly = fromCalendar && !isAuthenticated();
 
     document.querySelectorAll('#editCrewContainer .custom-crew-cb').forEach(el => el.remove());
+    document.querySelectorAll('#editServicesContainer .custom-service-cb').forEach(el => el.remove());
     
     const form = document.getElementById('editForm');
     form.reset();
@@ -910,19 +960,37 @@
     form.elements['startTime'].value = to24Hour(e['Event Start Time']);
     form.elements['endTime'].value = to24Hour(e['Event End Time']);
     
-    // Fill Logistics
-    form.elements['services'].value = e['Services'] || '';
     form.elements['contactPerson'].value = e['Contact Person'] || '';
     form.elements['contactNumber'].value = e['Contact Number'] || '';
     
+    // Map Services
+    const servicesList = (e['Services'] || '').split(',').map(s=>s.trim()).filter(s=>s);
+    const sInputs = form.elements['services'];
+    if (sInputs) {
+        if (sInputs.length) sInputs.forEach(i => i.checked = false);
+        else sInputs.checked = false;
+    }
+    servicesList.forEach(s => {
+        let found = false;
+        if (sInputs) {
+            if (sInputs.length) {
+                sInputs.forEach(i => { if(i.value.toLowerCase() === s.toLowerCase()) { i.checked = true; found = true; }});
+            } else {
+                if (sInputs.value.toLowerCase() === s.toLowerCase()) { sInputs.checked = true; found = true; }
+            }
+        }
+        if(!found) {
+            addCustomServiceCheckbox(s, 'editServicesContainer', true);
+        }
+    });
+
+    // Map Crew
     const crew = (e['Manpower'] || '').split(',').map(s=>s.trim()).filter(s=>s);
     const mInputs = form.elements['manpower'];
-    
     if (mInputs) {
         if (mInputs.length) mInputs.forEach(i => i.checked = false);
         else mInputs.checked = false;
     }
-
     crew.forEach(c => {
         let found = false;
         if (mInputs) {
@@ -1001,7 +1069,9 @@
     document.getElementById('overlayText').innerText = "Saving Event...";
     btn.disabled = true; ov.style.display='flex';
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+    
     obj.manpower = fd.getAll('manpower');
+    obj.services = fd.getAll('services'); // Grab all checked services
     
     const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
     
@@ -1010,6 +1080,7 @@
         bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
         e.target.reset(); 
         document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
+        document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
         toggleAvpFields(false, 'new'); 
         fetchAllData(); 
     } else alert("Error: " + (res?res.error:"Unknown"));
@@ -1022,7 +1093,9 @@
     btn.disabled=true; ov.style.display='flex';
     
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+    
     obj.manpower = fd.getAll('manpower');
+    obj.services = fd.getAll('services'); // Grab all checked services
     
     const res = await callApi({action:'editEvent', updateData: obj}, 'POST');
     
