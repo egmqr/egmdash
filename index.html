@@ -508,10 +508,10 @@
     if(!dStr) return '';
     let d = new Date(dStr);
     if(isNaN(d)) return '';
-    let month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
-    if(month.length < 2) month = '0' + month;
-    if(day.length < 2) day = '0' + day;
-    return [year, month, day].join('-');
+    let year = d.getFullYear();
+    let month = String(d.getMonth() + 1).padStart(2, '0');
+    let day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   // --- Custom Input Logic (Crew & Services) ---
@@ -686,7 +686,7 @@
 
   // --- Views Rendering ---
   function renderEvents(data, isDefault) {
-    let html = '', dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.toISOString().split('T')[0]}) : [...new Set(data.map(e=>e['Event Date']))].sort();
+    let html = '', dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(data.map(e=>e['Event Date']))].sort();
     const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
     if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No shooting events found matching your criteria.</div></div>'; return; }
     
@@ -724,7 +724,6 @@
                   venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
               }
               
-              // Map services to badges
               let servicesBadges = e['Services'] ? e['Services'].split(',').map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-1 fw-normal">${s.trim()}</span>`).join('') : '-';
 
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
@@ -904,12 +903,13 @@
       const elements = form.querySelectorAll('input, select, textarea, button');
       
       elements.forEach(el => {
-          if(el.id !== 'editSubmitBtn' && el.id !== 'editCrewAddBtn') {
+          if(el.id !== 'editSubmitBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'editAvpCheck') {
               el.disabled = isReadOnly;
           }
       });
       
       document.getElementById('editCrewAddBtn').disabled = isReadOnly;
+      document.getElementById('editAvpCheck').disabled = isReadOnly;
       
       if (isReadOnly) {
           document.getElementById('editSubmitBtn').style.display = 'none';
@@ -1071,7 +1071,7 @@
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     
     obj.manpower = fd.getAll('manpower');
-    obj.services = fd.getAll('services'); // Grab all checked services
+    obj.services = fd.getAll('services'); 
     
     const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
     
@@ -1095,7 +1095,1118 @@
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     
     obj.manpower = fd.getAll('manpower');
-    obj.services = fd.getAll('services'); // Grab all checked services
+    obj.services = fd.getAll('services'); 
+    
+    const res = await callApi({action:'editEvent', updateData: obj}, 'POST');
+    
+    ov.style.display='none'; btn.disabled=false;
+    if(res && res.success) { 
+        bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
+        fetchAllData(); 
+    } else alert("Error: " + (res?res.error:"Unknown"));
+  };
+
+  window.onload = fetchAllData;
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EGM Operations Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  
+  <style>
+    body { background-color: #f8fafc; padding: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #334155; }
+    @media (min-width: 768px) { body { padding: 20px; font-size: 0.95rem; } }
+    
+    /* Modern Cards */
+    .card { transition: all 0.3s ease; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); height: 100%; background: #ffffff; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04); border-color: #cbd5e1; }
+    
+    /* Soft Badges */
+    .badge-soft-dark { background-color: #f1f5f9; color: #475569; font-weight: 600; border: 1px solid #e2e8f0;}
+    .badge-soft-success { background-color: #dcfce7; color: #047857; font-weight: 600; border: 1px solid #a7f3d0;}
+    .badge-soft-warning { background-color: #fef9c3; color: #b45309; font-weight: 600; border: 1px solid #fde047;}
+    .badge-avp { background-color: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; font-size: 0.7rem; vertical-align: middle; margin-left: 5px; }
+
+    /* Mobile Priority Nav Pills */
+    .nav-pills { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; gap: 8px; padding-bottom: 5px; border-bottom: none; }
+    .nav-pills::-webkit-scrollbar { display: none; }
+    .nav-pills .nav-link { white-space: nowrap; border-radius: 20px; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 6px 18px; font-weight: 600; color: #64748b; font-size: 0.85rem; cursor: pointer; transition: 0.2s;}
+    .nav-pills .nav-link.active { background: #2563eb; color: white; border-color: #2563eb; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+    
+    /* Glassmorphism Sticky Header */
+    .sticky-header { position: sticky; top: 0; background: rgba(248, 250, 252, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; padding-top: 10px; margin-top: -10px; margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px;}
+    @media (min-width: 768px) { .sticky-header { padding-top: 20px; margin-top: -20px; margin-left: -20px; margin-right: -20px; padding-left: 20px; padding-right: 20px; margin-bottom: 25px; } }
+
+    /* Buttons & Inputs */
+    .btn { border-radius: 8px; font-weight: 600; letter-spacing: 0.3px; }
+    .btn-primary { background-color: #2563eb; border-color: #2563eb; }
+    .btn-primary:hover { background-color: #1d4ed8; border-color: #1d4ed8; }
+    .form-control, .form-select { border-radius: 8px; border-color: #cbd5e1; }
+    .form-control:focus, .form-select:focus { border-color: #2563eb; box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.1); }
+    .form-control:disabled, .form-select:disabled { background-color: #f1f5f9; opacity: 0.8; }
+    
+    .filter-panel { background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .form-label-sm { font-size: 0.65rem; font-weight: 700; color: #64748b; margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: 0.5px;}
+    
+    /* Card Elements */
+    .card-icon { width: 20px; display: inline-block; text-align: center; margin-right: 6px; font-size: 1rem; }
+    .edit-trigger { cursor: pointer; transition: 0.2s; color: #94a3b8; }
+    .edit-trigger:hover { color: #2563eb; }
+    .map-link { color: #dc3545; text-decoration: none; border-bottom: 1px dashed rgba(220, 53, 69, 0.5); transition: 0.2s; }
+    .map-link:hover { color: #b02a37; border-bottom-color: #b02a37; }
+    
+    /* File Upload & Badges */
+    .card-upload-btn { cursor: pointer; color: #2563eb; font-size: 0.75rem; font-weight: 700; border: 1px dashed #93c5fd; background-color: #eff6ff; padding: 8px 12px; border-radius: 8px; display: block; text-align: center; transition: 0.2s; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px;}
+    .card-upload-btn:hover { background-color: #dbeafe; border-color: #60a5fa; }
+    .file-badge { font-size: 0.75rem; padding: 6px 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #e2e8f0; background-color: #f8fafc; color: #475569; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .file-badge a { color: #2563eb; text-decoration: none; font-weight: 600; }
+    .file-badge a:hover { text-decoration: underline; }
+    .file-delete-btn { cursor: pointer; color: #ef4444; font-weight: bold; padding-left: 6px; border-left: 1px solid #cbd5e1; flex-shrink: 0; font-size: 1.1rem; line-height: 1;}
+    .file-delete-btn:hover { color: #b91c1c; }
+
+    /* Custom Calendar Grid */
+    .calendar-container { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; }
+    .calendar-header-row { display: grid; grid-template-columns: repeat(7, 1fr); background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    .calendar-header-cell { text-align: center; font-weight: 700; font-size: 0.75rem; color: #64748b; padding: 12px 5px; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #f1f5f9; }
+    .calendar-header-cell:last-child { border-right: none; }
+    
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: #e2e8f0; gap: 1px; } 
+    .calendar-day { background: #fff; min-height: 110px; padding: 6px; display: flex; flex-direction: column; gap: 4px; transition: 0.2s; min-width: 0; overflow: hidden; }
+    .calendar-day:hover { background-color: #f8fafc; }
+    .calendar-day.empty { background: #f8fafc; cursor: default; }
+    .calendar-day.today { background: #eff6ff; }
+    
+    .date-number { font-weight: 600; font-size: 0.85rem; color: #475569; align-self: flex-end; margin-bottom: 4px; }
+    .calendar-day.today .date-number { background: #2563eb; color: #fff; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    
+    .cal-event-pill { width: 100%; font-size: 0.7rem; font-weight: 500; padding: 4px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-align: left; transition: 0.2s; border: 1px solid transparent; margin-bottom: 2px; line-height: 1.2; display: block; }
+    .cal-event-pill:hover { opacity: 0.8; transform: scale(0.98); }
+    .cal-status-confirmed { background-color: #dcfce7; color: #047857; border-color: #a7f3d0; }
+    .cal-status-pencil { background-color: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+    .cal-status-cancelled { background-color: #fee2e2; color: #b91c1c; border-color: #fca5a5; text-decoration: line-through; opacity: 0.7; }
+
+    @media (max-width: 767px) {
+        .calendar-day { min-height: 80px; padding: 3px; }
+        .date-number { font-size: 0.75rem; margin-bottom: 2px;}
+        .cal-event-pill { font-size: 0.6rem; padding: 3px 4px; }
+        .calendar-header-cell { font-size: 0.65rem; padding: 8px 2px; }
+    }
+
+    /* Overlays & Loaders */
+    .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;}
+    .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
+    .bg-sync-indicator { font-size: 0.7rem; color: #94a3b8; display: none; align-items: center; gap: 5px; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    
+    /* Tables */
+    .table-custom { border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .table-custom th { background-color: #f1f5f9; color: #475569; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; }
+    .table-custom td { vertical-align: middle; color: #334155; border-bottom: 1px solid #f1f5f9; }
+  </style>
+</head>
+<body>
+
+<div id="submitOverlay" class="submit-overlay">
+  <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+  <h5 class="mt-3 fw-bold text-secondary" id="overlayText">Processing...</h5>
+</div>
+
+<div class="container-fluid" style="max-width: 1400px; margin: auto; padding: 0;">
+  
+  <div class="sticky-header">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="fw-bold mb-0 d-flex align-items-center" style="letter-spacing: -0.5px;">EGM <span class="text-primary ms-1">Ops</span> 
+          <span id="bgSyncIndicator" class="bg-sync-indicator ms-3"><div class="spinner-border spinner-border-sm" role="status" style="width: 0.8rem; height: 0.8rem; border-width: 0.15em;"></div> Syncing</span>
+      </h4>
+      <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-1" onclick="requireAuth(() => new bootstrap.Modal(document.getElementById('addEventModal')).show())">
+        <i class="bi bi-plus-lg"></i> New Entry
+      </button>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center pb-2">
+      <ul class="nav nav-pills" id="appTabs">
+        <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-card-list me-1"></i> List</a></li>
+        <li class="nav-item"><a class="nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
+        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="handleTabClick('payments')"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
+      </ul>
+      <button id="filterToggleBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
+        <i class="bi bi-sliders"></i> <span class="d-none d-sm-inline">Filters</span>
+      </button>
+    </div>
+
+    <div class="collapse mt-2" id="filterCollapse">
+      <div class="filter-panel" id="eventFilters">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">From Date</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">To Date</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">Crew Member</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Crew</option></select></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">Event Status</span><select id="fStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Statuses</option><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+          <div class="col-12 col-md-1 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
+        </div>
+      </div>
+
+      <div class="filter-panel" id="paymentFilters" style="display:none;">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">GR / Invoice #</span><input type="text" id="fGrInv" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
+          <div class="col-6 col-md-3"><span class="form-label-sm">Billing Status</span><select id="fBillStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Statuses</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+          <div class="col-6 col-md-2 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loader" class="loader text-center">
+      <div class="spinner-border text-primary" role="status"></div>
+      <div class="mt-2 fw-bold small text-muted">Loading initially...</div>
+  </div>
+  
+  <div class="px-2 px-md-0">
+      
+      <div id="events-view">
+          <h4 class="fw-bold mb-4 mt-2" style="color: #1e293b; letter-spacing: -0.5px;">Upcoming Events</h4>
+          <div id="events-list" class="row g-3"></div>
+      </div>
+
+      <div id="calendar-view" style="display:none;">
+          <div class="d-flex justify-content-between align-items-center mb-3 mt-2 px-1">
+              <button class="btn btn-light border btn-sm px-3 shadow-sm fw-bold" onclick="changeCalendarMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+              <h5 class="fw-bold mb-0" id="calendarMonthYear" style="color: #1e293b; letter-spacing: -0.5px;">Month Year</h5>
+              <button class="btn btn-light border btn-sm px-3 shadow-sm fw-bold" onclick="changeCalendarMonth(1)"><i class="bi bi-chevron-right"></i></button>
+          </div>
+          
+          <div class="calendar-container">
+              <div class="calendar-header-row">
+                  <div class="calendar-header-cell">Sun</div>
+                  <div class="calendar-header-cell">Mon</div>
+                  <div class="calendar-header-cell">Tue</div>
+                  <div class="calendar-header-cell">Wed</div>
+                  <div class="calendar-header-cell">Thu</div>
+                  <div class="calendar-header-cell">Fri</div>
+                  <div class="calendar-header-cell text-primary">Sat</div>
+              </div>
+              <div id="calendarDays" class="calendar-grid">
+                  </div>
+          </div>
+      </div>
+
+      <div id="payments-view" style="display:none;">
+          <div class="table-custom bg-white shadow-sm">
+              <div class="table-responsive">
+                  <table class="table table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th class="py-3 px-3">ID</th>
+                            <th class="py-3">Event Name</th>
+                            <th class="py-3">Payment Type</th>
+                            <th class="py-3">Email Thread</th>
+                            <th class="py-3">Status & Date</th>
+                            <th class="py-3 px-3">GR & Invoice</th>
+                        </tr>
+                    </thead>
+                    <tbody id="p-body" class="small"></tbody>
+                  </table>
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+
+<div class="modal fade" id="authModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-dark text-white border-0"><h6 class="fw-bold mb-0 text-uppercase letter-spacing-1"><i class="bi bi-shield-lock me-2"></i> Admin Access</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center">
+  <p class="small text-muted mb-3">Please enter the password to access restricted features.</p>
+  <input type="password" id="authPassword" class="form-control text-center mb-3 py-2" placeholder="••••••••" onkeydown="if(event.key === 'Enter') submitAuth()">
+  <div id="authError" class="text-danger small fw-bold mb-3" style="display:none;">Incorrect Password!</div>
+  <button id="authSubmitBtn" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" onclick="submitAuth()">UNLOCK</button>
+</div></div></div></div>
+
+<div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-calendar-plus me-2"></i> New Event Entry</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4"><form id="eventForm">
+  
+  <div class="row g-2 mb-3 align-items-center">
+    <div class="col-8 col-md-10">
+        <label class="form-label-sm">Event Name</label>
+        <input type="text" name="eventName" class="form-control fw-bold" required>
+    </div>
+    <div class="col-4 col-md-2 mt-4 pt-1">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="avp" id="newAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'new')">
+            <label class="form-check-label fw-bold text-primary small" for="newAvpCheck">AVP</label>
+        </div>
+    </div>
+  </div>
+
+  <div class="row g-2 mb-4" id="newAvpHiddenFields">
+    <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
+    <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+    <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+  </div>
+
+  <div id="newLogisticsFields">
+    <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
+    <div class="row g-2 mb-4">
+        <div class="col-6 col-md-3"><label class="form-label-sm">Event Date</label><input type="date" name="eventDate" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
+        <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+    </div>
+    
+    <div class="section-title text-secondary"><i class="bi bi-list-check me-1"></i> Logistics & Contact</div>
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
+    </div>
+    
+    <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+        <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
+        <div class="row px-2 g-2" id="newServicesContainer">
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints"> Photo souvenir prints</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR"> Photo souvenir QR</div>
+        </div>
+    </div>
+
+    <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
+    <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+        <div class="row px-2 g-2" id="newCrewContainer">
+            <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+        </div>
+        <div class="input-group input-group-sm mt-3">
+            <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
+            <input type="text" id="newCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
+            <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('newCustomCrewInput', 'newCrewContainer')">ADD</button>
+        </div>
+    </div>
+  </div>
+
+  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
+  <select name="paymentType" id="pTypeSelect" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
+  
+  <div id="billingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
+    <div class="mb-3"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6"><label class="form-label-sm">Billing Status</label><select name="billingStatus" class="form-select form-select-sm"><option value="">Select Status...</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+        <div class="col-12 col-md-6"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
+    </div>
+    <div class="row g-3">
+        <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm" placeholder="e.g. GR-10024"></div>
+        <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm" placeholder="e.g. INV-2023-01"></div>
+    </div>
+  </div>
+  
+  <div class="mb-4"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea></div>
+  
+  <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="submitBtn"><i class="bi bi-check2-circle me-1"></i> CREATE ENTRY</button>
+</form></div></div></div></div>
+
+<div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-pencil-square me-2"></i> Event Details</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
+    
+  <div id="editAuthWarning" class="alert alert-warning small py-2 mb-3 shadow-sm border-0 align-items-center justify-content-between" style="display:none;">
+      <span><i class="bi bi-eye-fill me-1"></i> <strong>View-Only.</strong> Login to make changes.</span>
+      <button type="button" class="btn btn-dark btn-sm fw-bold py-1 px-2 shadow-sm" style="font-size: 0.7rem;" onclick="unlockEditModal()">LOGIN</button>
+  </div>
+
+  <form id="editForm">
+  <input type="hidden" id="editEventId" name="eventId">
+  
+  <div class="row g-2 mb-3 align-items-center">
+    <div class="col-8 col-md-10">
+        <label class="form-label-sm">Event Name</label>
+        <input type="text" name="eventName" class="form-control fw-bold" required>
+    </div>
+    <div class="col-4 col-md-2 mt-4 pt-1">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="avp" id="editAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'edit')">
+            <label class="form-check-label fw-bold text-primary small" for="editAvpCheck">AVP</label>
+        </div>
+    </div>
+  </div>
+
+  <div class="row g-2 mb-4" id="editAvpHiddenFields">
+    <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
+    <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+    <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+  </div>
+
+  <div id="editLogisticsFields">
+    <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
+    <div class="row g-2 mb-4">
+        <div class="col-6 col-md-3"><label class="form-label-sm">Event Date</label><input type="date" name="eventDate" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
+        <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+    </div>
+    
+    <div class="section-title text-secondary"><i class="bi bi-list-check me-1"></i> Logistics & Contact</div>
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
+        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
+    </div>
+    
+    <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+        <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
+        <div class="row px-2 g-2" id="editServicesContainer">
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints"> Photo souvenir prints</div>
+            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR"> Photo souvenir QR</div>
+        </div>
+    </div>
+
+    <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
+    <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+        <div class="row px-2 g-2" id="editCrewContainer">
+            <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+        </div>
+        <div class="input-group input-group-sm mt-3">
+            <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
+            <input type="text" id="editCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
+            <button id="editCrewAddBtn" class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('editCustomCrewInput', 'editCrewContainer')">ADD</button>
+        </div>
+    </div>
+  </div>
+
+  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
+  <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('editPaymentType', 'editBillingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
+  
+  <div id="editBillingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
+    <div class="mb-3"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6"><label class="form-label-sm">Billing Status</label><select id="editBillingStatus" name="billingStatus" class="form-select form-select-sm"><option value="">Select Status...</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+        <div class="col-12 col-md-6"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
+    </div>
+    <div class="row g-3">
+        <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm" placeholder="e.g. GR-10024"></div>
+        <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm" placeholder="e.g. INV-2023-01"></div>
+    </div>
+  </div>
+  
+  <div class="mb-4"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea></div>
+  
+  <button type="submit" class="btn btn-warning w-100 py-3 fw-bold shadow-sm" id="editSubmitBtn"><i class="bi bi-cloud-arrow-up me-1"></i> SAVE CHANGES</button>
+</form></div></div></div></div>
+
+<div class="modal fade" id="uploadFileModal" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-cloud-upload me-2"></i> Upload Document</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4">
+  <input type="hidden" id="uploadEventId">
+  <div class="mb-3">
+    <label class="form-label-sm mb-1">Select Label</label>
+    <select id="uploadLabel" class="form-select fw-bold">
+        <option>Permit</option>
+        <option>Shot List</option>
+        <option>Receipt</option>
+        <option>Contract</option>
+        <option>Other</option>
+    </select>
+  </div>
+  <div class="mb-4">
+    <label class="form-label-sm mb-1">Choose File</label>
+    <input type="file" id="uploadFileInput" class="form-control">
+  </div>
+  <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="submitFileUpload()">UPLOAD FILE</button>
+</div></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  let pendingAuthAction = null;
+  const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
+  
+  let rawEvents = [], rawPayments = [], currentTab = 'events';
+  let filteredEventsCache = []; 
+  let currentCalendarDate = new Date(); 
+  
+  const baseCrew = ["Edgar","Francis","Mael","Lexie","Athan","Jovert","May","Tina","Jops","Grace","Jun","Tatalino","Joram","Roy","Smile"];
+
+  // --- Auth Functions ---
+  function isAuthenticated() {
+      const exp = localStorage.getItem('egm_auth_exp');
+      if (exp && parseInt(exp) > Date.now()) return true;
+      localStorage.removeItem('egm_auth_token');
+      return false;
+  }
+
+  function requireAuth(actionFunction) {
+      if (isAuthenticated()) {
+          actionFunction();
+      } else {
+          pendingAuthAction = actionFunction;
+          document.getElementById('authPassword').value = '';
+          document.getElementById('authError').style.display = 'none';
+          new bootstrap.Modal(document.getElementById('authModal')).show();
+          setTimeout(() => document.getElementById('authPassword').focus(), 500);
+      }
+  }
+
+  async function submitAuth() {
+      const pass = document.getElementById('authPassword').value;
+      if (!pass) return;
+
+      const btn = document.getElementById('authSubmitBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>VERIFYING...';
+      btn.disabled = true;
+
+      const res = await callApi({ action: 'verifyPassword', password: pass }, 'POST'); 
+
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+
+      if (res && res.success) {
+          localStorage.setItem('egm_auth_exp', Date.now() + 3600000); // 1 hr
+          localStorage.setItem('egm_auth_token', pass); 
+          bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
+          
+          if (pendingAuthAction) {
+              setTimeout(() => {
+                  pendingAuthAction();
+                  pendingAuthAction = null;
+              }, 300);
+          }
+      } else {
+          document.getElementById('authError').innerText = res.error || "Incorrect Password!";
+          document.getElementById('authError').style.display = 'block';
+      }
+  }
+
+  // --- Helper Functions ---
+  function formatAMPM(t) {
+      if(!t || t==='--' || t.trim()==='') return '--:--';
+      const match = t.trim().match(/(\d+):(\d+)\s*(AM|PM|am|pm)?/i);
+      if(match) {
+          let h = parseInt(match[1], 10);
+          let m = match[2];
+          let ampm = match[3] ? match[3].toUpperCase() : '';
+          if(!ampm) {
+              ampm = h >= 12 ? 'PM' : 'AM';
+              h = h % 12 || 12;
+          }
+          return h + ':' + m + ' ' + ampm;
+      }
+      return t;
+  }
+  
+  function to24Hour(timeStr) {
+    if(!timeStr || timeStr.trim() === '' || timeStr === '--:--') return '';
+    const match = timeStr.trim().match(/(\d+):(\d+)\s*(AM|PM|am|pm)?/i);
+    if(match) {
+      let h = parseInt(match[1], 10);
+      let m = match[2];
+      let ampm = match[3] ? match[3].toUpperCase() : '';
+      if(ampm === 'PM' && h < 12) h += 12;
+      if(ampm === 'AM' && h === 12) h = 0;
+      return h.toString().padStart(2, '0') + ':' + m;
+    }
+    return timeStr;
+  }
+  
+  function toInputDate(dStr) {
+    if(!dStr) return '';
+    let d = new Date(dStr);
+    if(isNaN(d)) return '';
+    let year = d.getFullYear();
+    let month = String(d.getMonth() + 1).padStart(2, '0');
+    let day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // --- Custom Input Logic (Crew & Services) ---
+  function handleAddCustomCrew(inputId, containerId) {
+      const input = document.getElementById(inputId);
+      addCustomCrewCheckbox(input.value, containerId, true);
+      input.value = '';
+  }
+
+  function addCustomCrewCheckbox(name, containerId, checkDefault = true) {
+      if(!name || name.trim() === '') return;
+      name = name.trim();
+      const container = document.getElementById(containerId);
+      
+      const existing = Array.from(container.querySelectorAll('input[name="manpower"]')).map(el => el.value.toLowerCase());
+      if(existing.includes(name.toLowerCase())) {
+         const cb = container.querySelector(`input[name="manpower"][value="${name}"]`);
+         if(cb && checkDefault) cb.checked = true;
+         return;
+      }
+
+      const div = document.createElement('div');
+      div.className = 'col-4 col-md-3 form-check small custom-crew-cb text-primary fw-bold';
+      div.innerHTML = `<input class="form-check-input" type="checkbox" name="manpower" value="${name}" ${checkDefault ? 'checked' : ''}> ${name}`;
+      container.appendChild(div);
+  }
+  
+  function addCustomServiceCheckbox(name, containerId, checkDefault = true) {
+      if(!name || name.trim() === '') return;
+      name = name.trim();
+      const container = document.getElementById(containerId);
+      
+      const existing = Array.from(container.querySelectorAll('input[name="services"]')).map(el => el.value.toLowerCase());
+      if(existing.includes(name.toLowerCase())) {
+         const cb = container.querySelector(`input[name="services"][value="${name}"]`);
+         if(cb && checkDefault) cb.checked = true;
+         return;
+      }
+
+      const div = document.createElement('div');
+      div.className = 'col-6 col-md-4 form-check small custom-service-cb text-primary fw-bold';
+      div.innerHTML = `<input class="form-check-input" type="checkbox" name="services" value="${name}" ${checkDefault ? 'checked' : ''}> ${name}`;
+      container.appendChild(div);
+  }
+
+  function updateCrewFilterDropdown(events) {
+      const select = document.getElementById('fCrew');
+      const currentVal = select.value;
+      let allCrew = new Set(baseCrew);
+      
+      events.forEach(e => {
+          if(e['Manpower']) {
+              e['Manpower'].split(',').forEach(c => {
+                  let trimmed = c.trim();
+                  if(trimmed) allCrew.add(trimmed);
+              });
+          }
+      });
+      
+      let html = '<option value="">All Crew</option>';
+      Array.from(allCrew).sort().forEach(c => {
+          html += `<option value="${c}">${c}</option>`;
+      });
+      select.innerHTML = html;
+      select.value = currentVal; 
+  }
+
+  // --- API and Fetch Logic ---
+  async function callApi(payload, method='GET', isSilent=false) {
+    if(!isSilent) document.getElementById('loader').style.display='block';
+    
+    let u = new URL(API_URL); 
+    let reqObj = { method: method, headers: { "Content-Type": "text/plain;charset=utf-8" } };
+
+    if(method === 'GET') {
+        Object.keys(payload).forEach(k => u.searchParams.append(k, payload[k]));
+    } else {
+        if (payload.action !== 'verifyPassword') {
+            payload.password = localStorage.getItem('egm_auth_token') || '';
+        }
+        reqObj.body = JSON.stringify(payload);
+    }
+
+    try {
+        const r = await fetch(u, reqObj);
+        const d = await r.json(); 
+        if(!isSilent) document.getElementById('loader').style.display='none'; 
+        return d;
+    } catch(e) {
+        if(!isSilent) document.getElementById('loader').style.display='none';
+        console.error("API Call Failed", e);
+        return { success: false, error: e.toString() };
+    }
+  }
+
+  function toggleBilling(s, b) { document.getElementById(b).style.display = document.getElementById(s).value === 'Billing'?'block':'none'; }
+  
+  function toggleAvpFields(isAvp, prefix) { 
+      document.getElementById(prefix + 'AvpHiddenFields').style.display = isAvp ? 'none' : 'flex'; 
+      document.getElementById(prefix + 'LogisticsFields').style.display = isAvp ? 'none' : 'block'; 
+  }
+
+  function processFetchedData(res) {
+      rawPayments = res.payments || [];
+      rawEvents = res.events.map(ev => {
+        const pay = rawPayments.find(p => p['Event ID'] === ev['Event ID']);
+        return {
+            ...ev, 
+            'Payment Type': pay?pay['Payment Type']:'', 
+            'Billing Status': pay?pay['Billing Status']:'', 
+            'Billing Status Date': pay?pay['Billing Status Date']:'',
+            'GR Number': pay?pay['GR Number']:'',
+            'Invoice Number': pay?pay['Invoice Number']:'',
+            'Email Thread': pay?pay['Email Thread Title']:''
+        };
+      });
+      updateCrewFilterDropdown(rawEvents);
+      applyFilters();
+  }
+
+  async function fetchAllData() {
+    const cachedData = localStorage.getItem('egm_dashboard_data');
+    let isSilent = false;
+
+    if (cachedData) {
+        processFetchedData(JSON.parse(cachedData));
+        isSilent = true; 
+        document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+    }
+
+    const res = await callApi({action:'getAllData'}, 'GET', isSilent);
+    document.getElementById('bgSyncIndicator').style.display = 'none';
+
+    if(res && res.events) {
+        localStorage.setItem('egm_dashboard_data', JSON.stringify(res));
+        processFetchedData(res);
+    }
+  }
+
+  function clearFilters() {
+    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType','fBillStatus'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
+    applyFilters();
+  }
+
+  function applyFilters() {
+    if(currentTab === 'events' || currentTab === 'calendar') {
+      const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
+      let filtered = rawEvents;
+      if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n) || (e['Event Venue'] && e['Event Venue'].toLowerCase().includes(n)));
+      if(dF) filtered = filtered.filter(e => e['Event Date'] >= dF);
+      if(dT) filtered = filtered.filter(e => e['Event Date'] <= dT);
+      if(c) filtered = filtered.filter(e => e['Manpower'].includes(c));
+      if(s) filtered = filtered.filter(e => e['Event Status'] === s);
+      
+      filteredEventsCache = filtered; 
+      
+      renderEvents(filtered, !n && !dF && !dT && !c && !s);
+      renderCalendar(filtered);
+    } else {
+      const q=document.getElementById('fPaySearch').value.toLowerCase(), 
+            grInv=document.getElementById('fGrInv').value.toLowerCase(),
+            t=document.getElementById('fPayType').value, 
+            s=document.getElementById('fBillStatus').value;
+      let filtered = rawEvents;
+      if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
+      if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
+      if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
+      if(s) filtered = filtered.filter(e => e['Billing Status'] === s);
+      renderPayments(filtered);
+    }
+  }
+
+  // --- Views Rendering ---
+  function renderEvents(data, isDefault) {
+    let html = '', dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(data.map(e=>e['Event Date']))].sort();
+    const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
+    if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No shooting events found matching your criteria.</div></div>'; return; }
+    
+    dates.forEach(ds => {
+      const evs = shootingEvents.filter(e => e['Event Date'] === ds);
+      if(evs.length || isDefault) {
+        let displayHeader = ds;
+        if(ds && ds.includes('-')) {
+            const dParts = ds.split('-');
+            const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
+            displayHeader = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        
+        html += `<div class="col-12 mt-4"><h5 class="fw-bold border-bottom border-2 pb-2" style="color: #0f172a;"><i class="bi bi-calendar3 me-2 text-primary"></i>${displayHeader}</h5></div>`;
+        
+        if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
+        else {
+            evs.forEach(e => {
+              let filesHtml = '';
+              Object.keys(e).forEach(key => {
+                 if(key.toLowerCase().startsWith('file0') && e[key]) {
+                    const parts = e[key].split('|');
+                    if(parts.length === 3) {
+                       filesHtml += `<span class="file-badge mb-2 me-2"><i class="bi bi-file-earmark-text text-secondary"></i> ${parts[0]} <a href="${parts[1]}" target="_blank" class="ms-1">View</a> <span class="file-delete-btn ms-1" title="Delete File" onclick="requireAuth(() => deleteFile('${e['Event ID']}', '${parts[2]}'))"><i class="bi bi-x"></i></span></span>`;
+                    }
+                 }
+              });
+
+              let statusBadgeClass = 'badge-soft-dark';
+              if(e['Event Status'] === 'Confirmed') statusBadgeClass = 'badge-soft-success';
+              else if(e['Event Status'] === 'Cancelled') statusBadgeClass = 'badge-soft-warning';
+
+              let venueDisplay = `<span class="fw-medium">${e['Event Venue'] || 'No Venue Set'}</span>`;
+              if (e['Event Venue Link']) {
+                  venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
+              }
+              
+              let servicesBadges = e['Services'] ? e['Services'].split(',').map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-1 fw-normal">${s.trim()}</span>`).join('') : '-';
+
+              html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
+                    <div class="d-flex justify-content-between mb-3 align-items-center">
+                        <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']} <span onclick="requireAuth(() => openEditModal('${e['Event ID']}'))" class="edit-trigger ms-2"><i class="bi bi-pencil-square"></i></span></span>
+                        <span class="badge ${statusBadgeClass} px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>
+                    </div>
+                    
+                    <h5 class="fw-bold mb-1 lh-sm" style="color: #1e293b;">${e['Event Name']}</h5>
+                    <p class="small text-muted mb-4"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> ${venueDisplay}</p>
+                    
+                    <div class="small text-secondary">
+                        <div class="d-flex mb-2 align-items-start">
+                            <i class="card-icon bi bi-clock-fill text-primary opacity-75"></i> 
+                            <div>
+                                <span class="d-block mb-1"><strong class="text-dark">Call:</strong> <span class="text-danger fw-bold">${formatAMPM(e['Call Time'])}</span></span>
+                                <span class="d-block"><strong class="text-dark">Shoot:</strong> ${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex mb-2 align-items-start">
+                            <i class="card-icon bi bi-list-check text-secondary opacity-75 mt-1"></i>
+                            <div style="line-height: 1.4;"><strong class="text-dark">Services:</strong><br>${servicesBadges}</div>
+                        </div>
+                        
+                        <div class="d-flex mb-3 align-items-start">
+                            <i class="card-icon bi bi-people-fill text-info opacity-75 mt-1"></i> 
+                            <div style="line-height: 1.4;"><strong class="text-dark">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-light text-dark border me-1 mb-1 fw-medium">${c.trim()}</span>`).join('') : '-'}</div>
+                        </div>
+                        
+                        <div class="bg-light p-2 rounded-3 border mb-3">
+                            <p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2">${e['Contact Number']}</span></p>
+                        </div>
+                        
+                        <p class="mb-0 text-muted fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
+                    </div>
+                    
+                    <div class="mt-auto pt-4">
+                        <div class="d-flex flex-wrap">${filesHtml}</div>
+                        <label class="card-upload-btn w-100" onclick="openUploadModal('${e['Event ID']}')"><i class="bi bi-cloud-arrow-up me-1"></i> Add Document</label>
+                    </div>
+                </div></div>`;
+            });
+        }
+      }
+    });
+    document.getElementById('events-list').innerHTML = html;
+  }
+
+  // --- Calendar Generator Logic ---
+  function changeCalendarMonth(dir) {
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir);
+      renderCalendar(filteredEventsCache); 
+  }
+
+  function renderCalendar(data) {
+      const year = currentCalendarDate.getFullYear();
+      const month = currentCalendarDate.getMonth();
+      const today = new Date();
+      
+      document.getElementById('calendarMonthYear').innerText = currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      let html = '';
+      
+      for(let i=0; i<firstDay; i++) {
+          html += `<div class="calendar-day empty"></div>`;
+      }
+      
+      for(let d=1; d<=daysInMonth; d++) {
+          const currentDateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          const isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
+          const dayClass = isToday ? 'calendar-day today' : 'calendar-day';
+          
+          const dayEvents = data.filter(e => e['Event Date'] === currentDateStr && e['AVP Required'] !== 'TRUE');
+          
+          let eventsHtml = '';
+          dayEvents.forEach(e => {
+              let pillClass = 'cal-status-pencil';
+              if(e['Event Status'] === 'Confirmed') pillClass = 'cal-status-confirmed';
+              else if(e['Event Status'] === 'Cancelled') pillClass = 'cal-status-cancelled';
+              
+              const timePrefix = e['Event Start Time'] ? `${formatAMPM(e['Event Start Time'])} ` : '';
+              
+              eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Event ID']}', true)" title="${e['Event Name']}">
+                  <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
+              </div>`;
+          });
+          
+          html += `<div class="${dayClass}">
+                      <div class="date-number">${d}</div>
+                      ${eventsHtml}
+                   </div>`;
+      }
+      
+      const totalCells = firstDay + daysInMonth;
+      const remaining = (7 - (totalCells % 7)) % 7;
+      for(let i=0; i<remaining; i++) {
+          html += `<div class="calendar-day empty"></div>`;
+      }
+      
+      document.getElementById('calendarDays').innerHTML = html;
+  }
+
+  function renderPayments(data) {
+    let html = '';
+    if (data.length === 0) {
+        document.getElementById('p-body').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>No payment records found.</td></tr>';
+        return;
+    }
+
+    data.forEach(p => {
+      const isAvp = p['AVP Required'] === 'TRUE';
+      const nameDisplay = isAvp ? `<span class="fw-bold text-dark">${p['Event Name']}</span> <span class="badge badge-avp rounded-pill shadow-sm">AVP</span>` : `<span class="fw-bold text-dark">${p['Event Name']}</span>`;
+      
+      let badgeClass = 'badge-soft-dark';
+      if(p['Payment Type'] === 'Billing') badgeClass = 'badge-soft-warning';
+      else if(p['Payment Type']) badgeClass = 'badge-soft-success';
+      let badge = `<span class="badge ${badgeClass} px-2 py-1 rounded-pill">${p['Billing Status']||'Pending'}</span>`;
+      
+      let dateStr = p['Billing Status Date'] ? new Date(p['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
+
+      html += `<tr>
+        <td class="fw-bold text-nowrap text-secondary">#${p['Event ID']}</td>
+        <td style="min-width: 180px;">${nameDisplay}</td>
+        <td class="text-nowrap"><span class="badge bg-light text-dark border">${p['Payment Type']||'-'}</span></td>
+        <td style="min-width: 180px;" class="text-truncate text-secondary" style="max-width: 250px;"><i class="bi bi-envelope me-1 opacity-50"></i> ${p['Email Thread']||'-'}</td>
+        <td class="text-nowrap">${badge} <br><span class="text-muted fw-bold mt-1 d-block" style="font-size: 0.75rem;"><i class="bi bi-calendar2 me-1"></i>${dateStr}</span></td>
+        <td class="text-nowrap">
+            <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">GR: <span class="text-dark fw-bold badge bg-light border">${p['GR Number']||'--'}</span></span>
+            <span class="d-block text-muted" style="font-size: 0.75rem;">INV: <span class="text-dark fw-bold badge bg-light border">${p['Invoice Number']||'--'}</span></span>
+        </td>
+      </tr>`;
+    });
+    document.getElementById('p-body').innerHTML = html;
+  }
+
+  function handleTabClick(tabName) {
+      if(tabName === 'payments') { requireAuth(() => switchTab('payments')); } 
+      else { switchTab(tabName); }
+  }
+
+  function switchTab(t) {
+    currentTab = t;
+    document.getElementById('events-view').style.display = t==='events'?'block':'none';
+    document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
+    document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
+    
+    document.getElementById('eventFilters').style.display = t==='events'?'block':'none';
+    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
+    
+    const filterBtn = document.getElementById('filterToggleBtn');
+    if (t === 'calendar') {
+        filterBtn.classList.remove('d-flex');
+        filterBtn.classList.add('d-none');
+        const filterCollapse = document.getElementById('filterCollapse');
+        if (filterCollapse.classList.contains('show')) {
+            new bootstrap.Collapse(filterCollapse, {toggle: false}).hide();
+        }
+    } else {
+        filterBtn.classList.remove('d-none');
+        filterBtn.classList.add('d-flex');
+    }
+    
+    document.getElementById('e-tab').classList.toggle('active', t==='events');
+    document.getElementById('c-tab').classList.toggle('active', t==='calendar');
+    document.getElementById('p-tab').classList.toggle('active', t==='payments');
+    
+    applyFilters(); 
+  }
+
+  // --- View-Only Logic for Modals ---
+  function setEditFormState(isReadOnly) {
+      const form = document.getElementById('editForm');
+      const elements = form.querySelectorAll('input, select, textarea, button');
+      
+      elements.forEach(el => {
+          if(el.id !== 'editSubmitBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'editAvpCheck') {
+              el.disabled = isReadOnly;
+          }
+      });
+      
+      document.getElementById('editCrewAddBtn').disabled = isReadOnly;
+      document.getElementById('editAvpCheck').disabled = isReadOnly;
+      
+      if (isReadOnly) {
+          document.getElementById('editSubmitBtn').style.display = 'none';
+          document.getElementById('editAuthWarning').style.setProperty('display', 'flex', 'important');
+      } else {
+          document.getElementById('editSubmitBtn').style.display = 'block';
+          document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
+      }
+  }
+
+  function unlockEditModal() {
+      const editModalEl = document.getElementById('editEventModal');
+      const editModal = bootstrap.Modal.getInstance(editModalEl);
+      editModal.hide();
+      
+      setTimeout(() => {
+          requireAuth(() => {
+              setEditFormState(false);
+              editModal.show();
+          });
+      }, 300); 
+  }
+
+  function openEditModal(id, fromCalendar = false) {
+    const e = rawEvents.find(ev => ev['Event ID'] === id);
+    if(!e) return;
+    
+    const isReadOnly = fromCalendar && !isAuthenticated();
+
+    document.querySelectorAll('#editCrewContainer .custom-crew-cb').forEach(el => el.remove());
+    document.querySelectorAll('#editServicesContainer .custom-service-cb').forEach(el => el.remove());
+    
+    const form = document.getElementById('editForm');
+    form.reset();
+    
+    form.elements['eventId'].value = id;
+    form.elements['eventName'].value = e['Event Name'] || '';
+    form.elements['eventVenue'].value = e['Event Venue'] || '';
+    form.elements['venueLink'].value = e['Event Venue Link'] || '';
+    form.elements['eventStatus'].value = e['Event Status'] || '';
+    
+    const isAvp = e['AVP Required'] === 'TRUE';
+    form.elements['avp'].checked = isAvp;
+    toggleAvpFields(isAvp, 'edit');
+    
+    form.elements['eventDate'].value = toInputDate(e['Event Date']);
+    form.elements['callTime'].value = to24Hour(e['Call Time']);
+    form.elements['startTime'].value = to24Hour(e['Event Start Time']);
+    form.elements['endTime'].value = to24Hour(e['Event End Time']);
+    
+    form.elements['contactPerson'].value = e['Contact Person'] || '';
+    form.elements['contactNumber'].value = e['Contact Number'] || '';
+    
+    // Map Services
+    const servicesList = (e['Services'] || '').split(',').map(s=>s.trim()).filter(s=>s);
+    const sInputs = form.elements['services'];
+    if (sInputs) {
+        if (sInputs.length) sInputs.forEach(i => i.checked = false);
+        else sInputs.checked = false;
+    }
+    servicesList.forEach(s => {
+        let found = false;
+        if (sInputs) {
+            if (sInputs.length) {
+                sInputs.forEach(i => { if(i.value.toLowerCase() === s.toLowerCase()) { i.checked = true; found = true; }});
+            } else {
+                if (sInputs.value.toLowerCase() === s.toLowerCase()) { sInputs.checked = true; found = true; }
+            }
+        }
+        if(!found) {
+            addCustomServiceCheckbox(s, 'editServicesContainer', true);
+        }
+    });
+
+    // Map Crew
+    const crew = (e['Manpower'] || '').split(',').map(s=>s.trim()).filter(s=>s);
+    const mInputs = form.elements['manpower'];
+    if (mInputs) {
+        if (mInputs.length) mInputs.forEach(i => i.checked = false);
+        else mInputs.checked = false;
+    }
+    crew.forEach(c => {
+        let found = false;
+        if (mInputs) {
+            if (mInputs.length) {
+                mInputs.forEach(i => { if(i.value.toLowerCase() === c.toLowerCase()) { i.checked = true; found = true; }});
+            } else {
+                if (mInputs.value.toLowerCase() === c.toLowerCase()) { mInputs.checked = true; found = true; }
+            }
+        }
+        if(!found) {
+            addCustomCrewCheckbox(c, 'editCrewContainer', true);
+        }
+    });
+    
+    form.elements['paymentType'].value = e['Payment Type'] || '';
+    form.elements['emailThread'].value = e['Email Thread'] || '';
+    form.elements['billingStatus'].value = e['Billing Status'] || '';
+    form.elements['billingStatusDate'].value = toInputDate(e['Billing Status Date']);
+    form.elements['grNumber'].value = e['GR Number'] || '';
+    form.elements['invoiceNumber'].value = e['Invoice Number'] || '';
+    form.elements['notes'].value = e['Event Notes'] || '';
+    
+    toggleBilling('editPaymentType', 'editBillingBox');
+    
+    setEditFormState(isReadOnly);
+    
+    new bootstrap.Modal(document.getElementById('editEventModal')).show();
+  }
+
+  function openUploadModal(eventId) {
+    document.getElementById('uploadEventId').value = eventId;
+    document.getElementById('uploadFileInput').value = '';
+    new bootstrap.Modal(document.getElementById('uploadFileModal')).show();
+  }
+
+  function submitFileUpload() {
+    const fileInput = document.getElementById('uploadFileInput');
+    if (!fileInput.files[0]) return alert("Please select a file first.");
+    
+    const eventId = document.getElementById('uploadEventId').value;
+    const label = document.getElementById('uploadLabel').value;
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    const ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = "Uploading Document...";
+    
+    reader.onload = async (ev) => {
+      bootstrap.Modal.getInstance(document.getElementById('uploadFileModal')).hide();
+      ov.style.display = 'flex';
+      
+      const res = await callApi({ 
+         action: 'uploadFile', base64: ev.target.result, filename: file.name, eventId: eventId, label: label
+      }, 'POST');
+      
+      ov.style.display = 'none';
+      if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function deleteFile(eventId, fileId) {
+    if(!confirm("Are you sure you want to permanently delete this file? This cannot be undone.")) return;
+    const ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = "Deleting File...";
+    ov.style.display = 'flex';
+
+    const res = await callApi({ action: 'deleteFile', eventId: eventId, fileId: fileId }, 'POST');
+    ov.style.display = 'none';
+    if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+  }
+
+  document.getElementById('eventForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = "Saving Event...";
+    btn.disabled = true; ov.style.display='flex';
+    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+    
+    obj.manpower = fd.getAll('manpower');
+    obj.services = fd.getAll('services'); 
+    
+    const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
+    
+    ov.style.display='none'; btn.disabled=false;
+    if(res && res.success) { 
+        bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
+        e.target.reset(); 
+        document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
+        document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
+        toggleAvpFields(false, 'new'); 
+        fetchAllData(); 
+    } else alert("Error: " + (res?res.error:"Unknown"));
+  };
+
+  document.getElementById('editForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('editSubmitBtn'), ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = "Updating Event...";
+    btn.disabled=true; ov.style.display='flex';
+    
+    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+    
+    obj.manpower = fd.getAll('manpower');
+    obj.services = fd.getAll('services'); 
     
     const res = await callApi({action:'editEvent', updateData: obj}, 'POST');
     
