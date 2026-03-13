@@ -16,11 +16,17 @@
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
     .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.85); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
     .form-label-sm { font-size: 0.7rem; font-weight: bold; color: #6c757d; margin-bottom: 2px; display: block; text-transform: uppercase; }
-    .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.75rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 2px 6px; border-radius: 4px; }
+    .card-upload-btn { cursor: pointer; color: #0d6efd; font-size: 0.75rem; font-weight: bold; border: 1px dashed #0d6efd; padding: 4px 8px; border-radius: 4px; display: inline-block; transition: 0.2s;}
+    .card-upload-btn:hover { background-color: #f8f9fa; }
     .section-title { font-size: 0.8rem; font-weight: bold; color: #adb5bd; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #eee; }
     .edit-trigger { cursor: pointer; transition: 0.2s; }
     .edit-trigger:hover { color: #0d6efd; }
     .badge-avp { background-color: #6f42c1; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 5px; }
+    .file-badge { font-size: 0.75rem; padding: 6px 10px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #dee2e6; background-color: #fff; color: #495057; border-radius: 6px; }
+    .file-badge a { color: #0d6efd; text-decoration: none; }
+    .file-badge a:hover { text-decoration: underline; }
+    .file-delete-btn { cursor: pointer; color: #dc3545; font-weight: bold; padding-left: 5px; border-left: 1px solid #dee2e6; }
+    .file-delete-btn:hover { color: #a52a2a; }
   </style>
 </head>
 <body>
@@ -133,6 +139,24 @@
   <button type="submit" class="btn btn-warning w-100 py-2 fw-bold" id="editSubmitBtn">SAVE CHANGES</button>
 </form></div></div></div></div>
 
+<div class="modal fade" id="uploadFileModal" tabindex="-1"><div class="modal-dialog modal-sm"><div class="modal-content border-0"><div class="modal-header bg-light border-0"><h6 class="fw-bold mb-0">Upload File</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3">
+  <input type="hidden" id="uploadEventId">
+  <div class="mb-3">
+    <label class="small fw-bold">File Label</label>
+    <select id="uploadLabel" class="form-select form-select-sm">
+        <option>Permit</option>
+        <option>Shot List</option>
+        <option>Receipt</option>
+        <option>Contract</option>
+        <option>Other</option>
+    </select>
+  </div>
+  <div class="mb-3">
+    <input type="file" id="uploadFileInput" class="form-control form-control-sm">
+  </div>
+  <button class="btn btn-primary btn-sm w-100 fw-bold" onclick="submitFileUpload()">UPLOAD NOW</button>
+</div></div></div></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
@@ -211,7 +235,17 @@
         if(!evs.length) html += `<div class="col-12 mb-3"><div class="p-3 bg-white rounded border border-light text-center text-muted small fst-italic">No events for this day.</div></div>`;
         else {
             evs.forEach(e => {
-              const permitLink = e['Permits'] ? `<a href="${e['Permits']}" target="_blank" class="badge bg-info text-dark text-decoration-none">Permit</a>` : `<span class="badge bg-light text-muted">No Permit</span>`;
+              // Parse files from file0X columns
+              let filesHtml = '';
+              Object.keys(e).forEach(key => {
+                 if(key.toLowerCase().startsWith('file0') && e[key]) {
+                    const parts = e[key].split('|');
+                    if(parts.length === 3) {
+                       filesHtml += `<span class="file-badge mb-1 me-1">${parts[0]} <a href="${parts[1]}" target="_blank">View</a> <span class="file-delete-btn" title="Delete File" onclick="deleteFile('${e['Event ID']}', '${parts[2]}')">&times;</span></span>`;
+                    }
+                 }
+              });
+
               html += `<div class="col-md-6 col-lg-4 mb-3"><div class="card p-3 shadow-sm">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="badge bg-dark">ID: ${e['Event ID']} <span onclick="openEditModal('${e['Event ID']}')" class="edit-trigger ms-1">✏️</span></span>
@@ -226,10 +260,9 @@
                         <p class="mb-1">👤 <strong>Contact:</strong> ${e['Contact Person']} (${e['Contact Number']})</p>
                         <p class="mb-0 text-muted" style="font-size: 0.75rem;">📝 <strong>Notes:</strong> ${e['Event Notes'] || 'None'}</p>
                     </div>
-                    <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
-                        ${permitLink}
-                        <label class="card-upload-btn" onclick="document.getElementById('file-${e['Event ID']}').click()">Upload Permit</label>
-                        <input type="file" id="file-${e['Event ID']}" style="display:none" onchange="handleUpload(this, '${e['Event ID']}')">
+                    <div class="mt-3 pt-2 border-top">
+                        <div class="d-flex flex-wrap mb-2">${filesHtml}</div>
+                        <label class="card-upload-btn w-100 text-center" onclick="openUploadModal('${e['Event ID']}')">+ Upload Document</label>
                     </div>
                 </div></div>`;
             });
@@ -267,17 +300,6 @@
     applyFilters();
   }
 
-  async function handleUpload(input, id) {
-    if (!input.files[0]) return;
-    const label = input.previousElementSibling; label.innerHTML = "Uploading...";
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const res = await callApi({}, 'POST', { action: 'uploadPermit', base64: ev.target.result, filename: input.files[0].name, eventId: id });
-      if (res.success) { label.innerHTML = "Done!"; fetchAllData(); } else { alert("Error: " + res.error); label.innerHTML = "Upload"; }
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-
   function openEditModal(id) {
     const e = rawEvents.find(ev => ev['Event ID'] === id);
     if(!e) return;
@@ -290,9 +312,60 @@
     new bootstrap.Modal(document.getElementById('editEventModal')).show();
   }
 
+  // File Upload Logic
+  function openUploadModal(eventId) {
+    document.getElementById('uploadEventId').value = eventId;
+    document.getElementById('uploadFileInput').value = '';
+    new bootstrap.Modal(document.getElementById('uploadFileModal')).show();
+  }
+
+  function submitFileUpload() {
+    const fileInput = document.getElementById('uploadFileInput');
+    if (!fileInput.files[0]) return alert("Please select a file first.");
+    
+    const eventId = document.getElementById('uploadEventId').value;
+    const label = document.getElementById('uploadLabel').value;
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    const ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = "Uploading File...";
+    
+    reader.onload = async (ev) => {
+      bootstrap.Modal.getInstance(document.getElementById('uploadFileModal')).hide();
+      ov.style.display = 'flex';
+      
+      const res = await callApi({}, 'POST', { 
+         action: 'uploadFile', 
+         base64: ev.target.result, 
+         filename: file.name, 
+         eventId: eventId,
+         label: label
+      });
+      
+      ov.style.display = 'none';
+      if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function deleteFile(eventId, fileId) {
+    if(!confirm("Are you sure you want to permanently delete this file?")) return;
+    
+    const ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = "Deleting File...";
+    ov.style.display = 'flex';
+
+    const res = await callApi({}, 'POST', { action: 'deleteFile', eventId: eventId, fileId: fileId });
+    ov.style.display = 'none';
+    
+    if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+  }
+
   document.getElementById('eventForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = "Processing...";
     btn.disabled = true; ov.style.display='flex';
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
@@ -310,6 +383,7 @@
   document.getElementById('editForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('editSubmitBtn'), ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = "Processing...";
     btn.disabled=true; ov.style.display='flex';
     const res = await callApi({}, 'POST', {action:'updateStatus', updateData: Object.fromEntries(new FormData(e.target).entries())});
     ov.style.display='none'; btn.disabled=false;
