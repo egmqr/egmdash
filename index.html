@@ -261,7 +261,7 @@
 
       <div class="row g-2 mb-4" id="newAvpHiddenFields">
         <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0"></div></div>
         <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
       </div>
   </div>
@@ -385,10 +385,14 @@
   <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="submitBtn"><i class="bi bi-check2-circle me-1"></i> CREATE ENTRY</button>
 </form></div></div></div></div>
 
-<div class="modal fade" id="addDayModal" tabindex="-1"><div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-calendar-plus me-2"></i> Add Additional Day</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
-  <h6 id="addDayEventName" class="fw-bold text-primary mb-3 pb-2 border-bottom"></h6>
+<div class="modal fade" id="addDayModal" tabindex="-1"><div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary" id="addDayHeader"><i class="bi bi-calendar-plus me-2"></i> Add Additional Day</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
   <form id="addDayForm">
   <input type="hidden" id="addDayEventId" name="eventId">
+
+  <div class="mb-3" id="addDayNameBlock">
+      <label class="form-label-sm">Event Name (For this specific day)</label>
+      <input type="text" name="eventName" id="addDayEventNameInput" class="form-control fw-bold" required>
+  </div>
   
   <div class="mb-4" id="addDayStatusBlock"><label class="form-label-sm">Day Status</label><select name="eventStatus" class="form-select form-select-sm fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option></select></div>
   
@@ -1080,13 +1084,15 @@
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
             
+            // Sort by earliest time, force Crew Leave to bottom
             evs.sort((a, b) => {
                 const leaveA = a['Event Name'] === 'Crew Leave' ? 1 : 0;
                 const leaveB = b['Event Name'] === 'Crew Leave' ? 1 : 0;
                 if (leaveA !== leaveB) return leaveA - leaveB;
 
-                const timeA = to24Hour(a['Event Start Time']) || "99:99";
-                const timeB = to24Hour(b['Event Start Time']) || "99:99";
+                // Priority: Start Time, fallback to Call Time, fallback to "99:99" (bottom)
+                let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
+                let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
                 return timeA.localeCompare(timeB);
             });
 
@@ -1144,7 +1150,6 @@
                   venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
               }
               
-              // Smart Regex split to ensure badges look clean on the dashboard
               let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-1 fw-normal">${s.trim()}</span>`).join('') : '-';
 
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
@@ -1229,13 +1234,15 @@
           
           let eventsHtml = '';
           
+          // Sort Calendar pills by earliest time, force Crew Leave to bottom
           dayEvents.sort((a, b) => {
               const leaveA = a['Event Name'] === 'Crew Leave' ? 1 : 0;
               const leaveB = b['Event Name'] === 'Crew Leave' ? 1 : 0;
               if (leaveA !== leaveB) return leaveA - leaveB;
 
-              const timeA = to24Hour(a['Event Start Time']) || "99:99";
-              const timeB = to24Hour(b['Event Start Time']) || "99:99";
+              // Priority: Start Time, fallback to Call Time, fallback to "99:99"
+              let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
+              let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
               return timeA.localeCompare(timeB);
           });
 
@@ -1449,13 +1456,19 @@
      });
      
      if (e['Event Name'] === 'Crew Leave') {
-         document.getElementById('addDayEventName').innerHTML = "<i class='bi bi-airplane-fill text-danger me-1'></i> Add Leave Day";
+         document.getElementById('addDayHeader').innerHTML = "<i class='bi bi-airplane-fill text-danger me-1'></i> Add Leave Day";
          document.getElementById('addDayStatusBlock').style.display = 'none';
          document.getElementById('addDayServicesBlock').style.display = 'none';
+         document.getElementById('addDayNameBlock').style.display = 'none';
+         document.getElementById('addDayEventNameInput').removeAttribute('required');
+         document.getElementById('addDayEventNameInput').value = 'Crew Leave';
      } else {
-         document.getElementById('addDayEventName').innerText = "Add Day to: " + e['Event Name'] + ' (#' + id + ')';
+         document.getElementById('addDayHeader').innerHTML = `<i class="bi bi-calendar-plus me-2"></i> Add Day to Project <span class="badge bg-light border text-secondary ms-1">#${id}</span>`;
          document.getElementById('addDayStatusBlock').style.display = 'block';
          document.getElementById('addDayServicesBlock').style.display = 'block';
+         document.getElementById('addDayNameBlock').style.display = 'block';
+         document.getElementById('addDayEventNameInput').setAttribute('required', 'required');
+         document.getElementById('addDayEventNameInput').value = e['Event Name'];
          
          // Pre-populate with previous day's services using Smart Parser
          const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
