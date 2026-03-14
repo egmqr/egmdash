@@ -261,7 +261,7 @@
 
       <div class="row g-2 mb-4" id="newAvpHiddenFields">
         <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0"></div></div>
+        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
         <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
       </div>
   </div>
@@ -1015,12 +1015,10 @@
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
             
-            // Sort to push Crew Leave cards to the bottom of this specific day's list
             evs.sort((a, b) => (a['Event Name'] === 'Crew Leave' ? 1 : 0) - (b['Event Name'] === 'Crew Leave' ? 1 : 0));
 
             evs.forEach(e => {
               
-              // --- SPECIAL CREW LEAVE CARD RENDER (Compact 1/3 height) ---
               if (e['Event Name'] === 'Crew Leave') {
                   html += `<div class="col-12 col-md-6 col-lg-4">
                     <div class="card p-2 p-md-3" style="background-color: #fff1f2; border-color: #fecaca; height: auto !important;">
@@ -1044,7 +1042,6 @@
                   return; 
               }
 
-              // --- NORMAL EVENT CARD RENDER ---
               let projectRows = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
               let fileSet = new Set();
               let filesHtml = '';
@@ -1072,7 +1069,8 @@
                   venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
               }
               
-              let servicesBadges = e['Services'] ? e['Services'].split(',').map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-1 fw-normal">${s.trim()}</span>`).join('') : '-';
+              // Smart Regex split to ensure badges look clean on the dashboard
+              let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-1 fw-normal">${s.trim()}</span>`).join('') : '-';
 
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
                     <div class="d-flex justify-content-between mb-3 align-items-center">
@@ -1434,7 +1432,8 @@
         form.elements['contactNumber'].value = e['Contact Number'] || '';
         
         // --- SMART PARSER FOR SERVICES ---
-        const servicesList = (e['Services'] || '').split(',').map(s=>s.trim()).filter(s=>s);
+        // Using strict regex so commas inside brackets are ignored
+        const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
         const sInputs = form.elements['services'];
         if (sInputs) {
             if (sInputs.length) sInputs.forEach(i => i.checked = false);
@@ -1592,7 +1591,7 @@
             if(booths) details.push(`${booths} booth(s)`);
             if(count) details.push(`${count} prints`);
             if(size) details.push(size);
-            finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(', ')}]` : s);
+            finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : s);
         } else if (s === 'Frame Token') {
             const count = document.getElementById('newSrvFrameCount').value;
             finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
@@ -1680,7 +1679,7 @@
             if(booths) details.push(`${booths} booth(s)`);
             if(count) details.push(`${count} prints`);
             if(size) details.push(size);
-            finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(', ')}]` : s);
+            finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : s);
         } else if (s === 'Frame Token') {
             const count = document.getElementById('editSrvFrameCount').value;
             finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
