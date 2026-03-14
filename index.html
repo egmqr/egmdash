@@ -178,6 +178,7 @@
     .dark-mode .badge.bg-light.text-dark { background-color: #2b2b2b !important; color: #f3f4f6 !important; border-color: #444444 !important; }
     .dark-mode .badge.bg-white { background-color: #121212 !important; }
     
+    /* Transparent table rows in Dark Mode so they inherit the card background cleanly */
     .dark-mode .table, .dark-mode .table th, .dark-mode .table td { background-color: transparent !important; color: #d1d5db !important; border-bottom-color: #333333 !important; }
     .dark-mode .table-hover tbody tr:hover td { background-color: #2b2b2b !important; color: #f3f4f6 !important; }
     
@@ -731,7 +732,8 @@
   
   <div class="mb-4" id="editNotesBlock"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2"></textarea></div>
   
-  <button type="submit" class="btn btn-warning w-100 py-3 fw-bold shadow-sm" id="editSubmitBtn"><i class="bi bi-cloud-arrow-up me-1"></i> SAVE CHANGES</button>
+  <button type="submit" class="btn btn-warning w-100 py-3 fw-bold shadow-sm mb-2" id="editSubmitBtn"><i class="bi bi-cloud-arrow-up me-1"></i> SAVE CHANGES</button>
+  <button type="button" class="btn btn-outline-danger w-100 py-2 fw-bold shadow-sm" id="editDeleteBtn" onclick="deleteFullEvent()"><i class="bi bi-trash3 me-1"></i> DELETE FULL PROJECT</button>
 </form></div></div></div></div>
 
 <div class="modal fade" id="uploadFileModal" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-cloud-upload me-2"></i> Upload Document</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4">
@@ -1510,7 +1512,7 @@
       const elements = form.querySelectorAll('input, select, textarea, button');
       
       elements.forEach(el => {
-          if(el.id !== 'editSubmitBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') {
+          if(el.id !== 'editSubmitBtn' && el.id !== 'editDeleteBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') {
               el.disabled = isReadOnly;
           }
       });
@@ -1519,9 +1521,11 @@
       
       if (isReadOnly) {
           document.getElementById('editSubmitBtn').style.display = 'none';
+          document.getElementById('editDeleteBtn').style.display = 'none';
           document.getElementById('editAuthWarning').style.setProperty('display', 'flex', 'important');
       } else {
           document.getElementById('editSubmitBtn').style.display = 'block';
+          document.getElementById('editDeleteBtn').style.display = 'block';
           document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
       }
   }
@@ -1850,6 +1854,29 @@
     const res = await callApi({ action: 'deleteFile', eventId: eventId, fileId: fileId }, 'POST');
     ov.style.display = 'none';
     if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+  }
+  
+  async function deleteFullEvent() {
+      const eventId = document.getElementById('editEventId').value;
+      if (!eventId) return;
+      
+      if(!confirm(`WARNING: Are you sure you want to permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) {
+          return;
+      }
+      
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = "Deleting Event...";
+      ov.style.display = 'flex';
+      
+      const res = await callApi({ action: 'deleteEvent', eventId: eventId }, 'POST');
+      
+      ov.style.display = 'none';
+      if (res && res.success) {
+          bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
+          fetchAllData();
+      } else {
+          alert("Error: " + (res ? res.error : "Unknown"));
+      }
   }
 
   // --- Form Submissions ---
