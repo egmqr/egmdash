@@ -399,6 +399,71 @@
       <div class="col-6 col-md-4"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
       <div class="col-12 col-md-4"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
   </div>
+
+  <div id="addDayServicesBlock" class="mb-4 p-3 bg-light rounded border shadow-sm">
+      <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
+      <div class="row px-2 g-2" id="addDayServicesContainer">
+          
+          <div class="col-12 col-md-6 form-check small mb-2">
+              <input class="form-check-input" type="checkbox" name="services" value="Photo" id="addDaySrvPhoto" onchange="document.getElementById('addDaySrvPhotoDetails').style.display = this.checked ? 'block' : 'none'">
+              <label for="addDaySrvPhoto" class="fw-bold text-dark">Photo</label>
+              <div id="addDaySrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
+                  <div class="input-group input-group-sm">
+                      <input type="number" id="addDaySrvPhotoCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                      <span class="input-group-text bg-light text-muted border-secondary-subtle">photographer(s)</span>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="col-12 col-md-6 form-check small mb-2">
+              <input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints with QR" id="addDaySrvPrints" onchange="document.getElementById('addDaySrvPrintsDetails').style.display = this.checked ? 'block' : 'none'">
+              <label for="addDaySrvPrints" class="fw-bold text-dark">Photo souvenir prints with QR</label>
+              <div id="addDaySrvPrintsDetails" class="mt-1 pe-2" style="display:none;">
+                  <div class="input-group input-group-sm mb-1">
+                      <input type="number" id="addDaySrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                      <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                  </div>
+                  <div class="input-group input-group-sm">
+                      <input type="number" id="addDaySrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                      <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
+                      <select id="addDaySrvPrintsSize" class="form-select border-secondary-subtle">
+                          <option value="4R">4R</option>
+                          <option value="Wallet size">Wallet size</option>
+                          <option value="5R">5R</option>
+                      </select>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="col-12 col-md-6 form-check small mb-2">
+              <input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="addDaySrvFrame" onchange="document.getElementById('addDaySrvFrameDetails').style.display = this.checked ? 'block' : 'none'">
+              <label for="addDaySrvFrame" class="fw-bold text-dark">Frame Token</label>
+              <div id="addDaySrvFrameDetails" class="mt-1 pe-2" style="display:none;">
+                  <div class="input-group input-group-sm">
+                      <input type="number" id="addDaySrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                      <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
+                  </div>
+              </div>
+          </div>
+
+          <div class="col-12 col-md-6 form-check small mb-2">
+              <input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR" id="addDaySrvQR" onchange="document.getElementById('addDaySrvQRDetails').style.display = this.checked ? 'block' : 'none'">
+              <label for="addDaySrvQR" class="fw-bold text-dark">Photo souvenir QR</label>
+              <div id="addDaySrvQRDetails" class="mt-1 pe-2" style="display:none;">
+                  <div class="input-group input-group-sm">
+                      <input type="number" id="addDaySrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                      <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                  </div>
+              </div>
+          </div>
+
+          <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
+          <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
+          <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
+          <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
+          <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
+      </div>
+  </div>
   
   <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
   <div class="mb-4 p-3 bg-light rounded border shadow-sm">
@@ -1015,10 +1080,12 @@
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
             
+            // Sort to push Crew Leave cards to the bottom of this specific day's list
             evs.sort((a, b) => (a['Event Name'] === 'Crew Leave' ? 1 : 0) - (b['Event Name'] === 'Crew Leave' ? 1 : 0));
 
             evs.forEach(e => {
               
+              // --- SPECIAL CREW LEAVE CARD RENDER (Compact 1/3 height) ---
               if (e['Event Name'] === 'Crew Leave') {
                   html += `<div class="col-12 col-md-6 col-lg-4">
                     <div class="card p-2 p-md-3" style="background-color: #fff1f2; border-color: #fecaca; height: auto !important;">
@@ -1042,6 +1109,7 @@
                   return; 
               }
 
+              // --- NORMAL EVENT CARD RENDER ---
               let projectRows = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
               let fileSet = new Set();
               let filesHtml = '';
@@ -1069,7 +1137,7 @@
                   venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
               }
               
-              // Smart Regex split to ensure badges look clean on the dashboard
+              // Only split by commas that are NOT inside brackets
               let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-1 fw-normal">${s.trim()}</span>`).join('') : '-';
 
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
@@ -1349,20 +1417,87 @@
      const e = rawEvents.find(ev => ev['Event ID'] === id);
      if(!e) return;
      
-     if (e['Event Name'] === 'Crew Leave') {
-         document.getElementById('addDayEventName').innerHTML = "<i class='bi bi-airplane-fill text-danger me-1'></i> Add Leave Day";
-         document.getElementById('addDayStatusBlock').style.display = 'none';
-     } else {
-         document.getElementById('addDayEventName').innerText = "Add Day to: " + e['Event Name'] + ' (#' + id + ')';
-         document.getElementById('addDayStatusBlock').style.display = 'block';
-     }
-     
-     document.getElementById('addDayEventId').value = id;
-
      const form = document.getElementById('addDayForm');
      form.reset();
      document.querySelectorAll('#addDayCrewContainer .custom-crew-cb').forEach(el => el.remove());
+     
+     // Reset dynamic service inputs
+     if(document.getElementById('addDaySrvPhotoCount')) document.getElementById('addDaySrvPhotoCount').value = '';
+     if(document.getElementById('addDaySrvPrintsBooth')) document.getElementById('addDaySrvPrintsBooth').value = '';
+     if(document.getElementById('addDaySrvPrintsCount')) document.getElementById('addDaySrvPrintsCount').value = '';
+     if(document.getElementById('addDaySrvPrintsSize')) document.getElementById('addDaySrvPrintsSize').value = '4R';
+     if(document.getElementById('addDaySrvFrameCount')) document.getElementById('addDaySrvFrameCount').value = '';
+     if(document.getElementById('addDaySrvQRBooth')) document.getElementById('addDaySrvQRBooth').value = '';
+     
+     ['Photo', 'Prints', 'Frame', 'QR'].forEach(srv => {
+        const el = document.getElementById('addDaySrv' + srv);
+        if(el) { el.checked = false; el.onchange(); }
+     });
+     
+     if (e['Event Name'] === 'Crew Leave') {
+         document.getElementById('addDayEventName').innerHTML = "<i class='bi bi-airplane-fill text-danger me-1'></i> Add Leave Day";
+         document.getElementById('addDayStatusBlock').style.display = 'none';
+         document.getElementById('addDayServicesBlock').style.display = 'none';
+     } else {
+         document.getElementById('addDayEventName').innerText = "Add Day to: " + e['Event Name'] + ' (#' + id + ')';
+         document.getElementById('addDayStatusBlock').style.display = 'block';
+         document.getElementById('addDayServicesBlock').style.display = 'block';
+         
+         // Pre-populate with previous day's services using Smart Parser
+         const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
+         const sInputs = form.elements['services'];
+         if (sInputs) {
+             if (sInputs.length) sInputs.forEach(i => i.checked = false);
+             else sInputs.checked = false;
+         }
 
+         servicesList.forEach(s => {
+             if (s.startsWith('Photo [') || s === 'Photo') {
+                 document.getElementById('addDaySrvPhoto').checked = true;
+                 document.getElementById('addDaySrvPhotoDetails').style.display = 'block';
+                 let match = s.match(/\[(\d+)\s+photographer/);
+                 if(match) document.getElementById('addDaySrvPhotoCount').value = match[1];
+                 
+             } else if (s.startsWith('Photo souvenir prints') || s === 'Photo souvenir prints') {
+                 document.getElementById('addDaySrvPrints').checked = true;
+                 document.getElementById('addDaySrvPrintsDetails').style.display = 'block';
+                 let bMatch = s.match(/(\d+)\s+booth/);
+                 if(bMatch) document.getElementById('addDaySrvPrintsBooth').value = bMatch[1];
+                 let pMatch = s.match(/(\d+)\s+prints/);
+                 if(pMatch) document.getElementById('addDaySrvPrintsCount').value = pMatch[1];
+                 if(s.includes('Wallet size')) document.getElementById('addDaySrvPrintsSize').value = 'Wallet size';
+                 else if(s.includes('5R')) document.getElementById('addDaySrvPrintsSize').value = '5R';
+                 else if(s.includes('4R')) document.getElementById('addDaySrvPrintsSize').value = '4R';
+                 
+             } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
+                 document.getElementById('addDaySrvFrame').checked = true;
+                 document.getElementById('addDaySrvFrameDetails').style.display = 'block';
+                 let match = s.match(/\[(\d+)\s+frame/);
+                 if(match) document.getElementById('addDaySrvFrameCount').value = match[1];
+                 
+             } else if (s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
+                 document.getElementById('addDaySrvQR').checked = true;
+                 document.getElementById('addDaySrvQRDetails').style.display = 'block';
+                 let match = s.match(/\[(\d+)\s+booth/);
+                 if(match) document.getElementById('addDaySrvQRBooth').value = match[1];
+                 
+             } else {
+                 let found = false;
+                 if (sInputs) {
+                     if (sInputs.length) {
+                         sInputs.forEach(i => { if(i.value.toLowerCase() === s.toLowerCase()) { i.checked = true; found = true; }});
+                     } else {
+                         if (sInputs.value.toLowerCase() === s.toLowerCase()) { sInputs.checked = true; found = true; }
+                     }
+                 }
+                 if(!found) {
+                     addCustomServiceCheckbox(s, 'addDayServicesContainer', true);
+                 }
+             }
+         });
+     }
+     
+     document.getElementById('addDayEventId').value = id;
      new bootstrap.Modal(document.getElementById('addDayModal')).show();
   }
 
@@ -1432,7 +1567,6 @@
         form.elements['contactNumber'].value = e['Contact Number'] || '';
         
         // --- SMART PARSER FOR SERVICES ---
-        // Using strict regex so commas inside brackets are ignored
         const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
         const sInputs = form.elements['services'];
         if (sInputs) {
@@ -1643,6 +1777,34 @@
     
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
+    
+    // Build Dynamic Services String for Add Day
+    let rawServices = fd.getAll('services');
+    let finalServices = [];
+    rawServices.forEach(s => {
+        if (s === 'Photo') {
+            const count = document.getElementById('addDaySrvPhotoCount').value;
+            finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
+        } else if (s === 'Photo souvenir prints with QR') {
+            const booths = document.getElementById('addDaySrvPrintsBooth').value;
+            const count = document.getElementById('addDaySrvPrintsCount').value;
+            const size = document.getElementById('addDaySrvPrintsSize').value;
+            let details = [];
+            if(booths) details.push(`${booths} booth(s)`);
+            if(count) details.push(`${count} prints`);
+            if(size) details.push(size);
+            finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : s);
+        } else if (s === 'Frame Token') {
+            const count = document.getElementById('addDaySrvFrameCount').value;
+            finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
+        } else if (s === 'Photo souvenir QR') {
+            const booths = document.getElementById('addDaySrvQRBooth').value;
+            finalServices.push(booths ? `Photo souvenir QR [${booths} booth(s)]` : s);
+        } else {
+            finalServices.push(s);
+        }
+    });
+    obj.services = finalServices;
     
     document.getElementById('overlayText').innerText = "Adding Day...";
     btn.disabled = true; ov.style.display='flex';
