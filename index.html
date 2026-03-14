@@ -680,20 +680,25 @@
       document.getElementById(prefix + 'ServicesContactFields').style.display = isAvp ? 'none' : 'block'; 
   }
 
+  // UPDATED: Dynamically adds/removes 'required' attribute to avoid invisible form validation blocking submits
   function toggleEntryMode(prefix) {
       const isLeave = document.getElementById(prefix + 'TypeLeave').checked;
       const generalBlock = document.getElementById(prefix + 'GeneralFields');
       const servicesBlock = document.getElementById(prefix + 'ServicesContactFields');
       const paymentBlock = document.getElementById(prefix + 'PaymentFields');
+      
+      const formId = prefix === 'new' ? 'eventForm' : 'editForm';
+      const eventNameInput = document.querySelector(`#${formId} input[name="eventName"]`);
 
       if (isLeave) {
           generalBlock.style.display = 'none';
           servicesBlock.style.display = 'none';
           paymentBlock.style.display = 'none';
+          if(eventNameInput) eventNameInput.removeAttribute('required');
       } else {
           generalBlock.style.display = 'block';
           paymentBlock.style.display = 'block';
-          // Restore AVP visibility accurately
+          if(eventNameInput) eventNameInput.setAttribute('required', 'required');
           const isAvp = document.getElementById(prefix + 'AvpCheck').checked;
           toggleAvpFields(isAvp, prefix);
       }
@@ -794,10 +799,12 @@
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrowStr = tomorrowDate.getFullYear() + '-' + String(tomorrowDate.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrowDate.getDate()).padStart(2, '0');
 
-    let dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(data.map(e=>e['Event Date']))].sort();
+    // ONLY standard events for the List View (Excludes Crew Leave)
+    const listData = data.filter(e => e['AVP Required'] !== 'TRUE' && e['Event Name'] !== 'Crew Leave');
+
+    let dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(listData.map(e=>e['Event Date']))].sort();
     
-    const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
-    if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No events found matching your criteria.</div></div>'; return; }
+    if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No shooting events found matching your criteria.</div></div>'; return; }
 
     dates.sort((a,b) => {
         if(!a) return 1; if(!b) return -1;
@@ -805,7 +812,7 @@
     });
 
     dates.forEach(ds => {
-      const evs = shootingEvents.filter(e => e['Event Date'] === ds);
+      const evs = listData.filter(e => e['Event Date'] === ds);
       if(evs.length || isDefault) {
         let displayHeader = ds;
         if(ds && ds.includes('-')) {
@@ -828,34 +835,7 @@
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
             evs.forEach(e => {
-              // SPECIAL CREW LEAVE CARD
-              if (e['Event Name'] === 'Crew Leave') {
-                  html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4" style="background-color: #fff1f2; border-color: #fecaca;">
-                      <div class="d-flex justify-content-between mb-3 align-items-start">
-                          <div>
-                              <span class="badge bg-danger px-2 py-1 fs-6 border-0 shadow-sm mb-2"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
-                              <br>
-                              <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted" style="font-size: 0.65rem;">#${e['Event ID']}</span>
-                              <span onclick="requireAuth(() => openEditModal('${e['Event ID']}', '${e['Event Date']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
-                              <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-danger" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
-                          </div>
-                      </div>
-                      
-                      <div class="mb-3 mt-1">
-                          <strong class="text-danger">Crew on Leave:</strong><br>
-                          <div class="mt-2" style="line-height: 1.5;">
-                              ${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-1 fs-6 shadow-sm">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic">No crew selected</span>'}
-                          </div>
-                      </div>
-                      
-                      <div class="small text-secondary mt-auto border-top pt-3 border-danger border-opacity-25">
-                          <p class="mb-0 fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50 text-danger"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
-                      </div>
-                  </div></div>`;
-                  return; // Skip normal event rendering for this loop iteration
-              }
-
-              // NORMAL EVENT CARD
+              
               let projectRows = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
               let fileSet = new Set();
               let filesHtml = '';
@@ -1005,7 +985,6 @@
     
     const uniqueDataMap = new Map();
     data.forEach(item => {
-        // Exclude Crew Leaves completely from billing view just in case
         if (item['Event Name'] !== 'Crew Leave' && !uniqueDataMap.has(item['Event ID'])) {
             uniqueDataMap.set(item['Event ID'], item);
         }
@@ -1165,7 +1144,6 @@
     form.elements['originalDate'].value = date;
     form.elements['eventName'].value = e['Event Name'] || '';
     
-    // Automatically trigger Leave UI mode if it's a Crew Leave
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
         toggleEntryMode('edit');
@@ -1295,7 +1273,6 @@
     btn.disabled = true; ov.style.display='flex';
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     
-    // OVERRIDE for Leave Type
     if (document.getElementById('newTypeLeave').checked) {
         obj.eventName = 'Crew Leave';
         obj.eventStatus = 'Confirmed';
