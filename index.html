@@ -266,12 +266,14 @@
       </div>
   </div>
 
-  <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
-  <div class="row g-2 mb-4">
-      <div class="col-6 col-md-3"><label class="form-label-sm">Date</label><input type="date" name="eventDate" class="form-control form-control-sm" required></div>
-      <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
-      <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
-      <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+  <div id="newDateTimeBlock">
+      <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
+      <div class="row g-2 mb-4">
+          <div class="col-6 col-md-3"><label class="form-label-sm">Date</label><input type="date" name="eventDate" class="form-control form-control-sm" required></div>
+          <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
+          <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+      </div>
   </div>
     
   <div id="newServicesContactFields">
@@ -296,15 +298,17 @@
       </div>
   </div>
 
-  <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
-  <div class="mb-4 p-3 bg-light rounded border shadow-sm">
-      <div class="row px-2 g-2" id="newCrewContainer">
-          <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
-      </div>
-      <div class="input-group input-group-sm mt-3">
-          <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
-          <input type="text" id="newCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
-          <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('newCustomCrewInput', 'newCrewContainer')">ADD</button>
+  <div id="newCrewBlock">
+      <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
+      <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+          <div class="row px-2 g-2" id="newCrewContainer">
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+          </div>
+          <div class="input-group input-group-sm mt-3">
+              <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
+              <input type="text" id="newCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
+              <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('newCustomCrewInput', 'newCrewContainer')">ADD</button>
+          </div>
       </div>
   </div>
 
@@ -722,6 +726,18 @@
   function toggleAvpFields(isAvp, prefix) { 
       document.getElementById(prefix + 'AvpHiddenFields').style.display = isAvp ? 'none' : 'flex'; 
       document.getElementById(prefix + 'ServicesContactFields').style.display = isAvp ? 'none' : 'block'; 
+      document.getElementById(prefix + 'DateTimeBlock').style.display = isAvp ? 'none' : 'block'; 
+      document.getElementById(prefix + 'CrewBlock').style.display = isAvp ? 'none' : 'block'; 
+      
+      const formId = prefix === 'new' ? 'eventForm' : 'editForm';
+      const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
+      if (dateInput) {
+          if (isAvp) {
+              dateInput.removeAttribute('required');
+          } else {
+              dateInput.setAttribute('required', 'required');
+          }
+      }
   }
 
   function toggleEntryMode(prefix) {
@@ -729,19 +745,28 @@
       const generalBlock = document.getElementById(prefix + 'GeneralFields');
       const servicesBlock = document.getElementById(prefix + 'ServicesContactFields');
       const paymentBlock = document.getElementById(prefix + 'PaymentFields');
+      const dateTimeBlock = document.getElementById(prefix + 'DateTimeBlock');
+      const crewBlock = document.getElementById(prefix + 'CrewBlock');
       
       const formId = prefix === 'new' ? 'eventForm' : 'editForm';
       const eventNameInput = document.querySelector(`#${formId} input[name="eventName"]`);
+      const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
 
       if (isLeave) {
           generalBlock.style.display = 'none';
           servicesBlock.style.display = 'none';
           paymentBlock.style.display = 'none';
+          
+          if(dateTimeBlock) dateTimeBlock.style.display = 'block';
+          if(crewBlock) crewBlock.style.display = 'block';
+          
           if(eventNameInput) eventNameInput.removeAttribute('required');
+          if(dateInput) dateInput.setAttribute('required', 'required');
       } else {
           generalBlock.style.display = 'block';
           paymentBlock.style.display = 'block';
           if(eventNameInput) eventNameInput.setAttribute('required', 'required');
+          
           const isAvp = document.getElementById(prefix + 'AvpCheck').checked;
           toggleAvpFields(isAvp, prefix);
       }
@@ -1235,7 +1260,7 @@
   }
 
   function openEditModal(id, date, fromCalendar = false) {
-    const e = rawEvents.find(ev => ev['Event ID'] === id && ev['Event Date'] === date);
+    const e = rawEvents.find(ev => ev['Event ID'] === id && (!date || ev['Event Date'] === date));
     if(!e) return;
     
     const isReadOnly = fromCalendar && !isAuthenticated();
@@ -1243,7 +1268,9 @@
     // DYNAMIC BILLING POSITIONING (Moves Payment section to top if event is in the past)
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
-    const isPast = date < todayStr;
+    
+    // AVP Projects don't usually have dates, so if it's missing a date we don't automatically move it
+    const isPast = date && date < todayStr; 
     
     const paymentBlock = document.getElementById('editPaymentFields');
     const toggleBlock = document.getElementById('editTypeToggleBlock');
@@ -1264,7 +1291,7 @@
     form.reset();
     
     form.elements['eventId'].value = id;
-    form.elements['originalDate'].value = date;
+    form.elements['originalDate'].value = date || '';
     form.elements['eventName'].value = e['Event Name'] || '';
     
     // Automatically trigger Leave UI mode if it's a Crew Leave
@@ -1398,7 +1425,6 @@
     obj.manpower = fd.getAll('manpower');
     obj.services = fd.getAll('services'); 
 
-    // Custom Validation to handle Event Name without breaking invisible inputs
     const isLeave = document.getElementById('newTypeLeave').checked;
     if (isLeave) {
         if (obj.manpower.length === 0) {
