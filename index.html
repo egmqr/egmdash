@@ -239,10 +239,10 @@
   
   <div class="d-flex mb-4 gap-2 border-bottom pb-3">
       <input type="radio" class="btn-check" name="entryMode" id="newTypeEvent" value="event" checked onchange="toggleEntryMode('new')">
-      <label class="btn btn-outline-primary btn-sm fw-bold w-50" for="newTypeEvent"><i class="bi bi-camera-video me-1"></i> Shooting Event</label>
+      <label class="btn btn-outline-primary fw-bold d-flex align-items-center justify-content-center" style="flex: 2; font-size: 1rem; padding: 10px;" for="newTypeEvent"><i class="bi bi-camera-video me-2"></i> Shooting Event</label>
 
       <input type="radio" class="btn-check" name="entryMode" id="newTypeLeave" value="leave" onchange="toggleEntryMode('new')">
-      <label class="btn btn-outline-danger btn-sm fw-bold w-50" for="newTypeLeave"><i class="bi bi-airplane me-1"></i> Crew Leave</label>
+      <label class="btn btn-outline-danger btn-sm fw-bold d-flex align-items-center justify-content-center" style="flex: 1; font-size: 0.8rem;" for="newTypeLeave"><i class="bi bi-airplane me-1"></i> Crew Leave</label>
   </div>
 
   <div id="newGeneralFields">
@@ -261,7 +261,7 @@
 
       <div class="row g-2 mb-4" id="newAvpHiddenFields">
         <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0"></div></div>
         <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
       </div>
   </div>
@@ -377,10 +377,10 @@
   
   <div class="d-flex mb-4 gap-2 border-bottom pb-3" id="editTypeToggleBlock">
       <input type="radio" class="btn-check" name="entryMode" id="editTypeEvent" value="event" onchange="toggleEntryMode('edit')">
-      <label class="btn btn-outline-primary btn-sm fw-bold w-50" for="editTypeEvent"><i class="bi bi-camera-video me-1"></i> Shooting Event</label>
+      <label class="btn btn-outline-primary fw-bold d-flex align-items-center justify-content-center" style="flex: 2; font-size: 1rem; padding: 10px;" for="editTypeEvent"><i class="bi bi-camera-video me-2"></i> Shooting Event</label>
 
       <input type="radio" class="btn-check" name="entryMode" id="editTypeLeave" value="leave" onchange="toggleEntryMode('edit')">
-      <label class="btn btn-outline-danger btn-sm fw-bold w-50" for="editTypeLeave"><i class="bi bi-airplane me-1"></i> Crew Leave</label>
+      <label class="btn btn-outline-danger btn-sm fw-bold d-flex align-items-center justify-content-center" style="flex: 1; font-size: 0.8rem;" for="editTypeLeave"><i class="bi bi-airplane me-1"></i> Crew Leave</label>
   </div>
 
   <div id="editGeneralFields">
@@ -399,7 +399,7 @@
 
       <div class="row g-2 mb-4" id="editAvpHiddenFields">
         <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0"></div></div>
         <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
       </div>
   </div>
@@ -1425,6 +1425,7 @@
     obj.manpower = fd.getAll('manpower');
     obj.services = fd.getAll('services'); 
 
+    // Custom Validation to handle Event Name without breaking invisible inputs
     const isLeave = document.getElementById('newTypeLeave').checked;
     if (isLeave) {
         if (obj.manpower.length === 0) {
