@@ -154,7 +154,17 @@
           <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">GR / Invoice #</span><input type="text" id="fGrInv" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
-          <div class="col-6 col-md-3"><span class="form-label-sm">Billing Status</span><select id="fBillStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Statuses</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+          <div class="col-6 col-md-3">
+              <span class="form-label-sm">Billing Status</span>
+              <select id="fBillStatus" class="form-select form-select-sm" onchange="applyFilters()">
+                  <option value="Unpaid" selected>Unpaid / Processing</option>
+                  <option value="">All Statuses</option>
+                  <option value="GR Pending">GR Pending</option>
+                  <option value="GR Received">GR Received</option>
+                  <option value="GR Processed">GR Processed</option>
+                  <option value="Payment released">Payment released</option>
+              </select>
+          </div>
           <div class="col-6 col-md-2 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
         </div>
       </div>
@@ -771,7 +781,13 @@
   }
 
   function clearFilters() {
-    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType','fBillStatus'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
+    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
+    
+    // Explicitly reset the custom Billing Status default
+    if(document.getElementById('fBillStatus')) {
+        document.getElementById('fBillStatus').value = 'Unpaid';
+    }
+    
     applyFilters();
   }
 
@@ -811,7 +827,14 @@
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
       if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
       if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
-      if(s) filtered = filtered.filter(e => e['Billing Status'] === s);
+      
+      // Handle "Unpaid" special filter
+      if(s === 'Unpaid') {
+          filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed'].includes(e['Billing Status']));
+      } else if(s) {
+          filtered = filtered.filter(e => e['Billing Status'] === s);
+      }
+      
       renderPayments(filtered);
     }
   }
@@ -827,6 +850,7 @@
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrowStr = tomorrowDate.getFullYear() + '-' + String(tomorrowDate.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrowDate.getDate()).padStart(2, '0');
 
+    // ONLY EXCLUDE AVP
     const listData = data.filter(e => e['AVP Required'] !== 'TRUE');
 
     let dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(listData.map(e=>e['Event Date']))].sort();
@@ -1050,6 +1074,13 @@
     });
     const uniqueData = Array.from(uniqueDataMap.values());
     
+    // SORT BY MOST RECENT EVENT DATE
+    uniqueData.sort((a, b) => {
+        let dateA = a['Event Date'] || '';
+        let dateB = b['Event Date'] || '';
+        return dateB.localeCompare(dateA); 
+    });
+
     if (uniqueData.length === 0) {
         document.getElementById('p-body').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>No payment records found.</td></tr>';
         return;
@@ -1069,10 +1100,11 @@
       let badge = `<span class="badge ${badgeClass} px-2 py-1 rounded-pill">${p['Billing Status']||'Pending'}</span>`;
       
       let dateStr = p['Billing Status Date'] ? new Date(p['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
+      let eventDateStr = p['Event Date'] ? new Date(p['Event Date']).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '-';
 
       html += `<tr>
         <td class="fw-bold text-nowrap text-secondary">#${p['Event ID']}</td>
-        <td style="min-width: 180px;">${nameDisplay}</td>
+        <td style="min-width: 180px;">${nameDisplay}<br><span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${eventDateStr}</span></td>
         <td class="text-nowrap"><span class="badge bg-light text-dark border">${p['Payment Type']||'-'}</span></td>
         <td style="min-width: 180px;" class="text-truncate text-secondary" style="max-width: 250px;"><i class="bi bi-envelope me-1 opacity-50"></i> ${p['Email Thread']||'-'}</td>
         <td class="text-nowrap">${badge} <br><span class="text-muted fw-bold mt-1 d-block" style="font-size: 0.75rem;"><i class="bi bi-calendar2 me-1"></i>${dateStr}</span></td>
@@ -1109,12 +1141,12 @@
             let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
             bsCollapse.hide();
         }
-        ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType','fBillStatus'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
+        ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
+        if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
     } else {
         filterBtn.classList.remove('d-none');
         filterBtn.classList.add('d-flex');
         
-        // Auto expand filter panel on desktop sizes when viewing lists
         if (window.innerWidth >= 768) {
             if (!filterCollapseEl.classList.contains('show')) {
                 let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
@@ -1213,7 +1245,6 @@
     form.elements['originalDate'].value = date;
     form.elements['eventName'].value = e['Event Name'] || '';
     
-    // Automatically trigger Leave UI mode if it's a Crew Leave
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
         toggleEntryMode('edit');
@@ -1344,7 +1375,6 @@
     obj.manpower = fd.getAll('manpower');
     obj.services = fd.getAll('services'); 
 
-    // Custom Validation to handle Event Name without breaking invisible inputs
     const isLeave = document.getElementById('newTypeLeave').checked;
     if (isLeave) {
         if (obj.manpower.length === 0) {
@@ -1435,9 +1465,7 @@
     } else alert("Error: " + (res?res.error:"Unknown"));
   };
 
-  // INITIALIZATION
   window.onload = () => {
-      // Force auto-expand of filter panel on desktop load
       if (window.innerWidth >= 768) {
           document.getElementById('filterCollapse').classList.add('show');
       }
