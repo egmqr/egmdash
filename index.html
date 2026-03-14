@@ -803,7 +803,7 @@
       
       if(dF) {
           filtered = filtered.filter(e => e['Event Date'] >= dF);
-      } else if (!n) {
+      } else if (!n && currentTab === 'events') {
           filtered = filtered.filter(e => !e['Event Date'] || e['Event Date'] >= todayStr);
       }
       
