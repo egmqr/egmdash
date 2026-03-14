@@ -367,11 +367,11 @@
       <button type="button" class="btn btn-dark btn-sm fw-bold py-1 px-2 shadow-sm" style="font-size: 0.7rem;" onclick="unlockEditModal()">LOGIN</button>
   </div>
 
-  <form id="editForm">
+  <form id="editForm" class="d-flex flex-column">
   <input type="hidden" id="editEventId" name="eventId">
   <input type="hidden" id="editOriginalDate" name="originalDate">
   
-  <div class="d-flex mb-4 gap-2 border-bottom pb-3">
+  <div class="d-flex mb-4 gap-2 border-bottom pb-3" id="editTypeToggleBlock">
       <input type="radio" class="btn-check" name="entryMode" id="editTypeEvent" value="event" onchange="toggleEntryMode('edit')">
       <label class="btn btn-outline-primary btn-sm fw-bold w-50" for="editTypeEvent"><i class="bi bi-camera-video me-1"></i> Shooting Event</label>
 
@@ -400,12 +400,14 @@
       </div>
   </div>
 
-  <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
-  <div class="row g-2 mb-4">
-      <div class="col-6 col-md-3"><label class="form-label-sm">Event Date</label><input type="date" name="eventDate" class="form-control form-control-sm" required></div>
-      <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
-      <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
-      <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+  <div id="editDateTimeBlock">
+      <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
+      <div class="row g-2 mb-4">
+          <div class="col-6 col-md-3"><label class="form-label-sm">Event Date</label><input type="date" name="eventDate" class="form-control form-control-sm" required></div>
+          <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
+          <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+      </div>
   </div>
     
   <div id="editServicesContactFields">
@@ -430,15 +432,17 @@
       </div>
   </div>
 
-  <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
-  <div class="mb-4 p-3 bg-light rounded border shadow-sm">
-      <div class="row px-2 g-2" id="editCrewContainer">
-          <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
-      </div>
-      <div class="input-group input-group-sm mt-3">
-          <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
-          <input type="text" id="editCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
-          <button id="editCrewAddBtn" class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('editCustomCrewInput', 'editCrewContainer')">ADD</button>
+  <div id="editCrewBlock">
+      <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
+      <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+          <div class="row px-2 g-2" id="editCrewContainer">
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+          </div>
+          <div class="input-group input-group-sm mt-3">
+              <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
+              <input type="text" id="editCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
+              <button id="editCrewAddBtn" class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('editCustomCrewInput', 'editCrewContainer')">ADD</button>
+          </div>
       </div>
   </div>
 
@@ -459,7 +463,7 @@
       </div>
   </div>
   
-  <div class="mb-4"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea></div>
+  <div class="mb-4" id="editNotesBlock"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea></div>
   
   <button type="submit" class="btn btn-warning w-100 py-3 fw-bold shadow-sm" id="editSubmitBtn"><i class="bi bi-cloud-arrow-up me-1"></i> SAVE CHANGES</button>
 </form></div></div></div></div>
@@ -884,10 +888,12 @@
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
             
+            // Sort to push Crew Leave cards to the bottom of this specific day's list
             evs.sort((a, b) => (a['Event Name'] === 'Crew Leave' ? 1 : 0) - (b['Event Name'] === 'Crew Leave' ? 1 : 0));
 
             evs.forEach(e => {
               
+              // --- SPECIAL CREW LEAVE CARD RENDER (Compact 1/3 height) ---
               if (e['Event Name'] === 'Crew Leave') {
                   html += `<div class="col-12 col-md-6 col-lg-4">
                     <div class="card p-2 p-md-3" style="background-color: #fff1f2; border-color: #fecaca; height: auto !important;">
@@ -911,6 +917,7 @@
                   return; 
               }
 
+              // --- NORMAL EVENT CARD RENDER ---
               let projectRows = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
               let fileSet = new Set();
               let filesHtml = '';
@@ -1022,6 +1029,7 @@
           
           let eventsHtml = '';
           
+          // Sort Calendar pills so Crew Leave is always at the bottom
           dayEvents.sort((a, b) => (a['Event Name'] === 'Crew Leave' ? 1 : 0) - (b['Event Name'] === 'Crew Leave' ? 1 : 0));
 
           dayEvents.forEach(e => {
@@ -1229,6 +1237,23 @@
     
     const isReadOnly = fromCalendar && !isAuthenticated();
 
+    // DYNAMIC BILLING POSITIONING (Moves Payment section to top if event is in the past)
+    const todayDate = new Date();
+    const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
+    const isPast = date < todayStr;
+    
+    const paymentBlock = document.getElementById('editPaymentFields');
+    const toggleBlock = document.getElementById('editTypeToggleBlock');
+    const notesBlock = document.getElementById('editNotesBlock');
+
+    if (isPast) {
+        toggleBlock.parentNode.insertBefore(paymentBlock, toggleBlock.nextSibling);
+        paymentBlock.classList.add('border-bottom', 'pb-3', 'mb-4');
+    } else {
+        notesBlock.parentNode.insertBefore(paymentBlock, notesBlock);
+        paymentBlock.classList.remove('border-bottom', 'pb-3', 'mb-4');
+    }
+
     document.querySelectorAll('#editCrewContainer .custom-crew-cb').forEach(el => el.remove());
     document.querySelectorAll('#editServicesContainer .custom-service-cb').forEach(el => el.remove());
     
@@ -1239,6 +1264,7 @@
     form.elements['originalDate'].value = date;
     form.elements['eventName'].value = e['Event Name'] || '';
     
+    // Automatically trigger Leave UI mode if it's a Crew Leave
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
         toggleEntryMode('edit');
