@@ -12,11 +12,11 @@
   
   <style>
     :root {
-      --sticky-top: 110px; /* Dynamic variable updated by JS */
+      --sticky-top: 110px; /* Dynamically calculated based on header height */
     }
-  
-    body { background-color: #f8fafc; padding: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #334155; }
-    @media (min-width: 768px) { body { padding: 20px; font-size: 0.95rem; } }
+
+    body { background-color: #f8fafc; padding: 10px; padding-bottom: 120px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #334155; }
+    @media (min-width: 768px) { body { padding: 20px; padding-bottom: 120px; font-size: 0.95rem; } }
     
     /* Modern Cards */
     .card { transition: all 0.3s ease; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); height: 100%; background: #ffffff; }
@@ -41,15 +41,43 @@
     .sticky-header { position: sticky; top: 0; background: rgba(248, 250, 252, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; padding-top: 10px; margin-top: -10px; margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px;}
     @media (min-width: 768px) { .sticky-header { padding-top: 20px; margin-top: -20px; margin-left: -20px; margin-right: -20px; padding-left: 20px; padding-right: 20px; margin-bottom: 25px; } }
 
-    /* Sticky Date Headers for List View */
-    .sticky-date-header {
+    /* Sticky Date Headers */
+    .sticky-date-header-container {
         position: -webkit-sticky;
         position: sticky;
         top: var(--sticky-top);
-        background-color: #f8fafc; /* Matches body to seamlessly hide previous headers */
-        z-index: 990; /* Floats above cards, slides under main header */
-        padding-top: 15px;
-        margin-top: 10px;
+        z-index: 990;
+        background-color: #f8fafc;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        margin-top: 1.5rem;
+        margin-left: -10px;
+        margin-right: -10px;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    @media (min-width: 768px) {
+        .sticky-date-header-container { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
+    }
+    .sticky-date-header {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border-bottom: 2px solid #e2e8f0;
+        color: #0f172a;
+        transition: all 0.3s ease;
+    }
+    .sticky-date-header i {
+        color: #2563eb;
+        transition: color 0.3s ease;
+    }
+    .sticky-date-header-container.is-pinned .sticky-date-header {
+        background-color: #2563eb;
+        border-bottom-color: transparent;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+    }
+    .sticky-date-header-container.is-pinned .sticky-date-header h5,
+    .sticky-date-header-container.is-pinned .sticky-date-header i {
+        color: #ffffff !important;
     }
 
     /* Buttons & Inputs */
@@ -1094,7 +1122,13 @@
             }
         }
         
-        html += `<div class="col-12 sticky-date-header"><h5 class="fw-bold border-bottom border-2 pb-2 mb-0 d-flex align-items-center" style="color: #0f172a;"><i class="bi bi-calendar3 me-2 text-primary fs-5"></i>${displayHeader}</h5></div>`;
+        // Sticky Header UI Implementation
+        html += `<div class="col-12 sticky-date-header-container">
+                    <div class="sticky-date-header d-flex align-items-center">
+                        <i class="bi bi-calendar3 me-2 fs-5"></i>
+                        <h5 class="fw-bold mb-0">${displayHeader}</h5>
+                    </div>
+                 </div>`;
         
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
@@ -1217,6 +1251,7 @@
       }
     });
     document.getElementById('events-list').innerHTML = html;
+    setTimeout(checkStickyHeaders, 50); // Recalculate sticky headers after rendering
   }
 
   // --- Calendar Generator Logic ---
@@ -1927,9 +1962,22 @@
     } else alert("Error: " + (res?res.error:"Unknown"));
   };
 
+  // UI Sticky Header Logic
+  function checkStickyHeaders() {
+      const stickyOffset = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sticky-top')) || 110;
+      document.querySelectorAll('.sticky-date-header-container').forEach(container => {
+          const rect = container.getBoundingClientRect();
+          if (rect.top <= stickyOffset + 2) {
+              container.classList.add('is-pinned');
+          } else {
+              container.classList.remove('is-pinned');
+          }
+      });
+  }
+
+  window.addEventListener('scroll', checkStickyHeaders, {passive: true});
+
   window.onload = () => {
-      
-      // Setup dynamic sticky offset based on top header height
       const stickyHeaderEl = document.querySelector('.sticky-header');
       if (stickyHeaderEl && window.ResizeObserver) {
           new ResizeObserver(entries => {
