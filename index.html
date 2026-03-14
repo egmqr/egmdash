@@ -303,6 +303,36 @@
   <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="submitBtn"><i class="bi bi-check2-circle me-1"></i> CREATE ENTRY</button>
 </form></div></div></div></div>
 
+<div class="modal fade" id="addDayModal" tabindex="-1"><div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-calendar-plus me-2"></i> Add Shooting Day</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
+  <h6 id="addDayEventName" class="fw-bold text-primary mb-3 pb-2 border-bottom"></h6>
+  <form id="addDayForm">
+  <input type="hidden" id="addDayEventId" name="eventId">
+  
+  <div class="mb-4"><label class="form-label-sm">Day Status</label><select name="eventStatus" class="form-select form-select-sm fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option></select></div>
+  
+  <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
+  <div class="row g-2 mb-4">
+      <div class="col-12 col-md-4"><label class="form-label-sm">Date</label><input type="date" name="eventDate" class="form-control form-control-sm" required></div>
+      <div class="col-6 col-md-4"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
+      <div class="col-6 col-md-4"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+      <div class="col-12 col-md-4"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+  </div>
+  
+  <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
+  <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+      <div class="row px-2 g-2" id="addDayCrewContainer">
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+      </div>
+      <div class="input-group input-group-sm mt-3">
+          <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
+          <input type="text" id="addDayCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew...">
+          <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('addDayCustomCrewInput', 'addDayCrewContainer')">ADD</button>
+      </div>
+  </div>
+  
+  <button type="submit" class="btn btn-success w-100 py-3 fw-bold shadow-sm" id="addDaySubmitBtn"><i class="bi bi-check2-circle me-1"></i> SAVE NEW DAY</button>
+</form></div></div></div></div>
+
 <div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-pencil-square me-2"></i> Event Details</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
     
   <div id="editAuthWarning" class="alert alert-warning small py-2 mb-3 shadow-sm border-0 align-items-center justify-content-between" style="display:none;">
@@ -312,6 +342,7 @@
 
   <form id="editForm">
   <input type="hidden" id="editEventId" name="eventId">
+  <input type="hidden" id="editOriginalDate" name="originalDate">
   
   <div class="row g-2 mb-3 align-items-center">
     <div class="col-8 col-md-10">
@@ -753,14 +784,24 @@
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
             evs.forEach(e => {
+              
+              // GATHER ALL FILES ACROSS MULTI-DAY EVENTS
+              let projectRows = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
+              let fileSet = new Set();
               let filesHtml = '';
-              Object.keys(e).forEach(key => {
-                 if(key.toLowerCase().startsWith('file0') && e[key]) {
-                    const parts = e[key].split('|');
-                    if(parts.length === 3) {
-                       filesHtml += `<span class="file-badge mb-2 me-2"><i class="bi bi-file-earmark-text text-secondary"></i> ${parts[0]} <a href="${parts[1]}" target="_blank" class="ms-1">View</a> <span class="file-delete-btn ms-1" title="Delete File" onclick="requireAuth(() => deleteFile('${e['Event ID']}', '${parts[2]}'))"><i class="bi bi-x"></i></span></span>`;
-                    }
-                 }
+              
+              projectRows.forEach(row => {
+                  Object.keys(row).forEach(key => {
+                      if(key.toLowerCase().startsWith('file0') && row[key]) {
+                          if(!fileSet.has(row[key])) {
+                              fileSet.add(row[key]);
+                              const parts = row[key].split('|');
+                              if(parts.length === 3) {
+                                 filesHtml += `<span class="file-badge mb-2 me-2"><i class="bi bi-file-earmark-text text-secondary"></i> ${parts[0]} <a href="${parts[1]}" target="_blank" class="ms-1">View</a> <span class="file-delete-btn ms-1" title="Delete File" onclick="requireAuth(() => deleteFile('${e['Event ID']}', '${parts[2]}'))"><i class="bi bi-x"></i></span></span>`;
+                              }
+                          }
+                      }
+                  });
               });
 
               let statusBadgeClass = 'badge-soft-dark';
@@ -776,7 +817,11 @@
 
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
                     <div class="d-flex justify-content-between mb-3 align-items-center">
-                        <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']} <span onclick="requireAuth(() => openEditModal('${e['Event ID']}'))" class="edit-trigger ms-2"><i class="bi bi-pencil-square"></i></span></span>
+                        <div>
+                            <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
+                            <span onclick="requireAuth(() => openEditModal('${e['Event ID']}', '${e['Event Date']}'))" class="edit-trigger ms-1 px-1" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
+                            <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
+                        </div>
                         <span class="badge ${statusBadgeClass} px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>
                     </div>
                     
@@ -858,7 +903,7 @@
               
               const timePrefix = e['Event Start Time'] ? `${formatAMPM(e['Event Start Time'])} ` : '';
               
-              eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Event ID']}', true)" title="${e['Event Name']}">
+              eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Event ID']}', '${e['Event Date']}', true)" title="${e['Event Name']}">
                   <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
               </div>`;
           });
@@ -880,12 +925,22 @@
 
   function renderPayments(data) {
     let html = '';
-    if (data.length === 0) {
+    
+    // Deduplicate so multi-day events only show ONCE in the billing table
+    const uniqueDataMap = new Map();
+    data.forEach(item => {
+        if (!uniqueDataMap.has(item['Event ID'])) {
+            uniqueDataMap.set(item['Event ID'], item);
+        }
+    });
+    const uniqueData = Array.from(uniqueDataMap.values());
+    
+    if (uniqueData.length === 0) {
         document.getElementById('p-body').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>No payment records found.</td></tr>';
         return;
     }
 
-    data.forEach(p => {
+    uniqueData.forEach(p => {
       const isAvp = p['AVP Required'] === 'TRUE';
       const nameDisplay = isAvp ? `<span class="fw-bold text-dark">${p['Event Name']}</span> <span class="badge badge-avp rounded-pill shadow-sm">AVP</span>` : `<span class="fw-bold text-dark">${p['Event Name']}</span>`;
       
@@ -893,7 +948,6 @@
       if(p['Payment Type'] === 'Billing') badgeClass = 'badge-soft-warning';
       else if(p['Payment Type']) badgeClass = 'badge-soft-success';
       
-      // CUSTOM STATUS OVERRIDES
       if(p['Billing Status'] === 'GR Received') badgeClass = 'badge-apple-green';
       if(p['Billing Status'] === 'Payment released') badgeClass = 'badge-go-green';
 
@@ -938,7 +992,6 @@
         if (filterCollapse.classList.contains('show')) {
             new bootstrap.Collapse(filterCollapse, {toggle: false}).hide();
         }
-        // Auto-Clear Filters instantly when Calendar is opened
         ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType','fBillStatus'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
     } else {
         filterBtn.classList.remove('d-none');
@@ -987,8 +1040,24 @@
       }, 300); 
   }
 
-  function openEditModal(id, fromCalendar = false) {
-    const e = rawEvents.find(ev => ev['Event ID'] === id);
+  // --- MODAL TRIGGERS ---
+
+  function openAddDayModal(id) {
+     const e = rawEvents.find(ev => ev['Event ID'] === id);
+     if(!e) return;
+     
+     document.getElementById('addDayEventName').innerText = "Add Day to: " + e['Event Name'] + ' (#' + id + ')';
+     document.getElementById('addDayEventId').value = id;
+
+     const form = document.getElementById('addDayForm');
+     form.reset();
+     document.querySelectorAll('#addDayCrewContainer .custom-crew-cb').forEach(el => el.remove());
+
+     new bootstrap.Modal(document.getElementById('addDayModal')).show();
+  }
+
+  function openEditModal(id, date, fromCalendar = false) {
+    const e = rawEvents.find(ev => ev['Event ID'] === id && ev['Event Date'] === date);
     if(!e) return;
     
     const isReadOnly = fromCalendar && !isAuthenticated();
@@ -1000,6 +1069,8 @@
     form.reset();
     
     form.elements['eventId'].value = id;
+    form.elements['originalDate'].value = date; // Composite key for the backend
+    
     form.elements['eventName'].value = e['Event Name'] || '';
     form.elements['eventVenue'].value = e['Event Venue'] || '';
     form.elements['venueLink'].value = e['Event Venue Link'] || '';
@@ -1117,6 +1188,8 @@
     if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
   }
 
+  // --- Form Submissions ---
+
   document.getElementById('eventForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
@@ -1136,6 +1209,25 @@
         document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
         document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
         toggleAvpFields(false, 'new'); 
+        fetchAllData(); 
+    } else alert("Error: " + (res?res.error:"Unknown"));
+  };
+
+  document.getElementById('addDayForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('addDaySubmitBtn'), ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = "Adding Day...";
+    btn.disabled = true; ov.style.display='flex';
+    
+    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+    obj.manpower = fd.getAll('manpower');
+    
+    const res = await callApi({action:'addEventDay', formObject:obj}, 'POST');
+    
+    ov.style.display='none'; btn.disabled=false;
+    if(res && res.success) { 
+        bootstrap.Modal.getInstance(document.getElementById('addDayModal')).hide(); 
+        e.target.reset(); 
         fetchAllData(); 
     } else alert("Error: " + (res?res.error:"Unknown"));
   };
