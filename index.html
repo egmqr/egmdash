@@ -1051,7 +1051,7 @@
 
     const listData = data.filter(e => e['AVP Required'] !== 'TRUE');
 
-    let dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(listData.map(e=>e['Event Date']))].sort();
+    let dates = isDefault ? Array.from({length:14}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(listData.map(e=>e['Event Date']))].sort();
     
     if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No events found matching your criteria.</div></div>'; return; }
 
@@ -1150,6 +1150,7 @@
                   venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
               }
               
+              // Smart Regex split to ensure badges look clean on the dashboard
               let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-1 fw-normal">${s.trim()}</span>`).join('') : '-';
 
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
