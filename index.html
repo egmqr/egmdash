@@ -1080,8 +1080,15 @@
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
             
-            // Sort to push Crew Leave cards to the bottom of this specific day's list
-            evs.sort((a, b) => (a['Event Name'] === 'Crew Leave' ? 1 : 0) - (b['Event Name'] === 'Crew Leave' ? 1 : 0));
+            evs.sort((a, b) => {
+                const leaveA = a['Event Name'] === 'Crew Leave' ? 1 : 0;
+                const leaveB = b['Event Name'] === 'Crew Leave' ? 1 : 0;
+                if (leaveA !== leaveB) return leaveA - leaveB;
+
+                const timeA = to24Hour(a['Event Start Time']) || "99:99";
+                const timeB = to24Hour(b['Event Start Time']) || "99:99";
+                return timeA.localeCompare(timeB);
+            });
 
             evs.forEach(e => {
               
@@ -1137,7 +1144,7 @@
                   venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
               }
               
-              // Only split by commas that are NOT inside brackets
+              // Smart Regex split to ensure badges look clean on the dashboard
               let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-1 fw-normal">${s.trim()}</span>`).join('') : '-';
 
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
@@ -1222,8 +1229,15 @@
           
           let eventsHtml = '';
           
-          // Sort Calendar pills so Crew Leave is always at the bottom
-          dayEvents.sort((a, b) => (a['Event Name'] === 'Crew Leave' ? 1 : 0) - (b['Event Name'] === 'Crew Leave' ? 1 : 0));
+          dayEvents.sort((a, b) => {
+              const leaveA = a['Event Name'] === 'Crew Leave' ? 1 : 0;
+              const leaveB = b['Event Name'] === 'Crew Leave' ? 1 : 0;
+              if (leaveA !== leaveB) return leaveA - leaveB;
+
+              const timeA = to24Hour(a['Event Start Time']) || "99:99";
+              const timeB = to24Hour(b['Event Start Time']) || "99:99";
+              return timeA.localeCompare(timeB);
+          });
 
           dayEvents.forEach(e => {
               if (e['Event Name'] === 'Crew Leave') {
@@ -1567,6 +1581,7 @@
         form.elements['contactNumber'].value = e['Contact Number'] || '';
         
         // --- SMART PARSER FOR SERVICES ---
+        // Using strict regex so commas inside brackets are ignored
         const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
         const sInputs = form.elements['services'];
         if (sInputs) {
