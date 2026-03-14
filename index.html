@@ -12,16 +12,17 @@
   
   <style>
     :root {
-      --sticky-top: 110px; /* Dynamically calculated based on header height */
+      --sticky-top: 110px; 
     }
 
-    body { background-color: #f8fafc; padding: 10px; padding-bottom: 120px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #334155; }
+    body { background-color: #f8fafc; padding: 10px; padding-bottom: 120px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #334155; transition: background-color 0.3s ease, color 0.3s ease; }
     @media (min-width: 768px) { body { padding: 20px; padding-bottom: 120px; font-size: 0.95rem; } }
     
     /* Modern Cards */
     .card { transition: all 0.3s ease; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); height: 100%; background: #ffffff; }
     .card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04); border-color: #cbd5e1; }
-    
+    .leave-card { background-color: #fff1f2; border-color: #fecaca; }
+
     /* Soft Badges */
     .badge-soft-dark { background-color: #f1f5f9; color: #475569; font-weight: 600; border: 1px solid #e2e8f0;}
     .badge-soft-success { background-color: #dcfce7; color: #047857; font-weight: 600; border: 1px solid #a7f3d0;}
@@ -38,47 +39,16 @@
     .nav-pills .nav-link.active { background: #2563eb; color: white; border-color: #2563eb; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
     
     /* Glassmorphism Sticky Header */
-    .sticky-header { position: sticky; top: 0; background: rgba(248, 250, 252, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; padding-top: 10px; margin-top: -10px; margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px;}
+    .sticky-header { transition: background-color 0.3s ease; position: sticky; top: 0; background: rgba(248, 250, 252, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; padding-top: 10px; margin-top: -10px; margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px;}
     @media (min-width: 768px) { .sticky-header { padding-top: 20px; margin-top: -20px; margin-left: -20px; margin-right: -20px; padding-left: 20px; padding-right: 20px; margin-bottom: 25px; } }
 
     /* Sticky Date Headers */
-    .sticky-date-header-container {
-        position: -webkit-sticky;
-        position: sticky;
-        top: var(--sticky-top);
-        z-index: 990;
-        background-color: #f8fafc;
-        padding-top: 10px;
-        padding-bottom: 10px;
-        margin-top: 1.5rem;
-        margin-left: -10px;
-        margin-right: -10px;
-        padding-left: 10px;
-        padding-right: 10px;
-    }
-    @media (min-width: 768px) {
-        .sticky-date-header-container { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
-    }
-    .sticky-date-header {
-        padding: 8px 12px;
-        border-radius: 8px;
-        border-bottom: 2px solid #e2e8f0;
-        color: #0f172a;
-        transition: all 0.3s ease;
-    }
-    .sticky-date-header i {
-        color: #2563eb;
-        transition: color 0.3s ease;
-    }
-    .sticky-date-header-container.is-pinned .sticky-date-header {
-        background-color: #2563eb;
-        border-bottom-color: transparent;
-        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
-    }
-    .sticky-date-header-container.is-pinned .sticky-date-header h5,
-    .sticky-date-header-container.is-pinned .sticky-date-header i {
-        color: #ffffff !important;
-    }
+    .sticky-date-header-container { position: -webkit-sticky; position: sticky; top: var(--sticky-top); z-index: 990; background-color: #f8fafc; padding-top: 10px; padding-bottom: 10px; margin-top: 1.5rem; margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px; transition: background-color 0.3s ease; }
+    @media (min-width: 768px) { .sticky-date-header-container { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; } }
+    .sticky-date-header { padding: 8px 12px; border-radius: 8px; border-bottom: 2px solid #e2e8f0; color: #0f172a; transition: all 0.3s ease; }
+    .sticky-date-header i { color: #2563eb; transition: color 0.3s ease; }
+    .sticky-date-header-container.is-pinned .sticky-date-header { background-color: #2563eb; border-bottom-color: transparent; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+    .sticky-date-header-container.is-pinned .sticky-date-header h5, .sticky-date-header-container.is-pinned .sticky-date-header i { color: #ffffff !important; }
 
     /* Buttons & Inputs */
     .btn { border-radius: 8px; font-weight: 600; letter-spacing: 0.3px; }
@@ -88,7 +58,7 @@
     .form-control:focus, .form-select:focus { border-color: #2563eb; box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.1); }
     .form-control:disabled, .form-select:disabled { background-color: #f1f5f9; opacity: 0.8; }
     
-    .filter-panel { background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .filter-panel { background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.3s ease; }
     .form-label-sm { font-size: 0.65rem; font-weight: 700; color: #64748b; margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: 0.5px;}
     
     /* Card Elements */
@@ -108,18 +78,18 @@
     .file-delete-btn:hover { color: #b91c1c; }
 
     /* Custom Calendar Grid */
-    .calendar-container { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; }
-    .calendar-header-row { display: grid; grid-template-columns: repeat(7, 1fr); background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
-    .calendar-header-cell { text-align: center; font-weight: 700; font-size: 0.75rem; color: #64748b; padding: 12px 5px; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #f1f5f9; }
+    .calendar-container { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; transition: all 0.3s ease; }
+    .calendar-header-row { display: grid; grid-template-columns: repeat(7, 1fr); background: #f8fafc; border-bottom: 1px solid #e2e8f0; transition: all 0.3s ease;}
+    .calendar-header-cell { text-align: center; font-weight: 700; font-size: 0.75rem; color: #64748b; padding: 12px 5px; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #f1f5f9; transition: all 0.3s ease; }
     .calendar-header-cell:last-child { border-right: none; }
     
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: #e2e8f0; gap: 1px; } 
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: #e2e8f0; gap: 1px; transition: all 0.3s ease;} 
     .calendar-day { background: #fff; min-height: 110px; padding: 6px; display: flex; flex-direction: column; gap: 4px; transition: 0.2s; min-width: 0; overflow: hidden; }
     .calendar-day:hover { background-color: #f8fafc; }
     .calendar-day.empty { background: #f8fafc; cursor: default; }
     .calendar-day.today { background: #eff6ff; }
     
-    .date-number { font-weight: 600; font-size: 0.85rem; color: #475569; align-self: flex-end; margin-bottom: 4px; }
+    .date-number { font-weight: 600; font-size: 0.85rem; color: #475569; align-self: flex-end; margin-bottom: 4px; transition: color 0.3s ease;}
     .calendar-day.today .date-number { background: #2563eb; color: #fff; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
     
     .cal-event-pill { width: 100%; font-size: 0.7rem; font-weight: 500; padding: 4px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-align: left; transition: 0.2s; border: 1px solid transparent; margin-bottom: 2px; line-height: 1.2; display: block; }
@@ -136,7 +106,7 @@
         .calendar-header-cell { font-size: 0.65rem; padding: 8px 2px; }
     }
 
-    /* Overlays, Loaders & Animations */
+    /* Overlays & Loaders */
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;}
     .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
     .bg-sync-indicator { font-size: 0.7rem; color: #94a3b8; display: none; align-items: center; gap: 5px; animation: pulse 1.5s infinite; }
@@ -145,9 +115,66 @@
     @keyframes spin { 100% { transform: rotate(360deg); } }
     
     /* Tables */
-    .table-custom { border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
-    .table-custom th { background-color: #f1f5f9; color: #475569; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; }
-    .table-custom td { vertical-align: middle; color: #334155; border-bottom: 1px solid #f1f5f9; }
+    .table-custom { border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; transition: all 0.3s ease; }
+    .table-custom th { background-color: #f1f5f9; color: #475569; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; transition: background-color 0.3s ease, color 0.3s ease; }
+    .table-custom td { vertical-align: middle; color: #334155; border-bottom: 1px solid #f1f5f9; transition: border-color 0.3s ease; }
+
+    /* ================== DARK MODE STYLES ================== */
+    body.dark-mode { background-color: #0f172a; color: #cbd5e1; }
+    .dark-mode .card, .dark-mode .filter-panel, .dark-mode .calendar-container, .dark-mode .table-custom, .dark-mode .modal-content { background: #1e293b !important; border-color: #334155 !important; }
+    .dark-mode .sticky-header { background: rgba(15, 23, 42, 0.9); border-bottom-color: #1e293b; }
+    .dark-mode .sticky-date-header-container { background-color: #0f172a; }
+    .dark-mode .sticky-date-header { color: #e2e8f0 !important; border-bottom-color: #334155; }
+    .dark-mode .sticky-date-header h5 { color: #e2e8f0 !important; }
+    .dark-mode .sticky-date-header-container.is-pinned .sticky-date-header { background-color: #2563eb; color: #fff !important; }
+    
+    .dark-mode .nav-pills .nav-link { background: #334155; border-color: #334155; color: #94a3b8; }
+    .dark-mode .nav-pills .nav-link.active { background: #2563eb; color: white; }
+    .dark-mode .btn-light { background-color: #334155; border-color: #475569 !important; color: #cbd5e1; }
+    .dark-mode .btn-light:hover { background-color: #475569; color: #f8fafc; }
+    
+    .dark-mode .card h5 { color: #f8fafc !important; }
+    .dark-mode .text-dark { color: #f8fafc !important; }
+    .dark-mode .text-secondary { color: #94a3b8 !important; }
+    .dark-mode .text-muted { color: #64748b !important; }
+    .dark-mode .bg-light { background-color: #334155 !important; }
+    .dark-mode .bg-white { background-color: #1e293b !important; }
+    .dark-mode .border, .dark-mode .border-bottom { border-color: #334155 !important; }
+    
+    .dark-mode .leave-card { background-color: #450a0a !important; border-color: #7f1d1d !important; }
+    .dark-mode .file-badge { background-color: #0f172a; color: #cbd5e1; border-color: #334155; }
+    
+    .dark-mode .form-control, .dark-mode .form-select { background-color: #0f172a; border-color: #334155; color: #e2e8f0; }
+    .dark-mode .form-control:focus, .dark-mode .form-select:focus { background-color: #0f172a; color: #e2e8f0; border-color: #3b82f6;}
+    .dark-mode ::placeholder { color: #64748b !important; }
+    .dark-mode .input-group-text { background-color: #334155 !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark-mode .form-label-sm { color: #94a3b8; }
+    .dark-mode .modal-header.bg-light { background-color: #0f172a !important; border-bottom-color: #334155 !important; }
+    .dark-mode .modal-header .text-secondary { color: #e2e8f0 !important; }
+    .dark-mode .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+    
+    .dark-mode .badge-soft-dark { background-color: #334155; color: #cbd5e1; border-color: #475569;}
+    .dark-mode .badge-soft-success { background-color: #064e3b; color: #a7f3d0; border-color: #065f46; }
+    .dark-mode .badge-soft-warning { background-color: #78350f; color: #fed7aa; border-color: #92400e; }
+    .dark-mode .badge-apple-green { background-color: #14532d; color: #d9f99d; border-color: #166534; }
+    .dark-mode .badge-orange { background-color: #7c2d12; color: #fdba74; border-color: #9a3412; }
+    .dark-mode .badge-avp { background-color: #2e1065; color: #ddd6fe; border-color: #4c1d95; }
+    .dark-mode .badge.bg-light.text-dark { background-color: #334155 !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark-mode .badge.bg-white { background-color: #0f172a !important; }
+    
+    .dark-mode .table { color: #cbd5e1; }
+    .dark-mode .table-custom th { background-color: #0f172a; color: #94a3b8; border-bottom-color: #334155; }
+    .dark-mode .table td { border-bottom-color: #334155; }
+    .dark-mode .table-hover tbody tr:hover { background-color: #334155; color: #e2e8f0; }
+    
+    .dark-mode .calendar-header-row { background-color: #0f172a; border-bottom-color: #334155; }
+    .dark-mode .calendar-header-cell { border-right-color: #1e293b; }
+    .dark-mode .calendar-grid { background: #334155; }
+    .dark-mode .calendar-day { background: #1e293b; }
+    .dark-mode .calendar-day:hover { background-color: #334155; }
+    .dark-mode .calendar-day.empty { background: #0f172a; }
+    .dark-mode .calendar-day.today { background: #1e3a8a; } 
+    .dark-mode .date-number { color: #94a3b8; }
   </style>
 </head>
 <body>
@@ -165,9 +192,16 @@
           <i class="bi bi-arrow-repeat text-primary ms-2" id="syncIcon" style="cursor: pointer; font-size: 1.3rem;" onclick="forceSync()" title="Force Sync with Google Sheets"></i>
           <span id="bgSyncIndicator" class="bg-sync-indicator ms-3"><div class="spinner-border spinner-border-sm" role="status" style="width: 0.8rem; height: 0.8rem; border-width: 0.15em;"></div> Syncing</span>
       </h4>
-      <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-1" onclick="requireAuth(() => openNewEventModal())">
-        <i class="bi bi-plus-lg"></i> New Entry
-      </button>
+      
+      <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-1" onclick="requireAuth(() => openNewEventModal())">
+            <i class="bi bi-plus-lg"></i> <span class="d-none d-sm-inline">New Entry</span>
+          </button>
+          <button id="themeToggleBtn" class="btn btn-light border-secondary-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center" onclick="toggleTheme()" title="Toggle Dark Mode" style="width: 38px; height: 34px;">
+            <i id="themeIcon" class="bi bi-moon-fill text-secondary"></i>
+          </button>
+      </div>
+
     </div>
 
     <div class="d-flex justify-content-between align-items-center pb-2">
@@ -304,7 +338,7 @@
 
       <div class="row g-2 mb-4" id="newAvpHiddenFields">
         <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0"></div></div>
         <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
       </div>
   </div>
@@ -767,6 +801,29 @@
       }
   }
 
+  // --- Theme Logic ---
+  function toggleTheme() {
+      const body = document.body;
+      const isDark = body.classList.toggle('dark-mode');
+      localStorage.setItem('egm_theme', isDark ? 'dark' : 'light');
+      
+      const icon = document.getElementById('themeIcon');
+      if (isDark) {
+          icon.className = 'bi bi-sun-fill text-warning';
+      } else {
+          icon.className = 'bi bi-moon-fill text-secondary';
+      }
+  }
+
+  function applySavedTheme() {
+      const savedTheme = localStorage.getItem('egm_theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.body.classList.add('dark-mode');
+          document.getElementById('themeIcon').className = 'bi bi-sun-fill text-warning';
+      }
+  }
+  applySavedTheme(); // Run immediately
+
   // --- Helper Functions ---
   function formatAMPM(t) {
       if(!t || t==='--' || t.trim()==='') return '--:--';
@@ -1150,7 +1207,7 @@
               // --- SPECIAL CREW LEAVE CARD RENDER (Compact 1/3 height) ---
               if (e['Event Name'] === 'Crew Leave') {
                   html += `<div class="col-12 col-md-6 col-lg-4">
-                    <div class="card p-2 p-md-3" style="background-color: #fff1f2; border-color: #fecaca; height: auto !important;">
+                    <div class="card leave-card p-2 p-md-3" style="height: auto !important;">
                       <div class="d-flex justify-content-between align-items-center mb-2">
                           <div>
                               <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
@@ -1194,7 +1251,7 @@
               if(e['Event Status'] === 'Confirmed') statusBadgeClass = 'badge-soft-success';
               else if(e['Event Status'] === 'Cancelled') statusBadgeClass = 'badge-soft-warning';
 
-              let venueDisplay = `<span class="fw-medium">${e['Event Venue'] || 'No Venue Set'}</span>`;
+              let venueDisplay = `<span class="fw-medium text-dark">${e['Event Venue'] || 'No Venue Set'}</span>`;
               if (e['Event Venue Link']) {
                   venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
               }
@@ -1206,13 +1263,13 @@
                     <div class="d-flex justify-content-between mb-3 align-items-center">
                         <div>
                             <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
-                            <span onclick="requireAuth(() => openEditModal('${e['Event ID']}', '${e['Event Date']}'))" class="edit-trigger ms-1 px-1" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
+                            <span onclick="requireAuth(() => openEditModal('${e['Event ID']}', '${e['Event Date']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
                             <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
                         </div>
                         <span class="badge ${statusBadgeClass} px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>
                     </div>
                     
-                    <h5 class="fw-bold mb-1 lh-sm" style="color: #1e293b;">${e['Event Name']}</h5>
+                    <h5 class="fw-bold mb-1 lh-sm text-dark">${e['Event Name']}</h5>
                     <p class="small text-muted mb-4"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> ${venueDisplay}</p>
                     
                     <div class="small text-secondary">
@@ -1235,7 +1292,7 @@
                         </div>
                         
                         <div class="bg-light p-2 rounded-3 border mb-3">
-                            <p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2">${e['Contact Number']}</span></p>
+                            <p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2 text-dark">${e['Contact Number']}</span></p>
                         </div>
                         
                         <p class="mb-0 text-muted fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
@@ -1438,7 +1495,7 @@
       const elements = form.querySelectorAll('input, select, textarea, button');
       
       elements.forEach(el => {
-          if(el.id !== 'editSubmitBtn' && el.id !== 'editCrewAddBtn') {
+          if(el.id !== 'editSubmitBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') {
               el.disabled = isReadOnly;
           }
       });
