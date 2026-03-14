@@ -22,6 +22,8 @@
     .badge-soft-dark { background-color: #f1f5f9; color: #475569; font-weight: 600; border: 1px solid #e2e8f0;}
     .badge-soft-success { background-color: #dcfce7; color: #047857; font-weight: 600; border: 1px solid #a7f3d0;}
     .badge-soft-warning { background-color: #fef9c3; color: #b45309; font-weight: 600; border: 1px solid #fde047;}
+    .badge-apple-green { background-color: #ecfccb; color: #3f6212; font-weight: 600; border: 1px solid #d9f99d; }
+    .badge-go-green { background-color: #22c55e; color: #ffffff; font-weight: 600; border: 1px solid #16a34a; }
     .badge-avp { background-color: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; font-size: 0.7rem; vertical-align: middle; margin-left: 5px; }
 
     /* Mobile Priority Nav Pills */
@@ -281,7 +283,7 @@
     </div>
   </div>
 
-  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
+  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
   <select name="paymentType" id="pTypeSelect" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
   
   <div id="billingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
@@ -710,7 +712,6 @@
   function renderEvents(data, isDefault) {
     let html = '';
     
-    // Create accurate local timezone strings for Today and Tomorrow
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
     
@@ -723,7 +724,6 @@
     const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
     if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No shooting events found matching your criteria.</div></div>'; return; }
 
-    // Pre-sort dates sequentially so tomorrow always follows today
     dates.sort((a,b) => {
         if(!a) return 1; if(!b) return -1;
         return a.localeCompare(b);
@@ -737,7 +737,6 @@
             const dParts = ds.split('-');
             const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
             
-            // Format strictly as e.g. "Saturday, Mar 14, 2026"
             const formattedDate = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
             
             if (ds === todayStr) {
@@ -893,6 +892,11 @@
       let badgeClass = 'badge-soft-dark';
       if(p['Payment Type'] === 'Billing') badgeClass = 'badge-soft-warning';
       else if(p['Payment Type']) badgeClass = 'badge-soft-success';
+      
+      // CUSTOM STATUS OVERRIDES
+      if(p['Billing Status'] === 'GR Received') badgeClass = 'badge-apple-green';
+      if(p['Billing Status'] === 'Payment released') badgeClass = 'badge-go-green';
+
       let badge = `<span class="badge ${badgeClass} px-2 py-1 rounded-pill">${p['Billing Status']||'Pending'}</span>`;
       
       let dateStr = p['Billing Status Date'] ? new Date(p['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
@@ -934,6 +938,8 @@
         if (filterCollapse.classList.contains('show')) {
             new bootstrap.Collapse(filterCollapse, {toggle: false}).hide();
         }
+        // Auto-Clear Filters instantly when Calendar is opened
+        ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType','fBillStatus'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
     } else {
         filterBtn.classList.remove('d-none');
         filterBtn.classList.add('d-flex');
