@@ -235,7 +235,7 @@
       <div class="row g-2 mb-3 align-items-center">
         <div class="col-8 col-md-10">
             <label class="form-label-sm">Event Name</label>
-            <input type="text" name="eventName" class="form-control fw-bold" required>
+            <input type="text" name="eventName" class="form-control fw-bold">
         </div>
         <div class="col-4 col-md-2 mt-4 pt-1">
             <div class="form-check">
@@ -369,7 +369,7 @@
       <div class="row g-2 mb-3 align-items-center">
         <div class="col-8 col-md-10">
             <label class="form-label-sm">Event Name</label>
-            <input type="text" name="eventName" class="form-control fw-bold" required>
+            <input type="text" name="eventName" class="form-control fw-bold">
         </div>
         <div class="col-4 col-md-2 mt-4 pt-1">
             <div class="form-check">
@@ -798,8 +798,8 @@
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrowStr = tomorrowDate.getFullYear() + '-' + String(tomorrowDate.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrowDate.getDate()).padStart(2, '0');
 
-    // EXCLUDE AVP, BUT KEEP NORMAL EVENTS AND CREW LEAVES
-    const listData = data.filter(e => e['AVP Required'] !== 'TRUE');
+    // ONLY standard events for the List View (Excludes Crew Leave from the dashboard cards view)
+    const listData = data.filter(e => e['AVP Required'] !== 'TRUE' && e['Event Name'] !== 'Crew Leave');
 
     let dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(listData.map(e=>e['Event Date']))].sort();
     
@@ -833,9 +833,12 @@
         
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
+            
+            // Sort to push Crew Leave cards to the bottom if they ever render here (backup sorting)
+            evs.sort((a, b) => (a['Event Name'] === 'Crew Leave' ? 1 : 0) - (b['Event Name'] === 'Crew Leave' ? 1 : 0));
+
             evs.forEach(e => {
               
-              // --- SPECIAL CREW LEAVE CARD RENDER ---
               if (e['Event Name'] === 'Crew Leave') {
                   html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4" style="background-color: #fff1f2; border-color: #fecaca;">
                       <div class="d-flex justify-content-between mb-3 align-items-start">
@@ -859,10 +862,9 @@
                           <p class="mb-0 fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50 text-danger"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
                       </div>
                   </div></div>`;
-                  return; // Stop normal rendering for this loop iteration
+                  return; 
               }
 
-              // --- NORMAL EVENT CARD RENDER ---
               let projectRows = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
               let fileSet = new Set();
               let filesHtml = '';
@@ -973,8 +975,11 @@
           const dayEvents = data.filter(e => e['Event Date'] === currentDateStr && e['AVP Required'] !== 'TRUE');
           
           let eventsHtml = '';
+          
+          // Sort Calendar pills so Crew Leave is always at the bottom
+          dayEvents.sort((a, b) => (a['Event Name'] === 'Crew Leave' ? 1 : 0) - (b['Event Name'] === 'Crew Leave' ? 1 : 0));
+
           dayEvents.forEach(e => {
-              
               if (e['Event Name'] === 'Crew Leave') {
                   eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="openEditModal('${e['Event ID']}', '${e['Event Date']}', true)" title="Leave: ${e['Manpower']}">
                       <span class="opacity-75">✈️</span> <strong>${e['Manpower'] || 'Leave'}</strong>
@@ -1171,7 +1176,6 @@
     form.elements['originalDate'].value = date;
     form.elements['eventName'].value = e['Event Name'] || '';
     
-    // Automatically trigger Leave UI mode if it's a Crew Leave
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
         toggleEntryMode('edit');
@@ -1297,21 +1301,31 @@
   document.getElementById('eventForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
-    document.getElementById('overlayText').innerText = "Saving Entry...";
-    btn.disabled = true; ov.style.display='flex';
-    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     
-    // OVERRIDE for Leave Type
-    if (document.getElementById('newTypeLeave').checked) {
+    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+    obj.manpower = fd.getAll('manpower');
+    obj.services = fd.getAll('services'); 
+
+    const isLeave = document.getElementById('newTypeLeave').checked;
+    if (isLeave) {
+        if (obj.manpower.length === 0) {
+            alert("Please select at least one crew member for this leave.");
+            return;
+        }
         obj.eventName = 'Crew Leave';
         obj.eventStatus = 'Confirmed';
         obj.avp = false;
         obj.paymentType = '';
+    } else {
+        if (!obj.eventName || obj.eventName.trim() === '') {
+            alert("Please enter an Event Name.");
+            return;
+        }
     }
     
-    obj.manpower = fd.getAll('manpower');
-    obj.services = fd.getAll('services'); 
-    
+    document.getElementById('overlayText').innerText = "Saving Entry...";
+    btn.disabled = true; ov.style.display='flex';
+
     const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
@@ -1328,11 +1342,12 @@
   document.getElementById('addDayForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('addDaySubmitBtn'), ov = document.getElementById('submitOverlay');
-    document.getElementById('overlayText').innerText = "Adding Day...";
-    btn.disabled = true; ov.style.display='flex';
     
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
+    
+    document.getElementById('overlayText').innerText = "Adding Day...";
+    btn.disabled = true; ov.style.display='flex';
     
     const res = await callApi({action:'addEventDay', formObject:obj}, 'POST');
     
@@ -1347,21 +1362,31 @@
   document.getElementById('editForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('editSubmitBtn'), ov = document.getElementById('submitOverlay');
-    document.getElementById('overlayText').innerText = "Updating...";
-    btn.disabled=true; ov.style.display='flex';
     
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+    obj.manpower = fd.getAll('manpower');
+    obj.services = fd.getAll('services'); 
     
-    if (document.getElementById('editTypeLeave').checked) {
+    const isLeave = document.getElementById('editTypeLeave').checked;
+    if (isLeave) {
+        if (obj.manpower.length === 0) {
+            alert("Please select at least one crew member for this leave.");
+            return;
+        }
         obj.eventName = 'Crew Leave';
         obj.eventStatus = 'Confirmed';
         obj.avp = false;
         obj.paymentType = '';
+    } else {
+        if (!obj.eventName || obj.eventName.trim() === '') {
+            alert("Please enter an Event Name.");
+            return;
+        }
     }
     
-    obj.manpower = fd.getAll('manpower');
-    obj.services = fd.getAll('services'); 
-    
+    document.getElementById('overlayText').innerText = "Updating...";
+    btn.disabled=true; ov.style.display='flex';
+
     const res = await callApi({action:'editEvent', updateData: obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
