@@ -839,29 +839,26 @@
 
             evs.forEach(e => {
               
-              // --- SPECIAL CREW LEAVE CARD RENDER ---
+              // --- SPECIAL CREW LEAVE CARD RENDER (Compact 1/3 height) ---
               if (e['Event Name'] === 'Crew Leave') {
-                  html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4" style="background-color: #fff1f2; border-color: #fecaca;">
-                      <div class="d-flex justify-content-between mb-3 align-items-start">
+                  html += `<div class="col-12 col-md-6 col-lg-4">
+                    <div class="card p-2 p-md-3" style="background-color: #fff1f2; border-color: #fecaca; height: auto !important;">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
                           <div>
-                              <span class="badge bg-danger px-2 py-1 fs-6 border-0 shadow-sm mb-2"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
-                              <br>
-                              <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted" style="font-size: 0.65rem;">#${e['Event ID']}</span>
-                              <span onclick="requireAuth(() => openEditModal('${e['Event ID']}', '${e['Event Date']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
-                              <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-danger" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
+                              <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
+                              <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
+                              <span onclick="requireAuth(() => openEditModal('${e['Event ID']}', '${e['Event Date']}'))" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
+                              <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
                           </div>
                       </div>
                       
-                      <div class="mb-3 mt-1">
-                          <strong class="text-danger">Crew on Leave:</strong><br>
-                          <div class="mt-2" style="line-height: 1.5;">
-                              ${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-1 fs-6 shadow-sm">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic">No crew selected</span>'}
+                      <div class="mb-1">
+                          <div style="line-height: 1.2;">
+                              ${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-1 fs-6 shadow-sm">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}
                           </div>
                       </div>
                       
-                      <div class="small text-secondary mt-auto border-top pt-3 border-danger border-opacity-25">
-                          <p class="mb-0 fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50 text-danger"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
-                      </div>
+                      ${e['Event Notes'] ? `<div class="small text-secondary mt-2 border-top pt-2 border-danger border-opacity-25"><p class="mb-0 fst-italic" style="font-size: 0.7rem;"><i class="bi bi-journal-text opacity-50 text-danger me-1"></i> ${e['Event Notes']}</p></div>` : ''}
                   </div></div>`;
                   return; // Stop normal rendering for this loop iteration
               }
