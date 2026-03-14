@@ -83,6 +83,7 @@
     .cal-status-confirmed { background-color: #dcfce7; color: #047857; border-color: #a7f3d0; }
     .cal-status-pencil { background-color: #f1f5f9; color: #475569; border-color: #cbd5e1; }
     .cal-status-cancelled { background-color: #fee2e2; color: #b91c1c; border-color: #fca5a5; text-decoration: line-through; opacity: 0.7; }
+    .cal-status-leave { background-color: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
 
     @media (max-width: 767px) {
         .calendar-day { min-height: 80px; padding: 3px; }
@@ -117,7 +118,7 @@
       <h4 class="fw-bold mb-0 d-flex align-items-center" style="letter-spacing: -0.5px;">EGM <span class="text-primary ms-1">Ops</span> 
           <span id="bgSyncIndicator" class="bg-sync-indicator ms-3"><div class="spinner-border spinner-border-sm" role="status" style="width: 0.8rem; height: 0.8rem; border-width: 0.15em;"></div> Syncing</span>
       </h4>
-      <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-1" onclick="requireAuth(() => new bootstrap.Modal(document.getElementById('addEventModal')).show())">
+      <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-1" onclick="requireAuth(() => openNewEventModal())">
         <i class="bi bi-plus-lg"></i> New Entry
       </button>
     </div>
@@ -220,82 +221,94 @@
   <button id="authSubmitBtn" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" onclick="submitAuth()">UNLOCK</button>
 </div></div></div></div>
 
-<div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-calendar-plus me-2"></i> New Event Entry</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4"><form id="eventForm">
+<div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-calendar-plus me-2"></i> New Entry</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4"><form id="eventForm">
   
-  <div class="row g-2 mb-3 align-items-center">
-    <div class="col-8 col-md-10">
-        <label class="form-label-sm">Event Name</label>
-        <input type="text" name="eventName" class="form-control fw-bold" required>
-    </div>
-    <div class="col-4 col-md-2 mt-4 pt-1">
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="avp" id="newAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'new')">
-            <label class="form-check-label fw-bold text-primary small" for="newAvpCheck">AVP</label>
+  <div class="d-flex mb-4 gap-2 border-bottom pb-3">
+      <input type="radio" class="btn-check" name="entryMode" id="newTypeEvent" value="event" checked onchange="toggleEntryMode('new')">
+      <label class="btn btn-outline-primary btn-sm fw-bold w-50" for="newTypeEvent"><i class="bi bi-camera-video me-1"></i> Shooting Event</label>
+
+      <input type="radio" class="btn-check" name="entryMode" id="newTypeLeave" value="leave" onchange="toggleEntryMode('new')">
+      <label class="btn btn-outline-danger btn-sm fw-bold w-50" for="newTypeLeave"><i class="bi bi-airplane me-1"></i> Crew Leave</label>
+  </div>
+
+  <div id="newGeneralFields">
+      <div class="row g-2 mb-3 align-items-center">
+        <div class="col-8 col-md-10">
+            <label class="form-label-sm">Event Name</label>
+            <input type="text" name="eventName" class="form-control fw-bold" required>
         </div>
-    </div>
+        <div class="col-4 col-md-2 mt-4 pt-1">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="avp" id="newAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'new')">
+                <label class="form-check-label fw-bold text-primary small" for="newAvpCheck">AVP</label>
+            </div>
+        </div>
+      </div>
+
+      <div class="row g-2 mb-4" id="newAvpHiddenFields">
+        <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
+        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+        <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+      </div>
   </div>
 
-  <div class="row g-2 mb-4" id="newAvpHiddenFields">
-    <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-    <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
-    <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+  <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
+  <div class="row g-2 mb-4">
+      <div class="col-6 col-md-3"><label class="form-label-sm">Date</label><input type="date" name="eventDate" class="form-control form-control-sm" required></div>
+      <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
+      <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+      <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
   </div>
-
-  <div id="newLogisticsFields">
-    <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
-    <div class="row g-2 mb-4">
-        <div class="col-6 col-md-3"><label class="form-label-sm">Event Date</label><input type="date" name="eventDate" class="form-control form-control-sm"></div>
-        <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
-        <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
-        <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
-    </div>
     
-    <div class="section-title text-secondary"><i class="bi bi-list-check me-1"></i> Logistics & Contact</div>
-    <div class="row g-2 mb-3">
-        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
-        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
-    </div>
-    
-    <div class="mb-4 p-3 bg-light rounded border shadow-sm">
-        <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
-        <div class="row px-2 g-2" id="newServicesContainer">
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints"> Photo souvenir prints</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR"> Photo souvenir QR</div>
-        </div>
-    </div>
-
-    <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
-    <div class="mb-4 p-3 bg-light rounded border shadow-sm">
-        <div class="row px-2 g-2" id="newCrewContainer">
-            <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
-        </div>
-        <div class="input-group input-group-sm mt-3">
-            <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
-            <input type="text" id="newCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
-            <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('newCustomCrewInput', 'newCrewContainer')">ADD</button>
-        </div>
-    </div>
+  <div id="newServicesContactFields">
+      <div class="section-title text-secondary"><i class="bi bi-list-check me-1"></i> Logistics & Contact</div>
+      <div class="row g-2 mb-3">
+          <div class="col-6 col-md-6"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-6"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
+      </div>
+      
+      <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+          <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
+          <div class="row px-2 g-2" id="newServicesContainer">
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints"> Photo souvenir prints</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR"> Photo souvenir QR</div>
+          </div>
+      </div>
   </div>
 
-  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
-  <select name="paymentType" id="pTypeSelect" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
-  
-  <div id="billingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-    <div class="mb-3"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
-    <div class="row g-3 mb-3">
-        <div class="col-12 col-md-6"><label class="form-label-sm">Billing Status</label><select name="billingStatus" class="form-select form-select-sm"><option value="">Select Status...</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
-        <div class="col-12 col-md-6"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
-    </div>
-    <div class="row g-3">
-        <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm" placeholder="e.g. GR-10024"></div>
-        <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm" placeholder="e.g. INV-2023-01"></div>
-    </div>
+  <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
+  <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+      <div class="row px-2 g-2" id="newCrewContainer">
+          <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+      </div>
+      <div class="input-group input-group-sm mt-3">
+          <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
+          <input type="text" id="newCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
+          <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('newCustomCrewInput', 'newCrewContainer')">ADD</button>
+      </div>
+  </div>
+
+  <div id="newPaymentFields">
+      <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
+      <select name="paymentType" id="pTypeSelect" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
+      
+      <div id="billingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
+        <div class="mb-3"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6"><label class="form-label-sm">Billing Status</label><select name="billingStatus" class="form-select form-select-sm"><option value="">Select Status...</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+            <div class="col-12 col-md-6"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm" placeholder="e.g. GR-10024"></div>
+            <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm" placeholder="e.g. INV-2023-01"></div>
+        </div>
+      </div>
   </div>
   
   <div class="mb-4"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea></div>
@@ -303,12 +316,12 @@
   <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="submitBtn"><i class="bi bi-check2-circle me-1"></i> CREATE ENTRY</button>
 </form></div></div></div></div>
 
-<div class="modal fade" id="addDayModal" tabindex="-1"><div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-calendar-plus me-2"></i> Add Shooting Day</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
+<div class="modal fade" id="addDayModal" tabindex="-1"><div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-calendar-plus me-2"></i> Add Additional Day</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
   <h6 id="addDayEventName" class="fw-bold text-primary mb-3 pb-2 border-bottom"></h6>
   <form id="addDayForm">
   <input type="hidden" id="addDayEventId" name="eventId">
   
-  <div class="mb-4"><label class="form-label-sm">Day Status</label><select name="eventStatus" class="form-select form-select-sm fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option></select></div>
+  <div class="mb-4" id="addDayStatusBlock"><label class="form-label-sm">Day Status</label><select name="eventStatus" class="form-select form-select-sm fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option></select></div>
   
   <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
   <div class="row g-2 mb-4">
@@ -344,80 +357,92 @@
   <input type="hidden" id="editEventId" name="eventId">
   <input type="hidden" id="editOriginalDate" name="originalDate">
   
-  <div class="row g-2 mb-3 align-items-center">
-    <div class="col-8 col-md-10">
-        <label class="form-label-sm">Event Name</label>
-        <input type="text" name="eventName" class="form-control fw-bold" required>
-    </div>
-    <div class="col-4 col-md-2 mt-4 pt-1">
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="avp" id="editAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'edit')">
-            <label class="form-check-label fw-bold text-primary small" for="editAvpCheck">AVP</label>
+  <div class="d-flex mb-4 gap-2 border-bottom pb-3">
+      <input type="radio" class="btn-check" name="entryMode" id="editTypeEvent" value="event" onchange="toggleEntryMode('edit')">
+      <label class="btn btn-outline-primary btn-sm fw-bold w-50" for="editTypeEvent"><i class="bi bi-camera-video me-1"></i> Shooting Event</label>
+
+      <input type="radio" class="btn-check" name="entryMode" id="editTypeLeave" value="leave" onchange="toggleEntryMode('edit')">
+      <label class="btn btn-outline-danger btn-sm fw-bold w-50" for="editTypeLeave"><i class="bi bi-airplane me-1"></i> Crew Leave</label>
+  </div>
+
+  <div id="editGeneralFields">
+      <div class="row g-2 mb-3 align-items-center">
+        <div class="col-8 col-md-10">
+            <label class="form-label-sm">Event Name</label>
+            <input type="text" name="eventName" class="form-control fw-bold" required>
         </div>
-    </div>
+        <div class="col-4 col-md-2 mt-4 pt-1">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="avp" id="editAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'edit')">
+                <label class="form-check-label fw-bold text-primary small" for="editAvpCheck">AVP</label>
+            </div>
+        </div>
+      </div>
+
+      <div class="row g-2 mb-4" id="editAvpHiddenFields">
+        <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
+        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+        <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+      </div>
   </div>
 
-  <div class="row g-2 mb-4" id="editAvpHiddenFields">
-    <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-    <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
-    <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
+  <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
+  <div class="row g-2 mb-4">
+      <div class="col-6 col-md-3"><label class="form-label-sm">Event Date</label><input type="date" name="eventDate" class="form-control form-control-sm" required></div>
+      <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
+      <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+      <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
   </div>
-
-  <div id="editLogisticsFields">
-    <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
-    <div class="row g-2 mb-4">
-        <div class="col-6 col-md-3"><label class="form-label-sm">Event Date</label><input type="date" name="eventDate" class="form-control form-control-sm"></div>
-        <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
-        <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
-        <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
-    </div>
     
-    <div class="section-title text-secondary"><i class="bi bi-list-check me-1"></i> Logistics & Contact</div>
-    <div class="row g-2 mb-3">
-        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
-        <div class="col-6 col-md-6"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
-    </div>
-    
-    <div class="mb-4 p-3 bg-light rounded border shadow-sm">
-        <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
-        <div class="row px-2 g-2" id="editServicesContainer">
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints"> Photo souvenir prints</div>
-            <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR"> Photo souvenir QR</div>
-        </div>
-    </div>
-
-    <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
-    <div class="mb-4 p-3 bg-light rounded border shadow-sm">
-        <div class="row px-2 g-2" id="editCrewContainer">
-            <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
-        </div>
-        <div class="input-group input-group-sm mt-3">
-            <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
-            <input type="text" id="editCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
-            <button id="editCrewAddBtn" class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('editCustomCrewInput', 'editCrewContainer')">ADD</button>
-        </div>
-    </div>
+  <div id="editServicesContactFields">
+      <div class="section-title text-secondary"><i class="bi bi-list-check me-1"></i> Logistics & Contact</div>
+      <div class="row g-2 mb-3">
+          <div class="col-6 col-md-6"><label class="form-label-sm">Contact Person</label><input type="text" name="contactPerson" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-6"><label class="form-label-sm">Contact Number</label><input type="text" name="contactNumber" class="form-control form-control-sm"></div>
+      </div>
+      
+      <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+          <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
+          <div class="row px-2 g-2" id="editServicesContainer">
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo"> Photo</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints"> Photo souvenir prints</div>
+              <div class="col-6 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR"> Photo souvenir QR</div>
+          </div>
+      </div>
   </div>
 
-  <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
-  <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('editPaymentType', 'editBillingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
-  
-  <div id="editBillingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-    <div class="mb-3"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
-    <div class="row g-3 mb-3">
-        <div class="col-12 col-md-6"><label class="form-label-sm">Billing Status</label><select id="editBillingStatus" name="billingStatus" class="form-select form-select-sm"><option value="">Select Status...</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
-        <div class="col-12 col-md-6"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
-    </div>
-    <div class="row g-3">
-        <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm" placeholder="e.g. GR-10024"></div>
-        <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm" placeholder="e.g. INV-2023-01"></div>
-    </div>
+  <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
+  <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+      <div class="row px-2 g-2" id="editCrewContainer">
+          <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+      </div>
+      <div class="input-group input-group-sm mt-3">
+          <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
+          <input type="text" id="editCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
+          <button id="editCrewAddBtn" class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('editCustomCrewInput', 'editCrewContainer')">ADD</button>
+      </div>
+  </div>
+
+  <div id="editPaymentFields">
+      <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
+      <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('editPaymentType', 'editBillingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
+      
+      <div id="editBillingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
+        <div class="mb-3"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6"><label class="form-label-sm">Billing Status</label><select id="editBillingStatus" name="billingStatus" class="form-select form-select-sm"><option value="">Select Status...</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
+            <div class="col-12 col-md-6"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm" placeholder="e.g. GR-10024"></div>
+            <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm" placeholder="e.g. INV-2023-01"></div>
+        </div>
+      </div>
   </div>
   
   <div class="mb-4"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea></div>
@@ -652,7 +677,26 @@
   
   function toggleAvpFields(isAvp, prefix) { 
       document.getElementById(prefix + 'AvpHiddenFields').style.display = isAvp ? 'none' : 'flex'; 
-      document.getElementById(prefix + 'LogisticsFields').style.display = isAvp ? 'none' : 'block'; 
+      document.getElementById(prefix + 'ServicesContactFields').style.display = isAvp ? 'none' : 'block'; 
+  }
+
+  function toggleEntryMode(prefix) {
+      const isLeave = document.getElementById(prefix + 'TypeLeave').checked;
+      const generalBlock = document.getElementById(prefix + 'GeneralFields');
+      const servicesBlock = document.getElementById(prefix + 'ServicesContactFields');
+      const paymentBlock = document.getElementById(prefix + 'PaymentFields');
+
+      if (isLeave) {
+          generalBlock.style.display = 'none';
+          servicesBlock.style.display = 'none';
+          paymentBlock.style.display = 'none';
+      } else {
+          generalBlock.style.display = 'block';
+          paymentBlock.style.display = 'block';
+          // Restore AVP visibility accurately
+          const isAvp = document.getElementById(prefix + 'AvpCheck').checked;
+          toggleAvpFields(isAvp, prefix);
+      }
   }
 
   function processFetchedData(res) {
@@ -753,7 +797,7 @@
     let dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(data.map(e=>e['Event Date']))].sort();
     
     const shootingEvents = data.filter(e => e['AVP Required'] !== 'TRUE');
-    if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No shooting events found matching your criteria.</div></div>'; return; }
+    if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No events found matching your criteria.</div></div>'; return; }
 
     dates.sort((a,b) => {
         if(!a) return 1; if(!b) return -1;
@@ -784,8 +828,34 @@
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
             evs.forEach(e => {
-              
-              // GATHER ALL FILES ACROSS MULTI-DAY EVENTS
+              // SPECIAL CREW LEAVE CARD
+              if (e['Event Name'] === 'Crew Leave') {
+                  html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4" style="background-color: #fff1f2; border-color: #fecaca;">
+                      <div class="d-flex justify-content-between mb-3 align-items-start">
+                          <div>
+                              <span class="badge bg-danger px-2 py-1 fs-6 border-0 shadow-sm mb-2"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
+                              <br>
+                              <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted" style="font-size: 0.65rem;">#${e['Event ID']}</span>
+                              <span onclick="requireAuth(() => openEditModal('${e['Event ID']}', '${e['Event Date']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
+                              <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-danger" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
+                          </div>
+                      </div>
+                      
+                      <div class="mb-3 mt-1">
+                          <strong class="text-danger">Crew on Leave:</strong><br>
+                          <div class="mt-2" style="line-height: 1.5;">
+                              ${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-1 fs-6 shadow-sm">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic">No crew selected</span>'}
+                          </div>
+                      </div>
+                      
+                      <div class="small text-secondary mt-auto border-top pt-3 border-danger border-opacity-25">
+                          <p class="mb-0 fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50 text-danger"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
+                      </div>
+                  </div></div>`;
+                  return; // Skip normal event rendering for this loop iteration
+              }
+
+              // NORMAL EVENT CARD
               let projectRows = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
               let fileSet = new Set();
               let filesHtml = '';
@@ -897,15 +967,22 @@
           
           let eventsHtml = '';
           dayEvents.forEach(e => {
-              let pillClass = 'cal-status-pencil';
-              if(e['Event Status'] === 'Confirmed') pillClass = 'cal-status-confirmed';
-              else if(e['Event Status'] === 'Cancelled') pillClass = 'cal-status-cancelled';
               
-              const timePrefix = e['Event Start Time'] ? `${formatAMPM(e['Event Start Time'])} ` : '';
-              
-              eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Event ID']}', '${e['Event Date']}', true)" title="${e['Event Name']}">
-                  <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
-              </div>`;
+              if (e['Event Name'] === 'Crew Leave') {
+                  eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="openEditModal('${e['Event ID']}', '${e['Event Date']}', true)" title="Leave: ${e['Manpower']}">
+                      <span class="opacity-75">✈️</span> <strong>${e['Manpower'] || 'Leave'}</strong>
+                  </div>`;
+              } else {
+                  let pillClass = 'cal-status-pencil';
+                  if(e['Event Status'] === 'Confirmed') pillClass = 'cal-status-confirmed';
+                  else if(e['Event Status'] === 'Cancelled') pillClass = 'cal-status-cancelled';
+                  
+                  const timePrefix = e['Event Start Time'] ? `${formatAMPM(e['Event Start Time'])} ` : '';
+                  
+                  eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Event ID']}', '${e['Event Date']}', true)" title="${e['Event Name']}">
+                      <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
+                  </div>`;
+              }
           });
           
           html += `<div class="${dayClass}">
@@ -926,10 +1003,10 @@
   function renderPayments(data) {
     let html = '';
     
-    // Deduplicate so multi-day events only show ONCE in the billing table
     const uniqueDataMap = new Map();
     data.forEach(item => {
-        if (!uniqueDataMap.has(item['Event ID'])) {
+        // Exclude Crew Leaves completely from billing view just in case
+        if (item['Event Name'] !== 'Crew Leave' && !uniqueDataMap.has(item['Event ID'])) {
             uniqueDataMap.set(item['Event ID'], item);
         }
     });
@@ -1041,12 +1118,28 @@
   }
 
   // --- MODAL TRIGGERS ---
+  
+  function openNewEventModal() {
+      document.getElementById('eventForm').reset();
+      document.getElementById('newTypeEvent').checked = true;
+      toggleEntryMode('new');
+      document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
+      document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
+      new bootstrap.Modal(document.getElementById('addEventModal')).show();
+  }
 
   function openAddDayModal(id) {
      const e = rawEvents.find(ev => ev['Event ID'] === id);
      if(!e) return;
      
-     document.getElementById('addDayEventName').innerText = "Add Day to: " + e['Event Name'] + ' (#' + id + ')';
+     if (e['Event Name'] === 'Crew Leave') {
+         document.getElementById('addDayEventName').innerHTML = "<i class='bi bi-airplane-fill text-danger me-1'></i> Add Leave Day";
+         document.getElementById('addDayStatusBlock').style.display = 'none';
+     } else {
+         document.getElementById('addDayEventName').innerText = "Add Day to: " + e['Event Name'] + ' (#' + id + ')';
+         document.getElementById('addDayStatusBlock').style.display = 'block';
+     }
+     
      document.getElementById('addDayEventId').value = id;
 
      const form = document.getElementById('addDayForm');
@@ -1069,47 +1162,63 @@
     form.reset();
     
     form.elements['eventId'].value = id;
-    form.elements['originalDate'].value = date; // Composite key for the backend
-    
+    form.elements['originalDate'].value = date;
     form.elements['eventName'].value = e['Event Name'] || '';
-    form.elements['eventVenue'].value = e['Event Venue'] || '';
-    form.elements['venueLink'].value = e['Event Venue Link'] || '';
-    form.elements['eventStatus'].value = e['Event Status'] || '';
     
-    const isAvp = e['AVP Required'] === 'TRUE';
-    form.elements['avp'].checked = isAvp;
-    toggleAvpFields(isAvp, 'edit');
+    // Automatically trigger Leave UI mode if it's a Crew Leave
+    if (e['Event Name'] === 'Crew Leave') {
+        document.getElementById('editTypeLeave').checked = true;
+        toggleEntryMode('edit');
+    } else {
+        document.getElementById('editTypeEvent').checked = true;
+        toggleEntryMode('edit');
+        
+        form.elements['eventVenue'].value = e['Event Venue'] || '';
+        form.elements['venueLink'].value = e['Event Venue Link'] || '';
+        form.elements['eventStatus'].value = e['Event Status'] || '';
+        
+        const isAvp = e['AVP Required'] === 'TRUE';
+        form.elements['avp'].checked = isAvp;
+        toggleAvpFields(isAvp, 'edit');
+        
+        form.elements['contactPerson'].value = e['Contact Person'] || '';
+        form.elements['contactNumber'].value = e['Contact Number'] || '';
+        
+        const servicesList = (e['Services'] || '').split(',').map(s=>s.trim()).filter(s=>s);
+        const sInputs = form.elements['services'];
+        if (sInputs) {
+            if (sInputs.length) sInputs.forEach(i => i.checked = false);
+            else sInputs.checked = false;
+        }
+        servicesList.forEach(s => {
+            let found = false;
+            if (sInputs) {
+                if (sInputs.length) {
+                    sInputs.forEach(i => { if(i.value.toLowerCase() === s.toLowerCase()) { i.checked = true; found = true; }});
+                } else {
+                    if (sInputs.value.toLowerCase() === s.toLowerCase()) { sInputs.checked = true; found = true; }
+                }
+            }
+            if(!found) {
+                addCustomServiceCheckbox(s, 'editServicesContainer', true);
+            }
+        });
+        
+        form.elements['paymentType'].value = e['Payment Type'] || '';
+        form.elements['emailThread'].value = e['Email Thread'] || '';
+        form.elements['billingStatus'].value = e['Billing Status'] || '';
+        form.elements['billingStatusDate'].value = toInputDate(e['Billing Status Date']);
+        form.elements['grNumber'].value = e['GR Number'] || '';
+        form.elements['invoiceNumber'].value = e['Invoice Number'] || '';
+        toggleBilling('editPaymentType', 'editBillingBox');
+    }
     
     form.elements['eventDate'].value = toInputDate(e['Event Date']);
     form.elements['callTime'].value = to24Hour(e['Call Time']);
     form.elements['startTime'].value = to24Hour(e['Event Start Time']);
     form.elements['endTime'].value = to24Hour(e['Event End Time']);
+    form.elements['notes'].value = e['Event Notes'] || '';
     
-    form.elements['contactPerson'].value = e['Contact Person'] || '';
-    form.elements['contactNumber'].value = e['Contact Number'] || '';
-    
-    // Map Services
-    const servicesList = (e['Services'] || '').split(',').map(s=>s.trim()).filter(s=>s);
-    const sInputs = form.elements['services'];
-    if (sInputs) {
-        if (sInputs.length) sInputs.forEach(i => i.checked = false);
-        else sInputs.checked = false;
-    }
-    servicesList.forEach(s => {
-        let found = false;
-        if (sInputs) {
-            if (sInputs.length) {
-                sInputs.forEach(i => { if(i.value.toLowerCase() === s.toLowerCase()) { i.checked = true; found = true; }});
-            } else {
-                if (sInputs.value.toLowerCase() === s.toLowerCase()) { sInputs.checked = true; found = true; }
-            }
-        }
-        if(!found) {
-            addCustomServiceCheckbox(s, 'editServicesContainer', true);
-        }
-    });
-
-    // Map Crew
     const crew = (e['Manpower'] || '').split(',').map(s=>s.trim()).filter(s=>s);
     const mInputs = form.elements['manpower'];
     if (mInputs) {
@@ -1130,18 +1239,7 @@
         }
     });
     
-    form.elements['paymentType'].value = e['Payment Type'] || '';
-    form.elements['emailThread'].value = e['Email Thread'] || '';
-    form.elements['billingStatus'].value = e['Billing Status'] || '';
-    form.elements['billingStatusDate'].value = toInputDate(e['Billing Status Date']);
-    form.elements['grNumber'].value = e['GR Number'] || '';
-    form.elements['invoiceNumber'].value = e['Invoice Number'] || '';
-    form.elements['notes'].value = e['Event Notes'] || '';
-    
-    toggleBilling('editPaymentType', 'editBillingBox');
-    
     setEditFormState(isReadOnly);
-    
     new bootstrap.Modal(document.getElementById('editEventModal')).show();
   }
 
@@ -1193,9 +1291,17 @@
   document.getElementById('eventForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
-    document.getElementById('overlayText').innerText = "Saving Event...";
+    document.getElementById('overlayText').innerText = "Saving Entry...";
     btn.disabled = true; ov.style.display='flex';
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+    
+    // OVERRIDE for Leave Type
+    if (document.getElementById('newTypeLeave').checked) {
+        obj.eventName = 'Crew Leave';
+        obj.eventStatus = 'Confirmed';
+        obj.avp = false;
+        obj.paymentType = '';
+    }
     
     obj.manpower = fd.getAll('manpower');
     obj.services = fd.getAll('services'); 
@@ -1235,10 +1341,17 @@
   document.getElementById('editForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('editSubmitBtn'), ov = document.getElementById('submitOverlay');
-    document.getElementById('overlayText').innerText = "Updating Event...";
+    document.getElementById('overlayText').innerText = "Updating...";
     btn.disabled=true; ov.style.display='flex';
     
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+    
+    if (document.getElementById('editTypeLeave').checked) {
+        obj.eventName = 'Crew Leave';
+        obj.eventStatus = 'Confirmed';
+        obj.avp = false;
+        obj.paymentType = '';
+    }
     
     obj.manpower = fd.getAll('manpower');
     obj.services = fd.getAll('services'); 
