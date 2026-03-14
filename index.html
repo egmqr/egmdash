@@ -319,8 +319,8 @@
             <div class="col-12 col-md-6"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
         </div>
         <div class="row g-3">
-            <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div>
-            <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
+            <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm" placeholder="e.g. GR-10024"></div>
+            <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm" placeholder="e.g. INV-2023-01"></div>
         </div>
       </div>
   </div>
@@ -457,8 +457,8 @@
             <div class="col-12 col-md-6"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
         </div>
         <div class="row g-3">
-            <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div>
-            <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
+            <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm" placeholder="e.g. GR-10024"></div>
+            <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm" placeholder="e.g. INV-2023-01"></div>
         </div>
       </div>
   </div>
@@ -1105,7 +1105,10 @@
       let eventDateStr = p['Event Date'] ? new Date(p['Event Date']).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '-';
 
       html += `<tr>
-        <td class="fw-bold text-nowrap text-secondary">#${p['Event ID']}</td>
+        <td class="fw-bold text-nowrap text-secondary">
+            #${p['Event ID']}
+            <span onclick="requireAuth(() => openEditModal('${p['Event ID']}', '${p['Event Date']}'))" class="edit-trigger ms-1 px-1" title="Edit Entry"><i class="bi bi-pencil-square"></i></span>
+        </td>
         <td style="min-width: 180px;">${nameDisplay}<br><span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${eventDateStr}</span></td>
         <td class="text-nowrap"><span class="badge bg-light text-dark border">${p['Payment Type']||'-'}</span></td>
         <td style="min-width: 180px;" class="text-truncate text-secondary" style="max-width: 250px;"><i class="bi bi-envelope me-1 opacity-50"></i> ${p['Email Thread']||'-'}</td>
@@ -1395,6 +1398,7 @@
     obj.manpower = fd.getAll('manpower');
     obj.services = fd.getAll('services'); 
 
+    // Custom Validation to handle Event Name without breaking invisible inputs
     const isLeave = document.getElementById('newTypeLeave').checked;
     if (isLeave) {
         if (obj.manpower.length === 0) {
