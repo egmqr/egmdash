@@ -798,8 +798,8 @@
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrowStr = tomorrowDate.getFullYear() + '-' + String(tomorrowDate.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrowDate.getDate()).padStart(2, '0');
 
-    // ONLY standard events for the List View (Excludes Crew Leave from the dashboard cards view)
-    const listData = data.filter(e => e['AVP Required'] !== 'TRUE' && e['Event Name'] !== 'Crew Leave');
+    // ONLY EXCLUDE AVP (Let Crew Leave stay so we can sort them to the bottom)
+    const listData = data.filter(e => e['AVP Required'] !== 'TRUE');
 
     let dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(listData.map(e=>e['Event Date']))].sort();
     
@@ -834,11 +834,12 @@
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
             
-            // Sort to push Crew Leave cards to the bottom if they ever render here (backup sorting)
+            // Sort to push Crew Leave cards to the bottom of this specific day's list
             evs.sort((a, b) => (a['Event Name'] === 'Crew Leave' ? 1 : 0) - (b['Event Name'] === 'Crew Leave' ? 1 : 0));
 
             evs.forEach(e => {
               
+              // --- SPECIAL CREW LEAVE CARD RENDER ---
               if (e['Event Name'] === 'Crew Leave') {
                   html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4" style="background-color: #fff1f2; border-color: #fecaca;">
                       <div class="d-flex justify-content-between mb-3 align-items-start">
@@ -862,9 +863,10 @@
                           <p class="mb-0 fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50 text-danger"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
                       </div>
                   </div></div>`;
-                  return; 
+                  return; // Stop normal rendering for this loop iteration
               }
 
+              // --- NORMAL EVENT CARD RENDER ---
               let projectRows = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
               let fileSet = new Set();
               let filesHtml = '';
@@ -1176,6 +1178,7 @@
     form.elements['originalDate'].value = date;
     form.elements['eventName'].value = e['Event Name'] || '';
     
+    // Automatically trigger Leave UI mode if it's a Crew Leave
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
         toggleEntryMode('edit');
@@ -1306,6 +1309,7 @@
     obj.manpower = fd.getAll('manpower');
     obj.services = fd.getAll('services'); 
 
+    // Custom Validation to handle Event Name without breaking invisible inputs
     const isLeave = document.getElementById('newTypeLeave').checked;
     if (isLeave) {
         if (obj.manpower.length === 0) {
