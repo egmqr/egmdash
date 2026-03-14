@@ -758,7 +758,7 @@
       
       if(dF) {
           filtered = filtered.filter(e => e['Event Date'] >= dF);
-      } else {
+      } else if (!n) {
           filtered = filtered.filter(e => !e['Event Date'] || e['Event Date'] >= todayStr);
       }
       
@@ -798,7 +798,7 @@
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrowStr = tomorrowDate.getFullYear() + '-' + String(tomorrowDate.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrowDate.getDate()).padStart(2, '0');
 
-    // ONLY EXCLUDE AVP (Let Crew Leave stay so we can sort them to the bottom)
+    // EXCLUDE AVP
     const listData = data.filter(e => e['AVP Required'] !== 'TRUE');
 
     let dates = isDefault ? Array.from({length:5}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(listData.map(e=>e['Event Date']))].sort();
