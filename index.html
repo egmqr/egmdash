@@ -81,8 +81,8 @@
     .map-link:hover { color: #b02a37; border-bottom-color: #b02a37; }
     
     /* File Upload & Badges */
-    .card-upload-btn { cursor: pointer; color: #0d9488; font-size: 0.75rem; font-weight: 700; border: 1px dashed #5eead4; background-color: transparent; padding: 8px 12px; border-radius: 8px; display: block; text-align: center; transition: 0.2s; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px;}
-    .card-upload-btn:hover { background-color: transparent; border-color: #14b8a6; }
+    .card-upload-btn { cursor: pointer; color: #0d9488; font-size: 0.75rem; font-weight: 700; border: 1px dashed #5eead4; background-color: #f0fdfa; padding: 8px 12px; border-radius: 8px; display: block; text-align: center; transition: 0.2s; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px;}
+    .card-upload-btn:hover { background-color: #ccfbf1; border-color: #14b8a6; }
     .file-badge { font-size: 0.75rem; padding: 6px 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #e2e8f0; background-color: #f8fafc; color: #475569; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
     .file-badge a { color: #0d9488; text-decoration: none; font-weight: 600; }
     .file-badge a:hover { text-decoration: underline; }
@@ -147,7 +147,7 @@
     .dark-mode .btn-light { background-color: #2b2b2b; border-color: #444444 !important; color: #d1d5db; }
     .dark-mode .btn-light:hover { background-color: #444444; color: #ffffff; }
     
-    .dark-mode .card h5 { color: #26c9bd !important; }
+    .dark-mode .card h5 { color: #ffffff !important; }
     .dark-mode .text-dark { color: #ffffff !important; }
     .dark-mode .text-secondary { color: #9ca3af !important; }
     .dark-mode .text-muted { color: #6b7280 !important; }
@@ -1233,8 +1233,8 @@
                       </div>
                       
                       <div class="mb-1">
-                          <div style="line-height: 1.2;">
-                              ${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-1 fs-6 shadow-sm">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}
+                          <div style="line-height: 1.6;">
+                              ${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-2 fw-bold px-2 py-1" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}
                           </div>
                       </div>
                       
@@ -1272,7 +1272,7 @@
               }
               
               // Smart Regex split to ensure badges look clean on the dashboard
-              let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-1 fw-normal">${s.trim()}</span>`).join('') : '-';
+              let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-2 fw-medium px-2 py-1" style="font-size: 0.8rem;">${s.trim()}</span>`).join('') : '-';
 
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
                     <div class="d-flex justify-content-between mb-3 align-items-center">
@@ -1298,12 +1298,12 @@
                         
                         <div class="d-flex mb-2 align-items-start">
                             <i class="card-icon bi bi-list-check text-secondary opacity-75 mt-1"></i>
-                            <div style="line-height: 1.4;"><strong class="text-dark">Services:</strong><br>${servicesBadges}</div>
+                            <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Services:</strong><br>${servicesBadges}</div>
                         </div>
                         
                         <div class="d-flex mb-3 align-items-start">
                             <i class="card-icon bi bi-people-fill text-info opacity-75 mt-1"></i> 
-                            <div style="line-height: 1.4;"><strong class="text-dark">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-light text-dark border me-1 mb-1 fw-medium">${c.trim()}</span>`).join('') : '-'}</div>
+                            <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-light text-dark border me-1 mb-2 fw-bold px-2 py-1" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '-'}</div>
                         </div>
                         
                         <div class="bg-light p-2 rounded-3 border mb-3">
