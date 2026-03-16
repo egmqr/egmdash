@@ -143,7 +143,13 @@
     .booth-file-btn:hover { background: #e2e8f0; }
     .booth-file-name { font-size: 13px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* View Booth Cards (Fixed classes to match JS outputs) */
+    /* Crop Modal Overrides - Fixed for Large Images */
+    .crop-container { width: 100%; max-width: 400px; height: 50vh; min-height: 250px; max-height: 400px; position: relative; background: #222; border-radius: 8px; overflow: hidden; background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
+    #imageToCrop { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+    .crop-actions { display: flex; gap: 15px; margin-top: 20px; width: 100%; max-width: 400px; }
+    .crop-btn-cancel { background: #555 !important; flex: 1; border-color: #555 !important; color: white !important;}
+
+    /* View Booth Cards */
     .booth-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 15px; background: #ffffff; transition: all 0.3s; }
     .booth-card h5 { margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; font-size: 15px; color: #1e293b; font-weight: 700; }
     .booth-link-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: #64748b; }
@@ -704,7 +710,7 @@
                   </div>
                   
                   <div id="addDayDetailsWithoutPrints" style="display: none;">
-                          <div class="input-group input-group-sm">
+                      <div class="input-group input-group-sm">
                           <input type="number" id="addDaySrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
                           <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
                       </div>
@@ -1354,6 +1360,7 @@
             else displayHeader = formattedDate;
         }
         
+        // Sticky Header UI Implementation
         html += `<div class="col-12 sticky-date-header-container">
                     <div class="sticky-date-header d-flex align-items-center">
                         <i class="bi bi-calendar3 me-2 fs-5"></i>
@@ -1424,6 +1431,7 @@
               
               let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
                   let sTrim = s.trim();
+                  // BOOTH QR PILL NO LONGER REQUIRES PASSWORD
                   if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only') || sTrim.startsWith('Photo souvenir')) {
                       let match = sTrim.match(/\[(\d+)\s+booth/);
                       let booths = match ? match[1] : 1;
@@ -1598,7 +1606,7 @@
 
   function handleTabClick(tabName) {
       if(tabName === 'payments') { requireAuth(() => switchTab('payments')); } 
-      else if(tabName === 'booth') { switchTab('booth'); } 
+      else if(tabName === 'booth') { switchTab('booth'); } // NO LONGER REQUIRES PASSWORD
       else { switchTab(tabName); }
   }
 
@@ -1642,6 +1650,7 @@
     document.getElementById('b-tab').classList.toggle('active', t==='booth');
     document.getElementById('p-tab').classList.toggle('active', t==='payments');
     
+    // Safety check for Booth tab manual clicks
     if (t === 'booth') {
         if (currentBoothMode === 'new') { setBoothMode('view'); } 
         else { setBoothMode(currentBoothMode); }
@@ -1650,13 +1659,17 @@
     }
   }
 
+  // --- View-Only Logic for Modals ---
   function setEditFormState(isReadOnly) {
       const form = document.getElementById('editForm');
       const elements = form.querySelectorAll('input, select, textarea, button');
       
       elements.forEach(el => {
-          if(el.id !== 'editSubmitBtn' && el.id !== 'editDeleteBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') { el.disabled = isReadOnly; }
+          if(el.id !== 'editSubmitBtn' && el.id !== 'editDeleteBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') {
+              el.disabled = isReadOnly;
+          }
       });
+      
       document.getElementById('editCrewAddBtn').disabled = isReadOnly;
       
       if (isReadOnly) {
@@ -1674,18 +1687,28 @@
       const editModalEl = document.getElementById('editEventModal');
       const editModal = bootstrap.Modal.getInstance(editModalEl);
       editModal.hide();
-      setTimeout(() => { requireAuth(() => { setEditFormState(false); editModal.show(); }); }, 300); 
+      
+      setTimeout(() => {
+          requireAuth(() => {
+              setEditFormState(false);
+              editModal.show();
+          });
+      }, 300); 
   }
 
   // --- EVENT MODAL TRIGGERS ---
+  
   function openNewEventModal() {
       document.getElementById('eventForm').reset();
+      
+      // Hide all dynamic service inputs
       ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
          const el = document.getElementById('newSrv' + id + 'Details');
          if(el) el.style.display = 'none';
       });
       document.getElementById('newTypeWithPrints').checked = true;
       togglePhotoQRDetails('new');
+
       document.getElementById('newTypeEvent').checked = true;
       toggleEntryMode('new');
       document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
@@ -1701,6 +1724,7 @@
      form.reset();
      document.querySelectorAll('#addDayCrewContainer .custom-crew-cb').forEach(el => el.remove());
      
+     // Reset dynamic service inputs
      if(document.getElementById('addDaySrvPhotoCount')) document.getElementById('addDaySrvPhotoCount').value = '';
      if(document.getElementById('addDaySrvPrintsBooth')) document.getElementById('addDaySrvPrintsBooth').value = '';
      if(document.getElementById('addDaySrvPrintsCount')) document.getElementById('addDaySrvPrintsCount').value = '';
@@ -1730,6 +1754,7 @@
          document.getElementById('addDayEventNameInput').setAttribute('required', 'required');
          document.getElementById('addDayEventNameInput').value = e['Event Name'];
          
+         // Pre-populate with previous day's services using Smart Parser
          const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
          const sInputs = form.elements['services'];
          if (sInputs) {
@@ -1796,8 +1821,10 @@
   function openEditModal(id, date, fromCalendar = false) {
     const e = rawEvents.find(ev => ev['Event ID'] === id && (!date || ev['Event Date'] === date));
     if(!e) return;
+    
     const isReadOnly = fromCalendar && !isAuthenticated();
 
+    // DYNAMIC BILLING POSITIONING
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
     const isPast = date && date < todayStr; 
@@ -1820,6 +1847,7 @@
     const form = document.getElementById('editForm');
     form.reset();
 
+    // Reset dynamic service inputs
     if(document.getElementById('editSrvPhotoCount')) document.getElementById('editSrvPhotoCount').value = '';
     if(document.getElementById('editSrvPrintsBooth')) document.getElementById('editSrvPrintsBooth').value = '';
     if(document.getElementById('editSrvPrintsCount')) document.getElementById('editSrvPrintsCount').value = '';
@@ -1838,6 +1866,7 @@
     form.elements['originalDate'].value = date || '';
     form.elements['eventName'].value = e['Event Name'] || '';
     
+    // Automatically trigger Leave UI mode if it's a Crew Leave
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
         toggleEntryMode('edit');
@@ -1856,6 +1885,8 @@
         form.elements['contactPerson'].value = e['Contact Person'] || '';
         form.elements['contactNumber'].value = e['Contact Number'] || '';
         
+        // --- SMART PARSER FOR SERVICES ---
+        // Using strict regex so commas inside brackets are ignored
         const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
         const sInputs = form.elements['services'];
         if (sInputs) {
@@ -1999,13 +2030,17 @@
   async function deleteFullEvent() {
       const eventId = document.getElementById('editEventId').value;
       if (!eventId) return;
-      if(!confirm(`WARNING: Are you sure you want to permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) { return; }
+      
+      if(!confirm(`WARNING: Are you sure you want to permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) {
+          return;
+      }
       
       const ov = document.getElementById('submitOverlay');
       document.getElementById('overlayText').innerText = "Deleting Event...";
       ov.style.display = 'flex';
       
       const res = await callApi({ action: 'deleteEvent', eventId: eventId }, 'POST');
+      
       ov.style.display = 'none';
       if (res && res.success) {
           bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
@@ -2015,13 +2050,16 @@
       }
   }
 
-  // --- EVENT FORM SUBMISSIONS ---
+  // --- Form Submissions ---
+
   document.getElementById('eventForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
+    
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
     
+    // Build Dynamic Services String
     let rawServices = fd.getAll('services');
     let finalServices = [];
     rawServices.forEach(s => {
@@ -2054,14 +2092,24 @@
 
     const isLeave = document.getElementById('newTypeLeave').checked;
     if (isLeave) {
-        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
-        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
+        if (obj.manpower.length === 0) {
+            alert("Please select at least one crew member for this leave.");
+            return;
+        }
+        obj.eventName = 'Crew Leave';
+        obj.eventStatus = 'Confirmed';
+        obj.avp = false;
+        obj.paymentType = '';
     } else {
-        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+        if (!obj.eventName || obj.eventName.trim() === '') {
+            alert("Please enter an Event Name.");
+            return;
+        }
     }
     
     document.getElementById('overlayText').innerText = "Saving Entry...";
     btn.disabled = true; ov.style.display='flex';
+
     const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
@@ -2078,9 +2126,11 @@
   document.getElementById('addDayForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('addDaySubmitBtn'), ov = document.getElementById('submitOverlay');
+    
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
     
+    // Build Dynamic Services String for Add Day
     let rawServices = fd.getAll('services');
     let finalServices = [];
     rawServices.forEach(s => {
@@ -2113,6 +2163,7 @@
     
     document.getElementById('overlayText').innerText = "Adding Day...";
     btn.disabled = true; ov.style.display='flex';
+    
     const res = await callApi({action:'addEventDay', formObject:obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
@@ -2126,9 +2177,11 @@
   document.getElementById('editForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('editSubmitBtn'), ov = document.getElementById('submitOverlay');
+    
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
     
+    // Build Dynamic Services String for Edit Form
     let rawServices = fd.getAll('services');
     let finalServices = [];
     rawServices.forEach(s => {
@@ -2161,14 +2214,24 @@
     
     const isLeave = document.getElementById('editTypeLeave').checked;
     if (isLeave) {
-        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
-        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
+        if (obj.manpower.length === 0) {
+            alert("Please select at least one crew member for this leave.");
+            return;
+        }
+        obj.eventName = 'Crew Leave';
+        obj.eventStatus = 'Confirmed';
+        obj.avp = false;
+        obj.paymentType = '';
     } else {
-        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+        if (!obj.eventName || obj.eventName.trim() === '') {
+            alert("Please enter an Event Name.");
+            return;
+        }
     }
     
     document.getElementById('overlayText').innerText = "Updating...";
     btn.disabled=true; ov.style.display='flex';
+
     const res = await callApi({action:'editEvent', updateData: obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
