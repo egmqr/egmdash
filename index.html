@@ -133,6 +133,32 @@
     .table-custom th { background-color: #f1f5f9; color: #475569; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; transition: background-color 0.3s ease, color 0.3s ease; }
     .table-custom td { vertical-align: middle; color: #334155; border-bottom: 1px solid #f1f5f9; transition: border-color 0.3s ease; }
 
+    /* ================== BOOTH QR SPECIFIC STYLES ================== */
+    .booth-color-input-wrapper { display: flex; gap: 8px; align-items: center; }
+    .booth-color-input-wrapper input[type="color"] { width: 44px; height: 44px; padding: 0; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; background: none; flex-shrink: 0; }
+    .booth-color-input-wrapper input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    .booth-color-input-wrapper input[type="color"]::-webkit-color-swatch { border: none; border-radius: 7px; }
+    .booth-custom-file-row { display: flex; align-items: center; gap: 10px; }
+    .booth-file-btn { background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
+    .booth-file-btn:hover { background: #e2e8f0; }
+    .booth-file-name { font-size: 13px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Crop Container inline styles in body */
+    .crop-container { width: 100%; max-width: 400px; height: 60vh; max-height: 400px; background: #222; border-radius: 8px; overflow: hidden; background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
+    #imageToCrop { display: block; max-width: 100%; }
+    .crop-actions { display: flex; gap: 15px; margin-top: 20px; width: 100%; max-width: 400px; }
+    .crop-btn-cancel { background: #555 !important; flex: 1; border-color: #555 !important; color: white !important;}
+
+    /* View Booth Cards */
+    .booth-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 15px; background: #ffffff; transition: all 0.3s; }
+    .booth-card h5 { margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; font-size: 15px; color: #1e293b; font-weight: 700; }
+    .booth-link-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: #64748b; }
+    .booth-link-actions { display: flex; gap: 6px; }
+    .booth-mini-btn { padding: 6px 10px; font-size: 11px; cursor: pointer; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+    .booth-mini-btn:hover { background: #e2e8f0; }
+    .booth-mini-btn.backup { background: #475569; color: #fff; border: none; }
+    .booth-mini-btn.backup:hover { background: #334155; }
+
     /* ================== DESATURATED DARK MODE ================== */
     body.dark-mode { background-color: #121212; color: #d1d5db; }
     .dark-mode .card, .dark-mode .filter-panel, .dark-mode .calendar-container, .dark-mode .table-custom, .dark-mode .modal-content { background: #1e1e1e !important; border-color: #333333 !important; }
@@ -180,6 +206,7 @@
     .dark-mode .badge.bg-light.text-dark { background-color: #2b2b2b !important; color: #f3f4f6 !important; border-color: #444444 !important; }
     .dark-mode .badge.bg-white { background-color: #121212 !important; }
     
+    /* Transparent table rows in Dark Mode so they inherit the card background cleanly */
     .dark-mode .table, .dark-mode .table th, .dark-mode .table td { background-color: transparent !important; color: #d1d5db !important; border-bottom-color: #333333 !important; }
     .dark-mode .table-hover tbody tr:hover td { background-color: #2b2b2b !important; color: #f3f4f6 !important; }
     
@@ -192,88 +219,16 @@
     .dark-mode .calendar-day.today { background: #134e4a; } 
     .dark-mode .date-number { color: #9ca3af; }
 
-
-    /* ================== BOOTH GENERATOR (STANDALONE ISOLATED STYLES) ================== */
-    /* These styles strictly apply only inside the Booth tab to prevent Bootstrap conflicts */
-    .booth-wrapper {
-      --bg-body: #f8fafc;
-      --bg-container: #ffffff;
-      --text-main: #334155;
-      --text-muted: #64748b;
-      --border: #cbd5e1;
-      --input-bg: #ffffff;
-      --btn-bg: #0d9488;
-      --btn-hover: #0f766e;
-      --btn-text: #ffffff;
-      --btn-outline-bg: #f8fafc;
-      --btn-outline-text: #334155;
-      --shadow: rgba(0,0,0,0.05);
-    }
-    body.dark-mode .booth-wrapper {
-      --bg-body: #121212;
-      --bg-container: #1e1e1e;
-      --text-main: #ffffff;
-      --text-muted: #9ca3af;
-      --border: #333333;
-      --input-bg: #121212;
-      --btn-bg: #0d9488;
-      --btn-hover: #0f766e;
-      --btn-text: #ffffff;
-      --btn-outline-bg: #2b2b2b;
-      --btn-outline-text: #d1d5db;
-      --shadow: rgba(0,0,0,0.5);
-    }
-
-    .booth-wrapper { color: var(--text-main); }
-    .booth-app-container { max-width: 600px; width: 100%; box-sizing: border-box; background: var(--bg-container); padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px var(--shadow); margin: 0 auto; transition: background-color 0.3s, box-shadow 0.3s; }
-    .booth-wrapper label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: var(--text-main); text-transform: uppercase; letter-spacing: 0px; }
-    .booth-wrapper input[type="text"], .booth-wrapper input[type="number"], .booth-wrapper select { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; background: var(--input-bg); color: var(--text-main); transition: 0.2s; outline: none; }
-    .booth-wrapper input:focus, .booth-wrapper select:focus { border-color: var(--text-muted); }
-    .booth-wrapper ::placeholder { color: var(--text-muted); opacity: 0.6; }
-
-    .booth-wrapper .color-input-wrapper { display: flex; gap: 8px; align-items: center; }
-    .booth-wrapper input[type="color"] { width: 44px; height: 44px; padding: 0; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; background: none; flex-shrink: 0; }
-    .booth-wrapper input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-    .booth-wrapper input[type="color"]::-webkit-color-swatch { border: none; border-radius: 7px; }
-
-    .booth-wrapper .custom-file-row { display: flex; align-items: center; gap: 10px; }
-    .booth-wrapper .file-btn { background: var(--btn-outline-bg); color: var(--btn-outline-text); border: 1px solid var(--border); padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
-    .booth-wrapper .file-btn:hover { background: var(--border); }
-    .booth-wrapper .file-name { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .booth-wrapper .hint-text { display: block; font-size: 12px; color: var(--text-muted); margin-top: 6px; }
-
-    .booth-wrapper button.action-btn { background-color: var(--btn-bg); color: var(--btn-text); border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-size: 15px; width: 100%; margin-top: 10px; font-weight: bold; transition: 0.2s; }
-    .booth-wrapper button.action-btn:hover:not(:disabled) { background-color: var(--btn-hover); transform: translateY(-1px); }
-    .booth-wrapper #boothDeleteBtn { background-color: var(--bg-container); color: var(--text-main); border: 1px solid var(--border); margin-top: 12px; display: none; }
-    .booth-wrapper #boothDeleteBtn:hover:not(:disabled) { background-color: var(--border); color: #ef4444; }
-
-    .booth-wrapper input:disabled, .booth-wrapper select:disabled, .booth-wrapper button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .booth-wrapper .form-group { margin-bottom: 18px; }
-    .booth-wrapper .color-group { display: flex; gap: 15px; margin-bottom: 18px; }
-    .booth-wrapper .color-group .form-group { flex: 1; margin-bottom: 0; }
-
-    .booth-wrapper .booth-card { border: 1px solid var(--border); border-radius: 10px; padding: 15px; margin-bottom: 15px; background: var(--bg-body); }
-    .booth-wrapper .booth-card h4 { margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); font-size: 15px; font-weight: bold;}
-    .booth-wrapper .link-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
-    .booth-wrapper .link-actions { display: flex; gap: 6px; }
-    .booth-wrapper .mini-btn { padding: 6px 10px; font-size: 11px; cursor: pointer; border: 1px solid var(--border); background: var(--btn-outline-bg); color: var(--btn-outline-text); border-radius: 6px; font-weight: bold; transition: 0.2s; }
-    .booth-wrapper .mini-btn:hover { background: var(--border); }
-    .booth-wrapper .mini-btn.backup { background: #444; color: #fff; border: none; }
-    .booth-wrapper .mini-btn.backup:hover { background: #222; }
-
-    .booth-wrapper .mode-toggle { display: flex; margin-bottom: 25px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-    .booth-wrapper .mode-btn { flex: 1; padding: 10px 5px; background: var(--btn-outline-bg); color: var(--btn-outline-text); border: none; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; border-right: 1px solid var(--border); }
-    .booth-wrapper .mode-btn:last-child { border-right: none; }
-    .booth-wrapper .mode-btn.active { background: var(--text-main); color: var(--bg-container); }
-
-    /* Image Cropper Modal (Reverted to Original) */
-    #cropModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 10005; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-    .crop-container { width: 100%; max-width: 400px; height: 60vh; max-height: 400px; background: #222; border-radius: 8px; overflow: hidden; background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
-    #imageToCrop { display: block; max-width: 100%; }
-    .crop-actions { display: flex; gap: 15px; margin-top: 20px; width: 100%; max-width: 400px; }
-    .crop-btn-cancel { background: #555 !important; color: #fff; border: none; flex: 1; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    .crop-btn-save { background: #0d9488 !important; color: #fff; border: none; flex: 1; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    /* Booth specific dark mode */
+    .dark-mode .booth-color-input-wrapper input[type="color"] { border-color: #333333; }
+    .dark-mode .booth-file-btn { background-color: #2b2b2b; color: #d1d5db; border-color: #444444; }
+    .dark-mode .booth-file-btn:hover { background-color: #444444; }
+    .dark-mode .booth-file-name { color: #9ca3af; }
+    .dark-mode .booth-card { background-color: #1e1e1e; border-color: #333333; }
+    .dark-mode .booth-card h5 { border-bottom-color: #333333; color: #ffffff !important; }
+    .dark-mode .booth-link-row { color: #9ca3af; }
+    .dark-mode .booth-mini-btn { background-color: #2b2b2b; color: #d1d5db; border-color: #444444; }
+    .dark-mode .booth-mini-btn:hover { background-color: #444444; }
   </style>
 </head>
 <body>
@@ -283,14 +238,14 @@
   <h5 class="mt-3 fw-bold text-secondary" id="overlayText">Processing...</h5>
 </div>
 
-<div id="cropModal">
-  <h3 style="color: #fff; margin-top: 0; margin-bottom: 15px;">Crop Custom Logo</h3>
+<div id="cropModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 10005; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+  <h4 style="color: #fff; margin-top: 0; margin-bottom: 15px;">Crop Custom Logo</h4>
   <div class="crop-container">
     <img id="imageToCrop" src="">
   </div>
   <div class="crop-actions">
-    <button class="crop-btn-cancel" onclick="cancelCrop()">Cancel</button>
-    <button class="crop-btn-save" onclick="applyCrop()">Apply (250x250)</button>
+    <button class="btn btn-secondary crop-btn-cancel w-100 fw-bold" onclick="cancelCrop()">Cancel</button>
+    <button class="btn btn-primary crop-btn-save w-100 fw-bold" onclick="applyCrop()">Apply (250x250)</button>
   </div>
 </div>
 
@@ -394,98 +349,106 @@
           </div>
       </div>
 
-      <div id="booth-view" style="display:none;" class="booth-wrapper">
-          <div class="booth-app-container">
-              <h4 style="margin-top:0; margin-bottom: 20px; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-                  <i class="bi bi-qr-code-scan me-2" style="color: var(--btn-bg);"></i> Photobooth Generator
-              </h4>
+      <div id="booth-view" style="display:none;">
+          <div class="card p-3 p-md-4" style="max-width: 600px; margin: 0 auto;">
+              <h5 class="fw-bold mb-3 border-bottom pb-2 text-dark"><i class="bi bi-qr-code-scan me-2 text-primary"></i> Photobooth Generator</h5>
               
-              <div class="mode-toggle">
-                  <button type="button" id="btnModeNew" class="mode-btn" onclick="setBoothMode('new')" style="display:none;">New Setup</button>
-                  <button type="button" id="btnModeEdit" class="mode-btn active" onclick="setBoothMode('edit')">Edit Setup</button>
-                  <button type="button" id="btnModeView" class="mode-btn" onclick="setBoothMode('view')">View QR</button>
-              </div>
+              <ul class="nav nav-pills w-100 d-flex mb-4" id="boothModeTabs">
+                  <li class="nav-item flex-fill text-center">
+                      <a class="nav-link w-100" id="btnModeNew" onclick="setBoothMode('new')" style="display:none;"><i class="bi bi-magic me-1"></i> New Setup</a>
+                  </li>
+                  <li class="nav-item flex-fill text-center">
+                      <a class="nav-link active w-100" id="btnModeEdit" onclick="setBoothMode('edit')"><i class="bi bi-pencil me-1"></i> Edit Setup</a>
+                  </li>
+                  <li class="nav-item flex-fill text-center">
+                      <a class="nav-link w-100" id="btnModeView" onclick="setBoothMode('view')"><i class="bi bi-eye me-1"></i> View QR</a>
+                  </li>
+              </ul>
 
-              <div class="form-group" id="boothSelectContainer">
-                  <label for="boothSearch">Search Generated Event</label>
-                  <input type="text" id="boothSearch" placeholder="Type to filter events..." onkeyup="filterBoothEvents()" style="margin-bottom: 8px;">
-                  
-                  <label for="boothEventSelect">Select Event</label>
-                  <select id="boothEventSelect" onchange="loadBoothEventDetails()">
-                      <option value="">-- Loading Events... --</option>
+              <div class="mb-4" id="boothSelectContainer">
+                  <label class="form-label-sm text-secondary">Search Generated Event</label>
+                  <input type="text" id="boothSearch" class="form-control form-control-sm mb-2" placeholder="Search by name or ID..." onkeyup="filterBoothEvents()">
+                  <select id="boothEventSelect" class="form-select form-select-sm fw-bold" onchange="loadBoothEventDetails()">
+                      <option value="">-- Loading Generated Booths... --</option>
                   </select>
               </div>
 
               <div id="boothFormFields" style="display:none;">
-                  <div class="form-group">
-                      <label>Event ID</label>
-                      <input type="text" id="boothEventId" disabled>
-                  </div>
-                  <div class="form-group">
-                      <label for="boothEventName">Page Title</label>
-                      <input type="text" id="boothEventName" placeholder="e.g., Jollibee National Convention" required>
-                  </div>
-                  <div class="form-group">
-                      <label for="boothFolderName">FOLDER NAME <span style="text-transform:none; font-weight:normal; color:var(--text-muted)">(SYNC TO DSLRBOOTH)</span></label>
-                      <input type="text" id="boothFolderName" placeholder="e.g., JBNATCON" required>
-                  </div>
-                  <div class="form-group">
-                      <label for="boothCountInput">Number of Booths / iPads</label>
-                      <input type="number" id="boothCountInput" min="1" placeholder="e.g., 3" required>
-                      <span class="hint-text" id="boothCountHint" style="display:none; color: var(--text-main); font-weight:bold;">Booth count is set by admin.</span>
+                  <div class="row g-3 mb-3">
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm text-secondary">Event ID</label>
+                          <input type="text" id="boothEventId" class="form-control form-control-sm fw-bold text-muted" placeholder="e.g. egm0015" disabled>
+                      </div>
+                      <div class="col-12 col-md-8">
+                          <label class="form-label-sm text-secondary">Page Title</label>
+                          <input type="text" id="boothEventName" class="form-control form-control-sm fw-bold" required>
+                      </div>
                   </div>
 
-                  <div class="color-group">
-                      <div class="form-group">
-                          <label>Font & Tab Color</label>
-                          <div class="color-input-wrapper">
+                  <div class="mb-3">
+                      <label class="form-label-sm text-secondary">FOLDER NAME <span class="fw-normal text-muted" style="text-transform: none;">(SYNC TO DSLRBOOTH)</span></label>
+                      <input type="text" id="boothFolderName" class="form-control form-control-sm fw-bold" placeholder="e.g. Smith Wedding" required>
+                  </div>
+                  
+                  <div class="mb-4 pb-4 border-bottom">
+                      <label class="form-label-sm text-secondary">Number of Booths / iPads</label>
+                      <input type="number" id="boothCountInput" class="form-control form-control-sm fw-bold" min="1" placeholder="e.g. 2" required>
+                      <span class="d-block mt-1 small fw-bold text-danger" id="boothCountHint" style="display:none;">Booth count is set by admin.</span>
+                  </div>
+
+                  <div class="row g-3 mb-4">
+                      <div class="col-6">
+                          <label class="form-label-sm text-secondary">Font & Tab Color</label>
+                          <div class="booth-color-input-wrapper">
                               <input type="color" id="boothFontColorPicker" value="#ffffff" oninput="syncBoothColor('boothFontColorPicker', 'boothFontColor')">
-                              <input type="text" id="boothFontColor" value="#ffffff" maxlength="7" oninput="syncBoothColor('boothFontColor', 'boothFontColorPicker')">
+                              <input type="text" id="boothFontColor" class="form-control form-control-sm" value="#ffffff" maxlength="7" oninput="syncBoothColor('boothFontColor', 'boothFontColorPicker')">
                           </div>
                       </div>
-                      <div class="form-group">
-                          <label>Background Color</label>
-                          <div class="color-input-wrapper">
+                      <div class="col-6">
+                          <label class="form-label-sm text-secondary">Background Color</label>
+                          <div class="booth-color-input-wrapper">
                               <input type="color" id="boothBgColorPicker" value="#000000" oninput="syncBoothColor('boothBgColorPicker', 'boothBgColor')">
-                              <input type="text" id="boothBgColor" value="#000000" maxlength="7" oninput="syncBoothColor('boothBgColor', 'boothBgColorPicker')">
+                              <input type="text" id="boothBgColor" class="form-control form-control-sm" value="#000000" maxlength="7" oninput="syncBoothColor('boothBgColor', 'boothBgColorPicker')">
                           </div>
                       </div>
                   </div>
 
-                  <div class="form-group">
-                      <label>Background Image <span style="text-transform:none; font-weight:normal; color:var(--text-muted)">(optional 1000x676)</span></label>
-                      <div class="custom-file-row">
+                  <div class="mb-3">
+                      <label class="form-label-sm text-secondary">Background Image <span class="fw-normal text-muted">(1000x676)</span></label>
+                      <div class="booth-custom-file-row">
                           <input type="file" id="boothBgFile" accept="image/*" style="display: none;" onchange="updateBoothFileName('boothBgFile', 'boothBgFileName')">
-                          <button type="button" class="file-btn" onclick="document.getElementById('boothBgFile').click()">Choose Image</button>
-                          <span class="file-name" id="boothBgFileName">No file chosen</span>
+                          <button type="button" class="booth-file-btn" onclick="document.getElementById('boothBgFile').click()">Choose Image</button>
+                          <span class="booth-file-name" id="boothBgFileName">No file chosen</span>
                       </div>
                   </div>
 
-                  <div class="form-group">
-                      <label>Custom Logo for QR <span style="text-transform:none; font-weight:normal; color:var(--text-muted)">(optional 250x250)</span></label>
-                      <div class="custom-file-row">
+                  <div class="mb-4">
+                      <label class="form-label-sm text-secondary">Custom Logo for QR <span class="fw-normal text-muted">(250x250)</span></label>
+                      <div class="booth-custom-file-row mb-2">
                           <input type="file" id="boothLogoFile" accept="image/*" style="display: none;" onchange="handleBoothLogoSelect(event)">
-                          <button type="button" class="file-btn" onclick="document.getElementById('boothLogoFile').click()">Choose Logo</button>
-                          <span class="file-name" id="boothLogoFileName">No file chosen</span>
+                          <button type="button" class="booth-file-btn" onclick="document.getElementById('boothLogoFile').click()">Choose Logo</button>
+                          <span class="booth-file-name" id="boothLogoFileName">No file chosen</span>
                       </div>
-                      <div style="margin-top: 14px; display: flex; align-items: center; gap: 8px;">
-                          <input type="checkbox" id="boothLogoOnMain" style="width: 18px; height: 18px; cursor: pointer; margin: 0; flex-shrink: 0; accent-color: var(--text-main);">
-                          <label for="boothLogoOnMain" style="margin: 0; font-weight: 500; font-size: 14px; cursor: pointer; text-transform: none;">Show logo as custom branding</label>
+                      <div class="form-check form-switch mt-2">
+                          <input class="form-check-input" type="checkbox" id="boothLogoOnMain">
+                          <label class="form-check-label small fw-bold text-dark" for="boothLogoOnMain">Show logo as custom branding</label>
                       </div>
                   </div>
 
-                  <button id="boothGenerateBtn" class="action-btn" onclick="runBoothGeneration()">GENERATE BOOTH SETUP</button>
-                  <button id="boothSaveBtn" class="action-btn" style="display: none;" onclick="runBoothUpdate()">SAVE CHANGES</button>
-                  <button id="boothDeleteBtn" class="action-btn" onclick="runBoothDelete()">DELETE BOOTH SETUP</button>
+                  <button id="boothGenerateBtn" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" onclick="runBoothGeneration()"><i class="bi bi-magic me-1"></i> GENERATE BOOTH SETUP</button>
+                  <button id="boothSaveBtn" class="btn btn-warning w-100 py-3 fw-bold shadow-sm mb-2" style="display:none;" onclick="runBoothUpdate()"><i class="bi bi-cloud-arrow-up me-1"></i> SAVE CHANGES</button>
+                  <button id="boothDeleteBtn" class="btn btn-outline-danger w-100 py-2 fw-bold shadow-sm" style="display:none;" onclick="runBoothDelete()"><i class="bi bi-trash3 me-1"></i> DELETE BOOTH SETUP</button>
               </div>
 
               <div id="boothViewContainer" style="display: none;">
-                  <h3 id="viewBoothTitle" style="margin: 0 0 5px 0;">Select an event above</h3>
-                  <p id="viewBoothId" style="font-family: monospace; color: var(--text-muted); font-size: 12px; margin: 0 0 20px 0;"></p>
+                  <div class="p-3 bg-light border border-secondary-subtle rounded mb-4">
+                      <h5 id="viewBoothTitle" class="fw-bold text-dark mb-1 mt-1">Select an event above</h5>
+                      <span id="viewBoothId" class="badge bg-secondary opacity-75 fw-normal"></span>
+                  </div>
                   
                   <div id="boothCardsList"></div>
                   
-                  <button id="boothDownloadAllQRsBtn" class="action-btn" style="display:none;" onclick="downloadAllBoothQRs()">Download All QR Codes</button>
+                  <button id="boothDownloadAllQRsBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mt-2" style="display:none;" onclick="downloadAllBoothQRs()"><i class="bi bi-download me-1"></i> Download All QR Codes</button>
               </div>
 
           </div>
@@ -761,7 +724,7 @@
               <div id="addDaySrvFrameDetails" class="mt-1 pe-2" style="display:none;">
                   <div class="input-group input-group-sm">
                       <input type="number" id="addDaySrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
+                      <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
                   </div>
               </div>
           </div>
@@ -990,6 +953,19 @@
   let currentCalendarDate = new Date(); 
   
   const baseCrew = ["Edgar","Francis","Mael","Lexie","Athan","Jovert","May","Tina","Jops","Grace","Jun","Tatalino","Joram","Roy","Smile"];
+
+  // --- BOOTH QR CONSTANTS ---
+  const MASTER_QR_URL = "https://egmqr.vercel.app/";
+  const NETLIFY_BASE_URL = "https://egmgallery.vercel.app/main.html";
+  const BACKUP_MASTER_QR_URL = "https://egmqr.github.io/web/";
+  const BACKUP_NETLIFY_BASE_URL = "https://egmqr.github.io/photo-viewer/main.html";
+  let currentBoothMode = 'view';
+  let allFetchedBoothEvents = [];
+  let currentViewBooths = [];
+  let cropper = null;
+  let croppedLogoPayload = null; 
+  let croppedQrLogoPayload = null; 
+  let originalLogoFilename = "";
 
   // --- Auth Functions ---
   function isAuthenticated() {
@@ -1384,7 +1360,6 @@
             else displayHeader = formattedDate;
         }
         
-        // Sticky Header UI Implementation
         html += `<div class="col-12 sticky-date-header-container">
                     <div class="sticky-date-header d-flex align-items-center">
                         <i class="bi bi-calendar3 me-2 fs-5"></i>
@@ -2329,10 +2304,10 @@
       const textSpan = document.getElementById(textId);
       if (fileInput.files.length > 0) {
           textSpan.innerText = fileInput.files[0].name;
-          textSpan.style.color = "var(--btn-bg)";
+          textSpan.style.color = "var(--bs-primary)";
       } else {
           textSpan.innerText = "No file chosen";
-          textSpan.style.color = "var(--text-muted)";
+          textSpan.style.color = "#64748b";
       }
   }
 
@@ -2428,8 +2403,8 @@
                      `;
                   } else {
                      let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
-                     if (details.qrLogoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.qrLogoId)}`;
-                     else if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.logoId)}`;
+                     if (details.qrLogoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.qrLogoId)}&centerImageSizeRatio=0.15`;
+                     else if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.logoId)}&centerImageSizeRatio=0.15`;
                      
                      currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false });
                      qrCodeActionHtml = `
@@ -2525,7 +2500,7 @@
       if (cropper) { cropper.destroy(); cropper = null; }
       document.getElementById('boothLogoFile').value = ""; 
       document.getElementById('boothLogoFileName').innerText = "No file chosen";
-      document.getElementById('boothLogoFileName').style.color = "var(--text-muted)";
+      document.getElementById('boothLogoFileName').style.color = "#64748b";
       croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
   }
 
@@ -2547,7 +2522,7 @@
       document.getElementById('cropModal').style.display = 'none';
       cropper.destroy(); cropper = null;
       document.getElementById('boothLogoFileName').innerText = baseName + "_cropped (250x250)";
-      document.getElementById('boothLogoFileName').style.color = "var(--btn-bg)";
+      document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
   }
 
   function readFileAsBase64(file) {
@@ -2587,7 +2562,7 @@
       ov.style.display = 'none';
       
       if (res && res.success) {
-          fetchBoothEvents(); 
+          fetchBoothEvents(); // Refresh data behind scenes
           if (actionName === "updateBoothSetup") {
               setBoothMode('view');
               setTimeout(() => { document.getElementById('boothEventSelect').value = eventId; loadBoothEventDetails(); }, 100);
