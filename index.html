@@ -1660,7 +1660,7 @@
                  let match = s.match(/\[(\d+)\s+photographer/);
                  if(match) document.getElementById('addDaySrvPhotoCount').value = match[1];
                  
-             } else if (s.startsWith('Photo souvenir prints') || s === 'Photo souvenir prints') {
+             } else if (s.startsWith('QR with Prints') || s === 'QR with Prints' || s.startsWith('Photo souvenir prints') || s === 'Photo souvenir prints') {
                  document.getElementById('addDaySrvPhotoQR').checked = true;
                  document.getElementById('addDaySrvPhotoQRDetails').style.display = 'block';
                  document.getElementById('addDayTypeWithPrints').checked = true;
@@ -1674,7 +1674,7 @@
                  else if(s.includes('5R')) document.getElementById('addDaySrvPrintsSize').value = '5R';
                  else if(s.includes('4R')) document.getElementById('addDaySrvPrintsSize').value = '4R';
                  
-             } else if (s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
+             } else if (s.startsWith('QR only') || s === 'QR only' || s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
                  document.getElementById('addDaySrvPhotoQR').checked = true;
                  document.getElementById('addDaySrvPhotoQRDetails').style.display = 'block';
                  document.getElementById('addDayTypeWithoutPrints').checked = true;
@@ -1743,8 +1743,8 @@
     if(document.getElementById('editSrvPrintsBooth')) document.getElementById('editSrvPrintsBooth').value = '';
     if(document.getElementById('editSrvPrintsCount')) document.getElementById('editSrvPrintsCount').value = '';
     if(document.getElementById('editSrvPrintsSize')) document.getElementById('editSrvPrintsSize').value = '4R';
-    if(document.getElementById('editSrvQRBooth')) document.getElementById('editSrvQRBooth').value = '';
     if(document.getElementById('editSrvFrameCount')) document.getElementById('editSrvFrameCount').value = '';
+    if(document.getElementById('editSrvQRBooth')) document.getElementById('editSrvQRBooth').value = '';
     
     ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
        const el = document.getElementById('editSrv' + id);
@@ -1792,7 +1792,7 @@
                 let match = s.match(/\[(\d+)\s+photographer/);
                 if(match) document.getElementById('editSrvPhotoCount').value = match[1];
                 
-            } else if (s.startsWith('Photo souvenir prints') || s === 'Photo souvenir prints') {
+            } else if (s.startsWith('QR with Prints') || s === 'QR with Prints' || s.startsWith('Photo souvenir prints') || s === 'Photo souvenir prints') {
                 document.getElementById('editSrvPhotoQR').checked = true;
                 document.getElementById('editSrvPhotoQRDetails').style.display = 'block';
                 document.getElementById('editTypeWithPrints').checked = true;
@@ -1806,7 +1806,13 @@
                 else if(s.includes('5R')) document.getElementById('editSrvPrintsSize').value = '5R';
                 else if(s.includes('4R')) document.getElementById('editSrvPrintsSize').value = '4R';
                 
-            } else if (s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
+            } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
+                document.getElementById('editSrvFrame').checked = true;
+                document.getElementById('editSrvFrameDetails').style.display = 'block';
+                let match = s.match(/\[(\d+)\s+frame/);
+                if(match) document.getElementById('editSrvFrameCount').value = match[1];
+                
+            } else if (s.startsWith('QR only') || s === 'QR only' || s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
                 document.getElementById('editSrvPhotoQR').checked = true;
                 document.getElementById('editSrvPhotoQRDetails').style.display = 'block';
                 document.getElementById('editTypeWithoutPrints').checked = true;
@@ -1814,12 +1820,6 @@
 
                 let match = s.match(/\[(\d+)\s+booth/);
                 if(match) document.getElementById('editSrvQRBooth').value = match[1];
-                
-            } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
-                document.getElementById('editSrvFrame').checked = true;
-                document.getElementById('editSrvFrameDetails').style.display = 'block';
-                let match = s.match(/\[(\d+)\s+frame/);
-                if(match) document.getElementById('editSrvFrameCount').value = match[1];
                 
             } else {
                 let found = false;
@@ -1967,10 +1967,10 @@
                 if(booths) details.push(`${booths} booth(s)`);
                 if(count) details.push(`${count} prints`);
                 if(size) details.push(size);
-                finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : `Photo souvenir prints with QR`);
+                finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
             } else {
                 const booths = document.getElementById('newSrvQRBooth').value;
-                finalServices.push(booths ? `Photo souvenir QR [${booths} booth(s)]` : `Photo souvenir QR`);
+                finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
             }
         } else if (s === 'Frame Token') {
             const count = document.getElementById('newSrvFrameCount').value;
@@ -2038,10 +2038,10 @@
                 if(booths) details.push(`${booths} booth(s)`);
                 if(count) details.push(`${count} prints`);
                 if(size) details.push(size);
-                finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : `Photo souvenir prints with QR`);
+                finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
             } else {
                 const booths = document.getElementById('addDaySrvQRBooth').value;
-                finalServices.push(booths ? `Photo souvenir QR [${booths} booth(s)]` : `Photo souvenir QR`);
+                finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
             }
         } else if (s === 'Frame Token') {
             const count = document.getElementById('addDaySrvFrameCount').value;
@@ -2089,10 +2089,10 @@
                 if(booths) details.push(`${booths} booth(s)`);
                 if(count) details.push(`${count} prints`);
                 if(size) details.push(size);
-                finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : `Photo souvenir prints with QR`);
+                finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
             } else {
                 const booths = document.getElementById('editSrvQRBooth').value;
-                finalServices.push(booths ? `Photo souvenir QR [${booths} booth(s)]` : `Photo souvenir QR`);
+                finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
             }
         } else if (s === 'Frame Token') {
             const count = document.getElementById('editSrvFrameCount').value;
