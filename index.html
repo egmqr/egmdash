@@ -81,8 +81,8 @@
     .map-link:hover { color: #b02a37; border-bottom-color: #b02a37; }
     
     /* File Upload & Badges */
-    .card-upload-btn { cursor: pointer; color: #0d9488; font-size: 0.75rem; font-weight: 700; border: 1px dashed #5eead4; background-color: transparent; padding: 8px 12px; border-radius: 8px; display: block; text-align: center; transition: 0.2s; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px;}
-    .card-upload-btn:hover { background-color: transparent; border-color: #14b8a6; }
+    .card-upload-btn { cursor: pointer; color: #0d9488; font-size: 0.75rem; font-weight: 700; border: 1px dashed #5eead4; background-color: #f0fdfa; padding: 8px 12px; border-radius: 8px; display: block; text-align: center; transition: 0.2s; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px;}
+    .card-upload-btn:hover { background-color: #ccfbf1; border-color: #14b8a6; }
     .file-badge { font-size: 0.75rem; padding: 6px 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #e2e8f0; background-color: #f8fafc; color: #475569; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
     .file-badge a { color: #0d9488; text-decoration: none; font-weight: 600; }
     .file-badge a:hover { text-decoration: underline; }
@@ -147,7 +147,7 @@
     .dark-mode .btn-light { background-color: #2b2b2b; border-color: #444444 !important; color: #d1d5db; }
     .dark-mode .btn-light:hover { background-color: #444444; color: #ffffff; }
     
-    .dark-mode .card h5 { color: #26c9bd !important; }
+    .dark-mode .card h5 { color: #ffffff !important; }
     .dark-mode .text-dark { color: #ffffff !important; }
     .dark-mode .text-secondary { color: #9ca3af !important; }
     .dark-mode .text-muted { color: #6b7280 !important; }
@@ -155,7 +155,7 @@
     .dark-mode .bg-white { background-color: #1e1e1e !important; }
     .dark-mode .border, .dark-mode .border-bottom { border-color: #333333 !important; }
     
-    .dark-mode .leave-card { background-color: transparent !important; border-color: #5c2020 !important; }
+    .dark-mode .leave-card { background-color: #2c1313 !important; border-color: #5c2020 !important; }
     .dark-mode .file-badge { background-color: #121212; color: #d1d5db; border-color: #333333; }
     
     .dark-mode .form-control, .dark-mode .form-select { background-color: #121212; border-color: #333333; color: #f3f4f6; }
@@ -171,9 +171,9 @@
     .dark-mode .badge-soft-success { background-color: #064e3b; color: #a7f3d0; border-color: #065f46; }
     .dark-mode .badge-soft-warning { background-color: #78350f; color: #fed7aa; border-color: #92400e; }
     .dark-mode .badge-apple-green { background-color: #14532d; color: #d9f99d; border-color: #166534; }
-    .dark-mode .badge-orange { background-color: #c45825; color: #fff; border-color: #9a3412; }
-    .dark-mode .badge-yellow { background-color: #917e2a; color: #fff; border-color: #854d0e; }
-    .dark-mode .badge-teal { background-color: #134e4a; color: #fff; border-color: #115e59; }
+    .dark-mode .badge-orange { background-color: #7c2d12; color: #fdba74; border-color: #9a3412; }
+    .dark-mode .badge-yellow { background-color: #713f12; color: #fef08a; border-color: #854d0e; }
+    .dark-mode .badge-teal { background-color: #134e4a; color: #5eead4; border-color: #115e59; }
     .dark-mode .badge-avp { background-color: #2e1065; color: #ddd6fe; border-color: #4c1d95; }
     .dark-mode .badge.bg-light.text-dark { background-color: #2b2b2b !important; color: #f3f4f6 !important; border-color: #444444 !important; }
     .dark-mode .badge.bg-white { background-color: #121212 !important; }
@@ -390,23 +390,45 @@
                   </div>
               </div>
               
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints with QR" id="newSrvPrints" onchange="document.getElementById('newSrvPrintsDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="newSrvPrints" class="fw-bold text-dark">Photo souvenir prints with QR</label>
-                  <div id="newSrvPrintsDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm mb-1">
-                          <input type="number" id="newSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+              <div class="col-12 col-md-12 form-check small mb-2">
+                  <input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="newSrvPhotoQR" onchange="document.getElementById('newSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'">
+                  <label for="newSrvPhotoQR" class="fw-bold text-dark">Photo Souvenir QR</label>
+                  <div id="newSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
+                      
+                      <div class="d-flex gap-3 mb-2">
+                          <div class="form-check">
+                              <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('new')" checked>
+                              <label class="form-check-label fw-bold text-dark" for="newTypeWithPrints">With Prints</label>
+                          </div>
+                          <div class="form-check">
+                              <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('new')">
+                              <label class="form-check-label fw-bold text-dark" for="newTypeWithoutPrints">Without Prints</label>
+                          </div>
                       </div>
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="newSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
-                          <select id="newSrvPrintsSize" class="form-select border-secondary-subtle">
-                              <option value="4R">4R</option>
-                              <option value="Wallet size">Wallet size</option>
-                              <option value="5R">5R</option>
-                          </select>
+                      
+                      <div id="newDetailsWithPrints">
+                          <div class="input-group input-group-sm mb-1">
+                              <input type="number" id="newSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                          </div>
+                          <div class="input-group input-group-sm">
+                              <input type="number" id="newSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                              <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
+                              <select id="newSrvPrintsSize" class="form-select border-secondary-subtle">
+                                  <option value="4R">4R</option>
+                                  <option value="Wallet size">Wallet size</option>
+                                  <option value="5R">5R</option>
+                              </select>
+                          </div>
                       </div>
+                      
+                      <div id="newDetailsWithoutPrints" style="display: none;">
+                          <div class="input-group input-group-sm">
+                              <input type="number" id="newSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                          </div>
+                      </div>
+                      
                   </div>
               </div>
               
@@ -417,17 +439,6 @@
                       <div class="input-group input-group-sm">
                           <input type="number" id="newSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
                           <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
-                      </div>
-                  </div>
-              </div>
-
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR" id="newSrvQR" onchange="document.getElementById('newSrvQRDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="newSrvQR" class="fw-bold text-dark">Photo souvenir QR</label>
-                  <div id="newSrvQRDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="newSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
                       </div>
                   </div>
               </div>
@@ -511,23 +522,45 @@
               </div>
           </div>
           
-          <div class="col-12 col-md-6 form-check small mb-2">
-              <input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints with QR" id="addDaySrvPrints" onchange="document.getElementById('addDaySrvPrintsDetails').style.display = this.checked ? 'block' : 'none'">
-              <label for="addDaySrvPrints" class="fw-bold text-dark">Photo souvenir prints with QR</label>
-              <div id="addDaySrvPrintsDetails" class="mt-1 pe-2" style="display:none;">
-                  <div class="input-group input-group-sm mb-1">
-                      <input type="number" id="addDaySrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                      <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+          <div class="col-12 col-md-12 form-check small mb-2">
+              <input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="addDaySrvPhotoQR" onchange="document.getElementById('addDaySrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'">
+              <label for="addDaySrvPhotoQR" class="fw-bold text-dark">Photo Souvenir QR</label>
+              <div id="addDaySrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
+                  
+                  <div class="d-flex gap-3 mb-2">
+                      <div class="form-check">
+                          <input class="form-check-input" type="radio" name="addDayPhotoQRType" id="addDayTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('addDay')" checked>
+                          <label class="form-check-label fw-bold text-dark" for="addDayTypeWithPrints">With Prints</label>
+                      </div>
+                      <div class="form-check">
+                          <input class="form-check-input" type="radio" name="addDayPhotoQRType" id="addDayTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('addDay')">
+                          <label class="form-check-label fw-bold text-dark" for="addDayTypeWithoutPrints">Without Prints</label>
+                      </div>
                   </div>
-                  <div class="input-group input-group-sm">
-                      <input type="number" id="addDaySrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                      <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
-                      <select id="addDaySrvPrintsSize" class="form-select border-secondary-subtle">
-                          <option value="4R">4R</option>
-                          <option value="Wallet size">Wallet size</option>
-                          <option value="5R">5R</option>
-                      </select>
+                  
+                  <div id="addDayDetailsWithPrints">
+                      <div class="input-group input-group-sm mb-1">
+                          <input type="number" id="addDaySrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                          <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                      </div>
+                      <div class="input-group input-group-sm">
+                          <input type="number" id="addDaySrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                          <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
+                          <select id="addDaySrvPrintsSize" class="form-select border-secondary-subtle">
+                              <option value="4R">4R</option>
+                              <option value="Wallet size">Wallet size</option>
+                              <option value="5R">5R</option>
+                          </select>
+                      </div>
                   </div>
+                  
+                  <div id="addDayDetailsWithoutPrints" style="display: none;">
+                      <div class="input-group input-group-sm">
+                          <input type="number" id="addDaySrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                          <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                      </div>
+                  </div>
+                  
               </div>
           </div>
           
@@ -538,17 +571,6 @@
                   <div class="input-group input-group-sm">
                       <input type="number" id="addDaySrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
                       <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
-                  </div>
-              </div>
-          </div>
-
-          <div class="col-12 col-md-6 form-check small mb-2">
-              <input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR" id="addDaySrvQR" onchange="document.getElementById('addDaySrvQRDetails').style.display = this.checked ? 'block' : 'none'">
-              <label for="addDaySrvQR" class="fw-bold text-dark">Photo souvenir QR</label>
-              <div id="addDaySrvQRDetails" class="mt-1 pe-2" style="display:none;">
-                  <div class="input-group input-group-sm">
-                      <input type="number" id="addDaySrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                      <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
                   </div>
               </div>
           </div>
@@ -648,23 +670,45 @@
                   </div>
               </div>
               
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo souvenir prints with QR" id="editSrvPrints" onchange="document.getElementById('editSrvPrintsDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="editSrvPrints" class="fw-bold text-dark">Photo souvenir prints with QR</label>
-                  <div id="editSrvPrintsDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm mb-1">
-                          <input type="number" id="editSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+              <div class="col-12 col-md-12 form-check small mb-2">
+                  <input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="editSrvPhotoQR" onchange="document.getElementById('editSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'">
+                  <label for="editSrvPhotoQR" class="fw-bold text-dark">Photo Souvenir QR</label>
+                  <div id="editSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
+                      
+                      <div class="d-flex gap-3 mb-2">
+                          <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('edit')" checked>
+                              <label class="form-check-label fw-bold text-dark" for="editTypeWithPrints">With Prints</label>
+                          </div>
+                          <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('edit')">
+                              <label class="form-check-label fw-bold text-dark" for="editTypeWithoutPrints">Without Prints</label>
+                          </div>
                       </div>
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="editSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
-                          <select id="editSrvPrintsSize" class="form-select border-secondary-subtle">
-                              <option value="4R">4R</option>
-                              <option value="Wallet size">Wallet size</option>
-                              <option value="5R">5R</option>
-                          </select>
+                      
+                      <div id="editDetailsWithPrints">
+                          <div class="input-group input-group-sm mb-1">
+                              <input type="number" id="editSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                          </div>
+                          <div class="input-group input-group-sm">
+                              <input type="number" id="editSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                              <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
+                              <select id="editSrvPrintsSize" class="form-select border-secondary-subtle">
+                                  <option value="4R">4R</option>
+                                  <option value="Wallet size">Wallet size</option>
+                                  <option value="5R">5R</option>
+                              </select>
+                          </div>
                       </div>
+                      
+                      <div id="editDetailsWithoutPrints" style="display: none;">
+                          <div class="input-group input-group-sm">
+                              <input type="number" id="editSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                          </div>
+                      </div>
+                      
                   </div>
               </div>
               
@@ -675,17 +719,6 @@
                       <div class="input-group input-group-sm">
                           <input type="number" id="editSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
                           <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
-                      </div>
-                  </div>
-              </div>
-
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo souvenir QR" id="editSrvQR" onchange="document.getElementById('editSrvQRDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="editSrvQR" class="fw-bold text-dark">Photo souvenir QR</label>
-                  <div id="editSrvQRDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="editSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
                       </div>
                   </div>
               </div>
@@ -1024,6 +1057,17 @@
           } else {
               dateInput.setAttribute('required', 'required');
           }
+      }
+  }
+
+  function togglePhotoQRDetails(prefix) {
+      const type = document.querySelector(`input[name="${prefix}PhotoQRType"]:checked`).value;
+      if (type === 'with_prints') {
+          document.getElementById(`${prefix}DetailsWithPrints`).style.display = 'block';
+          document.getElementById(`${prefix}DetailsWithoutPrints`).style.display = 'none';
+      } else {
+          document.getElementById(`${prefix}DetailsWithPrints`).style.display = 'none';
+          document.getElementById(`${prefix}DetailsWithoutPrints`).style.display = 'block';
       }
   }
 
@@ -1549,10 +1593,12 @@
       document.getElementById('eventForm').reset();
       
       // Hide all dynamic service inputs
-      ['Photo', 'Prints', 'Frame', 'QR'].forEach(id => {
+      ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
          const el = document.getElementById('newSrv' + id + 'Details');
          if(el) el.style.display = 'none';
       });
+      document.getElementById('newTypeWithPrints').checked = true;
+      togglePhotoQRDetails('new');
 
       document.getElementById('newTypeEvent').checked = true;
       toggleEntryMode('new');
@@ -1574,13 +1620,15 @@
      if(document.getElementById('addDaySrvPrintsBooth')) document.getElementById('addDaySrvPrintsBooth').value = '';
      if(document.getElementById('addDaySrvPrintsCount')) document.getElementById('addDaySrvPrintsCount').value = '';
      if(document.getElementById('addDaySrvPrintsSize')) document.getElementById('addDaySrvPrintsSize').value = '4R';
-     if(document.getElementById('addDaySrvFrameCount')) document.getElementById('addDaySrvFrameCount').value = '';
      if(document.getElementById('addDaySrvQRBooth')) document.getElementById('addDaySrvQRBooth').value = '';
+     if(document.getElementById('addDaySrvFrameCount')) document.getElementById('addDaySrvFrameCount').value = '';
      
-     ['Photo', 'Prints', 'Frame', 'QR'].forEach(srv => {
+     ['Photo', 'PhotoQR', 'Frame'].forEach(srv => {
         const el = document.getElementById('addDaySrv' + srv);
         if(el) { el.checked = false; el.onchange(); }
      });
+     document.getElementById('addDayTypeWithPrints').checked = true;
+     togglePhotoQRDetails('addDay');
      
      if (e['Event Name'] === 'Crew Leave') {
          document.getElementById('addDayHeader').innerHTML = "<i class='bi bi-airplane-fill text-danger me-1'></i> Add Leave Day";
@@ -1613,8 +1661,11 @@
                  if(match) document.getElementById('addDaySrvPhotoCount').value = match[1];
                  
              } else if (s.startsWith('Photo souvenir prints') || s === 'Photo souvenir prints') {
-                 document.getElementById('addDaySrvPrints').checked = true;
-                 document.getElementById('addDaySrvPrintsDetails').style.display = 'block';
+                 document.getElementById('addDaySrvPhotoQR').checked = true;
+                 document.getElementById('addDaySrvPhotoQRDetails').style.display = 'block';
+                 document.getElementById('addDayTypeWithPrints').checked = true;
+                 togglePhotoQRDetails('addDay');
+
                  let bMatch = s.match(/(\d+)\s+booth/);
                  if(bMatch) document.getElementById('addDaySrvPrintsBooth').value = bMatch[1];
                  let pMatch = s.match(/(\d+)\s+prints/);
@@ -1623,17 +1674,20 @@
                  else if(s.includes('5R')) document.getElementById('addDaySrvPrintsSize').value = '5R';
                  else if(s.includes('4R')) document.getElementById('addDaySrvPrintsSize').value = '4R';
                  
+             } else if (s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
+                 document.getElementById('addDaySrvPhotoQR').checked = true;
+                 document.getElementById('addDaySrvPhotoQRDetails').style.display = 'block';
+                 document.getElementById('addDayTypeWithoutPrints').checked = true;
+                 togglePhotoQRDetails('addDay');
+
+                 let match = s.match(/\[(\d+)\s+booth/);
+                 if(match) document.getElementById('addDaySrvQRBooth').value = match[1];
+                 
              } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
                  document.getElementById('addDaySrvFrame').checked = true;
                  document.getElementById('addDaySrvFrameDetails').style.display = 'block';
                  let match = s.match(/\[(\d+)\s+frame/);
                  if(match) document.getElementById('addDaySrvFrameCount').value = match[1];
-                 
-             } else if (s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
-                 document.getElementById('addDaySrvQR').checked = true;
-                 document.getElementById('addDaySrvQRDetails').style.display = 'block';
-                 let match = s.match(/\[(\d+)\s+booth/);
-                 if(match) document.getElementById('addDaySrvQRBooth').value = match[1];
                  
              } else {
                  let found = false;
@@ -1689,13 +1743,15 @@
     if(document.getElementById('editSrvPrintsBooth')) document.getElementById('editSrvPrintsBooth').value = '';
     if(document.getElementById('editSrvPrintsCount')) document.getElementById('editSrvPrintsCount').value = '';
     if(document.getElementById('editSrvPrintsSize')) document.getElementById('editSrvPrintsSize').value = '4R';
-    if(document.getElementById('editSrvFrameCount')) document.getElementById('editSrvFrameCount').value = '';
     if(document.getElementById('editSrvQRBooth')) document.getElementById('editSrvQRBooth').value = '';
+    if(document.getElementById('editSrvFrameCount')) document.getElementById('editSrvFrameCount').value = '';
     
-    ['Photo', 'Prints', 'Frame', 'QR'].forEach(id => {
+    ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
        const el = document.getElementById('editSrv' + id);
        if(el) { el.checked = false; el.onchange(); }
     });
+    document.getElementById('editTypeWithPrints').checked = true;
+    togglePhotoQRDetails('edit');
     
     form.elements['eventId'].value = id;
     form.elements['originalDate'].value = date || '';
@@ -1737,8 +1793,11 @@
                 if(match) document.getElementById('editSrvPhotoCount').value = match[1];
                 
             } else if (s.startsWith('Photo souvenir prints') || s === 'Photo souvenir prints') {
-                document.getElementById('editSrvPrints').checked = true;
-                document.getElementById('editSrvPrintsDetails').style.display = 'block';
+                document.getElementById('editSrvPhotoQR').checked = true;
+                document.getElementById('editSrvPhotoQRDetails').style.display = 'block';
+                document.getElementById('editTypeWithPrints').checked = true;
+                togglePhotoQRDetails('edit');
+
                 let bMatch = s.match(/(\d+)\s+booth/);
                 if(bMatch) document.getElementById('editSrvPrintsBooth').value = bMatch[1];
                 let pMatch = s.match(/(\d+)\s+prints/);
@@ -1747,17 +1806,20 @@
                 else if(s.includes('5R')) document.getElementById('editSrvPrintsSize').value = '5R';
                 else if(s.includes('4R')) document.getElementById('editSrvPrintsSize').value = '4R';
                 
+            } else if (s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
+                document.getElementById('editSrvPhotoQR').checked = true;
+                document.getElementById('editSrvPhotoQRDetails').style.display = 'block';
+                document.getElementById('editTypeWithoutPrints').checked = true;
+                togglePhotoQRDetails('edit');
+
+                let match = s.match(/\[(\d+)\s+booth/);
+                if(match) document.getElementById('editSrvQRBooth').value = match[1];
+                
             } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
                 document.getElementById('editSrvFrame').checked = true;
                 document.getElementById('editSrvFrameDetails').style.display = 'block';
                 let match = s.match(/\[(\d+)\s+frame/);
                 if(match) document.getElementById('editSrvFrameCount').value = match[1];
-                
-            } else if (s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
-                document.getElementById('editSrvQR').checked = true;
-                document.getElementById('editSrvQRDetails').style.display = 'block';
-                let match = s.match(/\[(\d+)\s+booth/);
-                if(match) document.getElementById('editSrvQRBooth').value = match[1];
                 
             } else {
                 let found = false;
@@ -1895,21 +1957,24 @@
         if (s === 'Photo') {
             const count = document.getElementById('newSrvPhotoCount').value;
             finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
-        } else if (s === 'Photo souvenir prints with QR') {
-            const booths = document.getElementById('newSrvPrintsBooth').value;
-            const count = document.getElementById('newSrvPrintsCount').value;
-            const size = document.getElementById('newSrvPrintsSize').value;
-            let details = [];
-            if(booths) details.push(`${booths} booth(s)`);
-            if(count) details.push(`${count} prints`);
-            if(size) details.push(size);
-            finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : s);
+        } else if (s === 'Photo Souvenir Master') {
+            const isWithPrints = document.getElementById('newTypeWithPrints').checked;
+            if (isWithPrints) {
+                const booths = document.getElementById('newSrvPrintsBooth').value;
+                const count = document.getElementById('newSrvPrintsCount').value;
+                const size = document.getElementById('newSrvPrintsSize').value;
+                let details = [];
+                if(booths) details.push(`${booths} booth(s)`);
+                if(count) details.push(`${count} prints`);
+                if(size) details.push(size);
+                finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : `Photo souvenir prints with QR`);
+            } else {
+                const booths = document.getElementById('newSrvQRBooth').value;
+                finalServices.push(booths ? `Photo souvenir QR [${booths} booth(s)]` : `Photo souvenir QR`);
+            }
         } else if (s === 'Frame Token') {
             const count = document.getElementById('newSrvFrameCount').value;
             finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
-        } else if (s === 'Photo souvenir QR') {
-            const booths = document.getElementById('newSrvQRBooth').value;
-            finalServices.push(booths ? `Photo souvenir QR [${booths} booth(s)]` : s);
         } else {
             finalServices.push(s);
         }
@@ -1963,21 +2028,24 @@
         if (s === 'Photo') {
             const count = document.getElementById('addDaySrvPhotoCount').value;
             finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
-        } else if (s === 'Photo souvenir prints with QR') {
-            const booths = document.getElementById('addDaySrvPrintsBooth').value;
-            const count = document.getElementById('addDaySrvPrintsCount').value;
-            const size = document.getElementById('addDaySrvPrintsSize').value;
-            let details = [];
-            if(booths) details.push(`${booths} booth(s)`);
-            if(count) details.push(`${count} prints`);
-            if(size) details.push(size);
-            finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : s);
+        } else if (s === 'Photo Souvenir Master') {
+            const isWithPrints = document.getElementById('addDayTypeWithPrints').checked;
+            if (isWithPrints) {
+                const booths = document.getElementById('addDaySrvPrintsBooth').value;
+                const count = document.getElementById('addDaySrvPrintsCount').value;
+                const size = document.getElementById('addDaySrvPrintsSize').value;
+                let details = [];
+                if(booths) details.push(`${booths} booth(s)`);
+                if(count) details.push(`${count} prints`);
+                if(size) details.push(size);
+                finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : `Photo souvenir prints with QR`);
+            } else {
+                const booths = document.getElementById('addDaySrvQRBooth').value;
+                finalServices.push(booths ? `Photo souvenir QR [${booths} booth(s)]` : `Photo souvenir QR`);
+            }
         } else if (s === 'Frame Token') {
             const count = document.getElementById('addDaySrvFrameCount').value;
             finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
-        } else if (s === 'Photo souvenir QR') {
-            const booths = document.getElementById('addDaySrvQRBooth').value;
-            finalServices.push(booths ? `Photo souvenir QR [${booths} booth(s)]` : s);
         } else {
             finalServices.push(s);
         }
@@ -2011,21 +2079,24 @@
         if (s === 'Photo') {
             const count = document.getElementById('editSrvPhotoCount').value;
             finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
-        } else if (s === 'Photo souvenir prints with QR') {
-            const booths = document.getElementById('editSrvPrintsBooth').value;
-            const count = document.getElementById('editSrvPrintsCount').value;
-            const size = document.getElementById('editSrvPrintsSize').value;
-            let details = [];
-            if(booths) details.push(`${booths} booth(s)`);
-            if(count) details.push(`${count} prints`);
-            if(size) details.push(size);
-            finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : s);
+        } else if (s === 'Photo Souvenir Master') {
+            const isWithPrints = document.getElementById('editTypeWithPrints').checked;
+            if (isWithPrints) {
+                const booths = document.getElementById('editSrvPrintsBooth').value;
+                const count = document.getElementById('editSrvPrintsCount').value;
+                const size = document.getElementById('editSrvPrintsSize').value;
+                let details = [];
+                if(booths) details.push(`${booths} booth(s)`);
+                if(count) details.push(`${count} prints`);
+                if(size) details.push(size);
+                finalServices.push(details.length > 0 ? `Photo souvenir prints with QR [${details.join(' - ')}]` : `Photo souvenir prints with QR`);
+            } else {
+                const booths = document.getElementById('editSrvQRBooth').value;
+                finalServices.push(booths ? `Photo souvenir QR [${booths} booth(s)]` : `Photo souvenir QR`);
+            }
         } else if (s === 'Frame Token') {
             const count = document.getElementById('editSrvFrameCount').value;
             finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
-        } else if (s === 'Photo souvenir QR') {
-            const booths = document.getElementById('editSrvQRBooth').value;
-            finalServices.push(booths ? `Photo souvenir QR [${booths} booth(s)]` : s);
         } else {
             finalServices.push(s);
         }
