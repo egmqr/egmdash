@@ -133,32 +133,6 @@
     .table-custom th { background-color: #f1f5f9; color: #475569; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; transition: background-color 0.3s ease, color 0.3s ease; }
     .table-custom td { vertical-align: middle; color: #334155; border-bottom: 1px solid #f1f5f9; transition: border-color 0.3s ease; }
 
-    /* ================== BOOTH QR SPECIFIC STYLES ================== */
-    .booth-color-input-wrapper { display: flex; gap: 8px; align-items: center; }
-    .booth-color-input-wrapper input[type="color"] { width: 44px; height: 44px; padding: 0; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; background: none; flex-shrink: 0; }
-    .booth-color-input-wrapper input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-    .booth-color-input-wrapper input[type="color"]::-webkit-color-swatch { border: none; border-radius: 7px; }
-    .booth-custom-file-row { display: flex; align-items: center; gap: 10px; }
-    .booth-file-btn { background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
-    .booth-file-btn:hover { background: #e2e8f0; }
-    .booth-file-name { font-size: 13px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    #cropModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 10005; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-    .crop-container { width: 100%; max-width: 400px; height: 60vh; max-height: 400px; background: #222; border-radius: 8px; overflow: hidden; background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
-    #imageToCrop { display: block; max-width: 100%; }
-    .crop-actions { display: flex; gap: 15px; margin-top: 20px; width: 100%; max-width: 400px; }
-    .crop-btn-cancel { background: #555 !important; flex: 1; border-color: #555 !important; color: white !important;}
-
-    /* View Booth Cards */
-    .booth-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 15px; background: #ffffff; transition: all 0.3s; }
-    .booth-card h5 { margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; font-size: 15px; color: #1e293b; font-weight: 700; }
-    .booth-link-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: #64748b; }
-    .booth-link-actions { display: flex; gap: 6px; }
-    .booth-mini-btn { padding: 6px 10px; font-size: 11px; cursor: pointer; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; border-radius: 6px; font-weight: bold; transition: 0.2s; }
-    .booth-mini-btn:hover { background: #e2e8f0; }
-    .booth-mini-btn.backup { background: #475569; color: #fff; border: none; }
-    .booth-mini-btn.backup:hover { background: #334155; }
-
     /* ================== DESATURATED DARK MODE ================== */
     body.dark-mode { background-color: #121212; color: #d1d5db; }
     .dark-mode .card, .dark-mode .filter-panel, .dark-mode .calendar-container, .dark-mode .table-custom, .dark-mode .modal-content { background: #1e1e1e !important; border-color: #333333 !important; }
@@ -380,7 +354,7 @@
                           <input type="text" id="boothEventId" class="form-control form-control-sm fw-bold text-muted" placeholder="e.g. egm0015" disabled>
                       </div>
                       <div class="col-12 col-md-8">
-                          <label class="form-label-sm text-secondary">Dashboard Event Name</label>
+                          <label class="form-label-sm text-secondary">Page Title</label>
                           <input type="text" id="boothEventName" class="form-control form-control-sm fw-bold" required>
                       </div>
                   </div>
@@ -393,7 +367,7 @@
                   <div class="mb-4 pb-4 border-bottom">
                       <label class="form-label-sm text-secondary">Number of Booths / iPads</label>
                       <input type="number" id="boothCountInput" class="form-control form-control-sm fw-bold" min="1" placeholder="e.g. 2" required>
-                      <span class="d-block mt-1 small fw-bold text-danger" id="boothCountHint" style="display:none;">Booth count cannot be changed during edits.</span>
+                      <span class="d-block mt-1 small fw-bold text-danger" id="boothCountHint" style="display:none;">Booth count is set by admin.</span>
                   </div>
 
                   <div class="row g-3 mb-4">
@@ -1360,6 +1334,7 @@
             else displayHeader = formattedDate;
         }
         
+        // Sticky Header UI Implementation
         html += `<div class="col-12 sticky-date-header-container">
                     <div class="sticky-date-header d-flex align-items-center">
                         <i class="bi bi-calendar3 me-2 fs-5"></i>
@@ -1430,11 +1405,12 @@
               
               let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
                   let sTrim = s.trim();
-                  if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only')) {
+                  // BOOTH QR PILL NO LONGER REQUIRES PASSWORD
+                  if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only') || sTrim.startsWith('Photo souvenir')) {
                       let match = sTrim.match(/\[(\d+)\s+booth/);
                       let booths = match ? match[1] : 1;
                       let cleanName = e['Event Name'].replace(/'/g, "\\'");
-                      return `<span class="badge badge-teal opacity-100 border me-1 mb-2 fw-bold px-2 py-1 text-wrap text-start shadow-sm" style="font-size: 0.8rem; line-height: 1.4; cursor: pointer;" onclick="requireAuth(() => goToBoothQR('${e['Event ID']}', '${booths}', '${cleanName}'))"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
+                      return `<span class="badge badge-teal opacity-100 border me-1 mb-2 fw-bold px-2 py-1 text-wrap text-start shadow-sm" style="font-size: 0.8rem; line-height: 1.4; cursor: pointer;" onclick="goToBoothQR('${e['Event ID']}', '${booths}', '${cleanName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
                   } else {
                       return `<span class="badge bg-secondary opacity-75 border me-1 mb-2 fw-medium px-2 py-1 text-wrap text-start" style="font-size: 0.8rem; line-height: 1.4;">${sTrim}</span>`;
                   }
@@ -1604,7 +1580,7 @@
 
   function handleTabClick(tabName) {
       if(tabName === 'payments') { requireAuth(() => switchTab('payments')); } 
-      else if(tabName === 'booth') { requireAuth(() => switchTab('booth')); }
+      else if(tabName === 'booth') { switchTab('booth'); } // NO LONGER REQUIRES PASSWORD
       else { switchTab(tabName); }
   }
 
@@ -2403,8 +2379,8 @@
                      `;
                   } else {
                      let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
-                     if (details.qrLogoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.qrLogoId)}`;
-                     else if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.logoId)}`;
+                     if (details.qrLogoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.qrLogoId)}&centerImageSizeRatio=0.15`;
+                     else if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.logoId)}&centerImageSizeRatio=0.15`;
                      
                      currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false });
                      qrCodeActionHtml = `
