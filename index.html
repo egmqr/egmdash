@@ -10,6 +10,8 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+  
   <style>
     :root {
       --sticky-top: 110px; /* Dynamically calculated based on header height */
@@ -131,6 +133,32 @@
     .table-custom th { background-color: #f1f5f9; color: #475569; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; transition: background-color 0.3s ease, color 0.3s ease; }
     .table-custom td { vertical-align: middle; color: #334155; border-bottom: 1px solid #f1f5f9; transition: border-color 0.3s ease; }
 
+    /* ================== BOOTH QR SPECIFIC STYLES ================== */
+    .booth-color-input-wrapper { display: flex; gap: 8px; align-items: center; }
+    .booth-color-input-wrapper input[type="color"] { width: 44px; height: 44px; padding: 0; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; background: none; flex-shrink: 0; }
+    .booth-color-input-wrapper input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    .booth-color-input-wrapper input[type="color"]::-webkit-color-swatch { border: none; border-radius: 7px; }
+    .booth-custom-file-row { display: flex; align-items: center; gap: 10px; }
+    .booth-file-btn { background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
+    .booth-file-btn:hover { background: #e2e8f0; }
+    .booth-file-name { font-size: 13px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    #cropModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 10005; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+    .crop-container { width: 100%; max-width: 400px; height: 60vh; max-height: 400px; background: #222; border-radius: 8px; overflow: hidden; background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
+    #imageToCrop { display: block; max-width: 100%; }
+    .crop-actions { display: flex; gap: 15px; margin-top: 20px; width: 100%; max-width: 400px; }
+    .crop-btn-cancel { background: #555 !important; flex: 1; border-color: #555 !important; color: white !important;}
+
+    /* View Booth Cards */
+    .booth-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 15px; background: #ffffff; transition: all 0.3s; }
+    .booth-card h5 { margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; font-size: 15px; color: #1e293b; font-weight: 700; }
+    .booth-link-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: #64748b; }
+    .booth-link-actions { display: flex; gap: 6px; }
+    .booth-mini-btn { padding: 6px 10px; font-size: 11px; cursor: pointer; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+    .booth-mini-btn:hover { background: #e2e8f0; }
+    .booth-mini-btn.backup { background: #475569; color: #fff; border: none; }
+    .booth-mini-btn.backup:hover { background: #334155; }
+
     /* ================== DESATURATED DARK MODE ================== */
     body.dark-mode { background-color: #121212; color: #d1d5db; }
     .dark-mode .card, .dark-mode .filter-panel, .dark-mode .calendar-container, .dark-mode .table-custom, .dark-mode .modal-content { background: #1e1e1e !important; border-color: #333333 !important; }
@@ -190,6 +218,17 @@
     .dark-mode .calendar-day.empty { background: #121212; }
     .dark-mode .calendar-day.today { background: #134e4a; } 
     .dark-mode .date-number { color: #9ca3af; }
+
+    /* Booth specific dark mode */
+    .dark-mode .booth-color-input-wrapper input[type="color"] { border-color: #333333; }
+    .dark-mode .booth-file-btn { background-color: #2b2b2b; color: #d1d5db; border-color: #444444; }
+    .dark-mode .booth-file-btn:hover { background-color: #444444; }
+    .dark-mode .booth-file-name { color: #9ca3af; }
+    .dark-mode .booth-card { background-color: #1e1e1e; border-color: #333333; }
+    .dark-mode .booth-card h5 { border-bottom-color: #333333; color: #ffffff !important; }
+    .dark-mode .booth-link-row { color: #9ca3af; }
+    .dark-mode .booth-mini-btn { background-color: #2b2b2b; color: #d1d5db; border-color: #444444; }
+    .dark-mode .booth-mini-btn:hover { background-color: #444444; }
   </style>
 </head>
 <body>
@@ -197,6 +236,17 @@
 <div id="submitOverlay" class="submit-overlay">
   <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
   <h5 class="mt-3 fw-bold text-secondary" id="overlayText">Processing...</h5>
+</div>
+
+<div id="cropModal">
+  <h4 style="color: #fff; margin-top: 0; margin-bottom: 15px;">Crop Custom Logo</h4>
+  <div class="crop-container">
+    <img id="imageToCrop" src="">
+  </div>
+  <div class="crop-actions">
+    <button class="btn btn-secondary crop-btn-cancel w-100 fw-bold" onclick="cancelCrop()">Cancel</button>
+    <button class="btn btn-primary crop-btn-save w-100 fw-bold" onclick="applyCrop()">Apply (250x250)</button>
+  </div>
 </div>
 
 <div class="container-fluid" style="max-width: 1400px; margin: auto; padding: 0;">
@@ -223,6 +273,7 @@
       <ul class="nav nav-pills" id="appTabs">
         <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-card-list me-1"></i> List</a></li>
         <li class="nav-item"><a class="nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
+        <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
         <li class="nav-item"><a class="nav-link" id="p-tab" onclick="handleTabClick('payments')"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
       </ul>
       <button id="filterToggleBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
@@ -295,6 +346,111 @@
               </div>
               <div id="calendarDays" class="calendar-grid">
                   </div>
+          </div>
+      </div>
+
+      <div id="booth-view" style="display:none;">
+          <div class="card p-3 p-md-4" style="max-width: 600px; margin: 0 auto;">
+              <h5 class="fw-bold mb-3 border-bottom pb-2 text-dark"><i class="bi bi-qr-code-scan me-2 text-primary"></i> Photobooth Generator</h5>
+              
+              <ul class="nav nav-pills w-100 d-flex mb-4" id="boothModeTabs">
+                  <li class="nav-item flex-fill text-center">
+                      <a class="nav-link w-100" id="btnModeNew" onclick="setBoothMode('new')" style="display:none;"><i class="bi bi-magic me-1"></i> New Setup</a>
+                  </li>
+                  <li class="nav-item flex-fill text-center">
+                      <a class="nav-link active w-100" id="btnModeEdit" onclick="setBoothMode('edit')"><i class="bi bi-pencil me-1"></i> Edit Setup</a>
+                  </li>
+                  <li class="nav-item flex-fill text-center">
+                      <a class="nav-link w-100" id="btnModeView" onclick="setBoothMode('view')"><i class="bi bi-eye me-1"></i> View QR</a>
+                  </li>
+              </ul>
+
+              <div class="mb-4" id="boothSelectContainer">
+                  <label class="form-label-sm text-secondary">Search Generated Event</label>
+                  <input type="text" id="boothSearch" class="form-control form-control-sm mb-2" placeholder="Search by name or ID..." onkeyup="filterBoothEvents()">
+                  <select id="boothEventSelect" class="form-select form-select-sm fw-bold" onchange="loadBoothEventDetails()">
+                      <option value="">-- Loading Generated Booths... --</option>
+                  </select>
+              </div>
+
+              <div id="boothFormFields" style="display:none;">
+                  <div class="row g-3 mb-3">
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm text-secondary">Event ID</label>
+                          <input type="text" id="boothEventId" class="form-control form-control-sm fw-bold text-muted" placeholder="e.g. egm0015" disabled>
+                      </div>
+                      <div class="col-12 col-md-8">
+                          <label class="form-label-sm text-secondary">Dashboard Event Name</label>
+                          <input type="text" id="boothEventName" class="form-control form-control-sm fw-bold text-muted" disabled>
+                      </div>
+                  </div>
+
+                  <div class="mb-3">
+                      <label class="form-label-sm text-secondary">Photobooth Display Name</label>
+                      <input type="text" id="boothFolderName" class="form-control form-control-sm fw-bold" placeholder="e.g. Smith Wedding" required>
+                  </div>
+                  
+                  <div class="mb-4 pb-4 border-bottom">
+                      <label class="form-label-sm text-secondary">Number of Booths / iPads</label>
+                      <input type="number" id="boothCountInput" class="form-control form-control-sm fw-bold" min="1" placeholder="e.g. 2" required>
+                      <span class="d-block mt-1 small fw-bold text-danger" id="boothCountHint" style="display:none;">Booth count cannot be changed during edits.</span>
+                  </div>
+
+                  <div class="row g-3 mb-4">
+                      <div class="col-6">
+                          <label class="form-label-sm text-secondary">Font & Tab Color</label>
+                          <div class="booth-color-input-wrapper">
+                              <input type="color" id="boothFontColorPicker" value="#ffffff" oninput="syncBoothColor('boothFontColorPicker', 'boothFontColor')">
+                              <input type="text" id="boothFontColor" class="form-control form-control-sm" value="#ffffff" maxlength="7" oninput="syncBoothColor('boothFontColor', 'boothFontColorPicker')">
+                          </div>
+                      </div>
+                      <div class="col-6">
+                          <label class="form-label-sm text-secondary">Background Color</label>
+                          <div class="booth-color-input-wrapper">
+                              <input type="color" id="boothBgColorPicker" value="#000000" oninput="syncBoothColor('boothBgColorPicker', 'boothBgColor')">
+                              <input type="text" id="boothBgColor" class="form-control form-control-sm" value="#000000" maxlength="7" oninput="syncBoothColor('boothBgColor', 'boothBgColorPicker')">
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="mb-3">
+                      <label class="form-label-sm text-secondary">Background Image <span class="fw-normal text-muted">(1000x676)</span></label>
+                      <div class="booth-custom-file-row">
+                          <input type="file" id="boothBgFile" accept="image/*" style="display: none;" onchange="updateBoothFileName('boothBgFile', 'boothBgFileName')">
+                          <button type="button" class="booth-file-btn" onclick="document.getElementById('boothBgFile').click()">Choose Image</button>
+                          <span class="booth-file-name" id="boothBgFileName">No file chosen</span>
+                      </div>
+                  </div>
+
+                  <div class="mb-4">
+                      <label class="form-label-sm text-secondary">Custom Logo for QR <span class="fw-normal text-muted">(250x250)</span></label>
+                      <div class="booth-custom-file-row mb-2">
+                          <input type="file" id="boothLogoFile" accept="image/*" style="display: none;" onchange="handleBoothLogoSelect(event)">
+                          <button type="button" class="booth-file-btn" onclick="document.getElementById('boothLogoFile').click()">Choose Logo</button>
+                          <span class="booth-file-name" id="boothLogoFileName">No file chosen</span>
+                      </div>
+                      <div class="form-check form-switch mt-2">
+                          <input class="form-check-input" type="checkbox" id="boothLogoOnMain">
+                          <label class="form-check-label small fw-bold text-dark" for="boothLogoOnMain">Show logo as custom branding</label>
+                      </div>
+                  </div>
+
+                  <button id="boothGenerateBtn" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" onclick="runBoothGeneration()"><i class="bi bi-magic me-1"></i> GENERATE BOOTH SETUP</button>
+                  <button id="boothSaveBtn" class="btn btn-warning w-100 py-3 fw-bold shadow-sm mb-2" style="display:none;" onclick="runBoothUpdate()"><i class="bi bi-cloud-arrow-up me-1"></i> SAVE CHANGES</button>
+                  <button id="boothDeleteBtn" class="btn btn-outline-danger w-100 py-2 fw-bold shadow-sm" style="display:none;" onclick="runBoothDelete()"><i class="bi bi-trash3 me-1"></i> DELETE BOOTH SETUP</button>
+              </div>
+
+              <div id="boothViewContainer" style="display: none;">
+                  <div class="p-3 bg-light border border-secondary-subtle rounded mb-4">
+                      <h5 id="viewBoothTitle" class="fw-bold text-dark mb-1 mt-1">Select an event above</h5>
+                      <span id="viewBoothId" class="badge bg-secondary opacity-75 fw-normal"></span>
+                  </div>
+                  
+                  <div id="boothCardsList"></div>
+                  
+                  <button id="boothDownloadAllQRsBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mt-2" style="display:none;" onclick="downloadAllBoothQRs()"><i class="bi bi-download me-1"></i> Download All QR Codes</button>
+              </div>
+
           </div>
       </div>
 
@@ -428,7 +584,6 @@
                               <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
                           </div>
                       </div>
-                      
                   </div>
               </div>
               
@@ -560,7 +715,6 @@
                           <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
                       </div>
                   </div>
-                  
               </div>
           </div>
           
@@ -708,7 +862,6 @@
                               <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
                           </div>
                       </div>
-                      
                   </div>
               </div>
               
@@ -789,6 +942,8 @@
 </div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
 <script>
   let pendingAuthAction = null;
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
@@ -798,6 +953,19 @@
   let currentCalendarDate = new Date(); 
   
   const baseCrew = ["Edgar","Francis","Mael","Lexie","Athan","Jovert","May","Tina","Jops","Grace","Jun","Tatalino","Joram","Roy","Smile"];
+
+  // --- BOOTH QR CONSTANTS ---
+  const MASTER_QR_URL = "https://egmqr.vercel.app/";
+  const NETLIFY_BASE_URL = "https://egmgallery.vercel.app/main.html";
+  const BACKUP_MASTER_QR_URL = "https://egmqr.github.io/web/";
+  const BACKUP_NETLIFY_BASE_URL = "https://egmqr.github.io/photo-viewer/main.html";
+  let currentBoothMode = 'view';
+  let allFetchedBoothEvents = [];
+  let currentViewBooths = [];
+  let cropper = null;
+  let croppedLogoPayload = null; 
+  let croppedQrLogoPayload = null; 
+  let originalLogoFilename = "";
 
   // --- Auth Functions ---
   function isAuthenticated() {
@@ -871,7 +1039,7 @@
           document.getElementById('themeIcon').className = 'bi bi-sun-fill text-warning';
       }
   }
-  applySavedTheme(); // Run immediately
+  applySavedTheme();
 
   // --- Helper Functions ---
   function formatAMPM(t) {
@@ -881,10 +1049,7 @@
           let h = parseInt(match[1], 10);
           let m = match[2];
           let ampm = match[3] ? match[3].toUpperCase() : '';
-          if(!ampm) {
-              ampm = h >= 12 ? 'PM' : 'AM';
-              h = h % 12 || 12;
-          }
+          if(!ampm) { ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; }
           return h + ':' + m + ' ' + ampm;
       }
       return t;
@@ -908,21 +1073,16 @@
       if(!raw) return '';
       let s = String(raw).trim();
       if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; 
-      
       let d = new Date(s);
       if(isNaN(d)) return s; 
-      
       let year = d.getFullYear();
       let month = String(d.getMonth() + 1).padStart(2, '0');
       let day = String(d.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
   }
 
-  function toInputDate(dStr) {
-      return normalizeDateStr(dStr);
-  }
+  function toInputDate(dStr) { return normalizeDateStr(dStr); }
 
-  // --- Custom Input Logic (Crew & Services) ---
   function handleAddCustomCrew(inputId, containerId) {
       const input = document.getElementById(inputId);
       addCustomCrewCheckbox(input.value, containerId, true);
@@ -933,14 +1093,12 @@
       if(!name || name.trim() === '') return;
       name = name.trim();
       const container = document.getElementById(containerId);
-      
       const existing = Array.from(container.querySelectorAll('input[name="manpower"]')).map(el => el.value.toLowerCase());
       if(existing.includes(name.toLowerCase())) {
          const cb = container.querySelector(`input[name="manpower"][value="${name}"]`);
          if(cb && checkDefault) cb.checked = true;
          return;
       }
-
       const div = document.createElement('div');
       div.className = 'col-4 col-md-3 form-check small custom-crew-cb text-primary fw-bold';
       div.innerHTML = `<input class="form-check-input" type="checkbox" name="manpower" value="${name}" ${checkDefault ? 'checked' : ''}> ${name}`;
@@ -951,14 +1109,12 @@
       if(!name || name.trim() === '') return;
       name = name.trim();
       const container = document.getElementById(containerId);
-      
       const existing = Array.from(container.querySelectorAll('input[name="services"]')).map(el => el.value.toLowerCase());
       if(existing.includes(name.toLowerCase())) {
          const cb = container.querySelector(`input[name="services"][value="${name}"]`);
          if(cb && checkDefault) cb.checked = true;
          return;
       }
-
       const div = document.createElement('div');
       div.className = 'col-6 col-md-4 form-check small custom-service-cb text-primary fw-bold';
       div.innerHTML = `<input class="form-check-input" type="checkbox" name="services" value="${name}" ${checkDefault ? 'checked' : ''}> ${name}`;
@@ -969,7 +1125,6 @@
       const select = document.getElementById('fCrew');
       const currentVal = select.value;
       let allCrew = new Set(baseCrew);
-      
       events.forEach(e => {
           if(e['Manpower']) {
               e['Manpower'].split(',').forEach(c => {
@@ -978,11 +1133,8 @@
               });
           }
       });
-      
       let html = '<option value="">All Crew</option>';
-      Array.from(allCrew).sort().forEach(c => {
-          html += `<option value="${c}">${c}</option>`;
-      });
+      Array.from(allCrew).sort().forEach(c => { html += `<option value="${c}">${c}</option>`; });
       select.innerHTML = html;
       select.value = currentVal; 
   }
@@ -1052,11 +1204,8 @@
       const formId = prefix === 'new' ? 'eventForm' : 'editForm';
       const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
       if (dateInput) {
-          if (isAvp) {
-              dateInput.removeAttribute('required');
-          } else {
-              dateInput.setAttribute('required', 'required');
-          }
+          if (isAvp) { dateInput.removeAttribute('required'); } 
+          else { dateInput.setAttribute('required', 'required'); }
       }
   }
 
@@ -1087,17 +1236,14 @@
           generalBlock.style.display = 'none';
           servicesBlock.style.display = 'none';
           paymentBlock.style.display = 'none';
-          
           if(dateTimeBlock) dateTimeBlock.style.display = 'block';
           if(crewBlock) crewBlock.style.display = 'block';
-          
           if(eventNameInput) eventNameInput.removeAttribute('required');
           if(dateInput) dateInput.setAttribute('required', 'required');
       } else {
           generalBlock.style.display = 'block';
           paymentBlock.style.display = 'block';
           if(eventNameInput) eventNameInput.setAttribute('required', 'required');
-          
           const isAvp = document.getElementById(prefix + 'AvpCheck').checked;
           toggleAvpFields(isAvp, prefix);
       }
@@ -1143,11 +1289,7 @@
 
   function clearFilters() {
     ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
-    
-    if(document.getElementById('fBillStatus')) {
-        document.getElementById('fBillStatus').value = 'Unpaid';
-    }
-    
+    if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
     applyFilters();
   }
 
@@ -1160,22 +1302,16 @@
       let filtered = rawEvents;
       
       if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n) || (e['Event Venue'] && e['Event Venue'].toLowerCase().includes(n)));
-      
-      if(dF) {
-          filtered = filtered.filter(e => e['Event Date'] >= dF);
-      } else if (!n && currentTab === 'events') {
-          filtered = filtered.filter(e => !e['Event Date'] || e['Event Date'] >= todayStr);
-      }
-      
+      if(dF) { filtered = filtered.filter(e => e['Event Date'] >= dF); } 
+      else if (!n && currentTab === 'events') { filtered = filtered.filter(e => !e['Event Date'] || e['Event Date'] >= todayStr); }
       if(dT) filtered = filtered.filter(e => e['Event Date'] <= dT);
       if(c) filtered = filtered.filter(e => e['Manpower'].includes(c));
       if(s) filtered = filtered.filter(e => e['Event Status'] === s);
       
       filteredEventsCache = filtered; 
-      
       renderEvents(filtered, !n && !dF && !dT && !c && !s);
       renderCalendar(filtered);
-    } else {
+    } else if (currentTab === 'payments') {
       const q=document.getElementById('fPaySearch').value.toLowerCase(), 
             grInv=document.getElementById('fGrInv').value.toLowerCase(),
             t=document.getElementById('fPayType').value, 
@@ -1183,16 +1319,12 @@
       let filtered = rawEvents;
       
       filtered = filtered.filter(e => e['Payment Type'] && e['Payment Type'].trim() !== '');
-      
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
       if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
       if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
       
-      if(s === 'Unpaid') {
-          filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed'].includes(e['Billing Status']));
-      } else if(s) {
-          filtered = filtered.filter(e => e['Billing Status'] === s);
-      }
+      if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed'].includes(e['Billing Status'])); } 
+      else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
       
       renderPayments(filtered);
     }
@@ -1201,24 +1333,18 @@
   // --- Views Rendering ---
   function renderEvents(data, isDefault) {
     let html = '';
-    
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
-    
     const tomorrowDate = new Date();
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrowStr = tomorrowDate.getFullYear() + '-' + String(tomorrowDate.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrowDate.getDate()).padStart(2, '0');
 
     const listData = data.filter(e => e['AVP Required'] !== 'TRUE');
-
     let dates = isDefault ? Array.from({length:14}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(listData.map(e=>e['Event Date']))].sort();
     
     if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No events found matching your criteria.</div></div>'; return; }
 
-    dates.sort((a,b) => {
-        if(!a) return 1; if(!b) return -1;
-        return a.localeCompare(b);
-    });
+    dates.sort((a,b) => { if(!a) return 1; if(!b) return -1; return a.localeCompare(b); });
 
     dates.forEach(ds => {
       const evs = listData.filter(e => e['Event Date'] === ds);
@@ -1227,19 +1353,13 @@
         if(ds && ds.includes('-')) {
             const dParts = ds.split('-');
             const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
-            
             const formattedDate = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
             
-            if (ds === todayStr) {
-                displayHeader = "Today, " + formattedDate;
-            } else if (ds === tomorrowStr) {
-                displayHeader = "Tomorrow, " + formattedDate;
-            } else {
-                displayHeader = formattedDate;
-            }
+            if (ds === todayStr) displayHeader = "Today, " + formattedDate;
+            else if (ds === tomorrowStr) displayHeader = "Tomorrow, " + formattedDate;
+            else displayHeader = formattedDate;
         }
         
-        // Sticky Header UI Implementation
         html += `<div class="col-12 sticky-date-header-container">
                     <div class="sticky-date-header d-flex align-items-center">
                         <i class="bi bi-calendar3 me-2 fs-5"></i>
@@ -1249,14 +1369,11 @@
         
         if(!evs.length) html += `<div class="col-12 mb-2"><div class="p-3 bg-white rounded-3 border border-dashed text-center text-muted small shadow-sm">No events scheduled for this day.</div></div>`;
         else {
-            
-            // Sort by earliest time, force Crew Leave to bottom
             evs.sort((a, b) => {
                 const leaveA = a['Event Name'] === 'Crew Leave' ? 1 : 0;
                 const leaveB = b['Event Name'] === 'Crew Leave' ? 1 : 0;
                 if (leaveA !== leaveB) return leaveA - leaveB;
 
-                // Priority: Start Time, fallback to Call Time, fallback to "99:99" (bottom)
                 let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
                 let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
                 return timeA.localeCompare(timeB);
@@ -1264,7 +1381,6 @@
 
             evs.forEach(e => {
               
-              // --- SPECIAL CREW LEAVE CARD RENDER (Compact 1/3 height) ---
               if (e['Event Name'] === 'Crew Leave') {
                   html += `<div class="col-12 col-md-6 col-lg-4">
                     <div class="card leave-card p-2 p-md-3" style="height: auto !important;">
@@ -1276,19 +1392,16 @@
                               <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
                           </div>
                       </div>
-                      
                       <div class="mb-1">
                           <div style="line-height: 1.6;">
                               ${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-2 fw-bold px-2 py-1 text-wrap" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}
                           </div>
                       </div>
-                      
                       ${e['Event Notes'] ? `<div class="small text-secondary mt-2 border-top pt-2 border-danger border-opacity-25"><p class="mb-0 fst-italic" style="font-size: 0.7rem;"><i class="bi bi-journal-text opacity-50 text-danger me-1"></i> ${e['Event Notes']}</p></div>` : ''}
                   </div></div>`;
                   return; 
               }
 
-              // --- NORMAL EVENT CARD RENDER ---
               let projectRows = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
               let fileSet = new Set();
               let filesHtml = '';
@@ -1317,7 +1430,18 @@
               }
               
               // Smart Regex split to ensure badges look clean on the dashboard (with text-wrap added)
-              let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => `<span class="badge bg-secondary opacity-75 border me-1 mb-2 fw-medium px-2 py-1 text-wrap text-start" style="font-size: 0.8rem; line-height: 1.4;">${s.trim()}</span>`).join('') : '-';
+              let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
+                  let sTrim = s.trim();
+                  // PILL LINK TO BOOTH GENERATOR
+                  if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only')) {
+                      let match = sTrim.match(/\[(\d+)\s+booth/);
+                      let booths = match ? match[1] : 1;
+                      let cleanName = e['Event Name'].replace(/'/g, "\\'");
+                      return `<span class="badge badge-teal opacity-100 border me-1 mb-2 fw-bold px-2 py-1 text-wrap text-start shadow-sm" style="font-size: 0.8rem; line-height: 1.4; cursor: pointer;" onclick="requireAuth(() => goToBoothQR('${e['Event ID']}', '${booths}', '${cleanName}'))"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
+                  } else {
+                      return `<span class="badge bg-secondary opacity-75 border me-1 mb-2 fw-medium px-2 py-1 text-wrap text-start" style="font-size: 0.8rem; line-height: 1.4;">${sTrim}</span>`;
+                  }
+              }).join('') : '-';
 
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
                     <div class="d-flex justify-content-between mb-3 align-items-center">
@@ -1368,10 +1492,9 @@
       }
     });
     document.getElementById('events-list').innerHTML = html;
-    setTimeout(checkStickyHeaders, 50); // Recalculate sticky headers after rendering
+    setTimeout(checkStickyHeaders, 50); 
   }
 
-  // --- Calendar Generator Logic ---
   function changeCalendarMonth(dir) {
       currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir);
       renderCalendar(filteredEventsCache); 
@@ -1388,10 +1511,7 @@
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       
       let html = '';
-      
-      for(let i=0; i<firstDay; i++) {
-          html += `<div class="calendar-day empty"></div>`;
-      }
+      for(let i=0; i<firstDay; i++) { html += `<div class="calendar-day empty"></div>`; }
       
       for(let d=1; d<=daysInMonth; d++) {
           const currentDateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -1399,16 +1519,12 @@
           const dayClass = isToday ? 'calendar-day today' : 'calendar-day';
           
           const dayEvents = data.filter(e => e['Event Date'] === currentDateStr && e['AVP Required'] !== 'TRUE');
-          
           let eventsHtml = '';
           
-          // Sort Calendar pills by earliest time, force Crew Leave to bottom
           dayEvents.sort((a, b) => {
               const leaveA = a['Event Name'] === 'Crew Leave' ? 1 : 0;
               const leaveB = b['Event Name'] === 'Crew Leave' ? 1 : 0;
               if (leaveA !== leaveB) return leaveA - leaveB;
-
-              // Priority: Start Time, fallback to Call Time, fallback to "99:99"
               let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
               let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
               return timeA.localeCompare(timeB);
@@ -1425,43 +1541,28 @@
                   else if(e['Event Status'] === 'Cancelled') pillClass = 'cal-status-cancelled';
                   
                   const timePrefix = e['Event Start Time'] ? `${formatAMPM(e['Event Start Time'])} ` : '';
-                  
                   eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Event ID']}', '${e['Event Date']}', true)" title="${e['Event Name']}">
                       <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
                   </div>`;
               }
           });
           
-          html += `<div class="${dayClass}">
-                      <div class="date-number">${d}</div>
-                      ${eventsHtml}
-                   </div>`;
+          html += `<div class="${dayClass}"><div class="date-number">${d}</div>${eventsHtml}</div>`;
       }
       
       const totalCells = firstDay + daysInMonth;
       const remaining = (7 - (totalCells % 7)) % 7;
-      for(let i=0; i<remaining; i++) {
-          html += `<div class="calendar-day empty"></div>`;
-      }
-      
+      for(let i=0; i<remaining; i++) { html += `<div class="calendar-day empty"></div>`; }
       document.getElementById('calendarDays').innerHTML = html;
   }
 
   function renderPayments(data) {
     let html = '';
-    
     const uniqueDataMap = new Map();
-    data.forEach(item => {
-        if (item['Event Name'] !== 'Crew Leave' && !uniqueDataMap.has(item['Event ID'])) {
-            uniqueDataMap.set(item['Event ID'], item);
-        }
-    });
+    data.forEach(item => { if (item['Event Name'] !== 'Crew Leave' && !uniqueDataMap.has(item['Event ID'])) uniqueDataMap.set(item['Event ID'], item); });
     const uniqueData = Array.from(uniqueDataMap.values());
-    
     uniqueData.sort((a, b) => {
-        let dateA = a['Event Date'] || '';
-        let dateB = b['Event Date'] || '';
-        return dateB.localeCompare(dateA); 
+        let dateA = a['Event Date'] || ''; let dateB = b['Event Date'] || ''; return dateB.localeCompare(dateA); 
     });
 
     if (uniqueData.length === 0) {
@@ -1483,7 +1584,6 @@
       if(p['Billing Status'] === 'Payment released') badgeClass = 'badge-go-green';
 
       let badge = `<span class="badge ${badgeClass} px-2 py-1 rounded-pill">${p['Billing Status']||'Pending'}</span>`;
-      
       let dateStr = p['Billing Status Date'] ? new Date(p['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
       let eventDateStr = p['Event Date'] ? new Date(p['Event Date']).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '-';
 
@@ -1507,6 +1607,7 @@
 
   function handleTabClick(tabName) {
       if(tabName === 'payments') { requireAuth(() => switchTab('payments')); } 
+      else if(tabName === 'booth') { requireAuth(() => switchTab('booth')); }
       else { switchTab(tabName); }
   }
 
@@ -1515,6 +1616,7 @@
     document.getElementById('events-view').style.display = t==='events'?'block':'none';
     document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
     document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
+    document.getElementById('booth-view').style.display = t==='booth'?'block':'none';
     
     document.getElementById('eventFilters').style.display = t==='events'?'block':'none';
     document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
@@ -1522,19 +1624,20 @@
     const filterBtn = document.getElementById('filterToggleBtn');
     const filterCollapseEl = document.getElementById('filterCollapse');
 
-    if (t === 'calendar') {
+    if (t === 'calendar' || t === 'booth') {
         filterBtn.classList.remove('d-flex');
         filterBtn.classList.add('d-none');
         if (filterCollapseEl.classList.contains('show')) {
             let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
             bsCollapse.hide();
         }
-        ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
-        if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
+        if (t === 'calendar') {
+            ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
+            if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
+        }
     } else {
         filterBtn.classList.remove('d-none');
         filterBtn.classList.add('d-flex');
-        
         if (window.innerWidth >= 768) {
             if (!filterCollapseEl.classList.contains('show')) {
                 let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
@@ -1545,9 +1648,16 @@
     
     document.getElementById('e-tab').classList.toggle('active', t==='events');
     document.getElementById('c-tab').classList.toggle('active', t==='calendar');
+    document.getElementById('b-tab').classList.toggle('active', t==='booth');
     document.getElementById('p-tab').classList.toggle('active', t==='payments');
     
-    applyFilters(); 
+    // Safety check for Booth tab manual clicks
+    if (t === 'booth') {
+        if (currentBoothMode === 'new') { setBoothMode('view'); } 
+        else { setBoothMode(currentBoothMode); }
+    } else {
+        applyFilters(); 
+    }
   }
 
   // --- View-Only Logic for Modals ---
@@ -1556,11 +1666,8 @@
       const elements = form.querySelectorAll('input, select, textarea, button');
       
       elements.forEach(el => {
-          if(el.id !== 'editSubmitBtn' && el.id !== 'editDeleteBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') {
-              el.disabled = isReadOnly;
-          }
+          if(el.id !== 'editSubmitBtn' && el.id !== 'editDeleteBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') { el.disabled = isReadOnly; }
       });
-      
       document.getElementById('editCrewAddBtn').disabled = isReadOnly;
       
       if (isReadOnly) {
@@ -1578,28 +1685,18 @@
       const editModalEl = document.getElementById('editEventModal');
       const editModal = bootstrap.Modal.getInstance(editModalEl);
       editModal.hide();
-      
-      setTimeout(() => {
-          requireAuth(() => {
-              setEditFormState(false);
-              editModal.show();
-          });
-      }, 300); 
+      setTimeout(() => { requireAuth(() => { setEditFormState(false); editModal.show(); }); }, 300); 
   }
 
-  // --- MODAL TRIGGERS ---
-  
+  // --- EVENT MODAL TRIGGERS ---
   function openNewEventModal() {
       document.getElementById('eventForm').reset();
-      
-      // Hide all dynamic service inputs
       ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
          const el = document.getElementById('newSrv' + id + 'Details');
          if(el) el.style.display = 'none';
       });
       document.getElementById('newTypeWithPrints').checked = true;
       togglePhotoQRDetails('new');
-
       document.getElementById('newTypeEvent').checked = true;
       toggleEntryMode('new');
       document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
@@ -1615,7 +1712,6 @@
      form.reset();
      document.querySelectorAll('#addDayCrewContainer .custom-crew-cb').forEach(el => el.remove());
      
-     // Reset dynamic service inputs
      if(document.getElementById('addDaySrvPhotoCount')) document.getElementById('addDaySrvPhotoCount').value = '';
      if(document.getElementById('addDaySrvPrintsBooth')) document.getElementById('addDaySrvPrintsBooth').value = '';
      if(document.getElementById('addDaySrvPrintsCount')) document.getElementById('addDaySrvPrintsCount').value = '';
@@ -1645,7 +1741,6 @@
          document.getElementById('addDayEventNameInput').setAttribute('required', 'required');
          document.getElementById('addDayEventNameInput').value = e['Event Name'];
          
-         // Pre-populate with previous day's services using Smart Parser
          const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
          const sInputs = form.elements['services'];
          if (sInputs) {
@@ -1674,6 +1769,12 @@
                  else if(s.includes('5R')) document.getElementById('addDaySrvPrintsSize').value = '5R';
                  else if(s.includes('4R')) document.getElementById('addDaySrvPrintsSize').value = '4R';
                  
+             } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
+                 document.getElementById('addDaySrvFrame').checked = true;
+                 document.getElementById('addDaySrvFrameDetails').style.display = 'block';
+                 let match = s.match(/\[(\d+)\s+frame/);
+                 if(match) document.getElementById('addDaySrvFrameCount').value = match[1];
+                 
              } else if (s.startsWith('QR only') || s === 'QR only' || s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
                  document.getElementById('addDaySrvPhotoQR').checked = true;
                  document.getElementById('addDaySrvPhotoQRDetails').style.display = 'block';
@@ -1682,12 +1783,6 @@
 
                  let match = s.match(/\[(\d+)\s+booth/);
                  if(match) document.getElementById('addDaySrvQRBooth').value = match[1];
-                 
-             } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
-                 document.getElementById('addDaySrvFrame').checked = true;
-                 document.getElementById('addDaySrvFrameDetails').style.display = 'block';
-                 let match = s.match(/\[(\d+)\s+frame/);
-                 if(match) document.getElementById('addDaySrvFrameCount').value = match[1];
                  
              } else {
                  let found = false;
@@ -1712,10 +1807,8 @@
   function openEditModal(id, date, fromCalendar = false) {
     const e = rawEvents.find(ev => ev['Event ID'] === id && (!date || ev['Event Date'] === date));
     if(!e) return;
-    
     const isReadOnly = fromCalendar && !isAuthenticated();
 
-    // DYNAMIC BILLING POSITIONING
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
     const isPast = date && date < todayStr; 
@@ -1738,7 +1831,6 @@
     const form = document.getElementById('editForm');
     form.reset();
 
-    // Reset dynamic service inputs
     if(document.getElementById('editSrvPhotoCount')) document.getElementById('editSrvPhotoCount').value = '';
     if(document.getElementById('editSrvPrintsBooth')) document.getElementById('editSrvPrintsBooth').value = '';
     if(document.getElementById('editSrvPrintsCount')) document.getElementById('editSrvPrintsCount').value = '';
@@ -1757,7 +1849,6 @@
     form.elements['originalDate'].value = date || '';
     form.elements['eventName'].value = e['Event Name'] || '';
     
-    // Automatically trigger Leave UI mode if it's a Crew Leave
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
         toggleEntryMode('edit');
@@ -1776,8 +1867,6 @@
         form.elements['contactPerson'].value = e['Contact Person'] || '';
         form.elements['contactNumber'].value = e['Contact Number'] || '';
         
-        // --- SMART PARSER FOR SERVICES ---
-        // Using strict regex so commas inside brackets are ignored
         const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
         const sInputs = form.elements['services'];
         if (sInputs) {
@@ -1921,17 +2010,13 @@
   async function deleteFullEvent() {
       const eventId = document.getElementById('editEventId').value;
       if (!eventId) return;
-      
-      if(!confirm(`WARNING: Are you sure you want to permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) {
-          return;
-      }
+      if(!confirm(`WARNING: Are you sure you want to permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) { return; }
       
       const ov = document.getElementById('submitOverlay');
       document.getElementById('overlayText').innerText = "Deleting Event...";
       ov.style.display = 'flex';
       
       const res = await callApi({ action: 'deleteEvent', eventId: eventId }, 'POST');
-      
       ov.style.display = 'none';
       if (res && res.success) {
           bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
@@ -1941,16 +2026,13 @@
       }
   }
 
-  // --- Form Submissions ---
-
+  // --- EVENT FORM SUBMISSIONS ---
   document.getElementById('eventForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
-    
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
     
-    // Build Dynamic Services String
     let rawServices = fd.getAll('services');
     let finalServices = [];
     rawServices.forEach(s => {
@@ -1983,24 +2065,14 @@
 
     const isLeave = document.getElementById('newTypeLeave').checked;
     if (isLeave) {
-        if (obj.manpower.length === 0) {
-            alert("Please select at least one crew member for this leave.");
-            return;
-        }
-        obj.eventName = 'Crew Leave';
-        obj.eventStatus = 'Confirmed';
-        obj.avp = false;
-        obj.paymentType = '';
+        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
     } else {
-        if (!obj.eventName || obj.eventName.trim() === '') {
-            alert("Please enter an Event Name.");
-            return;
-        }
+        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
     }
     
     document.getElementById('overlayText').innerText = "Saving Entry...";
     btn.disabled = true; ov.style.display='flex';
-
     const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
@@ -2017,11 +2089,9 @@
   document.getElementById('addDayForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('addDaySubmitBtn'), ov = document.getElementById('submitOverlay');
-    
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
     
-    // Build Dynamic Services String for Add Day
     let rawServices = fd.getAll('services');
     let finalServices = [];
     rawServices.forEach(s => {
@@ -2054,7 +2124,6 @@
     
     document.getElementById('overlayText').innerText = "Adding Day...";
     btn.disabled = true; ov.style.display='flex';
-    
     const res = await callApi({action:'addEventDay', formObject:obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
@@ -2068,11 +2137,9 @@
   document.getElementById('editForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('editSubmitBtn'), ov = document.getElementById('submitOverlay');
-    
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
     
-    // Build Dynamic Services String for Edit Form
     let rawServices = fd.getAll('services');
     let finalServices = [];
     rawServices.forEach(s => {
@@ -2105,24 +2172,14 @@
     
     const isLeave = document.getElementById('editTypeLeave').checked;
     if (isLeave) {
-        if (obj.manpower.length === 0) {
-            alert("Please select at least one crew member for this leave.");
-            return;
-        }
-        obj.eventName = 'Crew Leave';
-        obj.eventStatus = 'Confirmed';
-        obj.avp = false;
-        obj.paymentType = '';
+        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
     } else {
-        if (!obj.eventName || obj.eventName.trim() === '') {
-            alert("Please enter an Event Name.");
-            return;
-        }
+        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
     }
     
     document.getElementById('overlayText').innerText = "Updating...";
     btn.disabled=true; ov.style.display='flex';
-
     const res = await callApi({action:'editEvent', updateData: obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
@@ -2131,6 +2188,419 @@
         fetchAllData(); 
     } else alert("Error: " + (res?res.error:"Unknown"));
   };
+
+
+  // ==============================================================================
+  // PHOTOBOOTH GENERATOR FRONTEND INTEGRATION
+  // ==============================================================================
+
+  function goToBoothQR(eventId, booths, eventName) {
+      switchTab('booth');
+      document.getElementById('btnModeNew').style.display = 'block';
+      setBoothMode('new');
+      
+      document.getElementById('boothEventId').value = eventId;
+      document.getElementById('boothEventName').value = eventName;
+      document.getElementById('boothCountInput').value = booths;
+      
+      // Auto fill folder name based on Event Name
+      const shortName = eventName.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
+      document.getElementById('boothFolderName').value = shortName;
+  }
+
+  function setBoothMode(mode) {
+      currentBoothMode = mode;
+      
+      if (mode !== 'new') {
+          document.getElementById('btnModeNew').style.display = 'none';
+      }
+
+      document.getElementById('boothFolderName').value = ""; document.getElementById('boothEventName').value = "";
+      if(mode !== 'new') document.getElementById('boothCountInput').value = ""; 
+      
+      document.getElementById('boothFontColor').value = "#ffffff"; document.getElementById('boothFontColorPicker').value = "#ffffff"; 
+      document.getElementById('boothBgColor').value = "#000000"; document.getElementById('boothBgColorPicker').value = "#000000"; 
+      document.getElementById('boothBgFile').value = ""; document.getElementById('boothBgFileName').innerText = "No file chosen"; 
+      document.getElementById('boothLogoFile').value = ""; document.getElementById('boothLogoFileName').innerText = "No file chosen";
+      
+      croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
+      document.getElementById('boothLogoOnMain').checked = false; document.getElementById('boothSearch').value = ""; 
+      
+      const eventSelectDropdown = document.getElementById('boothEventSelect');
+      if(eventSelectDropdown) eventSelectDropdown.value = "";
+
+      document.getElementById('btnModeNew').classList.remove('active');
+      document.getElementById('btnModeEdit').classList.remove('active');
+      document.getElementById('btnModeView').classList.remove('active');
+
+      if (mode === 'new') {
+          document.getElementById('btnModeNew').classList.add('active');
+          document.getElementById('boothSelectContainer').style.display = 'none';
+          document.getElementById('boothFormFields').style.display = 'block';
+          document.getElementById('boothViewContainer').style.display = 'none';
+          document.getElementById('boothGenerateBtn').style.display = 'block';
+          document.getElementById('boothSaveBtn').style.display = 'none';
+          document.getElementById('boothDeleteBtn').style.display = 'none';
+          
+          document.getElementById('boothCountInput').disabled = true; // Lock because it comes from pill
+          document.getElementById('boothCountHint').style.display = 'none';
+          toggleBoothEditFields(true);
+          
+      } else if (mode === 'edit' || mode === 'view') {
+          document.getElementById('btnModeEdit').classList.toggle('active', mode === 'edit');
+          document.getElementById('btnModeView').classList.toggle('active', mode === 'view');
+          
+          document.getElementById('boothSelectContainer').style.display = 'block';
+          document.getElementById('boothFormFields').style.display = mode === 'edit' ? 'block' : 'none';
+          document.getElementById('boothViewContainer').style.display = mode === 'view' ? 'block' : 'none';
+          
+          document.getElementById('boothGenerateBtn').style.display = 'none';
+          document.getElementById('boothSaveBtn').style.display = mode === 'edit' ? 'block' : 'none';
+          document.getElementById('boothDeleteBtn').style.display = mode === 'edit' ? 'block' : 'none';
+          
+          if (mode === 'edit') {
+              document.getElementById('boothCountInput').disabled = true;
+              document.getElementById('boothCountHint').style.display = 'block';
+              toggleBoothEditFields(false); 
+          }
+          
+          if (mode === 'view') {
+              document.getElementById('viewBoothTitle').innerText = "Select an event above";
+              document.getElementById('viewBoothId').innerText = "";
+              document.getElementById('boothCardsList').innerHTML = "";
+              document.getElementById('boothDownloadAllQRsBtn').style.display = 'none';
+          }
+
+          if (allFetchedBoothEvents.length > 0) { renderBoothDropdown(allFetchedBoothEvents); } 
+          else { fetchBoothEvents(); }
+      }
+  }
+
+  function toggleBoothEditFields(isEnabled) {
+      document.getElementById('boothFolderName').disabled = !isEnabled;
+      
+      document.getElementById('boothFontColorPicker').disabled = !isEnabled;
+      document.getElementById('boothFontColor').disabled = !isEnabled;
+      document.getElementById('boothBgColorPicker').disabled = !isEnabled;
+      document.getElementById('boothBgColor').disabled = !isEnabled;
+      document.getElementById('boothLogoOnMain').disabled = !isEnabled;
+      
+      document.getElementById('boothBgFile').disabled = !isEnabled;
+      document.getElementById('boothLogoFile').disabled = !isEnabled;
+      const fileBtns = document.querySelectorAll('.booth-file-btn');
+      fileBtns.forEach(btn => btn.disabled = !isEnabled);
+
+      document.getElementById('boothSaveBtn').disabled = !isEnabled;
+      document.getElementById('boothDeleteBtn').disabled = !isEnabled;
+  }
+
+  function syncBoothColor(sourceId, targetId) {
+      let val = document.getElementById(sourceId).value;
+      if (sourceId.includes('Picker')) { document.getElementById(targetId).value = val; } 
+      else {
+          if (!val.startsWith('#')) val = '#' + val;
+          document.getElementById(sourceId).value = val;
+          if (val.length === 7) document.getElementById(targetId).value = val;
+      }
+  }
+
+  function updateBoothFileName(inputId, textId) {
+      const fileInput = document.getElementById(inputId);
+      const textSpan = document.getElementById(textId);
+      if (fileInput.files.length > 0) {
+          textSpan.innerText = fileInput.files[0].name;
+          textSpan.style.color = "var(--bs-primary)";
+      } else {
+          textSpan.innerText = "No file chosen";
+          textSpan.style.color = "#64748b";
+      }
+  }
+
+  async function fetchBoothEvents() {
+      const res = await callApi({ action: "getBoothList" }, 'POST', true);
+      if (res && res.success === false) return;
+      
+      const select = document.getElementById('boothEventSelect');
+      if (!Array.isArray(res)) {
+          select.innerHTML = '<option value="">Error loading booths</option>';
+          return;
+      }
+      allFetchedBoothEvents = res; 
+      if (currentBoothMode === 'edit' || currentBoothMode === 'view') renderBoothDropdown(allFetchedBoothEvents);
+  }
+
+  function renderBoothDropdown(eventsArray) {
+      const select = document.getElementById('boothEventSelect');
+      const currentVal = select.value; 
+      select.innerHTML = (eventsArray.length === 0 && allFetchedBoothEvents.length === 0) ? '<option value="">No generated booths found</option>' : '<option value="">-- Select a Booth Project --</option>';
+      eventsArray.forEach(e => {
+          let opt = document.createElement('option');
+          opt.value = e.id; opt.innerText = `${e.name} (${e.id})`;
+          if (e.id === currentVal && currentVal !== "") opt.selected = true;
+          select.appendChild(opt);
+      });
+  }
+
+  function filterBoothEvents() {
+      const searchTerm = document.getElementById('boothSearch').value.toLowerCase();
+      const filtered = allFetchedBoothEvents.filter(e => e.name.toLowerCase().includes(searchTerm) || e.id.toLowerCase().includes(searchTerm));
+      renderBoothDropdown(filtered);
+  }
+
+  async function loadBoothEventDetails() {
+      const selectedId = document.getElementById('boothEventSelect').value;
+      if (!selectedId) { setBoothMode(currentBoothMode); return; }
+      
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = "Loading details...";
+      ov.style.display = 'flex';
+      
+      const details = await callApi({ action: "getBoothDetails", eventId: selectedId }, 'POST');
+      ov.style.display = 'none';
+      if (details && details.success === false) return;
+
+      if (details) {
+          if (currentBoothMode === 'edit') {
+              document.getElementById('boothEventId').value = selectedId;
+              document.getElementById('boothFolderName').value = details.folderName || "";
+              document.getElementById('boothEventName').value = details.eventName || "";
+              document.getElementById('boothCountInput').value = details.boothCount || "";
+              document.getElementById('boothLogoOnMain').checked = details.logoOnMain === true;
+              
+              const loadedFontColor = details.fontColor || "#ffffff";
+              const loadedBgColor = details.bgColor || "#000000";
+              document.getElementById('boothFontColor').value = loadedFontColor; document.getElementById('boothFontColorPicker').value = loadedFontColor;
+              document.getElementById('boothBgColor').value = loadedBgColor; document.getElementById('boothBgColorPicker').value = loadedBgColor;
+              
+              toggleBoothEditFields(true);
+              
+          } else if (currentBoothMode === 'view') {
+              document.getElementById('viewBoothTitle').innerText = details.eventName || "Unnamed Event";
+              document.getElementById('viewBoothId').innerText = "ID: " + details.id;
+              
+              const boothList = document.getElementById('boothCardsList');
+              boothList.innerHTML = ''; currentViewBooths = [];
+              
+              const boothsArr = details.boothsStr ? details.boothsStr.split('|') : [];
+              const qrIdsArr = details.qrFileIdsStr ? details.qrFileIdsStr.split('|') : [];
+              const dynamicFolderName = details.folderName || 'Booth ';
+              
+              boothsArr.forEach((link, i) => {
+                  const boothNum = i + 1;
+                  const match = link.match(/folderId=([a-zA-Z0-9_-]+)/);
+                  const folderId = match ? match[1] : '';
+                  
+                  const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${boothNum}`;
+                  const pgDashUrl = `${MASTER_QR_URL}?folderId=${folderId}&booth=${boothNum}`;
+                  const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${boothNum}`;
+                  const backupPgDashUrl = `${BACKUP_MASTER_QR_URL}?folderId=${folderId}&booth=${boothNum}`;
+                  const driveUrl = `https://drive.google.com/drive/folders/${folderId}`;
+                  
+                  const qrFileId = qrIdsArr[i] || "";
+                  let qrCodeActionHtml = '';
+
+                  if (qrFileId) {
+                     const qrDriveViewerUrl = `https://drive.google.com/file/d/${qrFileId}/view`;
+                     currentViewBooths.push({ boothNum, fileId: qrFileId, isDrive: true });
+                     qrCodeActionHtml = `
+                        <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${qrDriveViewerUrl}')">Copy link</button>
+                        <button class="booth-mini-btn" onclick="window.open('https://drive.google.com/uc?export=download&id=${qrFileId}', '_blank')">Download</button>
+                     `;
+                  } else {
+                     let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
+                     if (details.qrLogoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.qrLogoId)}`;
+                     else if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.logoId)}`;
+                     
+                     currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false });
+                     qrCodeActionHtml = `
+                        <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${qcApiUrl}')">Copy link</button>
+                        <button class="booth-mini-btn" onclick="downloadBoothImage('${qcApiUrl}', 'Booth_${boothNum}_QR.png')">Download</button>
+                     `;
+                  }
+                  
+                  const card = document.createElement('div');
+                  card.className = 'booth-card';
+                  card.innerHTML = `
+                     <h5>${dynamicFolderName}${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span></h5>
+                     <div class="booth-link-row">
+                        <span>Main Gallery</span>
+                        <div class="booth-link-actions">
+                           <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${mainGalleryUrl}')">Copy link</button>
+                           <button class="booth-mini-btn backup" title="Fallback link" onclick="navigator.clipboard.writeText('${backupGalleryUrl}')">Backup</button>
+                           <button class="booth-mini-btn" onclick="window.open('${mainGalleryUrl}', '_blank')">Go</button>
+                        </div>
+                     </div>
+                     <div class="booth-link-row">
+                        <span>PG Dash</span>
+                        <div class="booth-link-actions">
+                           <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${pgDashUrl}')">Copy link</button>
+                           <button class="booth-mini-btn backup" title="Fallback link" onclick="navigator.clipboard.writeText('${backupPgDashUrl}')">Backup</button>
+                           <button class="booth-mini-btn" onclick="window.open('${pgDashUrl}', '_blank')">Go</button>
+                        </div>
+                     </div>
+                     <div class="booth-link-row">
+                        <span>Drive Folder</span>
+                        <div class="booth-link-actions">
+                           <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${driveUrl}')">Copy link</button>
+                           <button class="booth-mini-btn" onclick="window.open('${driveUrl}', '_blank')">Go</button>
+                        </div>
+                     </div>
+                     <div class="booth-link-row">
+                        <span>QR Code</span>
+                        <div class="booth-link-actions">${qrCodeActionHtml}</div>
+                     </div>
+                  `;
+                  boothList.appendChild(card);
+              });
+              
+              if (boothsArr.length > 1) document.getElementById('boothDownloadAllQRsBtn').style.display = 'block'; 
+              else document.getElementById('boothDownloadAllQRsBtn').style.display = 'none'; 
+          }
+      }
+  }
+
+  function downloadBoothImage(url, filename) {
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = "Downloading...";
+      ov.style.display = 'flex';
+      fetch(url).then(response => response.blob()).then(blob => {
+          const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = filename;
+          document.body.appendChild(link); link.click(); document.body.removeChild(link);
+          ov.style.display = 'none';
+      }).catch(err => {
+          ov.style.display = 'none'; window.open(url, '_blank');
+      });
+  }
+
+  async function downloadAllBoothQRs() {
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = "Initiating downloads...";
+      ov.style.display = 'flex';
+      for (let i = 0; i < currentViewBooths.length; i++) {
+          const booth = currentViewBooths[i];
+          if (booth.isDrive) window.open(`https://drive.google.com/uc?export=download&id=${booth.fileId}`, '_blank');
+          else downloadBoothImage(booth.url, `Booth_${booth.boothNum}_QR.png`);
+          await new Promise(resolve => setTimeout(resolve, 800)); 
+      }
+      ov.style.display = 'none';
+  }
+
+  function handleBoothLogoSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      originalLogoFilename = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          const image = document.getElementById('imageToCrop');
+          image.src = e.target.result;
+          document.getElementById('cropModal').style.display = 'flex';
+          if (cropper) cropper.destroy();
+          cropper = new Cropper(image, { aspectRatio: 1, viewMode: 1, autoCropArea: 0.9, background: false });
+      };
+      reader.readAsDataURL(file);
+  }
+
+  function cancelCrop() {
+      document.getElementById('cropModal').style.display = 'none';
+      if (cropper) { cropper.destroy(); cropper = null; }
+      document.getElementById('boothLogoFile').value = ""; 
+      document.getElementById('boothLogoFileName').innerText = "No file chosen";
+      document.getElementById('boothLogoFileName').style.color = "#64748b";
+      croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
+  }
+
+  function applyCrop() {
+      if (!cropper) return;
+      let baseName = originalLogoFilename.substring(0, originalLogoFilename.lastIndexOf('.')) || originalLogoFilename;
+      const canvasTrans = cropper.getCroppedCanvas({ width: 250, height: 250 });
+      const base64Trans = canvasTrans.toDataURL('image/png').split(',')[1];
+      croppedLogoPayload = { filename: baseName + '_transparent.png', mimeType: 'image/png', base64: base64Trans };
+
+      const canvasWhite = document.createElement('canvas');
+      canvasWhite.width = 250; canvasWhite.height = 250;
+      const ctx = canvasWhite.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 250, 250);
+      ctx.drawImage(canvasTrans, 0, 0); 
+      const base64White = canvasWhite.toDataURL('image/png').split(',')[1];
+      croppedQrLogoPayload = { filename: baseName + '_qr_whitebg.png', mimeType: 'image/png', base64: base64White };
+
+      document.getElementById('cropModal').style.display = 'none';
+      cropper.destroy(); cropper = null;
+      document.getElementById('boothLogoFileName').innerText = baseName + "_cropped (250x250)";
+      document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
+  }
+
+  function readFileAsBase64(file) {
+      return new Promise((resolve) => {
+          if (!file) { resolve(null); return; }
+          const reader = new FileReader();
+          reader.onload = e => resolve({ filename: file.name, mimeType: file.type, base64: e.target.result.split(',')[1] });
+          reader.readAsDataURL(file);
+      });
+  }
+
+  async function executeBoothAction(actionName) {
+      const eventId = actionName === 'generateBoothSetup' ? document.getElementById('boothEventId').value : document.getElementById('boothEventSelect').value;
+      const folderName = document.getElementById('boothFolderName').value.trim();
+      const eventName = document.getElementById('boothEventName').value.trim();
+      const boothCount = document.getElementById('boothCountInput').value;
+      
+      if (!eventId || !folderName || !eventName || !boothCount) {
+          alert("Required fields missing! Ensure an Event ID and Folder Name are set.");
+          return;
+      }
+
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = "Processing Booth Setup...";
+      ov.style.display = 'flex';
+
+      const bgData = await readFileAsBase64(document.getElementById('boothBgFile').files[0]);
+      const logoOnMain = document.getElementById('boothLogoOnMain').checked;
+
+      const payload = {
+          action: actionName, eventId, folderName, eventName, boothCount,
+          bgData, logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
+          fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value
+      };
+
+      const res = await callApi(payload, 'POST');
+      ov.style.display = 'none';
+      
+      if (res && res.success) {
+          fetchBoothEvents(); // Refresh data behind scenes
+          if (actionName === "updateBoothSetup") {
+              setBoothMode('view');
+              setTimeout(() => { document.getElementById('boothEventSelect').value = eventId; loadBoothEventDetails(); }, 100);
+          } else if (actionName === "generateBoothSetup") {
+              setBoothMode('view');
+              setTimeout(() => { document.getElementById('boothEventSelect').value = eventId; loadBoothEventDetails(); }, 100);
+          }
+      } else {
+          alert("Error: " + (res ? res.error || res.message : "Failed to process booth."));
+      }
+  }
+
+  function runBoothGeneration() { executeBoothAction("generateBoothSetup"); }
+  function runBoothUpdate() { executeBoothAction("updateBoothSetup"); }
+  
+  async function runBoothDelete() {
+      const selectedId = document.getElementById('boothEventSelect').value;
+      if (!selectedId || !confirm("WARNING: Are you sure you want to permanently delete this Photobooth setup? This will remove the Cloud storage, URLs, and QR codes.")) return;
+      
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = "Deleting Booth Setup...";
+      ov.style.display = 'flex';
+      
+      const res = await callApi({ action: "deleteBoothEvent", eventId: selectedId }, 'POST');
+      ov.style.display = 'none';
+      
+      if (res && res.success) {
+          fetchBoothEvents();
+          setBoothMode('edit');
+      } else {
+          alert("Error: " + (res ? res.error || res.message : "Failed to delete."));
+      }
+  }
 
   // UI Sticky Header Logic
   function checkStickyHeaders() {
