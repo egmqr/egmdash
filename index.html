@@ -143,13 +143,7 @@
     .booth-file-btn:hover { background: #e2e8f0; }
     .booth-file-name { font-size: 13px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* Crop Container inline styles in body */
-    .crop-container { width: 100%; max-width: 400px; height: 60vh; max-height: 400px; background: #222; border-radius: 8px; overflow: hidden; background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
-    #imageToCrop { display: block; max-width: 100%; }
-    .crop-actions { display: flex; gap: 15px; margin-top: 20px; width: 100%; max-width: 400px; }
-    .crop-btn-cancel { background: #555 !important; flex: 1; border-color: #555 !important; color: white !important;}
-
-    /* View Booth Cards */
+    /* View Booth Cards (Fixed classes to match JS outputs) */
     .booth-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 15px; background: #ffffff; transition: all 0.3s; }
     .booth-card h5 { margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; font-size: 15px; color: #1e293b; font-weight: 700; }
     .booth-link-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: #64748b; }
@@ -710,7 +704,7 @@
                   </div>
                   
                   <div id="addDayDetailsWithoutPrints" style="display: none;">
-                      <div class="input-group input-group-sm">
+                          <div class="input-group input-group-sm">
                           <input type="number" id="addDaySrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
                           <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
                       </div>
@@ -2398,8 +2392,8 @@
                      const qrDriveViewerUrl = `https://drive.google.com/file/d/${qrFileId}/view`;
                      currentViewBooths.push({ boothNum, fileId: qrFileId, isDrive: true });
                      qrCodeActionHtml = `
-                        <button class="mini-btn" onclick="navigator.clipboard.writeText('${qrDriveViewerUrl}')">Copy link</button>
-                        <button class="mini-btn" onclick="window.open('https://drive.google.com/uc?export=download&id=${qrFileId}', '_blank')">Download</button>
+                        <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${qrDriveViewerUrl}')">Copy link</button>
+                        <button class="booth-mini-btn" onclick="window.open('https://drive.google.com/uc?export=download&id=${qrFileId}', '_blank')">Download</button>
                      `;
                   } else {
                      let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
@@ -2408,41 +2402,41 @@
                      
                      currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false });
                      qrCodeActionHtml = `
-                        <button class="mini-btn" onclick="navigator.clipboard.writeText('${qcApiUrl}')">Copy link</button>
-                        <button class="mini-btn" onclick="downloadBoothImage('${qcApiUrl}', 'Booth_${boothNum}_QR.png')">Download</button>
+                        <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${qcApiUrl}')">Copy link</button>
+                        <button class="booth-mini-btn" onclick="downloadBoothImage('${qcApiUrl}', 'Booth_${boothNum}_QR.png')">Download</button>
                      `;
                   }
                   
                   const card = document.createElement('div');
                   card.className = 'booth-card';
                   card.innerHTML = `
-                     <h4>${dynamicFolderName}${boothNum} (Booth ${boothNum})</h4>
-                     <div class="link-row">
+                     <h5>${dynamicFolderName}${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span></h5>
+                     <div class="booth-link-row">
                         <span>Main Gallery</span>
-                        <div class="link-actions">
-                           <button class="mini-btn" onclick="navigator.clipboard.writeText('${mainGalleryUrl}')">Copy link</button>
-                           <button class="mini-btn backup" title="Fallback link" onclick="navigator.clipboard.writeText('${backupGalleryUrl}')">Backup</button>
-                           <button class="mini-btn" onclick="window.open('${mainGalleryUrl}', '_blank')">Go</button>
+                        <div class="booth-link-actions">
+                           <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${mainGalleryUrl}')">Copy link</button>
+                           <button class="booth-mini-btn backup" title="Fallback link" onclick="navigator.clipboard.writeText('${backupGalleryUrl}')">Backup</button>
+                           <button class="booth-mini-btn" onclick="window.open('${mainGalleryUrl}', '_blank')">Go</button>
                         </div>
                      </div>
-                     <div class="link-row">
+                     <div class="booth-link-row">
                         <span>PG Dash</span>
-                        <div class="link-actions">
-                           <button class="mini-btn" onclick="navigator.clipboard.writeText('${pgDashUrl}')">Copy link</button>
-                           <button class="mini-btn backup" title="Fallback link" onclick="navigator.clipboard.writeText('${backupPgDashUrl}')">Backup</button>
-                           <button class="mini-btn" onclick="window.open('${pgDashUrl}', '_blank')">Go</button>
+                        <div class="booth-link-actions">
+                           <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${pgDashUrl}')">Copy link</button>
+                           <button class="booth-mini-btn backup" title="Fallback link" onclick="navigator.clipboard.writeText('${backupPgDashUrl}')">Backup</button>
+                           <button class="booth-mini-btn" onclick="window.open('${pgDashUrl}', '_blank')">Go</button>
                         </div>
                      </div>
-                     <div class="link-row">
+                     <div class="booth-link-row">
                         <span>Drive Folder</span>
-                        <div class="link-actions">
-                           <button class="mini-btn" onclick="navigator.clipboard.writeText('${driveUrl}')">Copy link</button>
-                           <button class="mini-btn" onclick="window.open('${driveUrl}', '_blank')">Go</button>
+                        <div class="booth-link-actions">
+                           <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${driveUrl}')">Copy link</button>
+                           <button class="booth-mini-btn" onclick="window.open('${driveUrl}', '_blank')">Go</button>
                         </div>
                      </div>
-                     <div class="link-row">
+                     <div class="booth-link-row">
                         <span>QR Code</span>
-                        <div class="link-actions">${qrCodeActionHtml}</div>
+                        <div class="booth-link-actions">${qrCodeActionHtml}</div>
                      </div>
                   `;
                   boothList.appendChild(card);
