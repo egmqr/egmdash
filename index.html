@@ -381,12 +381,12 @@
                       </div>
                       <div class="col-12 col-md-8">
                           <label class="form-label-sm text-secondary">Dashboard Event Name</label>
-                          <input type="text" id="boothEventName" class="form-control form-control-sm fw-bold text-muted" disabled>
+                          <input type="text" id="boothEventName" class="form-control form-control-sm fw-bold" required>
                       </div>
                   </div>
 
                   <div class="mb-3">
-                      <label class="form-label-sm text-secondary">Photobooth Display Name</label>
+                      <label class="form-label-sm text-secondary">FOLDER NAME <span class="fw-normal text-muted" style="text-transform: none;">(SYNC TO DSLRBOOTH)</span></label>
                       <input type="text" id="boothFolderName" class="form-control form-control-sm fw-bold" placeholder="e.g. Smith Wedding" required>
                   </div>
                   
@@ -1373,7 +1373,6 @@
                 const leaveA = a['Event Name'] === 'Crew Leave' ? 1 : 0;
                 const leaveB = b['Event Name'] === 'Crew Leave' ? 1 : 0;
                 if (leaveA !== leaveB) return leaveA - leaveB;
-
                 let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
                 let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
                 return timeA.localeCompare(timeB);
@@ -1429,10 +1428,8 @@
                   venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
               }
               
-              // Smart Regex split to ensure badges look clean on the dashboard (with text-wrap added)
               let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
                   let sTrim = s.trim();
-                  // PILL LINK TO BOOTH GENERATOR
                   if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only')) {
                       let match = sTrim.match(/\[(\d+)\s+booth/);
                       let booths = match ? match[1] : 1;
@@ -1651,7 +1648,6 @@
     document.getElementById('b-tab').classList.toggle('active', t==='booth');
     document.getElementById('p-tab').classList.toggle('active', t==='payments');
     
-    // Safety check for Booth tab manual clicks
     if (t === 'booth') {
         if (currentBoothMode === 'new') { setBoothMode('view'); } 
         else { setBoothMode(currentBoothMode); }
@@ -1660,7 +1656,6 @@
     }
   }
 
-  // --- View-Only Logic for Modals ---
   function setEditFormState(isReadOnly) {
       const form = document.getElementById('editForm');
       const elements = form.querySelectorAll('input, select, textarea, button');
@@ -1769,12 +1764,6 @@
                  else if(s.includes('5R')) document.getElementById('addDaySrvPrintsSize').value = '5R';
                  else if(s.includes('4R')) document.getElementById('addDaySrvPrintsSize').value = '4R';
                  
-             } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
-                 document.getElementById('addDaySrvFrame').checked = true;
-                 document.getElementById('addDaySrvFrameDetails').style.display = 'block';
-                 let match = s.match(/\[(\d+)\s+frame/);
-                 if(match) document.getElementById('addDaySrvFrameCount').value = match[1];
-                 
              } else if (s.startsWith('QR only') || s === 'QR only' || s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
                  document.getElementById('addDaySrvPhotoQR').checked = true;
                  document.getElementById('addDaySrvPhotoQRDetails').style.display = 'block';
@@ -1783,6 +1772,12 @@
 
                  let match = s.match(/\[(\d+)\s+booth/);
                  if(match) document.getElementById('addDaySrvQRBooth').value = match[1];
+                 
+             } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
+                 document.getElementById('addDaySrvFrame').checked = true;
+                 document.getElementById('addDaySrvFrameDetails').style.display = 'block';
+                 let match = s.match(/\[(\d+)\s+frame/);
+                 if(match) document.getElementById('addDaySrvFrameCount').value = match[1];
                  
              } else {
                  let found = false;
@@ -1835,8 +1830,8 @@
     if(document.getElementById('editSrvPrintsBooth')) document.getElementById('editSrvPrintsBooth').value = '';
     if(document.getElementById('editSrvPrintsCount')) document.getElementById('editSrvPrintsCount').value = '';
     if(document.getElementById('editSrvPrintsSize')) document.getElementById('editSrvPrintsSize').value = '4R';
-    if(document.getElementById('editSrvFrameCount')) document.getElementById('editSrvFrameCount').value = '';
     if(document.getElementById('editSrvQRBooth')) document.getElementById('editSrvQRBooth').value = '';
+    if(document.getElementById('editSrvFrameCount')) document.getElementById('editSrvFrameCount').value = '';
     
     ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
        const el = document.getElementById('editSrv' + id);
@@ -1895,12 +1890,6 @@
                 else if(s.includes('5R')) document.getElementById('editSrvPrintsSize').value = '5R';
                 else if(s.includes('4R')) document.getElementById('editSrvPrintsSize').value = '4R';
                 
-            } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
-                document.getElementById('editSrvFrame').checked = true;
-                document.getElementById('editSrvFrameDetails').style.display = 'block';
-                let match = s.match(/\[(\d+)\s+frame/);
-                if(match) document.getElementById('editSrvFrameCount').value = match[1];
-                
             } else if (s.startsWith('QR only') || s === 'QR only' || s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
                 document.getElementById('editSrvPhotoQR').checked = true;
                 document.getElementById('editSrvPhotoQRDetails').style.display = 'block';
@@ -1909,6 +1898,12 @@
 
                 let match = s.match(/\[(\d+)\s+booth/);
                 if(match) document.getElementById('editSrvQRBooth').value = match[1];
+                
+            } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
+                document.getElementById('editSrvFrame').checked = true;
+                document.getElementById('editSrvFrameDetails').style.display = 'block';
+                let match = s.match(/\[(\d+)\s+frame/);
+                if(match) document.getElementById('editSrvFrameCount').value = match[1];
                 
             } else {
                 let found = false;
@@ -2203,7 +2198,6 @@
       document.getElementById('boothEventName').value = eventName;
       document.getElementById('boothCountInput').value = booths;
       
-      // Auto fill folder name based on Event Name
       const shortName = eventName.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
       document.getElementById('boothFolderName').value = shortName;
   }
@@ -2278,6 +2272,7 @@
 
   function toggleBoothEditFields(isEnabled) {
       document.getElementById('boothFolderName').disabled = !isEnabled;
+      document.getElementById('boothEventName').disabled = !isEnabled;
       
       document.getElementById('boothFontColorPicker').disabled = !isEnabled;
       document.getElementById('boothFontColor').disabled = !isEnabled;
