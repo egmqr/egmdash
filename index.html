@@ -1616,22 +1616,18 @@
     document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
     document.getElementById('booth-view').style.display = t==='booth'?'block':'none';
     
-    document.getElementById('eventFilters').style.display = t==='events'?'block':'none';
+    document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar') ? 'block' : 'none';
     document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
     
     const filterBtn = document.getElementById('filterToggleBtn');
     const filterCollapseEl = document.getElementById('filterCollapse');
 
-    if (t === 'calendar' || t === 'booth') {
+    if (t === 'booth') {
         filterBtn.classList.remove('d-flex');
         filterBtn.classList.add('d-none');
         if (filterCollapseEl.classList.contains('show')) {
             let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
             bsCollapse.hide();
-        }
-        if (t === 'calendar') {
-            ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
-            if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
         }
     } else {
         filterBtn.classList.remove('d-none');
