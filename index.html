@@ -14,7 +14,7 @@
   
   <style>
     :root {
-      --sticky-top: 110px; /* Dynamically calculated based on header height */
+      --sticky-top: 110px; 
     }
 
     body { background-color: #f8fafc; padding: 10px; padding-bottom: 120px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #334155; transition: background-color 0.3s ease, color 0.3s ease; }
@@ -143,7 +143,7 @@
     .booth-file-btn:hover { background: #e2e8f0; }
     .booth-file-name { font-size: 13px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* Crop Modal Overrides - Fixed for Large Images */
+    /* Crop Container inline styles */
     .crop-container { width: 100%; max-width: 400px; height: 50vh; min-height: 250px; max-height: 400px; position: relative; background: #222; border-radius: 8px; overflow: hidden; background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
     #imageToCrop { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
     .crop-actions { display: flex; gap: 15px; margin-top: 20px; width: 100%; max-width: 400px; }
@@ -158,6 +158,22 @@
     .booth-mini-btn:hover { background: #e2e8f0; }
     .booth-mini-btn.backup { background: #475569; color: #fff; border: none; }
     .booth-mini-btn.backup:hover { background: #334155; }
+
+    /* Booth Thumbnail & Gallery Extensions */
+    .booth-thumbnail { width: 44px; height: 44px; object-fit: cover; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; background: #fff; display: block; transition: 0.2s; }
+    .booth-thumbnail:hover { opacity: 0.8; }
+    .booth-thumbnail-container { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .booth-thumbnail-label { font-size: 9px; color: #64748b; margin-bottom: 2px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;}
+    
+    .booth-lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10500; justify-content: center; align-items: center; padding: 20px; }
+    .booth-lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); object-fit: contain; }
+    .booth-lightbox-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 35px; font-weight: bold; cursor: pointer; transition: 0.2s;}
+    .booth-lightbox-close:hover { color: #ef4444; transform: scale(1.1); }
+
+    .logo-gallery { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; margin-top: 5px; }
+    .logo-gallery-item { width: 60px; height: 60px; flex-shrink: 0; border: 2px solid transparent; border-radius: 8px; cursor: pointer; object-fit: contain; background: #fff; padding: 2px; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .logo-gallery-item:hover { border-color: #cbd5e1; transform: translateY(-2px);}
+    .logo-gallery-item.selected { border-color: #0d9488; box-shadow: 0 0 0 2px #0d9488; }
 
     /* ================== DESATURATED DARK MODE ================== */
     body.dark-mode { background-color: #121212; color: #d1d5db; }
@@ -229,6 +245,9 @@
     .dark-mode .booth-link-row { color: #9ca3af; }
     .dark-mode .booth-mini-btn { background-color: #2b2b2b; color: #d1d5db; border-color: #444444; }
     .dark-mode .booth-mini-btn:hover { background-color: #444444; }
+    .dark-mode .logo-gallery-item { background: #333; }
+    .dark-mode .logo-gallery-item.selected { border-color: #0d9488; box-shadow: 0 0 0 2px #0d9488; }
+    .dark-mode .booth-thumbnail-label { color: #9ca3af; }
   </style>
 </head>
 <body>
@@ -236,6 +255,11 @@
 <div id="submitOverlay" class="submit-overlay">
   <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
   <h5 class="mt-3 fw-bold text-secondary" id="overlayText">Processing...</h5>
+</div>
+
+<div id="boothLightbox" class="booth-lightbox" onclick="closeLightbox()">
+    <span class="booth-lightbox-close" onclick="closeLightbox()">&times;</span>
+    <img id="boothLightboxImg" src="" onclick="event.stopPropagation()">
 </div>
 
 <div id="cropModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 10005; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
@@ -352,17 +376,17 @@
       <div id="booth-view" style="display:none;">
           <div class="card p-3 p-md-4" style="max-width: 600px; margin: 0 auto;">
               
-              <ul class="nav nav-pills w-100 d-flex mb-4" id="boothModeTabs">
-    <li class="nav-item">
-        <a class="nav-link" id="btnModeNew" onclick="setBoothMode('new')" style="display:none;"><i class="bi bi-magic me-1"></i> New Setup</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link active" id="btnModeEdit" onclick="setBoothMode('edit')"><i class="bi bi-pencil me-1"></i> Edit Setup</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="btnModeView" onclick="setBoothMode('view')"><i class="bi bi-eye me-1"></i> View QR</a>
-    </li>
-</ul>
+              <ul class="nav nav-pills mb-4" id="boothModeTabs">
+                  <li class="nav-item">
+                      <a class="nav-link" id="btnModeNew" onclick="setBoothMode('new')" style="display:none;"><i class="bi bi-magic me-1"></i> New Setup</a>
+                  </li>
+                  <li class="nav-item">
+                      <a class="nav-link active" id="btnModeEdit" onclick="setBoothMode('edit')"><i class="bi bi-pencil me-1"></i> Edit Setup</a>
+                  </li>
+                  <li class="nav-item">
+                      <a class="nav-link" id="btnModeView" onclick="setBoothMode('view')"><i class="bi bi-eye me-1"></i> View QR</a>
+                  </li>
+              </ul>
 
               <div class="mb-4" id="boothSelectContainer">
                   <label class="form-label-sm text-secondary">Search Generated Event</label>
@@ -380,13 +404,13 @@
                       </div>
                       <div class="col-12 col-md-8">
                           <label class="form-label-sm text-secondary">Page Title</label>
-                          <input type="text" id="boothEventName" class="form-control form-control-sm fw-bold" placeholder="e.g. Jollibee Natcon 2026" required>
+                          <input type="text" id="boothEventName" class="form-control form-control-sm fw-bold" required>
                       </div>
                   </div>
 
                   <div class="mb-3">
                       <label class="form-label-sm text-secondary">FOLDER NAME <span class="fw-normal text-muted" style="text-transform: none;">(SYNC TO DSLRBOOTH)</span></label>
-                      <input type="text" id="boothFolderName" class="form-control form-control-sm fw-bold" placeholder="e.g. JBNATCON" required>
+                      <input type="text" id="boothFolderName" class="form-control form-control-sm fw-bold" placeholder="e.g. Smith Wedding" required>
                   </div>
                   
                   <div class="mb-4 pb-4 border-bottom">
@@ -396,38 +420,58 @@
                   </div>
 
                   <div class="row g-3 mb-4">
-    <div class="col-12 col-sm-6">
-        <label class="form-label-sm text-secondary">Font & Tab Color</label>
-        <div class="booth-color-input-wrapper">
-            <input type="color" id="boothFontColorPicker" value="#ffffff" oninput="syncBoothColor('boothFontColorPicker', 'boothFontColor')">
-            <input type="text" id="boothFontColor" class="form-control form-control-sm" value="#ffffff" maxlength="7" oninput="syncBoothColor('boothFontColor', 'boothFontColorPicker')">
-        </div>
-    </div>
-    <div class="col-12 col-sm-6">
-        <label class="form-label-sm text-secondary">Background Color</label>
-        <div class="booth-color-input-wrapper">
-            <input type="color" id="boothBgColorPicker" value="#000000" oninput="syncBoothColor('boothBgColorPicker', 'boothBgColor')">
-            <input type="text" id="boothBgColor" class="form-control form-control-sm" value="#000000" maxlength="7" oninput="syncBoothColor('boothBgColor', 'boothBgColorPicker')">
-        </div>
-    </div>
-</div>
+                      <div class="col-12 col-sm-6">
+                          <label class="form-label-sm text-secondary">Font & Tab Color</label>
+                          <div class="booth-color-input-wrapper">
+                              <input type="color" id="boothFontColorPicker" value="#ffffff" oninput="syncBoothColor('boothFontColorPicker', 'boothFontColor')">
+                              <input type="text" id="boothFontColor" class="form-control form-control-sm" value="#ffffff" maxlength="7" oninput="syncBoothColor('boothFontColor', 'boothFontColorPicker')">
+                          </div>
+                      </div>
+                      <div class="col-12 col-sm-6">
+                          <label class="form-label-sm text-secondary">Background Color</label>
+                          <div class="booth-color-input-wrapper">
+                              <input type="color" id="boothBgColorPicker" value="#000000" oninput="syncBoothColor('boothBgColorPicker', 'boothBgColor')">
+                              <input type="text" id="boothBgColor" class="form-control form-control-sm" value="#000000" maxlength="7" oninput="syncBoothColor('boothBgColor', 'boothBgColorPicker')">
+                          </div>
+                      </div>
+                  </div>
 
                   <div class="mb-3">
                       <label class="form-label-sm text-secondary">Background Image <span class="fw-normal text-muted">(1000x676)</span></label>
-                      <div class="booth-custom-file-row">
-                          <input type="file" id="boothBgFile" accept="image/*" style="display: none;" onchange="updateBoothFileName('boothBgFile', 'boothBgFileName')">
-                          <button type="button" class="booth-file-btn" onclick="document.getElementById('boothBgFile').click()">Choose Image</button>
-                          <span class="booth-file-name" id="boothBgFileName">No file chosen</span>
+                      <div class="d-flex align-items-center">
+                          <div class="booth-custom-file-row flex-grow-1">
+                              <input type="file" id="boothBgFile" accept="image/*" style="display: none;" onchange="updateBoothFileName('boothBgFile', 'boothBgFileName')">
+                              <button type="button" class="booth-file-btn" onclick="document.getElementById('boothBgFile').click()">Choose Image</button>
+                              <span class="booth-file-name" id="boothBgFileName">No file chosen</span>
+                          </div>
+                          <div class="booth-thumbnail-container ms-2" id="boothBgPreviewContainer" style="display:none;">
+                              <span class="booth-thumbnail-label">CURRENT</span>
+                              <img id="boothBgPreview" class="booth-thumbnail" src="" onclick="openLightbox(this.src)">
+                          </div>
                       </div>
                   </div>
 
                   <div class="mb-4">
                       <label class="form-label-sm text-secondary">Custom Logo for QR <span class="fw-normal text-muted">(250x250)</span></label>
-                      <div class="booth-custom-file-row mb-2">
-                          <input type="file" id="boothLogoFile" accept="image/*" style="display: none;" onchange="handleBoothLogoSelect(event)">
-                          <button type="button" class="booth-file-btn" onclick="document.getElementById('boothLogoFile').click()">Choose Logo</button>
-                          <span class="booth-file-name" id="boothLogoFileName">No file chosen</span>
+                      <div class="d-flex align-items-center mb-2">
+                          <div class="booth-custom-file-row flex-grow-1">
+                              <input type="file" id="boothLogoFile" accept="image/*" style="display: none;" onchange="handleBoothLogoSelect(event)">
+                              <button type="button" class="booth-file-btn" onclick="document.getElementById('boothLogoFile').click()">Upload New</button>
+                              <span class="booth-file-name" id="boothLogoFileName">No file chosen</span>
+                          </div>
+                          <div class="booth-thumbnail-container ms-2" id="boothLogoPreviewContainer" style="display:none;">
+                              <span class="booth-thumbnail-label">CURRENT</span>
+                              <img id="boothLogoPreview" class="booth-thumbnail" src="" onclick="openLightbox(this.src)">
+                          </div>
                       </div>
+                      
+                      <div class="mt-2 mb-2 p-2 bg-light border border-secondary-subtle rounded">
+                          <label class="form-label-sm text-secondary mb-1">Or select an existing logo:</label>
+                          <div id="existingLogoGallery" class="logo-gallery">
+                              <span class="small text-muted fst-italic">Loading logos...</span>
+                          </div>
+                      </div>
+
                       <div class="form-check form-switch mt-2">
                           <input class="form-check-input" type="checkbox" id="boothLogoOnMain">
                           <label class="form-check-label small fw-bold text-dark" for="boothLogoOnMain">Show logo as custom branding</label>
@@ -965,6 +1009,9 @@
   let croppedLogoPayload = null; 
   let croppedQrLogoPayload = null; 
   let originalLogoFilename = "";
+  let selectedExistingLogoId = "";
+  let selectedExistingQrLogoId = "";
+  let existingLogosCache = null;
 
   // --- Auth Functions ---
   function isAuthenticated() {
@@ -1359,7 +1406,6 @@
             else displayHeader = formattedDate;
         }
         
-        // Sticky Header UI Implementation
         html += `<div class="col-12 sticky-date-header-container">
                     <div class="sticky-date-header d-flex align-items-center">
                         <i class="bi bi-calendar3 me-2 fs-5"></i>
@@ -1430,7 +1476,6 @@
               
               let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
                   let sTrim = s.trim();
-                  // BOOTH QR PILL NO LONGER REQUIRES PASSWORD
                   if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only') || sTrim.startsWith('Photo souvenir')) {
                       let match = sTrim.match(/\[(\d+)\s+booth/);
                       let booths = match ? match[1] : 1;
@@ -1605,7 +1650,7 @@
 
   function handleTabClick(tabName) {
       if(tabName === 'payments') { requireAuth(() => switchTab('payments')); } 
-      else if(tabName === 'booth') { switchTab('booth'); } // NO LONGER REQUIRES PASSWORD
+      else if(tabName === 'booth') { switchTab('booth'); } 
       else { switchTab(tabName); }
   }
 
@@ -1645,7 +1690,6 @@
     document.getElementById('b-tab').classList.toggle('active', t==='booth');
     document.getElementById('p-tab').classList.toggle('active', t==='payments');
     
-    // Safety check for Booth tab manual clicks
     if (t === 'booth') {
         if (currentBoothMode === 'new') { setBoothMode('view'); } 
         else { setBoothMode(currentBoothMode); }
@@ -1654,17 +1698,13 @@
     }
   }
 
-  // --- View-Only Logic for Modals ---
   function setEditFormState(isReadOnly) {
       const form = document.getElementById('editForm');
       const elements = form.querySelectorAll('input, select, textarea, button');
       
       elements.forEach(el => {
-          if(el.id !== 'editSubmitBtn' && el.id !== 'editDeleteBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') {
-              el.disabled = isReadOnly;
-          }
+          if(el.id !== 'editSubmitBtn' && el.id !== 'editDeleteBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') { el.disabled = isReadOnly; }
       });
-      
       document.getElementById('editCrewAddBtn').disabled = isReadOnly;
       
       if (isReadOnly) {
@@ -1682,28 +1722,18 @@
       const editModalEl = document.getElementById('editEventModal');
       const editModal = bootstrap.Modal.getInstance(editModalEl);
       editModal.hide();
-      
-      setTimeout(() => {
-          requireAuth(() => {
-              setEditFormState(false);
-              editModal.show();
-          });
-      }, 300); 
+      setTimeout(() => { requireAuth(() => { setEditFormState(false); editModal.show(); }); }, 300); 
   }
 
   // --- EVENT MODAL TRIGGERS ---
-  
   function openNewEventModal() {
       document.getElementById('eventForm').reset();
-      
-      // Hide all dynamic service inputs
       ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
          const el = document.getElementById('newSrv' + id + 'Details');
          if(el) el.style.display = 'none';
       });
       document.getElementById('newTypeWithPrints').checked = true;
       togglePhotoQRDetails('new');
-
       document.getElementById('newTypeEvent').checked = true;
       toggleEntryMode('new');
       document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
@@ -1719,7 +1749,6 @@
      form.reset();
      document.querySelectorAll('#addDayCrewContainer .custom-crew-cb').forEach(el => el.remove());
      
-     // Reset dynamic service inputs
      if(document.getElementById('addDaySrvPhotoCount')) document.getElementById('addDaySrvPhotoCount').value = '';
      if(document.getElementById('addDaySrvPrintsBooth')) document.getElementById('addDaySrvPrintsBooth').value = '';
      if(document.getElementById('addDaySrvPrintsCount')) document.getElementById('addDaySrvPrintsCount').value = '';
@@ -1749,7 +1778,6 @@
          document.getElementById('addDayEventNameInput').setAttribute('required', 'required');
          document.getElementById('addDayEventNameInput').value = e['Event Name'];
          
-         // Pre-populate with previous day's services using Smart Parser
          const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
          const sInputs = form.elements['services'];
          if (sInputs) {
@@ -1816,10 +1844,8 @@
   function openEditModal(id, date, fromCalendar = false) {
     const e = rawEvents.find(ev => ev['Event ID'] === id && (!date || ev['Event Date'] === date));
     if(!e) return;
-    
     const isReadOnly = fromCalendar && !isAuthenticated();
 
-    // DYNAMIC BILLING POSITIONING
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
     const isPast = date && date < todayStr; 
@@ -1842,7 +1868,6 @@
     const form = document.getElementById('editForm');
     form.reset();
 
-    // Reset dynamic service inputs
     if(document.getElementById('editSrvPhotoCount')) document.getElementById('editSrvPhotoCount').value = '';
     if(document.getElementById('editSrvPrintsBooth')) document.getElementById('editSrvPrintsBooth').value = '';
     if(document.getElementById('editSrvPrintsCount')) document.getElementById('editSrvPrintsCount').value = '';
@@ -1861,7 +1886,6 @@
     form.elements['originalDate'].value = date || '';
     form.elements['eventName'].value = e['Event Name'] || '';
     
-    // Automatically trigger Leave UI mode if it's a Crew Leave
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
         toggleEntryMode('edit');
@@ -1880,8 +1904,6 @@
         form.elements['contactPerson'].value = e['Contact Person'] || '';
         form.elements['contactNumber'].value = e['Contact Number'] || '';
         
-        // --- SMART PARSER FOR SERVICES ---
-        // Using strict regex so commas inside brackets are ignored
         const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
         const sInputs = form.elements['services'];
         if (sInputs) {
@@ -2025,17 +2047,13 @@
   async function deleteFullEvent() {
       const eventId = document.getElementById('editEventId').value;
       if (!eventId) return;
-      
-      if(!confirm(`WARNING: Are you sure you want to permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) {
-          return;
-      }
+      if(!confirm(`WARNING: Are you sure you want to permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) { return; }
       
       const ov = document.getElementById('submitOverlay');
       document.getElementById('overlayText').innerText = "Deleting Event...";
       ov.style.display = 'flex';
       
       const res = await callApi({ action: 'deleteEvent', eventId: eventId }, 'POST');
-      
       ov.style.display = 'none';
       if (res && res.success) {
           bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
@@ -2045,16 +2063,13 @@
       }
   }
 
-  // --- Form Submissions ---
-
+  // --- EVENT FORM SUBMISSIONS ---
   document.getElementById('eventForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
-    
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
     
-    // Build Dynamic Services String
     let rawServices = fd.getAll('services');
     let finalServices = [];
     rawServices.forEach(s => {
@@ -2087,24 +2102,14 @@
 
     const isLeave = document.getElementById('newTypeLeave').checked;
     if (isLeave) {
-        if (obj.manpower.length === 0) {
-            alert("Please select at least one crew member for this leave.");
-            return;
-        }
-        obj.eventName = 'Crew Leave';
-        obj.eventStatus = 'Confirmed';
-        obj.avp = false;
-        obj.paymentType = '';
+        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
     } else {
-        if (!obj.eventName || obj.eventName.trim() === '') {
-            alert("Please enter an Event Name.");
-            return;
-        }
+        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
     }
     
     document.getElementById('overlayText').innerText = "Saving Entry...";
     btn.disabled = true; ov.style.display='flex';
-
     const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
@@ -2121,11 +2126,9 @@
   document.getElementById('addDayForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('addDaySubmitBtn'), ov = document.getElementById('submitOverlay');
-    
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
     
-    // Build Dynamic Services String for Add Day
     let rawServices = fd.getAll('services');
     let finalServices = [];
     rawServices.forEach(s => {
@@ -2158,7 +2161,6 @@
     
     document.getElementById('overlayText').innerText = "Adding Day...";
     btn.disabled = true; ov.style.display='flex';
-    
     const res = await callApi({action:'addEventDay', formObject:obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
@@ -2172,11 +2174,9 @@
   document.getElementById('editForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('editSubmitBtn'), ov = document.getElementById('submitOverlay');
-    
     const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
     obj.manpower = fd.getAll('manpower');
     
-    // Build Dynamic Services String for Edit Form
     let rawServices = fd.getAll('services');
     let finalServices = [];
     rawServices.forEach(s => {
@@ -2209,24 +2209,14 @@
     
     const isLeave = document.getElementById('editTypeLeave').checked;
     if (isLeave) {
-        if (obj.manpower.length === 0) {
-            alert("Please select at least one crew member for this leave.");
-            return;
-        }
-        obj.eventName = 'Crew Leave';
-        obj.eventStatus = 'Confirmed';
-        obj.avp = false;
-        obj.paymentType = '';
+        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
     } else {
-        if (!obj.eventName || obj.eventName.trim() === '') {
-            alert("Please enter an Event Name.");
-            return;
-        }
+        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
     }
     
     document.getElementById('overlayText').innerText = "Updating...";
     btn.disabled=true; ov.style.display='flex';
-
     const res = await callApi({action:'editEvent', updateData: obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
@@ -2240,17 +2230,7 @@
   // ==============================================================================
   // PHOTOBOOTH GENERATOR FRONTEND INTEGRATION
   // ==============================================================================
-function copyBoothLink(btn, text) {
-      navigator.clipboard.writeText(text).then(() => {
-          const originalText = btn.innerText;
-          btn.innerText = "Copied!";
-          btn.classList.add("text-success");
-          setTimeout(() => {
-              btn.innerText = originalText;
-              btn.classList.remove("text-success");
-          }, 1500);
-      });
-  }
+
   function goToBoothQR(eventId, booths, eventName) {
       switchTab('booth');
       document.getElementById('btnModeNew').style.display = 'block';
@@ -2279,7 +2259,14 @@ function copyBoothLink(btn, text) {
       document.getElementById('boothBgFile').value = ""; document.getElementById('boothBgFileName').innerText = "No file chosen"; 
       document.getElementById('boothLogoFile').value = ""; document.getElementById('boothLogoFileName').innerText = "No file chosen";
       
-      croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
+      // Clear Previews & Selections
+      document.getElementById('boothBgPreviewContainer').style.display = "none";
+      document.getElementById('boothLogoPreviewContainer').style.display = "none";
+      selectedExistingLogoId = ""; selectedExistingQrLogoId = "";
+      document.querySelectorAll('.logo-gallery-item').forEach(el => el.classList.remove('selected'));
+      
+      if (mode === 'new' || mode === 'edit') { fetchExistingLogos(); }
+
       document.getElementById('boothLogoOnMain').checked = false; document.getElementById('boothSearch').value = ""; 
       
       const eventSelectDropdown = document.getElementById('boothEventSelect');
@@ -2429,6 +2416,15 @@ function copyBoothLink(btn, text) {
               document.getElementById('boothFontColor').value = loadedFontColor; document.getElementById('boothFontColorPicker').value = loadedFontColor;
               document.getElementById('boothBgColor').value = loadedBgColor; document.getElementById('boothBgColorPicker').value = loadedBgColor;
               
+              if (details.bgId) {
+                  document.getElementById('boothBgPreview').src = `https://drive.google.com/uc?id=${details.bgId}`;
+                  document.getElementById('boothBgPreviewContainer').style.display = "flex";
+              }
+              if (details.logoId) {
+                  document.getElementById('boothLogoPreview').src = `https://drive.google.com/uc?id=${details.logoId}`;
+                  document.getElementById('boothLogoPreviewContainer').style.display = "flex";
+              }
+              
               toggleBoothEditFields(true);
               
           } else if (currentBoothMode === 'view') {
@@ -2456,7 +2452,7 @@ function copyBoothLink(btn, text) {
                   const qrFileId = qrIdsArr[i] || "";
                   let qrCodeActionHtml = '';
 
-                 if (qrFileId) {
+                  if (qrFileId) {
                      const qrDriveViewerUrl = `https://drive.google.com/file/d/${qrFileId}/view`;
                      currentViewBooths.push({ boothNum, fileId: qrFileId, isDrive: true });
                      qrCodeActionHtml = `
@@ -2465,8 +2461,8 @@ function copyBoothLink(btn, text) {
                      `;
                   } else {
                      let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
-                     if (details.qrLogoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.qrLogoId)}`;
-                     else if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.logoId)}`;
+                     if (details.qrLogoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.qrLogoId)}&centerImageSizeRatio=0.15`;
+                     else if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.logoId)}&centerImageSizeRatio=0.15`;
                      
                      currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false });
                      qrCodeActionHtml = `
@@ -2542,6 +2538,65 @@ function copyBoothLink(btn, text) {
       ov.style.display = 'none';
   }
 
+  function copyBoothLink(btn, text) {
+      navigator.clipboard.writeText(text).then(() => {
+          const originalText = btn.innerText;
+          btn.innerText = "Copied!";
+          btn.classList.add("text-success");
+          setTimeout(() => {
+              btn.innerText = originalText;
+              btn.classList.remove("text-success");
+          }, 1500);
+      });
+  }
+
+  function openLightbox(src) {
+      document.getElementById('boothLightboxImg').src = src;
+      document.getElementById('boothLightbox').style.display = 'flex';
+  }
+
+  function closeLightbox() {
+      document.getElementById('boothLightbox').style.display = 'none';
+      document.getElementById('boothLightboxImg').src = "";
+  }
+
+  async function fetchExistingLogos() {
+      if (existingLogosCache) { renderExistingLogos(existingLogosCache); return; }
+      document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-muted fst-italic">Loading logos...</span>';
+      const res = await callApi({ action: "getExistingLogos" }, 'POST', true);
+      if (res && res.success) {
+          existingLogosCache = res.logos;
+          renderExistingLogos(res.logos);
+      } else {
+          document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-danger">Failed to load logos.</span>';
+      }
+  }
+
+  function renderExistingLogos(logos) {
+      const container = document.getElementById('existingLogoGallery');
+      if (logos.length === 0) {
+          container.innerHTML = '<span class="small text-muted fst-italic">No existing logos found.</span>';
+          return;
+      }
+      let html = '';
+      logos.forEach(logo => {
+          html += `<img src="${logo.url}" class="logo-gallery-item" title="${logo.name}" onclick="selectExistingLogo('${logo.id}', '${logo.qrId}', this)">`;
+      });
+      container.innerHTML = html;
+  }
+
+  function selectExistingLogo(id, qrId, el) {
+      selectedExistingLogoId = id;
+      selectedExistingQrLogoId = qrId;
+      document.querySelectorAll('.logo-gallery-item').forEach(img => img.classList.remove('selected'));
+      el.classList.add('selected');
+      
+      document.getElementById('boothLogoFile').value = ""; 
+      document.getElementById('boothLogoFileName').innerText = "Using existing logo";
+      document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
+      croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
+  }
+
   function handleBoothLogoSelect(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -2585,6 +2640,9 @@ function copyBoothLink(btn, text) {
       cropper.destroy(); cropper = null;
       document.getElementById('boothLogoFileName').innerText = baseName + "_cropped (250x250)";
       document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
+      
+      selectedExistingLogoId = ""; selectedExistingQrLogoId = "";
+      document.querySelectorAll('.logo-gallery-item').forEach(el => el.classList.remove('selected'));
   }
 
   function readFileAsBase64(file) {
@@ -2617,7 +2675,8 @@ function copyBoothLink(btn, text) {
       const payload = {
           action: actionName, eventId, folderName, eventName, boothCount,
           bgData, logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
-          fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value
+          fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
+          existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId
       };
 
       const res = await callApi(payload, 'POST');
