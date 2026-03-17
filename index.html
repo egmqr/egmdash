@@ -2753,7 +2753,16 @@
       if (window.innerWidth >= 768) {
           document.getElementById('filterCollapse').classList.add('show');
       }
+      
+      // Load main dashboard data
       fetchAllData();
+      
+      // Silently pre-load Firebase & Drive logo data in the background
+      // 1.5 second delay ensures the main events list renders first
+      setTimeout(() => {
+          fetchBoothEvents();
+          fetchExistingLogos();
+      }, 1500);
   };
 </script>
 </body>
