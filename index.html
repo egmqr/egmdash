@@ -271,8 +271,8 @@
 
     <div class="d-flex justify-content-between align-items-center pb-2">
       <ul class="nav nav-pills" id="appTabs">
-        <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-card-list me-1"></i> List</a></li>
-        <li class="nav-item"><a class="nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
+        <li class="nav-item"><a class="nav-link" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-card-list me-1"></i> List</a></li>
+        <li class="nav-item"><a class="nav-link active" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
         <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
         <li class="nav-item"><a class="nav-link" id="p-tab" onclick="handleTabClick('payments')"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
       </ul>
@@ -322,12 +322,12 @@
   
   <div class="px-2 px-md-0">
       
-      <div id="events-view">
+      <div id="events-view" style="display:none;">
           <h4 class="fw-bold mb-4 mt-2" id="upcomingEventsHeader">Upcoming Events</h4>
           <div id="events-list" class="row g-3"></div>
       </div>
 
-      <div id="calendar-view" style="display:none;">
+      <div id="calendar-view">
           <div class="d-flex justify-content-between align-items-center mb-3 mt-2 px-1">
               <button class="btn btn-light border btn-sm px-3 shadow-sm fw-bold" onclick="changeCalendarMonth(-1)"><i class="bi bi-chevron-left"></i></button>
               <h5 class="fw-bold mb-0 text-dark" id="calendarMonthYear" style="letter-spacing: -0.5px;">Month Year</h5>
@@ -351,9 +351,8 @@
 
       <div id="booth-view" style="display:none;">
           <div class="card p-3 p-md-4" style="max-width: 600px; margin: 0 auto;">
-              <h5 class="fw-bold mb-3 border-bottom pb-2 text-dark"><i class="bi bi-qr-code-scan me-2 text-primary"></i> Photobooth Generator</h5>
               
-              <ul class="nav nav-pills mb-4" id="boothModeTabs">
+              <ul class="nav nav-pills w-100 d-flex mb-4" id="boothModeTabs">
     <li class="nav-item">
         <a class="nav-link" id="btnModeNew" onclick="setBoothMode('new')" style="display:none;"><i class="bi bi-magic me-1"></i> New Setup</a>
     </li>
@@ -948,7 +947,7 @@
   let pendingAuthAction = null;
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
   
-  let rawEvents = [], rawPayments = [], currentTab = 'events';
+  let rawEvents = [], rawPayments = [], currentTab = 'calendar';
   let filteredEventsCache = []; 
   let currentCalendarDate = new Date(); 
   
@@ -2245,7 +2244,17 @@
   // ==============================================================================
   // PHOTOBOOTH GENERATOR FRONTEND INTEGRATION
   // ==============================================================================
-
+function copyBoothLink(btn, text) {
+      navigator.clipboard.writeText(text).then(() => {
+          const originalText = btn.innerText;
+          btn.innerText = "Copied!";
+          btn.classList.add("text-success");
+          setTimeout(() => {
+              btn.innerText = originalText;
+              btn.classList.remove("text-success");
+          }, 1500);
+      });
+  }
   function goToBoothQR(eventId, booths, eventName) {
       switchTab('booth');
       document.getElementById('btnModeNew').style.display = 'block';
@@ -2451,21 +2460,21 @@
                   const qrFileId = qrIdsArr[i] || "";
                   let qrCodeActionHtml = '';
 
-                  if (qrFileId) {
+                 if (qrFileId) {
                      const qrDriveViewerUrl = `https://drive.google.com/file/d/${qrFileId}/view`;
                      currentViewBooths.push({ boothNum, fileId: qrFileId, isDrive: true });
                      qrCodeActionHtml = `
-                        <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${qrDriveViewerUrl}')">Copy link</button>
+                        <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qrDriveViewerUrl}')">Copy link</button>
                         <button class="booth-mini-btn" onclick="window.open('https://drive.google.com/uc?export=download&id=${qrFileId}', '_blank')">Download</button>
                      `;
                   } else {
                      let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
-                     if (details.qrLogoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.qrLogoId)}&centerImageSizeRatio=0.15`;
-                     else if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.logoId)}&centerImageSizeRatio=0.15`;
+                     if (details.qrLogoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.qrLogoId)}`;
+                     else if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.logoId)}`;
                      
                      currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false });
                      qrCodeActionHtml = `
-                        <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${qcApiUrl}')">Copy link</button>
+                        <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qcApiUrl}')">Copy link</button>
                         <button class="booth-mini-btn" onclick="downloadBoothImage('${qcApiUrl}', 'Booth_${boothNum}_QR.png')">Download</button>
                      `;
                   }
@@ -2477,23 +2486,23 @@
                      <div class="booth-link-row">
                         <span>Main Gallery</span>
                         <div class="booth-link-actions">
-                           <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${mainGalleryUrl}')">Copy link</button>
-                           <button class="booth-mini-btn backup" title="Fallback link" onclick="navigator.clipboard.writeText('${backupGalleryUrl}')">Backup</button>
+                           <button class="booth-mini-btn" onclick="copyBoothLink(this, '${mainGalleryUrl}')">Copy link</button>
+                           <button class="booth-mini-btn backup" title="Fallback link" onclick="copyBoothLink(this, '${backupGalleryUrl}')">Backup</button>
                            <button class="booth-mini-btn" onclick="window.open('${mainGalleryUrl}', '_blank')">Go</button>
                         </div>
                      </div>
                      <div class="booth-link-row">
                         <span>PG Dash</span>
                         <div class="booth-link-actions">
-                           <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${pgDashUrl}')">Copy link</button>
-                           <button class="booth-mini-btn backup" title="Fallback link" onclick="navigator.clipboard.writeText('${backupPgDashUrl}')">Backup</button>
+                           <button class="booth-mini-btn" onclick="copyBoothLink(this, '${pgDashUrl}')">Copy link</button>
+                           <button class="booth-mini-btn backup" title="Fallback link" onclick="copyBoothLink(this, '${backupPgDashUrl}')">Backup</button>
                            <button class="booth-mini-btn" onclick="window.open('${pgDashUrl}', '_blank')">Go</button>
                         </div>
                      </div>
                      <div class="booth-link-row">
                         <span>Drive Folder</span>
                         <div class="booth-link-actions">
-                           <button class="booth-mini-btn" onclick="navigator.clipboard.writeText('${driveUrl}')">Copy link</button>
+                           <button class="booth-mini-btn" onclick="copyBoothLink(this, '${driveUrl}')">Copy link</button>
                            <button class="booth-mini-btn" onclick="window.open('${driveUrl}', '_blank')">Go</button>
                         </div>
                      </div>
