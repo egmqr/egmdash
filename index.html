@@ -2417,17 +2417,19 @@
               document.getElementById('boothBgColor').value = loadedBgColor; document.getElementById('boothBgColorPicker').value = loadedBgColor;
               
               if (details.bgId) {
-                  document.getElementById('boothBgPreview').src = `https://lh3.googleusercontent.com/d/${details.bgId}`;
+                  document.getElementById('boothBgPreview').src = `https://drive.google.com/thumbnail?id=${details.bgId}&sz=w400`;
                   document.getElementById('boothBgPreviewContainer').style.display = "flex";
               } else {
                   document.getElementById('boothBgPreviewContainer').style.display = "none";
+                  document.getElementById('boothBgPreview').src = "";
               }
               
               if (details.logoId) {
-                  document.getElementById('boothLogoPreview').src = `https://lh3.googleusercontent.com/d/${details.logoId}`;
+                  document.getElementById('boothLogoPreview').src = `https://drive.google.com/thumbnail?id=${details.logoId}&sz=w400`;
                   document.getElementById('boothLogoPreviewContainer').style.display = "flex";
               } else {
                   document.getElementById('boothLogoPreviewContainer').style.display = "none";
+                  document.getElementById('boothLogoPreview').src = "";
               }
               
               toggleBoothEditFields(true);
