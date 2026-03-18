@@ -1469,8 +1469,6 @@ async function forceSync() {
             t=document.getElementById('fPayType').value, 
             s=document.getElementById('fBillStatus').value;
       let filtered = rawEvents;
-      
-      filtered = filtered.filter(e => e['Payment Type'] && e['Payment Type'].trim() !== '');
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
       if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
       if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
