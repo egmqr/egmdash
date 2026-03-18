@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -666,9 +668,22 @@
                 <div class="col-12 col-md-4"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
             </div>
         </div>
-      <div class="row g-2 mt-2" id="newPayInvUploadGroup"><div class="col-12"> <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label><div class="input-group input-group-sm"><input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control" placeholder="Paste link here..."><a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a></div></div></div>
-      <div class="row g-2 mt-2" id="newPayCheckUploadGroup"> <div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label><div class="input-group input-group-sm"><input type="url" name="checkUrl" id="newCheckUrl" class="form-control" placeholder="Paste link here..."><a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a></div></div></div>
+
+      <div class="row g-2 mt-2" id="newPayInvUploadGroup">
+    <div class="col-12">
+        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+        <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
     </div>
+</div>
+<div class="row g-2 mt-2" id="newPayCheckUploadGroup">
+    <div class="col-12">
+        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
+        <input type="url" name="checkUrl" id="newCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+    </div>
+</div>  
+       
+        
+      </div>
     <div class="row g-2 mb-2" id="newPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="newPaymentNotes" class="form-control form-control-sm"></div></div>
   </div>
   
@@ -796,6 +811,7 @@
   <form id="editForm" class="d-flex flex-column">
   <input type="hidden" id="editEventId" name="eventId">
   <input type="hidden" id="editOriginalDate" name="originalDate">
+  <input type="hidden" id="editFirestoreDocId" name="firestoreDocId">
   
   <div class="d-flex mb-4 gap-2 border-bottom pb-3" id="editTypeToggleBlock">
       <input type="radio" class="btn-check" name="entryMode" id="editTypeEvent" value="event" onchange="toggleEntryMode('edit')">
@@ -958,9 +974,29 @@
                 <div class="col-12 col-md-4"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
             </div>
         </div>
-        <div class="row g-2 mt-2" id="editPayInvUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label><div class="input-group input-group-sm"><input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control" placeholder="Paste link here..."><a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a></div><div id="editInvoiceLinkDisplay" class="mt-1"></div></div></div>
-        <div class="row g-2 mt-2" id="editPayCheckUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label><div class="input-group input-group-sm"><input type="url" name="checkUrl" id="editCheckUrl" class="form-control" placeholder="Paste link here..."><a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a></div><div id="editCheckLinkDisplay" class="mt-1"></div></div></div>
+
+<div class="row g-2 mt-2" id="editPayInvUploadGroup">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+            <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
+        </div>
+        <input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+        <div id="editInvoiceLinkDisplay" class="mt-1"></div>
+    </div>
 </div>
+<div class="row g-2 mt-2" id="editPayCheckUploadGroup">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
+            <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
+        </div>
+        <input type="url" name="checkUrl" id="editCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+        <div id="editCheckLinkDisplay" class="mt-1"></div>
+    </div>
+</div>
+      
+        </div>
     <div class="row g-2 mb-2" id="editPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="editPaymentNotes" class="form-control form-control-sm"></div></div>
   </div>
   
@@ -1001,6 +1037,69 @@
 </div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+<script>
+  // PASTE YOUR FIREBASE CONFIG HERE
+  const firebaseConfig = {
+    apiKey: "AIzaSyADWnFhu2xZwGQERFsxP-Xl_OlEaJ6N3NM",
+    authDomain: "event-database-78db0.firebaseapp.com",
+    projectId: "event-database-78db0",
+    storageBucket: "event-database-78db0.appspot.com",
+    messagingSenderId: "130288942287",
+    appId: "1:130288942287:web:68d24ee8d0ef1ae9408bba"
+  };
+  
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // 🔥 THE MAGIC FIX: Enable Local Caching so data loads in milliseconds
+  db.enablePersistence({ synchronizeTabs: true })
+    .catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn("Multiple tabs open, persistence can only be enabled in one.");
+        } else if (err.code == 'unimplemented') {
+            console.warn("The current browser does not support local caching.");
+        }
+    });
+
+  // Restored for Photobooth Generator Google Drive operations
+  async function callApi(payloadData, method = 'POST', isSilent = false) {
+    if (!isSilent) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'block';
+    }
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payloadData),
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const result = await response.json();
+      if (!isSilent) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+      }
+      if (result.status === "error") {
+          console.error("Backend error:", result.message);
+          alert("Server Error: " + result.message); 
+          return null;
+      }
+      return result;
+    } catch (error) {
+      if (!isSilent) {
+          const loader = document.getElementById('loader');
+          if (loader) loader.style.display = 'none';
+      }
+      console.error("Fetch/Network Error:", error);
+      return { error: error.message };
+    }
+  }
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
@@ -1030,25 +1129,35 @@
   let selectedExistingQrLogoId = "";
   let existingLogosCache = null;
 
+  // THE NEW FIREBASE GATEKEEPER
   function isAuthenticated() {
-      const exp = localStorage.getItem('egm_auth_exp');
-      if (exp && parseInt(exp) > Date.now()) return true;
-      localStorage.removeItem('egm_auth_token');
-      return false;
+      const user = firebase.auth().currentUser;
+      return user !== null;
   }
 
   function requireAuth(actionFunction) {
       if (isAuthenticated()) {
           actionFunction();
       } else {
+          // Force the modal to show
           pendingAuthAction = actionFunction;
           document.getElementById('authPassword').value = '';
           document.getElementById('authError').style.display = 'none';
-          new bootstrap.Modal(document.getElementById('authModal')).show();
+          
+          const authModalEl = document.getElementById('authModal');
+          const authModal = bootstrap.Modal.getInstance(authModalEl) || new bootstrap.Modal(authModalEl);
+          authModal.show();
+          
           setTimeout(() => document.getElementById('authPassword').focus(), 500);
       }
   }
 
+  // Optional but recommended: Listen for Firebase restoring the session on page refresh
+  firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+          console.log("Firebase Auth Restored securely.");
+      }
+  });
   async function submitAuth() {
       const pass = document.getElementById('authPassword').value;
       if (!pass) return;
@@ -1058,14 +1167,11 @@
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>VERIFYING...';
       btn.disabled = true;
 
-      const res = await callApi({ action: 'verifyPassword', password: pass }, 'POST'); 
-
-      btn.innerHTML = originalText;
-      btn.disabled = false;
-
-      if (res && res.success) {
-          localStorage.setItem('egm_auth_exp', Date.now() + 3600000); // 1 hr
-          localStorage.setItem('egm_auth_token', pass); 
+      try {
+          // THE MAGIC: Firebase verifies the password instantly
+          await firebase.auth().signInWithEmailAndPassword("admin@egm.com", pass);
+          
+          localStorage.setItem('egm_auth_exp', Date.now() + 3600000); // 1 hr expiration
           bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
           
           if (pendingAuthAction) {
@@ -1074,10 +1180,14 @@
                   pendingAuthAction = null;
               }, 300);
           }
-      } else {
-          document.getElementById('authError').innerText = res.error || "Incorrect Password!";
+      } catch (error) {
+          console.error("Auth Error:", error.message);
+          document.getElementById('authError').innerText = "Incorrect Password!";
           document.getElementById('authError').style.display = 'block';
       }
+
+      btn.innerHTML = originalText;
+      btn.disabled = false;
   }
 
   function toggleTheme() {
@@ -1199,81 +1309,9 @@
       select.value = currentVal; 
   }
 
-  async function callApi(payloadData, method = 'POST', isSilent = false) {
-    if (!isSilent) {
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.display = 'block';
-    }
-
-    try {
-      // Regardless of what parameter is passed, we MUST use POST
-      // to bypass the preflight CORS security check on Apps Script Web Apps.
-      // Your backend script parses the action out of the payload.
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify(payloadData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (!isSilent) {
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.display = 'none';
-      }
-
-      if (result.status === "error") {
-          console.error("Backend caught an error:", result.message);
-          alert("Server Error: " + result.message); 
-          return null;
-      }
-
-      return result;
-
-    } catch (error) {
-      if (!isSilent) {
-          const loader = document.getElementById('loader');
-          if (loader) loader.style.display = 'none';
-      }
-      console.error("Fetch/Network Error:", error);
-      return { error: error.message };
-    }
-  }
-
-  // Replace your existing forceSync function with this:
-async function forceSync() {
-  const icon = document.getElementById('syncIcon');
-  icon.classList.add('spin-anim');
-  document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
   
-  try {
-      // Route specifically to the 'getSheetData' action in your backend
-      const [eventsRes, paymentsRes] = await Promise.all([
-          callApi({action: 'getSheetData', sheetName: 'EVENTS'}, 'POST', true),
-          callApi({action: 'getSheetData', sheetName: 'PAYMENTS'}, 'POST', true)
-      ]);
-      
-      if (eventsRes && eventsRes.success && paymentsRes && paymentsRes.success) {
-          // Map the nested .data array to match the structure processFetchedData expects
-          const combined = { events: eventsRes.data, payments: paymentsRes.data };
-          localStorage.setItem('egm_dashboard_data', JSON.stringify(combined));
-          processFetchedData(combined);
-      } else {
-          alert("Manual Sync Error: " + (eventsRes?.error || paymentsRes?.error || "Unknown error"));
-      }
-  } catch (e) {
-      alert("Sync failed. Check connection.");
-  }
-  
-  icon.classList.remove('spin-anim');
-  document.getElementById('bgSyncIndicator').style.display = 'none';
-}
+
+
 
   function togglePaymentUI(prefix) {
       const type = document.getElementById(prefix + 'PaymentType').value;
@@ -1396,54 +1434,9 @@ async function forceSync() {
       }
   }
 
-  function processFetchedData(res) {
-      rawPayments = res.payments || [];
-      rawEvents = res.events.map(ev => {
-        const pay = rawPayments.find(p => p['Event ID'] === ev['Event ID']);
-        return {
-            ...ev, 
-            'Event Date': normalizeDateStr(ev['Event Date']),
-            'Payment Type': pay?pay['Payment Type']:'', 
-            'Billing Status': pay?pay['Billing Status']:'', 
-            'Billing Status Date': normalizeDateStr(pay?pay['Billing Status Date']:''),
-            'GR Number': pay?pay['GR Number']:'',
-            'Invoice Number': pay?pay['Invoice Number']:'',
-            'Email Thread': pay?pay['Email Thread Title']:'',
-            'Amount': pay?pay['Amount']:'',
-            'Payment Notes': pay?pay['Payment Notes']:'',
-            'Notes': pay?pay['Notes']:'',
-            'Invoice URL': pay?pay['Invoice URL']:'',
-            'Check URL': pay?pay['Check URL']:''
-        };
-      });
-      updateCrewFilterDropdown(rawEvents);
-      applyFilters();
-  }
 
-  async function fetchAllData() {
-  const cachedData = localStorage.getItem('egm_dashboard_data');
 
-  if (cachedData) {
-      processFetchedData(JSON.parse(cachedData));
-      document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
-  }
 
-  try {
-      // A direct GET request triggers your backend's doGet() function
-      const response = await fetch(API_URL);
-      const res = await response.json();
-
-      document.getElementById('bgSyncIndicator').style.display = 'none';
-
-      if(res && res.success) {
-          localStorage.setItem('egm_dashboard_data', JSON.stringify(res));
-          processFetchedData(res);
-      }
-  } catch (error) {
-      document.getElementById('bgSyncIndicator').style.display = 'none';
-      console.error("Initial Fetch Error:", error);
-  }
-}
 
   function clearFilters() {
     ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
@@ -1748,17 +1741,21 @@ async function forceSync() {
       let dateStr = p['Billing Status Date'] ? new Date(p['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
       let eventDateStr = p['Event Date'] ? new Date(p['Event Date']).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '-';
 
-     let actionHtml = '';
-      if (['Cash ORCR', 'Billing', 'Online Transfer ORCR', 'Check ORCR'].includes(p['Payment Type'])) {
-          if (p['Invoice URL']) {
-              actionHtml += `<a href="${p['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none shadow-sm"><i class="bi bi-box-arrow-up-right me-1"></i>View Inv</a> `;
-          }
-      }
-      if (['Check', 'Check AR', 'Check ORCR'].includes(p['Payment Type'])) {
-          if (p['Check URL']) {
-              actionHtml += `<a href="${p['Check URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none shadow-sm"><i class="bi bi-box-arrow-up-right me-1"></i>View Check</a> `;
-          }
-      }
+      let actionHtml = '';
+      
+      // If the payment type requires an invoice and the URL exists, show the View badge
+      if (['Cash ORCR', 'Billing', 'Online Transfer ORCR', 'Check ORCR'].includes(p['Payment Type'])) {
+          if (p['Invoice URL']) {
+              actionHtml += `<a href="${p['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 mb-1 text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>View Inv</a> `;
+          }
+      }
+      
+      // If the payment type requires a check and the URL exists, show the View badge
+      if (['Check', 'Check AR', 'Check ORCR'].includes(p['Payment Type'])) {
+          if (p['Check URL']) {
+              actionHtml += `<a href="${p['Check URL']}" target="_blank" class="badge bg-success text-white me-1 mb-1 text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>View Check</a>`;
+          }
+      }
 
       let amountStr = p['Amount'] ? `<br><strong class="text-success">₱${Number(p['Amount']).toLocaleString()}</strong>` : '';
 
@@ -1897,7 +1894,7 @@ async function forceSync() {
       const res = await callApi({ action: 'uploadPaymentDoc', base64Data: b64Data.base64, filename: b64Data.filename, eventId: eventId, docType: docType }, 'POST');
       
       ov.style.display = 'none';
-      if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+      if (res.success) {  } else { alert("Error: " + res.error); }
   }
 
   function openNewEventModal() {
@@ -1917,7 +1914,8 @@ async function forceSync() {
   }
 
   function openAddDayModal(id) {
-     const e = rawEvents.find(ev => String(ev['Event ID']) === String(id) && (!date || String(ev['Event Date']) === String(date)));
+     // FIX 1: Removed the broken 'date' reference
+     const e = rawEvents.find(ev => String(ev['Event ID']) === String(id));
      if(!e) return;
      
      const form = document.getElementById('addDayForm');
@@ -2013,7 +2011,11 @@ async function forceSync() {
      }
      
      document.getElementById('addDayEventId').value = id;
-     new bootstrap.Modal(document.getElementById('addDayModal')).show();
+     
+     // FIX 2: Safely get the existing modal instance or create a new one!
+     const modalEl = document.getElementById('addDayModal');
+     const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+     modal.show();
   }
 
   function openEditModal(id, date, fromCalendar = false) {
@@ -2057,9 +2059,22 @@ async function forceSync() {
     document.getElementById('editTypeWithPrints').checked = true;
     togglePhotoQRDetails('edit');
     
-    form.elements['eventId'].value = id;
+   form.elements['eventId'].value = id;
     form.elements['originalDate'].value = date || '';
+    form.elements['firestoreDocId'].value = e['Doc ID'] || '';
     form.elements['eventName'].value = e['Event Name'] || '';
+    
+    // THE FIX: Check if this is the Main Day and swap the delete button dynamically!
+    const isMainDay = (e['Doc ID'] === id) || (e['Doc ID'] === id + '_row0');
+    const deleteBtn = document.getElementById('editDeleteBtn');
+    
+    if (isMainDay) {
+        deleteBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> DELETE FULL PROJECT';
+        deleteBtn.onclick = () => deleteFullEvent(true);
+    } else {
+        deleteBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> DELETE THIS DAY ONLY';
+        deleteBtn.onclick = () => deleteFullEvent(false);
+    }
     
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
@@ -2143,12 +2158,20 @@ async function forceSync() {
         setTimeout(() => {
             if(e['Billing Status']) form.elements['billingStatus'].value = e['Billing Status'];
             
-            // Map directly to your new URL inputs
-            document.getElementById('editInvoiceUrl').value = e['Invoice URL'] || '';
-            document.getElementById('editCheckUrl').value = e['Check URL'] || '';
+            // THE FIX: Populate the new URL text inputs directly!
+            form.elements['invoiceUrl'].value = e['Invoice URL'] || '';
+            form.elements['checkUrl'].value = e['Check URL'] || '';
             
-            document.getElementById('editInvoiceLinkDisplay').innerHTML = e['Invoice URL'] ? `<a href="${e['Invoice URL']}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> View Current Invoice</a>` : '';
-            document.getElementById('editCheckLinkDisplay').innerHTML = e['Check URL'] ? `<a href="${e['Check URL']}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> View Current Check</a>` : '';
+            // Keep the clickable display links just in case you want to test them fast
+            const invDisplay = document.getElementById('editInvoiceLinkDisplay');
+            if (invDisplay) {
+                invDisplay.innerHTML = e['Invoice URL'] ? `<a href="${e['Invoice URL']}" target="_blank" class="small fw-bold text-success text-decoration-none mt-1 d-inline-block"><i class="bi bi-box-arrow-up-right"></i> Test Invoice Link</a>` : '';
+            }
+            
+            const chkDisplay = document.getElementById('editCheckLinkDisplay');
+            if (chkDisplay) {
+                chkDisplay.innerHTML = e['Check URL'] ? `<a href="${e['Check URL']}" target="_blank" class="small fw-bold text-success text-decoration-none mt-1 d-inline-block"><i class="bi bi-box-arrow-up-right"></i> Test Check Link</a>` : '';
+            }
         }, 10);
 
         form.elements['emailThread'].value = e['Email Thread'] || '';
@@ -2185,8 +2208,22 @@ async function forceSync() {
         }
     });
     
+    // Ensure the modal state matches Firebase Auth
     setEditFormState(isReadOnly);
-    new bootstrap.Modal(document.getElementById('editEventModal')).show();
+    
+    // THE FIX: If they try to open an edit modal from the list and aren't logged in,
+    // the requireAuth() used in the button will handle it. 
+    // If they come from the Calendar (View-Only mode), this shows the warning.
+    if (isReadOnly) {
+        document.getElementById('editAuthWarning').style.setProperty('display', 'flex', 'important');
+    } else {
+        document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
+    }
+    
+    // Safely get or create modal
+    const modalEl = document.getElementById('editEventModal');
+    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    modal.show();
   }
 
   function openUploadModal(eventId) {
@@ -2216,7 +2253,7 @@ async function forceSync() {
       }, 'POST');
       
       ov.style.display = 'none';
-      if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+      if (res.success) {  } else { alert("Error: " + res.error); }
     };
     reader.readAsDataURL(file);
   }
@@ -2229,26 +2266,42 @@ async function forceSync() {
 
     const res = await callApi({ action: 'deleteFile', eventId: eventId, fileId: fileId }, 'POST');
     ov.style.display = 'none';
-    if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+    if (res.success) {  } else { alert("Error: " + res.error); }
   }
   
-  async function deleteFullEvent() {
+  async function deleteFullEvent(isMain) {
       const eventId = document.getElementById('editEventId').value;
-      if (!eventId) return;
-      if(!confirm(`WARNING: Are you sure you want to permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) { return; }
+      const docId = document.getElementById('editFirestoreDocId').value;
       
-      const ov = document.getElementById('submitOverlay');
-      document.getElementById('overlayText').innerText = "Deleting Event...";
-      ov.style.display = 'flex';
+      if (!eventId || !docId) return;
       
-      const res = await callApi({ action: 'deleteEvent', eventId: eventId }, 'POST');
-      ov.style.display = 'none';
-      if (res && res.success) {
-          bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
-          fetchAllData();
+      if (isMain) {
+          if(!confirm(`WARNING: Permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) return;
+          
+          document.getElementById('submitOverlay').style.display = 'flex';
+          try {
+              // Batch delete: Finds every document that shares this Event ID and wipes them all
+              const snapshot = await db.collection("dashboard_events").where("eventId", "==", eventId).get();
+              const batch = db.batch();
+              snapshot.forEach(doc => batch.delete(doc.ref));
+              await batch.commit();
+          } catch (err) {
+              alert("Error deleting project: " + err.message);
+          }
       } else {
-          alert("Error: " + (res ? res.error : "Unknown"));
+          if(!confirm(`Delete this specific shooting day?\n\nThe rest of project #${eventId} will remain intact.`)) return;
+          
+          document.getElementById('submitOverlay').style.display = 'flex';
+          try {
+              // Single delete: Only targets this specific added day
+              await db.collection("dashboard_events").doc(docId).delete();
+          } catch (err) {
+              alert("Error deleting day: " + err.message);
+          }
       }
+      
+      document.getElementById('submitOverlay').style.display = 'none';
+      bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
   }
 
   function readFileAsBase64(file) {
@@ -2293,184 +2346,299 @@ async function forceSync() {
   }
 
   // --- EVENT FORM SUBMISSIONS ---
+  
   document.getElementById('eventForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
-    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
-    obj.manpower = fd.getAll('manpower');
-    
-    let rawServices = fd.getAll('services');
-    let finalServices = [];
-    rawServices.forEach(s => {
-        if (s === 'Photo') {
-            const count = document.getElementById('newSrvPhotoCount').value;
-            finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
-        } else if (s === 'Photo Souvenir Master') {
-            const isWithPrints = document.getElementById('newTypeWithPrints').checked;
-            if (isWithPrints) {
-                const booths = document.getElementById('newSrvPrintsBooth').value;
-                const count = document.getElementById('newSrvPrintsCount').value;
-                const size = document.getElementById('newSrvPrintsSize').value;
-                let details = [];
-                if(booths) details.push(`${booths} booth(s)`);
-                if(count) details.push(`${count} prints`);
-                if(size) details.push(size);
-                finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
-            } else {
-                const booths = document.getElementById('newSrvQRBooth').value;
-                finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
-            }
-        } else if (s === 'Frame Token') {
-            const count = document.getElementById('newSrvFrameCount').value;
-            finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
-        } else {
-            finalServices.push(s);
-        }
-    });
-    obj.services = finalServices;
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const ov = document.getElementById('submitOverlay');
+      const fd = new FormData(e.target);
+      const obj = Object.fromEntries(fd.entries());
+      
+      obj.manpower = fd.getAll('manpower');
+      let rawServices = fd.getAll('services');
+      let finalServices = [];
+      
+      rawServices.forEach(s => {
+          if (s === 'Photo') {
+              const count = document.getElementById('newSrvPhotoCount').value;
+              finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
+          } else if (s === 'Photo Souvenir Master') {
+              const isWithPrints = document.getElementById('newTypeWithPrints').checked;
+              if (isWithPrints) {
+                  const booths = document.getElementById('newSrvPrintsBooth').value;
+                  const count = document.getElementById('newSrvPrintsCount').value;
+                  const size = document.getElementById('newSrvPrintsSize').value;
+                  let details = [];
+                  if(booths) details.push(`${booths} booth(s)`);
+                  if(count) details.push(`${count} prints`);
+                  if(size) details.push(size);
+                  finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
+              } else {
+                  const booths = document.getElementById('newSrvQRBooth').value;
+                  finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
+              }
+          } else if (s === 'Frame Token') {
+              const count = document.getElementById('newSrvFrameCount').value;
+              finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
+          } else {
+              finalServices.push(s);
+          }
+      });
+      obj.services = finalServices;
 
-    const isLeave = document.getElementById('newTypeLeave').checked;
-    if (isLeave) {
-        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
-        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
-    } else {
-        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
-    }
-    
-    document.getElementById('overlayText').innerText = "Updating...";
-    btn.disabled=true; ov.style.display='flex';
-
-    document.getElementById('overlayText').innerText = "Saving Entry...";
-    const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
-    
-    ov.style.display='none'; btn.disabled=false;
-    if(res && res.success) { 
-        bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
-        e.target.reset(); 
-        document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
-        document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
-        toggleAvpFields(false, 'new'); 
-        togglePaymentUI('new');
-        fetchAllData(); 
-    } else alert("Error: " + (res?res.error:"Unknown"));
+      const isLeave = document.getElementById('newTypeLeave').checked;
+      if (isLeave) {
+          if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+          obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
+      } else {
+          if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+      }
+      
+      document.getElementById('overlayText').innerText = "Saving to Database...";
+      btn.disabled = true; ov.style.display = 'flex';
+      
+      try {
+          const newId = await getNextEventId();
+          await db.collection("dashboard_events").doc(newId).set({
+              eventId: newId,
+              eventName: obj.eventName || "",
+              eventDate: obj.eventDate || "",
+              eventVenue: obj.eventVenue || "",
+              venueLink: obj.venueLink || "",
+              eventStatus: obj.eventStatus || "Pencil Booked",
+              avpRequired: obj.avp === "true",
+              services: (obj.services || []).join(", "),
+              startTime: obj.startTime || "",
+              endTime: obj.endTime || "",
+              callTime: obj.callTime || "",
+              manpower: (obj.manpower || []).join(", "),
+              contactPerson: obj.contactPerson || "",
+              contactNumber: obj.contactNumber || "",
+              notes: obj.notes || "",
+              paymentType: obj.paymentType || "",
+              emailThread: obj.emailThread || "",
+              billingStatus: obj.billingStatus || "",
+              billingStatusDate: obj.billingStatusDate || "",
+              grNumber: obj.grNumber || "",
+              invoiceNumber: obj.invoiceNumber || "",
+              amount: obj.amount || "0",
+              paymentNotes: obj.paymentNotes || "",
+              invoiceUrl: obj.invoiceUrl || "",
+              checkUrl: obj.checkUrl || ""
+          });
+          
+          bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
+          e.target.reset(); 
+          document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
+          document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
+          toggleAvpFields(false, 'new'); togglePaymentUI('new');
+      } catch (err) {
+          alert("Error saving: " + err.message);
+      }
+      ov.style.display = 'none'; btn.disabled = false;
   };
 
   document.getElementById('addDayForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('addDaySubmitBtn'), ov = document.getElementById('submitOverlay');
-    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
-    obj.manpower = fd.getAll('manpower');
-    
-    let rawServices = fd.getAll('services');
-    let finalServices = [];
-    rawServices.forEach(s => {
-        if (s === 'Photo') {
-            const count = document.getElementById('addDaySrvPhotoCount').value;
-            finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
-        } else if (s === 'Photo Souvenir Master') {
-            const isWithPrints = document.getElementById('addDayTypeWithPrints').checked;
-            if (isWithPrints) {
-                const booths = document.getElementById('addDaySrvPrintsBooth').value;
-                const count = document.getElementById('addDaySrvPrintsCount').value;
-                const size = document.getElementById('addDaySrvPrintsSize').value;
-                let details = [];
-                if(booths) details.push(`${booths} booth(s)`);
-                if(count) details.push(`${count} prints`);
-                if(size) details.push(size);
-                finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
-            } else {
-                const booths = document.getElementById('addDaySrvQRBooth').value;
-                finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
-            }
-        } else if (s === 'Frame Token') {
-            const count = document.getElementById('addDaySrvFrameCount').value;
-            finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
-        } else {
-            finalServices.push(s);
-        }
-    });
-    obj.services = finalServices;
-    
-    document.getElementById('overlayText').innerText = "Adding Day...";
-    btn.disabled = true; ov.style.display='flex';
-    const res = await callApi({action:'addEventDay', formObject:obj}, 'POST');
-    
-    ov.style.display='none'; btn.disabled=false;
-    if(res && res.success) { 
-        bootstrap.Modal.getInstance(document.getElementById('addDayModal')).hide(); 
-        e.target.reset(); 
-        fetchAllData(); 
-    } else alert("Error: " + (res?res.error:"Unknown"));
+      e.preventDefault();
+      const btn = document.getElementById('addDaySubmitBtn'), ov = document.getElementById('submitOverlay');
+      const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+      obj.manpower = fd.getAll('manpower');
+      
+      let rawServices = fd.getAll('services');
+      let finalServices = [];
+      rawServices.forEach(s => {
+          if (s === 'Photo') {
+              const count = document.getElementById('addDaySrvPhotoCount').value;
+              finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
+          } else if (s === 'Photo Souvenir Master') {
+              const isWithPrints = document.getElementById('addDayTypeWithPrints').checked;
+              if (isWithPrints) {
+                  const booths = document.getElementById('addDaySrvPrintsBooth').value;
+                  const count = document.getElementById('addDaySrvPrintsCount').value;
+                  const size = document.getElementById('addDaySrvPrintsSize').value;
+                  let details = [];
+                  if(booths) details.push(`${booths} booth(s)`);
+                  if(count) details.push(`${count} prints`);
+                  if(size) details.push(size);
+                  finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
+              } else {
+                  const booths = document.getElementById('addDaySrvQRBooth').value;
+                  finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
+              }
+          } else if (s === 'Frame Token') {
+              const count = document.getElementById('addDaySrvFrameCount').value;
+              finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
+          } else {
+              finalServices.push(s);
+          }
+      });
+      obj.services = finalServices;
+      
+      document.getElementById('overlayText').innerText = "Adding Day...";
+      btn.disabled = true; ov.style.display='flex';
+      
+      try {
+          const baseDoc = await db.collection("dashboard_events").doc(obj.eventId).get();
+          const baseData = baseDoc.exists ? baseDoc.data() : {};
+          
+          // THE FIX: We create a unique Firestore Document ID, but KEEP the original eventId!
+          const uniqueDocId = obj.eventId + "_" + Date.now();
+          
+          await db.collection("dashboard_events").doc(uniqueDocId).set({
+              eventId: obj.eventId, // <-- Keeps it attached to egm0015
+              eventName: obj.eventName || baseData.eventName || "",
+              eventDate: obj.eventDate || "",
+              eventVenue: baseData.eventVenue || "",
+              venueLink: baseData.venueLink || "",
+              eventStatus: obj.eventStatus || "Pencil Booked",
+              avpRequired: baseData.avpRequired || false,
+              services: obj.services.length > 0 ? obj.services.join(", ") : (baseData.services || ""),
+              startTime: obj.startTime || "",
+              endTime: obj.endTime || "",
+              callTime: obj.callTime || "",
+              manpower: (obj.manpower || []).join(", "),
+              contactPerson: baseData.contactPerson || "",
+              contactNumber: baseData.contactNumber || "",
+              notes: baseData.notes || "",
+              paymentType: "", emailThread: "", billingStatus: "", billingStatusDate: "",
+              grNumber: "", invoiceNumber: "", amount: "0", paymentNotes: "", invoiceUrl: "", checkUrl: ""
+          });
+
+          bootstrap.Modal.getInstance(document.getElementById('addDayModal')).hide(); 
+          e.target.reset(); 
+      } catch (err) {
+          alert("Error adding day: " + err.message);
+      }
+      ov.style.display='none'; btn.disabled=false;
   };
 
   document.getElementById('editForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('editSubmitBtn'), ov = document.getElementById('submitOverlay');
-    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
-    obj.manpower = fd.getAll('manpower');
-    
-    let rawServices = fd.getAll('services');
-    let finalServices = [];
-    rawServices.forEach(s => {
-        if (s === 'Photo') {
-            const count = document.getElementById('editSrvPhotoCount').value;
-            finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
-        } else if (s === 'Photo Souvenir Master') {
-            const isWithPrints = document.getElementById('editTypeWithPrints').checked;
-            if (isWithPrints) {
-                const booths = document.getElementById('editSrvPrintsBooth').value;
-                const count = document.getElementById('editSrvPrintsCount').value;
-                const size = document.getElementById('editSrvPrintsSize').value;
-                let details = [];
-                if(booths) details.push(`${booths} booth(s)`);
-                if(count) details.push(`${count} prints`);
-                if(size) details.push(size);
-                finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
-            } else {
-                const booths = document.getElementById('editSrvQRBooth').value;
-                finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
-            }
-        } else if (s === 'Frame Token') {
-            const count = document.getElementById('editSrvFrameCount').value;
-            finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
-        } else {
-            finalServices.push(s);
-        }
-    });
-    obj.services = finalServices; 
-    
-    const isLeave = document.getElementById('editTypeLeave').checked;
-    if (isLeave) {
-        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
-        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
-    } else {
-        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
-    }
+      e.preventDefault();
+      const btn = document.getElementById('editSubmitBtn');
+      const ov = document.getElementById('submitOverlay');
+      const fd = new FormData(e.target);
+      const obj = Object.fromEntries(fd.entries());
+      
+      obj.manpower = fd.getAll('manpower');
+      let rawServices = fd.getAll('services');
+      let finalServices = [];
+      
+      rawServices.forEach(s => {
+          if (s === 'Photo') {
+              const count = document.getElementById('editSrvPhotoCount').value;
+              finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
+          } else if (s === 'Photo Souvenir Master') {
+              const isWithPrints = document.getElementById('editTypeWithPrints').checked;
+              if (isWithPrints) {
+                  const booths = document.getElementById('editSrvPrintsBooth').value;
+                  const count = document.getElementById('editSrvPrintsCount').value;
+                  const size = document.getElementById('editSrvPrintsSize').value;
+                  let details = [];
+                  if(booths) details.push(`${booths} booth(s)`);
+                  if(count) details.push(`${count} prints`);
+                  if(size) details.push(size);
+                  finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
+              } else {
+                  const booths = document.getElementById('editSrvQRBooth').value;
+                  finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
+              }
+          } else if (s === 'Frame Token') {
+              const count = document.getElementById('editSrvFrameCount').value;
+              finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
+          } else {
+              finalServices.push(s);
+          }
+      });
+      obj.services = finalServices; 
+      
+      const isLeave = document.getElementById('editTypeLeave').checked;
+      if (isLeave) {
+          if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+          obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
+      } else {
+          if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+      }
 
-    document.getElementById('overlayText').innerText = "Saving Entry...";
-    btn.disabled = true; ov.style.display='flex';
-    
-    const chkFile = document.getElementById(prefix + 'CheckFile');
-    const existingChk = document.getElementById('editExistingCheckUrl').value;
-    if (chkFile && chkFile.files[0]) {
-        if (existingChk && !confirm("You have selected a new Check photo. This will overwrite the existing Check link. Continue?")) {
-            btn.disabled = false; ov.style.display = 'none'; return;
-        }
-        let b64 = await readFileAsBase64(chkFile.files[0]);
-        obj.checkBase64 = b64.base64; obj.checkFilename = b64.filename;
-    }
-    
-    document.getElementById('overlayText').innerText = "Updating...";
-    const res = await callApi({action:'editEvent', formObject: obj}, 'POST');
-    
-    ov.style.display='none'; btn.disabled=false;
-    if(res && res.success) { 
-        bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
-        fetchAllData(); 
-    } else alert("Error: " + (res?res.error:"Unknown"));
+      document.getElementById('overlayText').innerText = "Updating Database...";
+      btn.disabled = true; ov.style.display = 'flex';
+
+    try {
+          // THE FIX: We use obj.firestoreDocId so it updates the exact day you are looking at!
+          await db.collection("dashboard_events").doc(obj.firestoreDocId).update({
+              eventName: obj.eventName || "",
+              eventDate: obj.eventDate || "",
+              eventVenue: obj.eventVenue || "",
+              venueLink: obj.venueLink || "",
+              eventStatus: obj.eventStatus || "Pencil Booked",
+              avpRequired: obj.avp === "true",
+              services: (obj.services || []).join(", "),
+              startTime: obj.startTime || "",
+              endTime: obj.endTime || "",
+              callTime: obj.callTime || "",
+              manpower: (obj.manpower || []).join(", "),
+              contactPerson: obj.contactPerson || "",
+              contactNumber: obj.contactNumber || "",
+              notes: obj.notes || "",
+              paymentType: obj.paymentType || "",
+              emailThread: obj.emailThread || "",
+              billingStatus: obj.billingStatus || "",
+              billingStatusDate: obj.billingStatusDate || "",
+              grNumber: obj.grNumber || "",
+              invoiceNumber: obj.invoiceNumber || "",
+              amount: obj.amount || "0",
+              paymentNotes: obj.paymentNotes || "",
+              invoiceUrl: obj.invoiceUrl || "",
+              checkUrl: obj.checkUrl || ""
+          });
+          bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
+      } catch (err) {
+          alert("Error updating: " + err.message);
+      }
+      ov.style.display = 'none'; btn.disabled = false;
   };
 
+  window.onload = () => {
+    localStorage.removeItem('egm_auth_exp'); 
+      const stickyHeaderEl = document.querySelector('.sticky-header');
+      if (stickyHeaderEl && window.ResizeObserver) {
+          new ResizeObserver(entries => {
+              for (let entry of entries) {
+                  document.documentElement.style.setProperty('--sticky-top', entry.target.offsetHeight + 'px');
+              }
+          }).observe(stickyHeaderEl);
+      }
+      
+      if (window.innerWidth >= 768) {
+          document.getElementById('filterCollapse').classList.add('show');
+      }
 
+      setTimeout(() => { fetchBoothEvents(); fetchExistingLogos(); }, 1500);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const activeTab = urlParams.get('tab') || 'calendar';
+      
+      if (activeTab === 'payments') {
+          if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
+          if(urlParams.get('grInv')) document.getElementById('fGrInv').value = urlParams.get('grInv');
+          if(urlParams.get('type')) {
+              document.getElementById('fPayType').value = urlParams.get('type');
+              updateFilterStatuses(); 
+          }
+          if(urlParams.get('status')) document.getElementById('fBillStatus').value = urlParams.get('status');
+      }
+      
+      currentTab = activeTab; 
+      setTimeout(() => handleTabClick(activeTab), 400); 
+  };
+
+  // We disabled manual syncing, but this stops the sync button from throwing an error
+  function forceSync() {
+      const icon = document.getElementById('syncIcon');
+      if(icon) {
+          icon.classList.add('spin-anim');
+          setTimeout(() => icon.classList.remove('spin-anim'), 1000);
+      }
+  }
   // ==============================================================================
   // PHOTOBOOTH GENERATOR FRONTEND INTEGRATION
   // ==============================================================================
@@ -2615,7 +2783,7 @@ async function forceSync() {
       allFetchedBoothEvents = res; 
       if (currentBoothMode === 'edit' || currentBoothMode === 'view') renderBoothDropdown(allFetchedBoothEvents);
   }
-
+ 
   function renderBoothDropdown(eventsArray) {
       const select = document.getElementById('boothEventSelect');
       const currentVal = select.value; 
@@ -3007,47 +3175,89 @@ async function forceSync() {
       }
       
       currentTab = activeTab; 
-      fetchAllData();
-      
       setTimeout(() => handleTabClick(activeTab), 400); 
   };
-  async function pollForUpdates() {
-      // Don't poll if the user is currently editing a form to prevent interruptions
-      const editModal = document.getElementById('editEventModal');
-      if (editModal && editModal.classList.contains('show')) return;
 
-      try {
-          // Use fetch directly to avoid triggering the visual loader
-          const response = await fetch(API_URL, {
-              method: 'POST',
-              body: JSON.stringify({ action: 'checkUpdate' })
-          });
-          
-          const res = await response.json();
-
-          if (res && res.success) {
-              // If we have a local timestamp, and the server timestamp is newer
-              if (localLastUpdate !== "0" && res.lastUpdate !== localLastUpdate) {
-                  console.log("Remote change detected! Syncing dashboard...");
-                  
-                  // Spin the sync icon to let the user know data is refreshing
-                  const icon = document.getElementById('syncIcon');
-                  if(icon) icon.classList.add('spin-anim');
-                  
-                  await fetchAllData();
-                  
-                  if(icon) icon.classList.remove('spin-anim');
-              }
-              // Update local timestamp
-              localLastUpdate = res.lastUpdate;
-          }
-      } catch (e) {
-          console.error("Polling error: ", e);
+  // We disabled manual syncing, but this stops the button from causing an error
+  function forceSync() {
+      const icon = document.getElementById('syncIcon');
+      if(icon) {
+          icon.classList.add('spin-anim');
+          setTimeout(() => icon.classList.remove('spin-anim'), 1000);
       }
   }
+// THE MAGIC REAL-TIME LISTENER
+db.collection("dashboard_events").onSnapshot((snapshot) => {
+    document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+    
+    const mappedEvents = [];
+    
+    snapshot.forEach((doc) => {
+        // Fallback to empty object if data is corrupted
+        const d = doc.data() || {}; 
+        
+        // Bulletproof Armor: Force every field to be a safe String() so .toLowerCase() never crashes
+        mappedEvents.push({
+            'Doc ID': String(doc.id),
+            'Event ID': String(d.eventId || ""),
+            'Event Name': String(d.eventName || ""),
+            'Event Date': String(d.eventDate || ""),
+            'Event Venue': String(d.eventVenue || ""),
+            'Event Venue Link': String(d.venueLink || ""),
+            'Event Status': String(d.eventStatus || ""),
+            'AVP Required': (d.avpRequired === true || String(d.avpRequired).toUpperCase() === "TRUE") ? "TRUE" : "FALSE",
+            'Services': String(d.services || ""),
+            'Event Start Time': String(d.startTime || ""),
+            'Event End Time': String(d.endTime || ""),
+            'Call Time': String(d.callTime || ""),
+            'Manpower': String(d.manpower || ""),
+            'Contact Person': String(d.contactPerson || ""),
+            'Contact Number': String(d.contactNumber || ""),
+            'Event Notes': String(d.notes || ""),
+            'Payment Type': String(d.paymentType || ""),
+            'Email Thread': String(d.emailThread || ""),
+            'Billing Status': String(d.billingStatus || ""),
+            'Billing Status Date': String(d.billingStatusDate || ""),
+            'GR Number': String(d.grNumber || ""),
+            'Invoice Number': String(d.invoiceNumber || ""),
+            'Amount': String(d.amount || "0"),
+            'Payment Notes': String(d.paymentNotes || ""),
+            'Invoice URL': String(d.invoiceUrl || ""),
+            'Check URL': String(d.checkUrl || "")
+        });
+    });
 
-  // Start checking every 8 seconds (8000 milliseconds)
-  setInterval(pollForUpdates, 8000);
+    rawEvents = mappedEvents;
+    
+    // Safely attempt to render the UI
+    try {
+        updateCrewFilterDropdown(rawEvents);
+        applyFilters();
+    } catch(err) {
+        console.error("UI Render Error:", err);
+        alert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
+    }
+    
+    // Hide the initial full-page loader
+    const mainLoader = document.getElementById('loader');
+    if (mainLoader) mainLoader.style.display = 'none';
+    
+    setTimeout(() => { document.getElementById('bgSyncIndicator').style.display = 'none'; }, 500);
+
+}, (error) => {
+    // If Firebase blocks the connection, it will scream at us here!
+    console.error("Firestore Security Error:", error);
+    alert("Firebase Connection Blocked! Check Firestore Rules. Error: " + error.message);
+});
+
+// Helper to get the next Event ID (egm0015)
+async function getNextEventId() {
+    const snapshot = await db.collection("dashboard_events").orderBy("eventId", "desc").limit(1).get();
+    if (snapshot.empty) return "egm0001";
+    const lastId = snapshot.docs[0].data().eventId;
+    const num = parseInt(lastId.replace('egm', ''), 10);
+    return 'egm' + ('0000' + (num + 1)).slice(-4);
+}
 </script>
 </body>
 </html>
