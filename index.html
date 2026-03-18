@@ -1185,7 +1185,7 @@
       select.value = currentVal; 
   }
 
-  async function callApi(payload, method='GET', isSilent=false) {
+ async function callApi(payload, method='GET', isSilent=false) {
     if(!isSilent) document.getElementById('loader').style.display='block';
     
     let u = new URL(API_URL); 
@@ -1202,13 +1202,15 @@
                 payload.password = localStorage.getItem('egm_auth_token') || '';
             }
             
-            // THE ULTIMATE FIX: 
-            // 1. NO custom headers block at all. 
-            // 2. redirect: 'follow' forces the browser to ride Google's internal 302 redirect.
+            // THE FORM WRAPPER: This absolutely prevents the CORS error.
             const response = await fetch(API_URL, {
                 method: 'POST',
-                redirect: 'follow', 
-                body: JSON.stringify(payload)
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    'data': JSON.stringify(payload)
+                })
             });
 
             const text = await response.text(); 
@@ -1217,9 +1219,9 @@
                 if(!isSilent) document.getElementById('loader').style.display='none'; 
                 return data;
             } catch (jsonErr) {
-                console.error("CRASH: Google returned HTML instead of JSON:", text);
+                console.error("Backend Error Response:", text);
                 if(!isSilent) document.getElementById('loader').style.display='none';
-                return { success: false, error: "Google intercepted the save request." };
+                return { success: false, error: "Backend crash. See console for details." };
             }
         }
     } catch(e) {
