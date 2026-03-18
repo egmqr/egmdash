@@ -1233,31 +1233,34 @@
     }
   }
 
-  async function forceSync() {
-      const icon = document.getElementById('syncIcon');
-      icon.classList.add('spin-anim');
-      document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+  // Replace your existing forceSync function with this:
+async function forceSync() {
+  const icon = document.getElementById('syncIcon');
+  icon.classList.add('spin-anim');
+  document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+  
+  try {
+      // Route specifically to the 'getSheetData' action in your backend
+      const [eventsRes, paymentsRes] = await Promise.all([
+          callApi({action: 'getSheetData', sheetName: 'EVENTS'}, 'POST', true),
+          callApi({action: 'getSheetData', sheetName: 'PAYMENTS'}, 'POST', true)
+      ]);
       
-      try {
-          const [eventsRes, paymentsRes] = await Promise.all([
-              callApi({action: 'getEvents'}, 'GET', true),
-              callApi({action: 'getPayments'}, 'GET', true)
-          ]);
-          
-          if (!eventsRes.error && !paymentsRes.error) {
-              const combined = { events: eventsRes, payments: paymentsRes };
-              localStorage.setItem('egm_dashboard_data', JSON.stringify(combined));
-              processFetchedData(combined);
-          } else {
-              alert("Manual Sync Error: " + (eventsRes.error || paymentsRes.error || "Unknown"));
-          }
-      } catch (e) {
-          alert("Sync failed. Check connection.");
+      if (eventsRes && eventsRes.success && paymentsRes && paymentsRes.success) {
+          // Map the nested .data array to match the structure processFetchedData expects
+          const combined = { events: eventsRes.data, payments: paymentsRes.data };
+          localStorage.setItem('egm_dashboard_data', JSON.stringify(combined));
+          processFetchedData(combined);
+      } else {
+          alert("Manual Sync Error: " + (eventsRes?.error || paymentsRes?.error || "Unknown error"));
       }
-      
-      icon.classList.remove('spin-anim');
-      document.getElementById('bgSyncIndicator').style.display = 'none';
+  } catch (e) {
+      alert("Sync failed. Check connection.");
   }
+  
+  icon.classList.remove('spin-anim');
+  document.getElementById('bgSyncIndicator').style.display = 'none';
+}
 
   function togglePaymentUI(prefix) {
       const type = document.getElementById(prefix + 'PaymentType').value;
@@ -1411,23 +1414,29 @@
   }
 
   async function fetchAllData() {
-    const cachedData = localStorage.getItem('egm_dashboard_data');
-    let isSilent = false;
+  const cachedData = localStorage.getItem('egm_dashboard_data');
 
-    if (cachedData) {
-        processFetchedData(JSON.parse(cachedData));
-        isSilent = true; 
-        document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
-    }
-
-    const res = await callApi({action:'getAllData'}, 'GET', isSilent);
-    document.getElementById('bgSyncIndicator').style.display = 'none';
-
-    if(res && res.events) {
-        localStorage.setItem('egm_dashboard_data', JSON.stringify(res));
-        processFetchedData(res);
-    }
+  if (cachedData) {
+      processFetchedData(JSON.parse(cachedData));
+      document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
   }
+
+  try {
+      // A direct GET request triggers your backend's doGet() function
+      const response = await fetch(API_URL);
+      const res = await response.json();
+
+      document.getElementById('bgSyncIndicator').style.display = 'none';
+
+      if(res && res.success) {
+          localStorage.setItem('egm_dashboard_data', JSON.stringify(res));
+          processFetchedData(res);
+      }
+  } catch (error) {
+      document.getElementById('bgSyncIndicator').style.display = 'none';
+      console.error("Initial Fetch Error:", error);
+  }
+}
 
   function clearFilters() {
     ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
