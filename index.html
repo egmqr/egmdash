@@ -992,6 +992,7 @@
 
 <script>
   let pendingAuthAction = null;
+  // This is your permanently designated Apps Script URL
   const API_URL = 'https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec';
   
   let rawEvents = [], rawPayments = [], currentTab = 'calendar';
@@ -1185,64 +1186,52 @@
       select.value = currentVal; 
   }
 
- async function callApi(payloadData) {
-  // Using your assigned production backend URL
-  const url = "https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec";
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
-      },
-      body: JSON.stringify(payloadData),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  async function callApi(payloadData, method = 'POST', isSilent = false) {
+    if (!isSilent) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'block';
     }
 
-    const result = await response.json();
+    try {
+      // Regardless of what parameter is passed, we MUST use POST
+      // to bypass the preflight CORS security check on Apps Script Web Apps.
+      // Your backend script parses the action out of the payload.
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify(payloadData),
+      });
 
-    if (result.status === "error") {
-        console.error("Backend caught an error:", result.message);
-        alert("Server Error: " + result.message); 
-        return null;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (!isSilent) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+      }
+
+      if (result.status === "error") {
+          console.error("Backend caught an error:", result.message);
+          alert("Server Error: " + result.message); 
+          return null;
+      }
+
+      return result;
+
+    } catch (error) {
+      if (!isSilent) {
+          const loader = document.getElementById('loader');
+          if (loader) loader.style.display = 'none';
+      }
+      console.error("Fetch/Network Error:", error);
+      return { error: error.message };
     }
-
-    console.log("API Call Successful:", result);
-    return result;
-
-  } catch (error) {
-    console.error("Fetch/Network Error:", error);
   }
-}
-
-// Form submission handler
-document.getElementById("yourFormId").onsubmit = async function(event) {
-    event.preventDefault(); 
-    
-    // 1. EXTRACT VALUES FROM YOUR HTML FORM
-    // Replace "eventNameInput", "paymentStatusInput", etc., with the actual IDs from your HTML tags
-    const eventNameValue = document.getElementById("eventNameInput").value;
-    const paymentStatusValue = document.getElementById("paymentStatusInput").value;
-    const assignedCrewValue = document.getElementById("crewInput").value;
-    
-    // 2. PACKAGE THE DATA
-    const dataToSend = { 
-      action: "submitData",
-      
-      // 3. INCLUDE THE EXTRACTED VALUES HERE
-      // The word on the left is the label sent to Google Sheets
-      // The variable on the right holds the data you just extracted
-      eventName: eventNameValue,
-      paymentStatus: paymentStatusValue,
-      assignedCrew: assignedCrewValue
-    };
-    
-    // Send it to the backend
-    await callApi(dataToSend);
-};
 
   async function forceSync() {
       const icon = document.getElementById('syncIcon');
