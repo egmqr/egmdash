@@ -1190,11 +1190,10 @@
     
     let u = new URL(API_URL); 
     
-    // We intentionally REMOVE the headers block for POST requests.
-    // Specifying Content-Type triggers a CORS "OPTIONS" preflight which Google automatically blocks.
     let fetchOptions = { 
         method: method,
-        redirect: "follow" // Crucial: Forces the browser to follow Google's 302 redirects
+        // This exact header bypasses Google's CORS "OPTIONS" preflight block:
+        headers: { "Content-Type": "text/plain;charset=utf-8" } 
     };
 
     if(method === 'GET') {
@@ -1208,21 +1207,14 @@
 
     try {
         const r = await fetch(u, fetchOptions);
-        const text = await r.text(); // Catch Google's hidden HTML crash pages
-        
-        try {
-            const d = JSON.parse(text); 
-            if(!isSilent) document.getElementById('loader').style.display='none'; 
-            return d;
-        } catch (jsonErr) {
-            console.error("Google returned an HTML error instead of JSON:", text);
-            if(!isSilent) document.getElementById('loader').style.display='none';
-            return { success: false, error: "Backend crash. Check Google Sheets headers or Folder permissions." };
-        }
+        const d = await r.json(); 
+        if(!isSilent) document.getElementById('loader').style.display='none'; 
+        return d;
     } catch(e) {
         if(!isSilent) document.getElementById('loader').style.display='none';
         console.error("API Call Failed", e);
-        return { success: false, error: "Network Error: " + e.message };
+        alert("Network Error: Make sure your API_URL is correct and you aren't running this from a local file:/// address.");
+        return { success: false, error: e.toString() };
     }
   }
 
