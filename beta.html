@@ -1127,21 +1127,25 @@
   let selectedExistingQrLogoId = "";
   let existingLogosCache = null;
 
-  // 1. We now let Firebase handle the persistent login state automatically
+  // THE NEW FIREBASE GATEKEEPER
   function isAuthenticated() {
-      // Only return true if Firebase explicitly confirms the user is logged in
-      return firebase.auth().currentUser !== null;
+      const user = firebase.auth().currentUser;
+      return user !== null;
   }
 
   function requireAuth(actionFunction) {
       if (isAuthenticated()) {
           actionFunction();
       } else {
-          // If not logged into Firebase, show the login modal!
+          // Force the modal to show
           pendingAuthAction = actionFunction;
           document.getElementById('authPassword').value = '';
           document.getElementById('authError').style.display = 'none';
-          new bootstrap.Modal(document.getElementById('authModal')).show();
+          
+          const authModalEl = document.getElementById('authModal');
+          const authModal = bootstrap.Modal.getInstance(authModalEl) || new bootstrap.Modal(authModalEl);
+          authModal.show();
+          
           setTimeout(() => document.getElementById('authPassword').focus(), 500);
       }
   }
@@ -2202,7 +2206,17 @@
         }
     });
     
+    // Ensure the modal state matches Firebase Auth
     setEditFormState(isReadOnly);
+    
+    // THE FIX: If they try to open an edit modal from the list and aren't logged in,
+    // the requireAuth() used in the button will handle it. 
+    // If they come from the Calendar (View-Only mode), this shows the warning.
+    if (isReadOnly) {
+        document.getElementById('editAuthWarning').style.setProperty('display', 'flex', 'important');
+    } else {
+        document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
+    }
     
     // Safely get or create modal
     const modalEl = document.getElementById('editEventModal');
@@ -2582,6 +2596,7 @@
   };
 
   window.onload = () => {
+    localStorage.removeItem('egm_auth_exp'); 
       const stickyHeaderEl = document.querySelector('.sticky-header');
       if (stickyHeaderEl && window.ResizeObserver) {
           new ResizeObserver(entries => {
