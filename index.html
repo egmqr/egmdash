@@ -1914,6 +1914,12 @@ async function forceSync() {
 
       const res = await callApi({ action: 'uploadPaymentDoc', base64Data: b64Data.base64, filename: b64Data.filename, eventId: eventId, docType: docType }, 'POST');
       
+      if (res && res.success) { 
+          document.getElementById('overlayText').innerText = "Syncing Dashboard...";
+          await forceSync(); 
+      } else {
+          alert("Error: " + (res ? res.error : "Unknown"));
+      }
       ov.style.display = 'none';
       if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
   }
@@ -2234,21 +2240,32 @@ async function forceSync() {
          action: 'uploadFile', base64: ev.target.result, filename: file.name, eventId: eventId, label: label
       }, 'POST');
       
+      if (res && res.success) { 
+          document.getElementById('overlayText').innerText = "Syncing Dashboard...";
+          await forceSync(); 
+      } else {
+          alert("Error: " + (res ? res.error : "Unknown"));
+      }
       ov.style.display = 'none';
-      if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
-    };
+  };
     reader.readAsDataURL(file);
   }
 
   async function deleteFile(eventId, fileId) {
-    if(!confirm("Are you sure you want to permanently delete this file? This cannot be undone.")) return;
-    const ov = document.getElementById('submitOverlay');
-    document.getElementById('overlayText').innerText = "Deleting File...";
-    ov.style.display = 'flex';
+      if(!confirm("Are you sure you want to permanently delete this file? This cannot be undone.")) return;
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = "Deleting File...";
+      ov.style.display = 'flex';
 
-    const res = await callApi({ action: 'deleteFile', eventId: eventId, fileId: fileId }, 'POST');
-    ov.style.display = 'none';
-    if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+      const res = await callApi({ action: 'deleteFile', eventId: eventId, fileId: fileId }, 'POST');
+      
+      if (res && res.success) { 
+          document.getElementById('overlayText').innerText = "Syncing Dashboard...";
+          await forceSync(); 
+      } else {
+          alert("Error: " + (res ? res.error : "Unknown"));
+      }
+      ov.style.display = 'none';
   }
   
   async function deleteFullEvent() {
@@ -2261,13 +2278,15 @@ async function forceSync() {
       ov.style.display = 'flex';
       
       const res = await callApi({ action: 'deleteEvent', eventId: eventId }, 'POST');
-      ov.style.display = 'none';
+      
       if (res && res.success) {
+          document.getElementById('overlayText').innerText = "Syncing Dashboard...";
+          await forceSync();
           bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
-          fetchAllData();
       } else {
           alert("Error: " + (res ? res.error : "Unknown"));
       }
+      ov.style.display = 'none';
   }
 
   function readFileAsBase64(file) {
@@ -2374,16 +2393,20 @@ async function forceSync() {
     document.getElementById('overlayText').innerText = "Saving Entry...";
     const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
     
-    ov.style.display='none'; btn.disabled=false;
     if(res && res.success) { 
+        document.getElementById('overlayText').innerText = "Syncing Dashboard...";
+        await forceSync();
         bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
         e.target.reset(); 
         document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
         document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
         toggleAvpFields(false, 'new'); 
         togglePaymentUI('new');
-        fetchAllData(); 
-    } else alert("Error: " + (res?res.error:"Unknown"));
+    } else {
+        alert("Error: " + (res ? res.error : "Unknown"));
+    }
+    ov.style.display='none'; 
+    btn.disabled=false;
   };
 
   document.getElementById('addDayForm').onsubmit = async (e) => {
@@ -2426,12 +2449,16 @@ async function forceSync() {
     btn.disabled = true; ov.style.display='flex';
     const res = await callApi({action:'addEventDay', formObject:obj}, 'POST');
     
-    ov.style.display='none'; btn.disabled=false;
     if(res && res.success) { 
+        document.getElementById('overlayText').innerText = "Syncing Dashboard...";
+        await forceSync();
         bootstrap.Modal.getInstance(document.getElementById('addDayModal')).hide(); 
         e.target.reset(); 
-        fetchAllData(); 
-    } else alert("Error: " + (res?res.error:"Unknown"));
+    } else {
+        alert("Error: " + (res ? res.error : "Unknown"));
+    }
+    ov.style.display='none'; 
+    btn.disabled=false;
   };
 
   document.getElementById('editForm').onsubmit = async (e) => {
