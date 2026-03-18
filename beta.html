@@ -1053,6 +1053,17 @@
   
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+
+  // 🔥 THE MAGIC FIX: Enable Local Caching so data loads in milliseconds
+  db.enablePersistence({ synchronizeTabs: true })
+    .catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn("Multiple tabs open, persistence can only be enabled in one.");
+        } else if (err.code == 'unimplemented') {
+            console.warn("The current browser does not support local caching.");
+        }
+    });
+
   // Restored for Photobooth Generator Google Drive operations
   async function callApi(payloadData, method = 'POST', isSilent = false) {
     if (!isSilent) {
@@ -1878,7 +1889,7 @@
       const res = await callApi({ action: 'uploadPaymentDoc', base64Data: b64Data.base64, filename: b64Data.filename, eventId: eventId, docType: docType }, 'POST');
       
       ov.style.display = 'none';
-      if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+      if (res.success) {  } else { alert("Error: " + res.error); }
   }
 
   function openNewEventModal() {
@@ -2227,7 +2238,7 @@
       }, 'POST');
       
       ov.style.display = 'none';
-      if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+      if (res.success) {  } else { alert("Error: " + res.error); }
     };
     reader.readAsDataURL(file);
   }
@@ -2240,7 +2251,7 @@
 
     const res = await callApi({ action: 'deleteFile', eventId: eventId, fileId: fileId }, 'POST');
     ov.style.display = 'none';
-    if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+    if (res.success) {  } else { alert("Error: " + res.error); }
   }
   
   async function deleteFullEvent(isMain) {
