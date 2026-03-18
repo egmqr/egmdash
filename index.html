@@ -2474,19 +2474,8 @@ async function forceSync() {
         if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
     }
 
-    document.getElementById('overlayText').innerText = "Compressing Files...";
-    btn.disabled=true; ov.style.display='flex';
-
-    const prefix = 'edit';
-    const invFile = document.getElementById(prefix + 'InvoiceFile');
-    const existingInv = document.getElementById('editExistingInvoiceUrl').value;
-    if (invFile && invFile.files[0]) {
-        if (existingInv && !confirm("You have selected a new Invoice document. This will overwrite the existing Invoice link. Continue?")) {
-            btn.disabled = false; ov.style.display = 'none'; return;
-        }
-        let b64 = await readFileAsBase64(invFile.files[0]);
-        obj.invoiceBase64 = b64.base64; obj.invoiceFilename = b64.filename;
-    }
+    document.getElementById('overlayText').innerText = "Saving Entry...";
+    btn.disabled = true; ov.style.display='flex';
     
     const chkFile = document.getElementById(prefix + 'CheckFile');
     const existingChk = document.getElementById('editExistingCheckUrl').value;
