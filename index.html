@@ -1185,47 +1185,51 @@
       select.value = currentVal; 
   }
 
-  async function callApi(payload, method='GET', isSilent=false) {
-      if(!isSilent) document.getElementById('loader').style.display='block';
-      
-      const cleanUrl = API_URL.trim();
-      let u = new URL(cleanUrl); 
+ async function callApi(payloadData) {
+  // Using your assigned production backend URL
+  const url = "https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec";
 
-      try {
-          let response;
-          if(method === 'GET') {
-              Object.keys(payload).forEach(k => u.searchParams.append(k, payload[k]));
-              response = await fetch(u);
-              const data = await response.json();
-              if(!isSilent) document.getElementById('loader').style.display='none';
-              return data;
-          } else {
-              // Add auth to payload before sending
-              if (payload.action !== 'verifyPassword') {
-                  payload.password = localStorage.getItem('egm_auth_token') || '';
-              }
-              
-              // To properly handle CORS with Google Apps Script and actually read the response:
-              // We use text/plain so it qualifies as a "simple request" to avoid the preflight OPTIONS,
-              // but we do NOT use no-cors, which allows us to wait for completion and read the result.
-              response = await fetch(cleanUrl, {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'text/plain;charset=utf-8'
-                  },
-                  body: JSON.stringify(payload)
-              });
-              
-              const data = await response.json();
-              if(!isSilent) document.getElementById('loader').style.display='none'; 
-              return data;
-          }
-      } catch(e) {
-          if(!isSilent) document.getElementById('loader').style.display='none';
-          console.error("API Call Failed", e);
-          return { success: false, error: "Network Error: Check console." };
-      }
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      // This is required to bypass the CORS preflight check
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify(payloadData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.status === "error") {
+        console.error("Backend caught an error:", result.message);
+        alert("Server Error: " + result.message); 
+        return null;
+    }
+
+    console.log("API Call Successful:", result);
+    return result;
+
+  } catch (error) {
+    console.error("Fetch/Network Error:", error);
   }
+}
+
+// Form submission handler
+document.getElementById("yourFormId").onsubmit = async function(event) {
+    event.preventDefault(); 
+    
+    const dataToSend = { 
+      action: "submitData",
+      // Include your actual form fields here
+    };
+    
+    await callApi(dataToSend);
+};
 
   async function forceSync() {
       const icon = document.getElementById('syncIcon');
