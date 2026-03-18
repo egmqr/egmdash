@@ -285,7 +285,16 @@
         <div class="row g-2 align-items-end">
           <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">GR / Invoice #</span><input type="text" id="fGrInv" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
-          <div class="col-6 col-md-2"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="updateFilterStatuses(); applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Cash ORCR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="updateFilterStatuses(); applyFilters()">
+    <option value="">All Types</option>
+    <option>Cash AR</option>
+    <option>Cash ORCR</option>
+    <option>Online Transfer AR</option>
+    <option>Online Transfer ORCR</option>
+    <option>Billing</option>
+    <option>Check AR</option>
+    <option>Check ORCR</option>
+</select></div>
           <div class="col-6 col-md-3">
               <span class="form-label-sm">Billing Status</span>
               <select id="fBillStatus" class="form-select form-select-sm" onchange="updateFilterTypes(); applyFilters()">
@@ -635,11 +644,13 @@
       <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
       <select name="paymentType" id="newPaymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('new')">
           <option value="">-- Choose Payment Method --</option>
-          <option>Cash AR</option>
-          <option>Cash ORCR</option>
-          <option>Online Transfer</option>
-          <option>Billing</option>
-          <option>Check</option>
+<option>Cash AR</option>
+<option>Cash ORCR</option>
+<option>Online Transfer AR</option>
+<option>Online Transfer ORCR</option>
+<option>Billing</option>
+<option>Check AR</option>
+<option>Check ORCR</option>
       </select>
       
       <div id="newDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
@@ -927,11 +938,13 @@
       <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
       <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('edit')">
           <option value="">-- Choose Payment Method --</option>
-          <option>Cash AR</option>
-          <option>Cash ORCR</option>
-          <option>Online Transfer</option>
-          <option>Billing</option>
-          <option>Check</option>
+<option>Cash AR</option>
+<option>Cash ORCR</option>
+<option>Online Transfer AR</option>
+<option>Online Transfer ORCR</option>
+<option>Billing</option>
+<option>Check AR</option>
+<option>Check ORCR</option>
       </select>
       
       <div id="editDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
@@ -1282,18 +1295,22 @@ async function forceSync() {
       if (!type) { box.style.display = 'none'; return; }
       box.style.display = 'block';
 
-      if (type === 'Cash AR') {
+      if (['Cash AR', 'Online Transfer AR'].includes(type)) {
           amtGrp.style.display = 'block'; statGrp.style.display = 'block';
           statusSel.innerHTML = '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
-      } else if (type === 'Cash ORCR') {
+      } else if (['Cash ORCR', 'Online Transfer ORCR'].includes(type)) {
           amtGrp.style.display = 'block'; statGrp.style.display = 'block'; invUpGrp.style.display = 'block';
+          // Added "Paid" to complete the lifecycle of an ORCR invoice
           statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
       } else if (type === 'Billing') {
           statGrp.style.display = 'block'; billGrp.style.display = 'block'; invUpGrp.style.display = 'block';
           statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
-      } else if (type === 'Check') {
+      } else if (type === 'Check AR') {
           amtGrp.style.display = 'block'; statGrp.style.display = 'block'; chkUpGrp.style.display = 'block';
-          statusSel.innerHTML = '<option value="Pending Clearance">Pending Clearance</option><option value="Cleared / Paid">Cleared / Paid</option>';
+          statusSel.innerHTML = '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
+      } else if (type === 'Check ORCR') {
+          amtGrp.style.display = 'block'; statGrp.style.display = 'block'; invUpGrp.style.display = 'block'; chkUpGrp.style.display = 'block';
+          statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
       }
   }
   
@@ -1305,16 +1322,14 @@ async function forceSync() {
       let options = '<option value="Unpaid">Unpaid / Processing</option><option value="">All Statuses</option>';
       statusSel.disabled = false;
       
-      if (type === 'Cash AR' || type === 'Online Transfer') {
+      if (['Cash AR', 'Online Transfer AR', 'Check AR'].includes(type)) {
           options += '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
-      } else if (type === 'Cash ORCR') {
+      } else if (['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR'].includes(type)) {
           options += '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
       } else if (type === 'Billing') {
           options += '<option value="Pending Invoice">Pending Invoice</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
-      } else if (type === 'Check') {
-          options += '<option value="Pending Clearance">Pending Clearance</option><option value="Cleared / Paid">Cleared / Paid</option>';
       } else {
-          options += '<option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option><option value="Pending Clearance">Pending Clearance</option><option value="Cleared / Paid">Cleared / Paid</option>';
+          options += '<option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
       }
       
       statusSel.innerHTML = options;
@@ -1330,7 +1345,9 @@ async function forceSync() {
       if (['GR Pending', 'GR Received', 'GR Processed', 'Payment released'].includes(status)) {
           if (typeSel.value !== 'Billing') { typeSel.value = 'Billing'; updateFilterStatuses(); document.getElementById('fBillStatus').value = status; }
       } else if (['Invoice Sent'].includes(status)) {
-          if (typeSel.value !== 'Cash ORCR') { typeSel.value = 'Cash ORCR'; updateFilterStatuses(); document.getElementById('fBillStatus').value = status; }
+          if (!['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR'].includes(typeSel.value)) { 
+              typeSel.value = 'Cash ORCR'; updateFilterStatuses(); document.getElementById('fBillStatus').value = status; 
+          }
       }
   }
 
@@ -1741,12 +1758,12 @@ async function forceSync() {
       let eventDateStr = p['Event Date'] ? new Date(p['Event Date']).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '-';
 
       let actionHtml = '';
-      if (['Cash ORCR', 'Billing'].includes(p['Payment Type'])) {
+      if (['Cash ORCR', 'Billing', 'Online Transfer ORCR', 'Check ORCR'].includes(p['Payment Type'])) {
           actionHtml += p['Invoice URL'] 
               ? `<a href="${p['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none">View Inv</a>` 
               : `<button class="btn btn-sm btn-outline-primary py-0 px-1 me-1 mb-1" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Invoice'))">Upload Inv</button>`;
       }
-      if (p['Payment Type'] === 'Check') {
+      if (['Check', 'Check AR', 'Check ORCR'].includes(p['Payment Type'])) {
           actionHtml += p['Check URL'] 
               ? `<a href="${p['Check URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none">View Check</a>` 
               : `<button class="btn btn-sm btn-outline-primary py-0 px-1 me-1 mb-1" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Check'))">Upload Check</button>`;
