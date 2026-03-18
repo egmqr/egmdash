@@ -668,17 +668,23 @@
         </div>
 
       <div class="row g-2 mt-2" id="newPayInvUploadGroup">
-    <div class="col-12">
-        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label><a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
-        <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
-    </div>
+    <div class="col-12">
+        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+        <div class="input-group input-group-sm">
+            <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control" placeholder="Paste link here...">
+            <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a>
+        </div>
+    </div>
 </div>
 <div class="row g-2 mt-2" id="newPayCheckUploadGroup">
-    <div class="col-12">
-        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label><a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
-        <input type="url" name="checkUrl" id="newCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
-    </div>
-</div>  
+    <div class="col-12">
+        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
+        <div class="input-group input-group-sm">
+            <input type="url" name="checkUrl" id="newCheckUrl" class="form-control" placeholder="Paste link here...">
+            <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a>
+        </div>
+    </div>
+</div>
        
         
       </div>
@@ -973,18 +979,24 @@
         </div>
 
         <div class="row g-2 mt-2" id="editPayInvUploadGroup">
-    <div class="col-12">
-        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
-        <input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
-        <div id="editInvoiceLinkDisplay" class="mt-1"></div>
-    </div>
+    <div class="col-12">
+        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+        <div class="input-group input-group-sm">
+            <input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control" placeholder="Paste link here...">
+            <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a>
+        </div>
+        <div id="editInvoiceLinkDisplay" class="mt-1"></div>
+    </div>
 </div>
 <div class="row g-2 mt-2" id="editPayCheckUploadGroup">
-    <div class="col-12">
-        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
-        <input type="url" name="checkUrl" id="editCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
-        <div id="editCheckLinkDisplay" class="mt-1"></div>
-    </div>
+    <div class="col-12">
+        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
+        <div class="input-group input-group-sm">
+            <input type="url" name="checkUrl" id="editCheckUrl" class="form-control" placeholder="Paste link here...">
+            <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a>
+        </div>
+        <div id="editCheckLinkDisplay" class="mt-1"></div>
+    </div>
 </div>
       
         </div>
@@ -1775,17 +1787,17 @@ async function forceSync() {
       let dateStr = p['Billing Status Date'] ? new Date(p['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
       let eventDateStr = p['Event Date'] ? new Date(p['Event Date']).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '-';
 
-      let actionHtml = '';
-      if (['Cash ORCR', 'Billing', 'Online Transfer ORCR', 'Check ORCR'].includes(p['Payment Type'])) {
-          actionHtml += p['Invoice URL'] 
-              ? `<a href="${p['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none">View Inv</a> <button class="btn btn-sm btn-outline-secondary py-0 px-1 me-1 mb-1" title="Overwrite Invoice" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Invoice', true))"><i class="bi bi-arrow-repeat"></i></button>` 
-              : `<button class="btn btn-sm btn-outline-primary py-0 px-1 me-1 mb-1" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Invoice', false))">Upload Inv</button>`;
-      }
-      if (['Check', 'Check AR', 'Check ORCR'].includes(p['Payment Type'])) {
-          actionHtml += p['Check URL'] 
-              ? `<a href="${p['Check URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none">View Check</a> <button class="btn btn-sm btn-outline-secondary py-0 px-1 me-1 mb-1" title="Overwrite Check" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Check', true))"><i class="bi bi-arrow-repeat"></i></button>` 
-              : `<button class="btn btn-sm btn-outline-primary py-0 px-1 me-1 mb-1" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Check', false))">Upload Check</button>`;
-      }
+     let actionHtml = '';
+      if (['Cash ORCR', 'Billing', 'Online Transfer ORCR', 'Check ORCR'].includes(p['Payment Type'])) {
+          if (p['Invoice URL']) {
+              actionHtml += `<a href="${p['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none shadow-sm"><i class="bi bi-box-arrow-up-right me-1"></i>View Inv</a> `;
+          }
+      }
+      if (['Check', 'Check AR', 'Check ORCR'].includes(p['Payment Type'])) {
+          if (p['Check URL']) {
+              actionHtml += `<a href="${p['Check URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none shadow-sm"><i class="bi bi-box-arrow-up-right me-1"></i>View Check</a> `;
+          }
+      }
 
       let amountStr = p['Amount'] ? `<br><strong class="text-success">₱${Number(p['Amount']).toLocaleString()}</strong>` : '';
 
