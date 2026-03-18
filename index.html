@@ -1187,10 +1187,7 @@
 
  async function callApi(payload, method='GET', isSilent=false) {
     if(!isSilent) document.getElementById('loader').style.display='block';
-    
-    // Safety check: Ensure the URL has no accidental spaces
-    const cleanUrl = API_URL.trim();
-    let u = new URL(cleanUrl); 
+    let u = new URL(API_URL); 
 
     try {
         if(method === 'GET') {
@@ -1204,28 +1201,23 @@
                 payload.password = localStorage.getItem('egm_auth_token') || '';
             }
             
-            // THE MULTIPART FORM BYPASS
-            // By packaging the JSON into a native FormData object and omitting custom headers, 
-            // the browser treats this exactly like a standard HTML form submission.
-            // This is mathematically guaranteed to skip the CORS Preflight block!
-            const fd = new FormData();
-            fd.append('data', JSON.stringify(payload));
-
-            const response = await fetch(cleanUrl, {
+            // EXACT MATCH to the successful console test.
+            // Pure text/plain forces the "Simple Request" CORS bypass.
+            const response = await fetch(API_URL, {
                 method: 'POST',
-                body: fd // DO NOT add headers here! The browser generates them automatically.
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
             });
 
-            // Read the response text first to prevent JSON parse crashes if Google errors out
             const text = await response.text(); 
             try {
                 const data = JSON.parse(text); 
                 if(!isSilent) document.getElementById('loader').style.display='none'; 
                 return data;
             } catch (jsonErr) {
-                console.error("Google returned an HTML error instead of JSON:", text);
+                console.error("Backend Error:", text);
                 if(!isSilent) document.getElementById('loader').style.display='none';
-                return { success: false, error: "Google intercepted the save request. See console." };
+                return { success: false, error: "Google intercepted the request." };
             }
         }
     } catch(e) {
