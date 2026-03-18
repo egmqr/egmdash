@@ -1037,7 +1037,9 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
 <script>
   // PASTE YOUR FIREBASE CONFIG HERE
   const firebaseConfig = {
@@ -1116,8 +1118,15 @@
 
   function isAuthenticated() {
       const exp = localStorage.getItem('egm_auth_exp');
-      if (exp && parseInt(exp) > Date.now()) return true;
-      localStorage.removeItem('egm_auth_token');
+      if (exp && parseInt(exp) > Date.now()) {
+          return true;
+      }
+      
+      // If time expired, officially log out of Firebase
+      if (firebase.auth().currentUser) {
+          firebase.auth().signOut();
+      }
+      localStorage.removeItem('egm_auth_exp');
       return false;
   }
 
@@ -1142,14 +1151,11 @@
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>VERIFYING...';
       btn.disabled = true;
 
-      const res = await callApi({ action: 'verifyPassword', password: pass }, 'POST'); 
-
-      btn.innerHTML = originalText;
-      btn.disabled = false;
-
-      if (res && res.success) {
-          localStorage.setItem('egm_auth_exp', Date.now() + 3600000); // 1 hr
-          localStorage.setItem('egm_auth_token', pass); 
+      try {
+          // THE MAGIC: Firebase verifies the password instantly
+          await firebase.auth().signInWithEmailAndPassword("admin@egm.com", pass);
+          
+          localStorage.setItem('egm_auth_exp', Date.now() + 3600000); // 1 hr expiration
           bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
           
           if (pendingAuthAction) {
@@ -1158,10 +1164,14 @@
                   pendingAuthAction = null;
               }, 300);
           }
-      } else {
-          document.getElementById('authError').innerText = res.error || "Incorrect Password!";
+      } catch (error) {
+          console.error("Auth Error:", error.message);
+          document.getElementById('authError').innerText = "Incorrect Password!";
           document.getElementById('authError').style.display = 'block';
       }
+
+      btn.innerHTML = originalText;
+      btn.disabled = false;
   }
 
   function toggleTheme() {
