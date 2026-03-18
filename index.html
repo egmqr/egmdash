@@ -9,18 +9,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-  
   <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
   
   <style>
-    :root {
-      --sticky-top: 110px; 
-    }
-
+    :root { --sticky-top: 110px; }
     body { background-color: #f8fafc; padding: 10px; padding-bottom: 120px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #334155; transition: background-color 0.3s ease, color 0.3s ease; }
     @media (min-width: 768px) { body { padding: 20px; padding-bottom: 120px; font-size: 0.95rem; } }
 
-    /* ================== GLOBAL TEAL EMPHASIS ================== */
     .text-primary { color: #0d9488 !important; }
     .bg-primary { background-color: #0d9488 !important; }
     .btn-primary { background-color: #0d9488; border-color: #0d9488; }
@@ -32,12 +27,10 @@
     .form-control:focus, .form-select:focus { border-color: #0d9488; box-shadow: 0 0 0 0.25rem rgba(13, 148, 136, 0.1); }
     .edit-trigger:hover { color: #0d9488; }
     
-    /* Modern Cards */
     .card { transition: all 0.3s ease; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); height: 100%; background: #ffffff; }
     .card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04); border-color: #cbd5e1; }
     .leave-card { background-color: #fff1f2; border-color: #fecaca; }
 
-    /* Soft Badges */
     .badge-soft-dark { background-color: #f1f5f9; color: #475569; font-weight: 600; border: 1px solid #e2e8f0;}
     .badge-soft-success { background-color: #dcfce7; color: #047857; font-weight: 600; border: 1px solid #a7f3d0;}
     .badge-soft-warning { background-color: #fef9c3; color: #b45309; font-weight: 600; border: 1px solid #fde047;}
@@ -48,17 +41,14 @@
     .badge-teal { background-color: #ccfbf1; color: #0f766e; font-weight: 600; border: 1px solid #99f6e4; }
     .badge-avp { background-color: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; font-size: 0.7rem; vertical-align: middle; margin-left: 5px; }
 
-    /* Mobile Priority Nav Pills */
     .nav-pills { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; gap: 8px; padding-bottom: 5px; border-bottom: none; }
     .nav-pills::-webkit-scrollbar { display: none; }
     .nav-pills .nav-link { white-space: nowrap; border-radius: 20px; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 6px 18px; font-weight: 600; color: #64748b; font-size: 0.85rem; cursor: pointer; transition: 0.2s;}
     .nav-pills .nav-link.active { background: #0d9488; color: white; border-color: #0d9488; box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.2); }
     
-    /* Glassmorphism Sticky Header */
     .sticky-header { transition: background-color 0.3s ease; position: sticky; top: 0; background: rgba(248, 250, 252, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; padding-top: 10px; margin-top: -10px; margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px;}
     @media (min-width: 768px) { .sticky-header { padding-top: 20px; margin-top: -20px; margin-left: -20px; margin-right: -20px; padding-left: 20px; padding-right: 20px; margin-bottom: 25px; } }
 
-    /* Sticky Date Headers */
     .sticky-date-header-container { position: -webkit-sticky; position: sticky; top: var(--sticky-top); z-index: 990; background-color: #f8fafc; padding-top: 10px; padding-bottom: 10px; margin-top: 1.5rem; margin-left: -10px; margin-right: -10px; padding-left: 10px; padding-right: 10px; transition: background-color 0.3s ease; }
     @media (min-width: 768px) { .sticky-date-header-container { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; } }
     .sticky-date-header { padding: 8px 12px; border-radius: 8px; border-bottom: 2px solid #e2e8f0; color: #0f172a; transition: all 0.3s ease; }
@@ -66,23 +56,16 @@
     .sticky-date-header-container.is-pinned .sticky-date-header { background-color: #0d9488; border-bottom-color: transparent; box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3); }
     .sticky-date-header-container.is-pinned .sticky-date-header h5, .sticky-date-header-container.is-pinned .sticky-date-header i { color: #ffffff !important; }
 
-    /* Upcoming Events Header */
     #upcomingEventsHeader { color: #1e293b; letter-spacing: -0.5px; transition: color 0.3s ease; }
-
-    /* Buttons & Inputs */
     .btn { border-radius: 8px; font-weight: 600; letter-spacing: 0.3px; }
     .form-control:disabled, .form-select:disabled { background-color: #f1f5f9; opacity: 0.8; }
-    
     .filter-panel { background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.3s ease; }
     .form-label-sm { font-size: 0.65rem; font-weight: 700; color: #64748b; margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: 0.5px;}
-    
-    /* Card Elements */
     .card-icon { width: 20px; display: inline-block; text-align: center; margin-right: 6px; font-size: 1rem; }
     .edit-trigger { cursor: pointer; transition: 0.2s; color: #94a3b8; }
     .map-link { color: #dc3545; text-decoration: none; border-bottom: 1px dashed rgba(220, 53, 69, 0.5); transition: 0.2s; }
     .map-link:hover { color: #b02a37; border-bottom-color: #b02a37; }
     
-    /* File Upload & Badges */
     .card-upload-btn { cursor: pointer; color: #0d9488; font-size: 0.75rem; font-weight: 700; border: 1px dashed #5eead4; background-color: #f0fdfa; padding: 8px 12px; border-radius: 8px; display: block; text-align: center; transition: 0.2s; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px;}
     .card-upload-btn:hover { background-color: #ccfbf1; border-color: #14b8a6; }
     .file-badge { font-size: 0.75rem; padding: 6px 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #e2e8f0; background-color: #f8fafc; color: #475569; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
@@ -91,7 +74,6 @@
     .file-delete-btn { cursor: pointer; color: #ef4444; font-weight: bold; padding-left: 6px; border-left: 1px solid #cbd5e1; flex-shrink: 0; font-size: 1.1rem; line-height: 1;}
     .file-delete-btn:hover { color: #b91c1c; }
 
-    /* Custom Calendar Grid */
     .calendar-container { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; transition: all 0.3s ease; }
     .calendar-header-row { display: grid; grid-template-columns: repeat(7, 1fr); background: #f8fafc; border-bottom: 1px solid #e2e8f0; transition: all 0.3s ease;}
     .calendar-header-cell { text-align: center; font-weight: 700; font-size: 0.75rem; color: #64748b; padding: 12px 5px; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #f1f5f9; transition: all 0.3s ease; }
@@ -120,7 +102,6 @@
         .calendar-header-cell { font-size: 0.65rem; padding: 8px 2px; }
     }
 
-    /* Overlays, Loaders & Animations */
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;}
     .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
     .bg-sync-indicator { font-size: 0.7rem; color: #94a3b8; display: none; align-items: center; gap: 5px; animation: pulse 1.5s infinite; }
@@ -128,12 +109,11 @@
     .spin-anim { animation: spin 1s linear infinite; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
     
-    /* Tables */
     .table-custom { border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; transition: all 0.3s ease; }
     .table-custom th { background-color: #f1f5f9; color: #475569; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; transition: background-color 0.3s ease, color 0.3s ease; }
     .table-custom td { vertical-align: middle; color: #334155; border-bottom: 1px solid #f1f5f9; transition: border-color 0.3s ease; }
 
-    /* ================== BOOTH QR SPECIFIC STYLES ================== */
+    /* BOOTH QR STYLES */
     .booth-color-input-wrapper { display: flex; gap: 8px; align-items: center; }
     .booth-color-input-wrapper input[type="color"] { width: 44px; height: 44px; padding: 0; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; background: none; flex-shrink: 0; }
     .booth-color-input-wrapper input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
@@ -143,13 +123,11 @@
     .booth-file-btn:hover { background: #e2e8f0; }
     .booth-file-name { font-size: 13px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* Crop Container inline styles */
     .crop-container { width: 100%; max-width: 400px; height: 50vh; min-height: 250px; max-height: 400px; position: relative; background: #222; border-radius: 8px; overflow: hidden; background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
     #imageToCrop { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
     .crop-actions { display: flex; gap: 15px; margin-top: 20px; width: 100%; max-width: 400px; }
     .crop-btn-cancel { background: #555 !important; flex: 1; border-color: #555 !important; color: white !important;}
 
-    /* View Booth Cards */
     .booth-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 15px; background: #ffffff; transition: all 0.3s; }
     .booth-card h5 { margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; font-size: 15px; color: #1e293b; font-weight: 700; }
     .booth-link-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: #64748b; flex-wrap: wrap; gap: 8px; }
@@ -159,7 +137,6 @@
     .booth-mini-btn.backup { background: #475569; color: #fff; border: none; }
     .booth-mini-btn.backup:hover { background: #334155; }
 
-    /* Booth Thumbnail & Gallery Extensions */
     .booth-thumbnail { width: 44px; height: 44px; object-fit: cover; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; background: #fff; display: block; transition: 0.2s; }
     .booth-thumbnail:hover { opacity: 0.8; }
     .booth-thumbnail-container { display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -175,7 +152,7 @@
     .logo-gallery-item:hover { border-color: #cbd5e1; transform: translateY(-2px);}
     .logo-gallery-item.selected { border-color: #0d9488; }
 
-    /* ================== DESATURATED DARK MODE ================== */
+    /* DARK MODE */
     body.dark-mode { background-color: #121212; color: #d1d5db; }
     .dark-mode .card, .dark-mode .filter-panel, .dark-mode .calendar-container, .dark-mode .table-custom, .dark-mode .modal-content { background: #1e1e1e !important; border-color: #333333 !important; }
     .dark-mode .sticky-header { background: rgba(18, 18, 18, 0.9); border-bottom-color: #333333; }
@@ -183,14 +160,11 @@
     .dark-mode .sticky-date-header { color: #f3f4f6 !important; border-bottom-color: #333333; }
     .dark-mode .sticky-date-header h5 { color: #f3f4f6 !important; }
     .dark-mode .sticky-date-header-container.is-pinned .sticky-date-header { background-color: #0d9488; color: #fff !important; }
-    
     .dark-mode #upcomingEventsHeader { color: #ffffff !important; }
-
     .dark-mode .nav-pills .nav-link { background: #2b2b2b; border-color: #333333; color: #9ca3af; }
     .dark-mode .nav-pills .nav-link.active { background: #0d9488; color: white; border-color: #0d9488; box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3); }
     .dark-mode .btn-light { background-color: #2b2b2b; border-color: #444444 !important; color: #d1d5db; }
     .dark-mode .btn-light:hover { background-color: #444444; color: #ffffff; }
-    
     .dark-mode .card h5 { color: #ffffff !important; }
     .dark-mode .text-dark { color: #ffffff !important; }
     .dark-mode .text-secondary { color: #9ca3af !important; }
@@ -198,10 +172,8 @@
     .dark-mode .bg-light { background-color: #2b2b2b !important; }
     .dark-mode .bg-white { background-color: #1e1e1e !important; }
     .dark-mode .border, .dark-mode .border-bottom { border-color: #333333 !important; }
-    
     .dark-mode .leave-card { background-color: #2c1313 !important; border-color: #5c2020 !important; }
     .dark-mode .file-badge { background-color: #121212; color: #d1d5db; border-color: #333333; }
-    
     .dark-mode .form-control, .dark-mode .form-select { background-color: #121212; border-color: #333333; color: #f3f4f6; }
     .dark-mode .form-control:focus, .dark-mode .form-select:focus { background-color: #121212; color: #f3f4f6; border-color: #0d9488;}
     .dark-mode ::placeholder { color: #6b7280 !important; }
@@ -210,7 +182,6 @@
     .dark-mode .modal-header.bg-light { background-color: #1e1e1e !important; border-bottom-color: #333333 !important; }
     .dark-mode .modal-header .text-secondary { color: #f3f4f6 !important; }
     .dark-mode .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
-    
     .dark-mode .badge-soft-dark { background-color: #333333; color: #d1d5db; border-color: #444444;}
     .dark-mode .badge-soft-success { background-color: #064e3b; color: #a7f3d0; border-color: #065f46; }
     .dark-mode .badge-soft-warning { background-color: #78350f; color: #fed7aa; border-color: #92400e; }
@@ -221,11 +192,8 @@
     .dark-mode .badge-avp { background-color: #2e1065; color: #ddd6fe; border-color: #4c1d95; }
     .dark-mode .badge.bg-light.text-dark { background-color: #2b2b2b !important; color: #f3f4f6 !important; border-color: #444444 !important; }
     .dark-mode .badge.bg-white { background-color: #121212 !important; }
-    
-    /* Transparent table rows in Dark Mode so they inherit the card background cleanly */
     .dark-mode .table, .dark-mode .table th, .dark-mode .table td { background-color: transparent !important; color: #d1d5db !important; border-bottom-color: #333333 !important; }
     .dark-mode .table-hover tbody tr:hover td { background-color: #2b2b2b !important; color: #f3f4f6 !important; }
-    
     .dark-mode .calendar-header-row { background-color: #121212; border-bottom-color: #333333; }
     .dark-mode .calendar-header-cell { border-right-color: #1e1e1e; }
     .dark-mode .calendar-grid { background: #333333; }
@@ -246,7 +214,7 @@
     .dark-mode .booth-mini-btn { background-color: #2b2b2b; color: #d1d5db; border-color: #444444; }
     .dark-mode .booth-mini-btn:hover { background-color: #444444; }
     .dark-mode .logo-gallery-item { background: #333; }
-    .dark-mode .logo-gallery-item.selected { border-color: #0d9488; box-shadow: 0 0 0 2px #0d9488; }
+    .dark-mode .logo-gallery-item.selected { border-color: #0d9488; }
     .dark-mode .booth-thumbnail-label { color: #9ca3af; }
   </style>
 </head>
@@ -258,7 +226,7 @@
 </div>
 
 <div id="boothLightbox" class="booth-lightbox" onclick="closeLightbox()">
-    <span class="booth-lightbox-close" onclick="closeLightbox()">&times;</span>
+    <span class="booth-lightbox-close" onclick="closeLightbox()">×</span>
     <img id="boothLightboxImg" src="" onclick="event.stopPropagation()">
 </div>
 
@@ -290,7 +258,6 @@
             <i id="themeIcon" class="bi bi-moon-fill text-secondary"></i>
           </button>
       </div>
-
     </div>
 
     <div class="d-flex justify-content-between align-items-center pb-2">
@@ -321,12 +288,16 @@
         <div class="row g-2 align-items-end">
           <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">GR / Invoice #</span><input type="text" id="fGrInv" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
-          <div class="col-6 col-md-2"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Cash ORCR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
           <div class="col-6 col-md-3">
               <span class="form-label-sm">Billing Status</span>
               <select id="fBillStatus" class="form-select form-select-sm" onchange="applyFilters()">
                   <option value="Unpaid" selected>Unpaid / Processing</option>
                   <option value="">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Pending Invoice">Pending Invoice</option>
+                  <option value="Invoice Sent">Invoice Sent</option>
                   <option value="GR Pending">GR Pending</option>
                   <option value="GR Received">GR Received</option>
                   <option value="GR Processed">GR Processed</option>
@@ -368,8 +339,7 @@
                   <div class="calendar-header-cell">Fri</div>
                   <div class="calendar-header-cell text-primary">Sat</div>
               </div>
-              <div id="calendarDays" class="calendar-grid">
-                  </div>
+              <div id="calendarDays" class="calendar-grid"></div>
           </div>
       </div>
 
@@ -505,10 +475,10 @@
                         <tr>
                             <th class="py-3 px-3">ID</th>
                             <th class="py-3">Event Name</th>
-                            <th class="py-3">Payment Type</th>
-                            <th class="py-3">Email Thread</th>
+                            <th class="py-3">Payment Info</th>
+                            <th class="py-3">Email Thread / Notes</th>
                             <th class="py-3">Status & Date</th>
-                            <th class="py-3 px-3">GR & Invoice</th>
+                            <th class="py-3 px-3">Invoices & Checks</th>
                         </tr>
                     </thead>
                     <tbody id="p-body" class="small"></tbody>
@@ -666,18 +636,31 @@
 
   <div id="newPaymentFields">
       <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
-      <select name="paymentType" id="pTypeSelect" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('pTypeSelect', 'billingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
+      <select name="paymentType" id="newPaymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('new')">
+          <option value="">-- Choose Payment Method --</option>
+          <option>Cash AR</option>
+          <option>Cash ORCR</option>
+          <option>Online Transfer</option>
+          <option>Billing</option>
+          <option>Check</option>
+      </select>
       
-      <div id="billingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-        <div class="mb-3"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
-        <div class="row g-3 mb-3">
-            <div class="col-12 col-md-6"><label class="form-label-sm">Billing Status</label><select name="billingStatus" class="form-select form-select-sm"><option value="">Select Status...</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
-            <div class="col-12 col-md-6"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
+      <div id="newDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
+        <div class="row g-2 mb-2" id="newPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success"></div></div></div>
+        <div class="row g-2 mb-2" id="newPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark"></select></div></div>
+        
+        <div id="newPayBillingGroup" style="display:none;">
+            <div class="mb-2"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
+            <div class="row g-2 mb-2">
+                <div class="col-12 col-md-4"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
+                <div class="col-12 col-md-4"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div>
+                <div class="col-12 col-md-4"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
+            </div>
         </div>
-        <div class="row g-3">
-            <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div>
-            <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
-        </div>
+
+        <div class="row g-2 mb-2" id="newPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="newPaymentNotes" class="form-control form-control-sm"></div></div>
+        <div class="row g-2 mt-2" id="newPayInvUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-cloud-arrow-up"></i> Upload Invoice Doc</label><input type="file" id="newInvoiceFile" accept="image/*,.pdf" class="form-control form-control-sm"></div></div>
+        <div class="row g-2 mt-2" id="newPayCheckUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-cloud-arrow-up"></i> Upload Check Photo</label><input type="file" id="newCheckFile" accept="image/*,.pdf" class="form-control form-control-sm"></div></div>
       </div>
   </div>
   
@@ -753,7 +736,7 @@
                   </div>
                   
                   <div id="addDayDetailsWithoutPrints" style="display: none;">
-                      <div class="input-group input-group-sm">
+                          <div class="input-group input-group-sm">
                           <input type="number" id="addDaySrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
                           <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
                       </div>
@@ -944,18 +927,31 @@
 
   <div id="editPaymentFields">
       <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
-      <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="toggleBilling('editPaymentType', 'editBillingBox')"><option value="">-- Choose Payment Method --</option><option>Cash AR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select>
+      <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('edit')">
+          <option value="">-- Choose Payment Method --</option>
+          <option>Cash AR</option>
+          <option>Cash ORCR</option>
+          <option>Online Transfer</option>
+          <option>Billing</option>
+          <option>Check</option>
+      </select>
       
-      <div id="editBillingBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-        <div class="mb-3"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
-        <div class="row g-3 mb-3">
-            <div class="col-12 col-md-6"><label class="form-label-sm">Billing Status</label><select id="editBillingStatus" name="billingStatus" class="form-select form-select-sm"><option value="">Select Status...</option><option>GR Pending</option><option>GR Received</option><option>GR Processed</option><option>Payment released</option></select></div>
-            <div class="col-12 col-md-6"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
+      <div id="editDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
+        <div class="row g-2 mb-2" id="editPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" id="editAmount" class="form-control border-start-0 fw-bold text-success"></div></div></div>
+        <div class="row g-2 mb-2" id="editPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="editBillingStatus" class="form-select form-select-sm fw-bold text-dark"></select></div></div>
+        
+        <div id="editPayBillingGroup" style="display:none;">
+            <div class="mb-2"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
+            <div class="row g-2 mb-2">
+                <div class="col-12 col-md-4"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
+                <div class="col-12 col-md-4"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div>
+                <div class="col-12 col-md-4"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
+            </div>
         </div>
-        <div class="row g-3">
-            <div class="col-12 col-md-6"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div>
-            <div class="col-12 col-md-6"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
-        </div>
+
+        <div class="row g-2 mb-2" id="editPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="editPaymentNotes" class="form-control form-control-sm"></div></div>
+        <div class="row g-2 mt-2" id="editPayInvUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-cloud-arrow-up"></i> Upload Invoice Doc</label><input type="file" id="editInvoiceFile" accept="image/*,.pdf" class="form-control form-control-sm"></div></div>
+        <div class="row g-2 mt-2" id="editPayCheckUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-cloud-arrow-up"></i> Upload Check Photo</label><input type="file" id="editCheckFile" accept="image/*,.pdf" class="form-control form-control-sm"></div></div>
       </div>
   </div>
   
@@ -982,6 +978,16 @@
     <input type="file" id="uploadFileInput" class="form-control">
   </div>
   <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="submitFileUpload()">UPLOAD FILE</button>
+</div></div></div></div>
+
+<div class="modal fade" id="uploadPaymentDocModal" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary" id="upPayTitle"><i class="bi bi-cloud-upload me-2"></i> Upload Doc</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4">
+  <input type="hidden" id="upPayEventId">
+  <input type="hidden" id="upPayDocType">
+  <div class="mb-4">
+    <label class="form-label-sm mb-1">Choose File</label>
+    <input type="file" id="upPayFileInput" accept="image/*,.pdf" class="form-control">
+  </div>
+  <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="submitPaymentDocUpload()">UPLOAD</button>
 </div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -1013,7 +1019,6 @@
   let selectedExistingQrLogoId = "";
   let existingLogosCache = null;
 
-  // --- Auth Functions ---
   function isAuthenticated() {
       const exp = localStorage.getItem('egm_auth_exp');
       if (exp && parseInt(exp) > Date.now()) return true;
@@ -1064,7 +1069,6 @@
       }
   }
 
-  // --- Theme Logic ---
   function toggleTheme() {
       const body = document.body;
       const isDark = body.classList.toggle('dark-mode');
@@ -1087,7 +1091,6 @@
   }
   applySavedTheme();
 
-  // --- Helper Functions ---
   function formatAMPM(t) {
       if(!t || t==='--' || t.trim()==='') return '--:--';
       const match = t.trim().match(/(\d+):(\d+)\s*(AM|PM|am|pm)?/i);
@@ -1185,7 +1188,6 @@
       select.value = currentVal; 
   }
 
-  // --- API and Fetch Logic ---
   async function callApi(payload, method='GET', isSilent=false) {
     if(!isSilent) document.getElementById('loader').style.display='block';
     
@@ -1239,7 +1241,40 @@
       document.getElementById('bgSyncIndicator').style.display = 'none';
   }
 
-  function toggleBilling(s, b) { document.getElementById(b).style.display = document.getElementById(s).value === 'Billing'?'block':'none'; }
+  function togglePaymentUI(prefix) {
+      const type = document.getElementById(prefix + 'PaymentType').value;
+      const box = document.getElementById(prefix + 'DynamicPayBox');
+      
+      const amtGrp = document.getElementById(prefix + 'PayAmountGroup');
+      const statGrp = document.getElementById(prefix + 'PayStatusGroup');
+      const billGrp = document.getElementById(prefix + 'PayBillingGroup');
+      const noteGrp = document.getElementById(prefix + 'PayNotesGroup');
+      const invUpGrp = document.getElementById(prefix + 'PayInvUploadGroup');
+      const chkUpGrp = document.getElementById(prefix + 'PayCheckUploadGroup');
+      const statusSel = document.getElementById(prefix + 'BillingStatus');
+
+      [amtGrp, statGrp, billGrp, noteGrp, invUpGrp, chkUpGrp].forEach(el => el.style.display = 'none');
+      statusSel.innerHTML = '';
+      
+      if (!type) { box.style.display = 'none'; return; }
+      box.style.display = 'block';
+
+      if (type === 'Cash AR') {
+          amtGrp.style.display = 'block'; statGrp.style.display = 'block';
+          statusSel.innerHTML = '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
+      } else if (type === 'Cash ORCR') {
+          amtGrp.style.display = 'block'; statGrp.style.display = 'block'; invUpGrp.style.display = 'block';
+          statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option>';
+      } else if (type === 'Online Transfer') {
+          amtGrp.style.display = 'block'; statGrp.style.display = 'block'; noteGrp.style.display = 'block';
+          statusSel.innerHTML = '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
+      } else if (type === 'Billing') {
+          statGrp.style.display = 'block'; billGrp.style.display = 'block'; invUpGrp.style.display = 'block';
+          statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
+      } else if (type === 'Check') {
+          amtGrp.style.display = 'block'; chkUpGrp.style.display = 'block';
+      }
+  }
   
   function toggleAvpFields(isAvp, prefix) { 
       document.getElementById(prefix + 'AvpHiddenFields').style.display = isAvp ? 'none' : 'flex'; 
@@ -1307,7 +1342,11 @@
             'Billing Status Date': normalizeDateStr(pay?pay['Billing Status Date']:''),
             'GR Number': pay?pay['GR Number']:'',
             'Invoice Number': pay?pay['Invoice Number']:'',
-            'Email Thread': pay?pay['Email Thread Title']:''
+            'Email Thread': pay?pay['Email Thread Title']:'',
+            'Amount': pay?pay['Amount']:'',
+            'Notes': pay?pay['Notes']:'',
+            'Invoice URL': pay?pay['Invoice URL']:'',
+            'Check URL': pay?pay['Check URL']:''
         };
       });
       updateCrewFilterDropdown(rawEvents);
@@ -1373,10 +1412,17 @@
       else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
       
       renderPayments(filtered);
+      
+      let url = new URL(window.location);
+      url.searchParams.set('tab', 'payments');
+      if(q) url.searchParams.set('q', q); else url.searchParams.delete('q');
+      if(grInv) url.searchParams.set('grInv', grInv); else url.searchParams.delete('grInv');
+      if(t) url.searchParams.set('type', t); else url.searchParams.delete('type');
+      if(s && s !== 'Unpaid') url.searchParams.set('status', s); else url.searchParams.delete('status');
+      window.history.replaceState({}, '', url);
     }
   }
 
-  // --- Views Rendering ---
   function renderEvents(data, isDefault) {
     let html = '';
     const todayDate = new Date();
@@ -1630,18 +1676,33 @@
       let dateStr = p['Billing Status Date'] ? new Date(p['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
       let eventDateStr = p['Event Date'] ? new Date(p['Event Date']).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '-';
 
+      let actionHtml = '';
+      if (['Cash ORCR', 'Billing'].includes(p['Payment Type'])) {
+          actionHtml += p['Invoice URL'] 
+              ? `<a href="${p['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none">View Inv</a>` 
+              : `<button class="btn btn-sm btn-outline-primary py-0 px-1 me-1 mb-1" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Invoice'))">Upload Inv</button>`;
+      }
+      if (p['Payment Type'] === 'Check') {
+          actionHtml += p['Check URL'] 
+              ? `<a href="${p['Check URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none">View Check</a>` 
+              : `<button class="btn btn-sm btn-outline-primary py-0 px-1 me-1 mb-1" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Check'))">Upload Check</button>`;
+      }
+
+      let amountStr = p['Amount'] ? `<br><strong class="text-success">₱${Number(p['Amount']).toLocaleString()}</strong>` : '';
+
       html += `<tr>
         <td class="fw-bold text-nowrap text-secondary">
             #${p['Event ID']}
             <span onclick="requireAuth(() => openEditModal('${p['Event ID']}', '${p['Event Date']}'))" class="edit-trigger ms-1 px-1" title="Edit Entry"><i class="bi bi-pencil-square"></i></span>
         </td>
         <td style="min-width: 180px;">${nameDisplay}<br><span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${eventDateStr}</span></td>
-        <td class="text-nowrap"><span class="badge bg-light text-dark border">${p['Payment Type']||'-'}</span></td>
-        <td style="min-width: 180px;" class="text-truncate text-secondary" style="max-width: 250px;"><i class="bi bi-envelope me-1 opacity-50"></i> ${p['Email Thread']||'-'}</td>
+        <td class="text-nowrap"><span class="badge bg-light text-dark border">${p['Payment Type']||'-'}</span>${amountStr}</td>
+        <td style="min-width: 180px;" class="text-truncate text-secondary" style="max-width: 250px;"><i class="bi bi-envelope me-1 opacity-50"></i> ${p['Email Thread']||'-'}<br><span class="small text-muted">${p['Notes']||''}</span></td>
         <td class="text-nowrap">${badge} <br><span class="text-muted fw-bold mt-1 d-block" style="font-size: 0.75rem;"><i class="bi bi-calendar2 me-1"></i>${dateStr}</span></td>
         <td class="text-nowrap">
             <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">GR: <span class="text-dark fw-bold badge bg-light border">${p['GR Number']||'--'}</span></span>
-            <span class="d-block text-muted" style="font-size: 0.75rem;">INV: <span class="text-dark fw-bold badge bg-light border">${p['Invoice Number']||'--'}</span></span>
+            <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">INV: <span class="text-dark fw-bold badge bg-light border">${p['Invoice Number']||'--'}</span></span>
+            ${actionHtml}
         </td>
       </tr>`;
     });
@@ -1725,7 +1786,34 @@
       setTimeout(() => { requireAuth(() => { setEditFormState(false); editModal.show(); }); }, 300); 
   }
 
-  // --- EVENT MODAL TRIGGERS ---
+  function openPaymentDocModal(eventId, docType) {
+      document.getElementById('upPayEventId').value = eventId;
+      document.getElementById('upPayDocType').value = docType;
+      document.getElementById('upPayTitle').innerHTML = `<i class="bi bi-cloud-upload me-2"></i> Upload ${docType}`;
+      document.getElementById('upPayFileInput').value = '';
+      new bootstrap.Modal(document.getElementById('uploadPaymentDocModal')).show();
+  }
+
+  async function submitPaymentDocUpload() {
+      const fileInput = document.getElementById('upPayFileInput');
+      if (!fileInput.files[0]) return alert("Select a file first.");
+      const eventId = document.getElementById('upPayEventId').value;
+      const docType = document.getElementById('upPayDocType').value;
+      const base64Data = await readFileAsBase64(fileInput.files[0]);
+
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = "Uploading Document...";
+      bootstrap.Modal.getInstance(document.getElementById('uploadPaymentDocModal')).hide();
+      ov.style.display = 'flex';
+
+      const res = await callApi({ 
+         action: 'uploadPaymentDoc', base64: base64Data.base64, filename: base64Data.filename, eventId: eventId, docType: docType
+      }, 'POST');
+      
+      ov.style.display = 'none';
+      if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+  }
+
   function openNewEventModal() {
       document.getElementById('eventForm').reset();
       ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
@@ -1736,6 +1824,7 @@
       togglePhotoQRDetails('new');
       document.getElementById('newTypeEvent').checked = true;
       toggleEntryMode('new');
+      togglePaymentUI('new');
       document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
       document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
       new bootstrap.Modal(document.getElementById('addEventModal')).show();
@@ -1963,12 +2052,18 @@
         });
         
         form.elements['paymentType'].value = e['Payment Type'] || '';
+        togglePaymentUI('edit');
+        
+        setTimeout(() => {
+            if(e['Billing Status']) form.elements['billingStatus'].value = e['Billing Status'];
+        }, 10);
+
         form.elements['emailThread'].value = e['Email Thread'] || '';
-        form.elements['billingStatus'].value = e['Billing Status'] || '';
         form.elements['billingStatusDate'].value = toInputDate(e['Billing Status Date']);
         form.elements['grNumber'].value = e['GR Number'] || '';
         form.elements['invoiceNumber'].value = e['Invoice Number'] || '';
-        toggleBilling('editPaymentType', 'editBillingBox');
+        form.elements['amount'].value = e['Amount'] || '';
+        form.elements['paymentNotes'].value = e['Notes'] || '';
     }
     
     form.elements['eventDate'].value = toInputDate(e['Event Date']);
@@ -2063,7 +2158,6 @@
       }
   }
 
-  // --- EVENT FORM SUBMISSIONS ---
   document.getElementById('eventForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
@@ -2108,6 +2202,18 @@
         if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
     }
     
+    const prefix = 'new';
+    const invFile = document.getElementById(prefix + 'InvoiceFile');
+    if (invFile && invFile.files[0]) {
+        let b64 = await readFileAsBase64(invFile.files[0]);
+        obj.invoiceBase64 = b64.base64; obj.invoiceFilename = b64.filename;
+    }
+    const chkFile = document.getElementById(prefix + 'CheckFile');
+    if (chkFile && chkFile.files[0]) {
+        let b64 = await readFileAsBase64(chkFile.files[0]);
+        obj.checkBase64 = b64.base64; obj.checkFilename = b64.filename;
+    }
+
     document.getElementById('overlayText').innerText = "Saving Entry...";
     btn.disabled = true; ov.style.display='flex';
     const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
@@ -2119,6 +2225,7 @@
         document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
         document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
         toggleAvpFields(false, 'new'); 
+        togglePaymentUI('new');
         fetchAllData(); 
     } else alert("Error: " + (res?res.error:"Unknown"));
   };
@@ -2214,6 +2321,18 @@
     } else {
         if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
     }
+
+    const prefix = 'edit';
+    const invFile = document.getElementById(prefix + 'InvoiceFile');
+    if (invFile && invFile.files[0]) {
+        let b64 = await readFileAsBase64(invFile.files[0]);
+        obj.invoiceBase64 = b64.base64; obj.invoiceFilename = b64.filename;
+    }
+    const chkFile = document.getElementById(prefix + 'CheckFile');
+    if (chkFile && chkFile.files[0]) {
+        let b64 = await readFileAsBase64(chkFile.files[0]);
+        obj.checkBase64 = b64.base64; obj.checkFilename = b64.filename;
+    }
     
     document.getElementById('overlayText').innerText = "Updating...";
     btn.disabled=true; ov.style.display='flex';
@@ -2259,7 +2378,6 @@
       document.getElementById('boothBgFile').value = ""; document.getElementById('boothBgFileName').innerText = "No file chosen"; 
       document.getElementById('boothLogoFile').value = ""; document.getElementById('boothLogoFileName').innerText = "No file chosen";
       
-      // Clear Previews & Selections
       document.getElementById('boothBgPreviewContainer').style.display = "none";
       document.getElementById('boothLogoPreviewContainer').style.display = "none";
       selectedExistingLogoId = ""; selectedExistingQrLogoId = "";
@@ -2285,7 +2403,7 @@
           document.getElementById('boothSaveBtn').style.display = 'none';
           document.getElementById('boothDeleteBtn').style.display = 'none';
           
-          document.getElementById('boothCountInput').disabled = true; // Lock because it comes from pill
+          document.getElementById('boothCountInput').disabled = true;
           document.getElementById('boothCountHint').style.display = 'none';
           toggleBoothEditFields(true);
           
@@ -2558,7 +2676,8 @@
   }
 
   function openLightbox(src) {
-      document.getElementById('boothLightboxImg').src = src;
+      let hiResSrc = src.replace('=w400', '=w1000').replace('=w150', '=w1000');
+      document.getElementById('boothLightboxImg').src = hiResSrc;
       document.getElementById('boothLightbox').style.display = 'flex';
   }
 
@@ -2690,7 +2809,7 @@
       ov.style.display = 'none';
       
       if (res && res.success) {
-          fetchBoothEvents(); // Refresh data behind scenes
+          fetchBoothEvents(); 
           if (actionName === "updateBoothSetup") {
               setBoothMode('view');
               setTimeout(() => { document.getElementById('boothEventSelect').value = eventId; loadBoothEventDetails(); }, 100);
@@ -2725,7 +2844,6 @@
       }
   }
 
-  // UI Sticky Header Logic
   function checkStickyHeaders() {
       const stickyOffset = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sticky-top')) || 110;
       document.querySelectorAll('.sticky-date-header-container').forEach(container => {
@@ -2753,16 +2871,19 @@
       if (window.innerWidth >= 768) {
           document.getElementById('filterCollapse').classList.add('show');
       }
-      
-      // Load main dashboard data
-      fetchAllData();
-      
-      // Silently pre-load Firebase & Drive logo data in the background
-      // 1.5 second delay ensures the main events list renders first
-      setTimeout(() => {
-          fetchBoothEvents();
-          fetchExistingLogos();
-      }, 1500);
+
+      setTimeout(() => { fetchBoothEvents(); fetchExistingLogos(); }, 1500);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('tab') === 'payments') {
+          if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
+          if(urlParams.get('grInv')) document.getElementById('fGrInv').value = urlParams.get('grInv');
+          if(urlParams.get('type')) document.getElementById('fPayType').value = urlParams.get('type');
+          if(urlParams.get('status')) document.getElementById('fBillStatus').value = urlParams.get('status');
+          setTimeout(() => handleTabClick('payments'), 500);
+      } else {
+          fetchAllData();
+      }
   };
 </script>
 </body>
