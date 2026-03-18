@@ -2245,37 +2245,253 @@
   }
 
   // --- EVENT FORM SUBMISSIONS ---
- window.onload = () => {
-      const stickyHeaderEl = document.querySelector('.sticky-header');
-      if (stickyHeaderEl && window.ResizeObserver) {
-          new ResizeObserver(entries => {
-              for (let entry of entries) {
-                  document.documentElement.style.setProperty('--sticky-top', entry.target.offsetHeight + 'px');
+z// --- EVENT FORM SUBMISSIONS ---
+  
+  document.getElementById('eventForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const ov = document.getElementById('submitOverlay');
+      const fd = new FormData(e.target);
+      const obj = Object.fromEntries(fd.entries());
+      
+      obj.manpower = fd.getAll('manpower');
+      let rawServices = fd.getAll('services');
+      let finalServices = [];
+      
+      rawServices.forEach(s => {
+          if (s === 'Photo') {
+              const count = document.getElementById('newSrvPhotoCount').value;
+              finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
+          } else if (s === 'Photo Souvenir Master') {
+              const isWithPrints = document.getElementById('newTypeWithPrints').checked;
+              if (isWithPrints) {
+                  const booths = document.getElementById('newSrvPrintsBooth').value;
+                  const count = document.getElementById('newSrvPrintsCount').value;
+                  const size = document.getElementById('newSrvPrintsSize').value;
+                  let details = [];
+                  if(booths) details.push(`${booths} booth(s)`);
+                  if(count) details.push(`${count} prints`);
+                  if(size) details.push(size);
+                  finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
+              } else {
+                  const booths = document.getElementById('newSrvQRBooth').value;
+                  finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
               }
-          }).observe(stickyHeaderEl);
-      }
-      
-      if (window.innerWidth >= 768) {
-          document.getElementById('filterCollapse').classList.add('show');
-      }
-
-      setTimeout(() => { fetchBoothEvents(); fetchExistingLogos(); }, 1500);
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const activeTab = urlParams.get('tab') || 'calendar';
-      
-      if (activeTab === 'payments') {
-          if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
-          if(urlParams.get('grInv')) document.getElementById('fGrInv').value = urlParams.get('grInv');
-          if(urlParams.get('type')) {
-              document.getElementById('fPayType').value = urlParams.get('type');
-              updateFilterStatuses(); 
+          } else if (s === 'Frame Token') {
+              const count = document.getElementById('newSrvFrameCount').value;
+              finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
+          } else {
+              finalServices.push(s);
           }
-          if(urlParams.get('status')) document.getElementById('fBillStatus').value = urlParams.get('status');
+      });
+      obj.services = finalServices;
+
+      const isLeave = document.getElementById('newTypeLeave').checked;
+      if (isLeave) {
+          if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+          obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
+      } else {
+          if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
       }
       
-      currentTab = activeTab; 
-      setTimeout(() => handleTabClick(activeTab), 400); 
+      document.getElementById('overlayText').innerText = "Saving to Database...";
+      btn.disabled = true; ov.style.display = 'flex';
+      
+      try {
+          const newId = await getNextEventId();
+          await db.collection("dashboard_events").doc(newId).set({
+              eventId: newId,
+              eventName: obj.eventName || "",
+              eventDate: obj.eventDate || "",
+              eventVenue: obj.eventVenue || "",
+              venueLink: obj.venueLink || "",
+              eventStatus: obj.eventStatus || "Pencil Booked",
+              avpRequired: obj.avp === "true",
+              services: (obj.services || []).join(", "),
+              startTime: obj.startTime || "",
+              endTime: obj.endTime || "",
+              callTime: obj.callTime || "",
+              manpower: (obj.manpower || []).join(", "),
+              contactPerson: obj.contactPerson || "",
+              contactNumber: obj.contactNumber || "",
+              notes: obj.notes || "",
+              paymentType: obj.paymentType || "",
+              emailThread: obj.emailThread || "",
+              billingStatus: obj.billingStatus || "",
+              billingStatusDate: obj.billingStatusDate || "",
+              grNumber: obj.grNumber || "",
+              invoiceNumber: obj.invoiceNumber || "",
+              amount: obj.amount || "0",
+              paymentNotes: obj.paymentNotes || "",
+              invoiceUrl: obj.invoiceUrl || "",
+              checkUrl: obj.checkUrl || ""
+          });
+          
+          bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
+          e.target.reset(); 
+          document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
+          document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
+          toggleAvpFields(false, 'new'); togglePaymentUI('new');
+      } catch (err) {
+          alert("Error saving: " + err.message);
+      }
+      ov.style.display = 'none'; btn.disabled = false;
+  };
+
+  document.getElementById('addDayForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('addDaySubmitBtn'), ov = document.getElementById('submitOverlay');
+      const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+      obj.manpower = fd.getAll('manpower');
+      
+      let rawServices = fd.getAll('services');
+      let finalServices = [];
+      rawServices.forEach(s => {
+          if (s === 'Photo') {
+              const count = document.getElementById('addDaySrvPhotoCount').value;
+              finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
+          } else if (s === 'Photo Souvenir Master') {
+              const isWithPrints = document.getElementById('addDayTypeWithPrints').checked;
+              if (isWithPrints) {
+                  const booths = document.getElementById('addDaySrvPrintsBooth').value;
+                  const count = document.getElementById('addDaySrvPrintsCount').value;
+                  const size = document.getElementById('addDaySrvPrintsSize').value;
+                  let details = [];
+                  if(booths) details.push(`${booths} booth(s)`);
+                  if(count) details.push(`${count} prints`);
+                  if(size) details.push(size);
+                  finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
+              } else {
+                  const booths = document.getElementById('addDaySrvQRBooth').value;
+                  finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
+              }
+          } else if (s === 'Frame Token') {
+              const count = document.getElementById('addDaySrvFrameCount').value;
+              finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
+          } else {
+              finalServices.push(s);
+          }
+      });
+      obj.services = finalServices;
+      
+      document.getElementById('overlayText').innerText = "Adding Day...";
+      btn.disabled = true; ov.style.display='flex';
+      
+      try {
+          const baseDoc = await db.collection("dashboard_events").doc(obj.eventId).get();
+          const baseData = baseDoc.exists ? baseDoc.data() : {};
+          const newId = await getNextEventId();
+          
+          await db.collection("dashboard_events").doc(newId).set({
+              eventId: newId,
+              eventName: obj.eventName || baseData.eventName || "",
+              eventDate: obj.eventDate || "",
+              eventVenue: baseData.eventVenue || "",
+              venueLink: baseData.venueLink || "",
+              eventStatus: obj.eventStatus || "Pencil Booked",
+              avpRequired: baseData.avpRequired || false,
+              services: obj.services.length > 0 ? obj.services.join(", ") : (baseData.services || ""),
+              startTime: obj.startTime || "",
+              endTime: obj.endTime || "",
+              callTime: obj.callTime || "",
+              manpower: (obj.manpower || []).join(", "),
+              contactPerson: baseData.contactPerson || "",
+              contactNumber: baseData.contactNumber || "",
+              notes: baseData.notes || "",
+              paymentType: "", emailThread: "", billingStatus: "", billingStatusDate: "",
+              grNumber: "", invoiceNumber: "", amount: "0", paymentNotes: "", invoiceUrl: "", checkUrl: ""
+          });
+
+          bootstrap.Modal.getInstance(document.getElementById('addDayModal')).hide(); 
+          e.target.reset(); 
+      } catch (err) {
+          alert("Error adding day: " + err.message);
+      }
+      ov.style.display='none'; btn.disabled=false;
+  };
+
+  document.getElementById('editForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('editSubmitBtn');
+      const ov = document.getElementById('submitOverlay');
+      const fd = new FormData(e.target);
+      const obj = Object.fromEntries(fd.entries());
+      
+      obj.manpower = fd.getAll('manpower');
+      let rawServices = fd.getAll('services');
+      let finalServices = [];
+      
+      rawServices.forEach(s => {
+          if (s === 'Photo') {
+              const count = document.getElementById('editSrvPhotoCount').value;
+              finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
+          } else if (s === 'Photo Souvenir Master') {
+              const isWithPrints = document.getElementById('editTypeWithPrints').checked;
+              if (isWithPrints) {
+                  const booths = document.getElementById('editSrvPrintsBooth').value;
+                  const count = document.getElementById('editSrvPrintsCount').value;
+                  const size = document.getElementById('editSrvPrintsSize').value;
+                  let details = [];
+                  if(booths) details.push(`${booths} booth(s)`);
+                  if(count) details.push(`${count} prints`);
+                  if(size) details.push(size);
+                  finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
+              } else {
+                  const booths = document.getElementById('editSrvQRBooth').value;
+                  finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
+              }
+          } else if (s === 'Frame Token') {
+              const count = document.getElementById('editSrvFrameCount').value;
+              finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
+          } else {
+              finalServices.push(s);
+          }
+      });
+      obj.services = finalServices; 
+      
+      const isLeave = document.getElementById('editTypeLeave').checked;
+      if (isLeave) {
+          if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+          obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
+      } else {
+          if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+      }
+
+      document.getElementById('overlayText').innerText = "Updating Database...";
+      btn.disabled = true; ov.style.display = 'flex';
+
+      try {
+          await db.collection("dashboard_events").doc(obj.eventId).update({
+              eventName: obj.eventName || "",
+              eventDate: obj.eventDate || "",
+              eventVenue: obj.eventVenue || "",
+              venueLink: obj.venueLink || "",
+              eventStatus: obj.eventStatus || "Pencil Booked",
+              avpRequired: obj.avp === "true",
+              services: (obj.services || []).join(", "),
+              startTime: obj.startTime || "",
+              endTime: obj.endTime || "",
+              callTime: obj.callTime || "",
+              manpower: (obj.manpower || []).join(", "),
+              contactPerson: obj.contactPerson || "",
+              contactNumber: obj.contactNumber || "",
+              notes: obj.notes || "",
+              paymentType: obj.paymentType || "",
+              emailThread: obj.emailThread || "",
+              billingStatus: obj.billingStatus || "",
+              billingStatusDate: obj.billingStatusDate || "",
+              grNumber: obj.grNumber || "",
+              invoiceNumber: obj.invoiceNumber || "",
+              amount: obj.amount || "0",
+              paymentNotes: obj.paymentNotes || "",
+              invoiceUrl: obj.invoiceUrl || "",
+              checkUrl: obj.checkUrl || ""
+          });
+          bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
+      } catch (err) {
+          alert("Error updating: " + err.message);
+      }
+      ov.style.display = 'none'; btn.disabled = false;
   };
 
   // ==============================================================================
@@ -2814,10 +3030,17 @@
       }
       
       currentTab = activeTab; 
-      fetchAllData();
-      
       setTimeout(() => handleTabClick(activeTab), 400); 
   };
+
+  // We disabled manual syncing, but this stops the button from causing an error
+  function forceSync() {
+      const icon = document.getElementById('syncIcon');
+      if(icon) {
+          icon.classList.add('spin-anim');
+          setTimeout(() => icon.classList.remove('spin-anim'), 1000);
+      }
+  }
 // THE MAGIC REAL-TIME LISTENER
 // This instantly updates the dashboard the millisecond data changes in Firestore.
 db.collection("dashboard_events").onSnapshot((snapshot) => {
