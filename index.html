@@ -288,10 +288,10 @@
         <div class="row g-2 align-items-end">
           <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">GR / Invoice #</span><input type="text" id="fGrInv" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
-          <div class="col-6 col-md-2"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Cash ORCR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
+          <div class="col-6 col-md-2"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="updateFilterStatuses(); applyFilters()"><option value="">All Types</option><option>Cash AR</option><option>Cash ORCR</option><option>Online Transfer</option><option>Billing</option><option>Check</option></select></div>
           <div class="col-6 col-md-3">
               <span class="form-label-sm">Billing Status</span>
-              <select id="fBillStatus" class="form-select form-select-sm" onchange="applyFilters()">
+              <select id="fBillStatus" class="form-select form-select-sm" onchange="updateFilterTypes(); applyFilters()">
                   <option value="Unpaid" selected>Unpaid / Processing</option>
                   <option value="">All Statuses</option>
                   <option value="Pending">Pending</option>
@@ -1371,6 +1371,42 @@
         processFetchedData(res);
     }
   }
+  function updateFilterStatuses() {
+      const type = document.getElementById('fPayType').value;
+      const statusSel = document.getElementById('fBillStatus');
+      const currentStatus = statusSel.value;
+      
+      let options = '<option value="Unpaid">Unpaid / Processing</option><option value="">All Statuses</option>';
+      
+      if (type === 'Cash AR' || type === 'Online Transfer') {
+          options += '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
+      } else if (type === 'Cash ORCR') {
+          options += '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
+      } else if (type === 'Billing') {
+          options += '<option value="Pending Invoice">Pending Invoice</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
+      } else {
+          // Default all options if no specific type is selected
+          options += '<option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
+      }
+      
+      statusSel.innerHTML = options;
+      
+      // Auto-retain previously selected status if it matches the new type, else default
+      if (options.includes(`value="${currentStatus}"`)) statusSel.value = currentStatus;
+      else statusSel.value = type ? "" : "Unpaid"; 
+  }
+
+  function updateFilterTypes() {
+      const status = document.getElementById('fBillStatus').value;
+      const typeSel = document.getElementById('fPayType');
+      
+      // Auto-switch Payment Type if a highly specific status is selected
+      if (['GR Pending', 'GR Received', 'GR Processed', 'Payment released'].includes(status)) {
+          if (typeSel.value !== 'Billing') { typeSel.value = 'Billing'; updateFilterStatuses(); document.getElementById('fBillStatus').value = status; }
+      } else if (['Invoice Sent'].includes(status)) {
+          if (typeSel.value !== 'Cash ORCR') { typeSel.value = 'Cash ORCR'; updateFilterStatuses(); document.getElementById('fBillStatus').value = status; }
+      }
+  }
 
   function clearFilters() {
     ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
@@ -1757,6 +1793,15 @@
     } else {
         applyFilters(); 
     }
+
+    // Apply unique URL for deep-linking the active tab
+    let url = new URL(window.location);
+    url.searchParams.set('tab', t);
+    // Erase payment filters from URL if we leave the payments tab
+    if (t !== 'payments') {
+        url.searchParams.delete('q'); url.searchParams.delete('grInv'); url.searchParams.delete('type'); url.searchParams.delete('status');
+    }
+    window.history.replaceState({}, '', url);
   }
 
   function setEditFormState(isReadOnly) {
@@ -2872,18 +2917,28 @@
           document.getElementById('filterCollapse').classList.add('show');
       }
 
+      // Pre-load Firebase & Drive images silently
       setTimeout(() => { fetchBoothEvents(); fetchExistingLogos(); }, 1500);
 
+      // Read URL deep links and apply them instantly
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('tab') === 'payments') {
+      const activeTab = urlParams.get('tab') || 'calendar'; // Defaults to calendar
+      
+      if (activeTab === 'payments') {
           if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
           if(urlParams.get('grInv')) document.getElementById('fGrInv').value = urlParams.get('grInv');
-          if(urlParams.get('type')) document.getElementById('fPayType').value = urlParams.get('type');
+          if(urlParams.get('type')) {
+              document.getElementById('fPayType').value = urlParams.get('type');
+              updateFilterStatuses(); // Adjust available statuses immediately
+          }
           if(urlParams.get('status')) document.getElementById('fBillStatus').value = urlParams.get('status');
-          setTimeout(() => handleTabClick('payments'), 500);
-      } else {
-          fetchAllData();
       }
+      
+      currentTab = activeTab; // Ensure data loads into correct context initially
+      fetchAllData();
+      
+      // Delay tab trigger so data can populate
+      setTimeout(() => handleTabClick(activeTab), 400); 
   };
 </script>
 </body>
