@@ -994,7 +994,7 @@
   let pendingAuthAction = null;
   // This is your permanently designated Apps Script URL
   const API_URL = 'https://script.google.com/macros/s/AKfycbwYMEUmPOR9spn-_jC3WousZ9L5s8aksFrZwYDTGwW-N54S9q7P1BY-_KIVVEzi1TU/exec';
-  
+  let localLastUpdate = "0";
   let rawEvents = [], rawPayments = [], currentTab = 'calendar';
   let filteredEventsCache = []; 
   let currentCalendarDate = new Date(); 
@@ -3003,6 +3003,43 @@ async function forceSync() {
       
       setTimeout(() => handleTabClick(activeTab), 400); 
   };
+  async function pollForUpdates() {
+      // Don't poll if the user is currently editing a form to prevent interruptions
+      const editModal = document.getElementById('editEventModal');
+      if (editModal && editModal.classList.contains('show')) return;
+
+      try {
+          // Use fetch directly to avoid triggering the visual loader
+          const response = await fetch(API_URL, {
+              method: 'POST',
+              body: JSON.stringify({ action: 'checkUpdate' })
+          });
+          
+          const res = await response.json();
+
+          if (res && res.success) {
+              // If we have a local timestamp, and the server timestamp is newer
+              if (localLastUpdate !== "0" && res.lastUpdate !== localLastUpdate) {
+                  console.log("Remote change detected! Syncing dashboard...");
+                  
+                  // Spin the sync icon to let the user know data is refreshing
+                  const icon = document.getElementById('syncIcon');
+                  if(icon) icon.classList.add('spin-anim');
+                  
+                  await fetchAllData();
+                  
+                  if(icon) icon.classList.remove('spin-anim');
+              }
+              // Update local timestamp
+              localLastUpdate = res.lastUpdate;
+          }
+      } catch (e) {
+          console.error("Polling error: ", e);
+      }
+  }
+
+  // Start checking every 8 seconds (8000 milliseconds)
+  setInterval(pollForUpdates, 8000);
 </script>
 </body>
 </html>
