@@ -1044,6 +1044,39 @@
   
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+  // Restored for Photobooth Generator Google Drive operations
+  async function callApi(payloadData, method = 'POST', isSilent = false) {
+    if (!isSilent) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'block';
+    }
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payloadData),
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const result = await response.json();
+      if (!isSilent) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+      }
+      if (result.status === "error") {
+          console.error("Backend error:", result.message);
+          alert("Server Error: " + result.message); 
+          return null;
+      }
+      return result;
+    } catch (error) {
+      if (!isSilent) {
+          const loader = document.getElementById('loader');
+          if (loader) loader.style.display = 'none';
+      }
+      console.error("Fetch/Network Error:", error);
+      return { error: error.message };
+    }
+  }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
