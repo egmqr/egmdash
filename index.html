@@ -1904,7 +1904,7 @@ async function forceSync() {
   }
 
   function openAddDayModal(id) {
-     const e = rawEvents.find(ev => ev['Event ID'] === id);
+     const e = rawEvents.find(ev => String(ev['Event ID']) === String(id) && (!date || String(ev['Event Date']) === String(date)));
      if(!e) return;
      
      const form = document.getElementById('addDayForm');
@@ -2453,7 +2453,7 @@ async function forceSync() {
     }
     
     document.getElementById('overlayText').innerText = "Updating...";
-    const res = await callApi({action:'editEvent', updateData: obj}, 'POST');
+    const res = await callApi({action:'editEvent', formObject: obj}, 'POST');
     
     ov.style.display='none'; btn.disabled=false;
     if(res && res.success) { 
