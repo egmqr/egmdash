@@ -1199,28 +1199,29 @@
             if (payload.action !== 'verifyPassword') {
                 payload.password = localStorage.getItem('egm_auth_token') || '';
             }
-            
-            // We pass the string directly into the body with ZERO headers. 
-            // This forces the browser to send a "Simple Request", completely bypassing the CORS Preflight block.
-            response = await fetch(u, {
+
+            // THE FIX: We package the JSON inside a standard Form submission wrapper.
+            // This guarantees the browser skips the CORS Preflight check entirely.
+            response = await fetch(API_URL, {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    'data': JSON.stringify(payload)
+                })
             });
         }
 
-        // We read it as raw text first. If Google crashes and returns an HTML login page, 
-        // this catches it gracefully instead of violently breaking the app.
         const text = await response.text(); 
-        
         try {
             const data = JSON.parse(text); 
             if(!isSilent) document.getElementById('loader').style.display='none'; 
             return data;
         } catch (jsonErr) {
-            console.error("CRASH: Google returned HTML instead of JSON data:", text);
+            console.error("Google returned an HTML error instead of JSON:", text);
             if(!isSilent) document.getElementById('loader').style.display='none';
-            alert("Google blocked the save request. This usually means your Google Account's Workspace settings are blocking public web apps.");
-            return { success: false, error: "Backend blocked by Google." };
+            return { success: false, error: "Google blocked the request. Check your deployment settings." };
         }
     } catch(e) {
         if(!isSilent) document.getElementById('loader').style.display='none';
