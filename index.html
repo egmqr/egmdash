@@ -1187,12 +1187,11 @@
 
  async function callApi(payloadData) {
   // Using your assigned production backend URL
-  const url = "https://script.google.com/macros/s/AKfycbxSjMkiGGcT6VdA83-DGXQFhPDrnBnZZGAh8PmJLuOVFfDOuFWzn_DFbW_3siJRO5FH/exec";
+  const url = "https://script.google.com/macros/s/AKfycbwYMEUmPOR9spn-_jC3WousZ9L5s8aksFrZwYDTGwW-N54S9q7P1BY-_KIVVEzi1TU/exec";
 
   try {
     const response = await fetch(url, {
       method: "POST",
-      // This is required to bypass the CORS preflight check
       headers: {
         "Content-Type": "text/plain;charset=utf-8",
       },
@@ -1223,11 +1222,25 @@
 document.getElementById("yourFormId").onsubmit = async function(event) {
     event.preventDefault(); 
     
+    // 1. EXTRACT VALUES FROM YOUR HTML FORM
+    // Replace "eventNameInput", "paymentStatusInput", etc., with the actual IDs from your HTML tags
+    const eventNameValue = document.getElementById("eventNameInput").value;
+    const paymentStatusValue = document.getElementById("paymentStatusInput").value;
+    const assignedCrewValue = document.getElementById("crewInput").value;
+    
+    // 2. PACKAGE THE DATA
     const dataToSend = { 
       action: "submitData",
-      // Include your actual form fields here
+      
+      // 3. INCLUDE THE EXTRACTED VALUES HERE
+      // The word on the left is the label sent to Google Sheets
+      // The variable on the right holds the data you just extracted
+      eventName: eventNameValue,
+      paymentStatus: paymentStatusValue,
+      assignedCrew: assignedCrewValue
     };
     
+    // Send it to the backend
     await callApi(dataToSend);
 };
 
