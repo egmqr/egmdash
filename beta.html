@@ -2117,14 +2117,21 @@
         
         setTimeout(() => {
             if(e['Billing Status']) form.elements['billingStatus'].value = e['Billing Status'];
-          document.getElementById('editInvoiceFile').value = '';
-        document.getElementById('editCheckFile').value = '';
-        document.getElementById('editExistingInvoiceUrl').value = e['Invoice URL'] || '';
-        document.getElementById('editInvoiceLinkDisplay').innerHTML = e['Invoice URL'] ? `<a href="${e['Invoice URL']}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> View Current Invoice</a>` : '';
-        
-        document.getElementById('editExistingCheckUrl').value = e['Check URL'] || '';
-        document.getElementById('editCheckLinkDisplay').innerHTML = e['Check URL'] ? `<a href="${e['Check URL']}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> View Current Check</a>` : '';
-          
+            
+            // THE FIX: Populate the new URL text inputs directly!
+            form.elements['invoiceUrl'].value = e['Invoice URL'] || '';
+            form.elements['checkUrl'].value = e['Check URL'] || '';
+            
+            // Keep the clickable display links just in case you want to test them fast
+            const invDisplay = document.getElementById('editInvoiceLinkDisplay');
+            if (invDisplay) {
+                invDisplay.innerHTML = e['Invoice URL'] ? `<a href="${e['Invoice URL']}" target="_blank" class="small fw-bold text-success text-decoration-none mt-1 d-inline-block"><i class="bi bi-box-arrow-up-right"></i> Test Invoice Link</a>` : '';
+            }
+            
+            const chkDisplay = document.getElementById('editCheckLinkDisplay');
+            if (chkDisplay) {
+                chkDisplay.innerHTML = e['Check URL'] ? `<a href="${e['Check URL']}" target="_blank" class="small fw-bold text-success text-decoration-none mt-1 d-inline-block"><i class="bi bi-box-arrow-up-right"></i> Test Check Link</a>` : '';
+            }
         }, 10);
 
         form.elements['emailThread'].value = e['Email Thread'] || '';
