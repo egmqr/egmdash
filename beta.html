@@ -1028,6 +1028,23 @@
 </div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+<script>
+  // PASTE YOUR FIREBASE CONFIG HERE
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "event-database-78db0.firebaseapp.com",
+    projectId: "event-database-78db0",
+    storageBucket: "event-database-78db0.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+  
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
@@ -1226,81 +1243,9 @@
       select.value = currentVal; 
   }
 
-  async function callApi(payloadData, method = 'POST', isSilent = false) {
-    if (!isSilent) {
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.display = 'block';
-    }
-
-    try {
-      // Regardless of what parameter is passed, we MUST use POST
-      // to bypass the preflight CORS security check on Apps Script Web Apps.
-      // Your backend script parses the action out of the payload.
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify(payloadData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (!isSilent) {
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.display = 'none';
-      }
-
-      if (result.status === "error") {
-          console.error("Backend caught an error:", result.message);
-          alert("Server Error: " + result.message); 
-          return null;
-      }
-
-      return result;
-
-    } catch (error) {
-      if (!isSilent) {
-          const loader = document.getElementById('loader');
-          if (loader) loader.style.display = 'none';
-      }
-      console.error("Fetch/Network Error:", error);
-      return { error: error.message };
-    }
-  }
-
-  // Replace your existing forceSync function with this:
-async function forceSync() {
-  const icon = document.getElementById('syncIcon');
-  icon.classList.add('spin-anim');
-  document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
   
-  try {
-      // Route specifically to the 'getSheetData' action in your backend
-      const [eventsRes, paymentsRes] = await Promise.all([
-          callApi({action: 'getSheetData', sheetName: 'EVENTS'}, 'POST', true),
-          callApi({action: 'getSheetData', sheetName: 'PAYMENTS'}, 'POST', true)
-      ]);
-      
-      if (eventsRes && eventsRes.success && paymentsRes && paymentsRes.success) {
-          // Map the nested .data array to match the structure processFetchedData expects
-          const combined = { events: eventsRes.data, payments: paymentsRes.data };
-          localStorage.setItem('egm_dashboard_data', JSON.stringify(combined));
-          processFetchedData(combined);
-      } else {
-          alert("Manual Sync Error: " + (eventsRes?.error || paymentsRes?.error || "Unknown error"));
-      }
-  } catch (e) {
-      alert("Sync failed. Check connection.");
-  }
-  
-  icon.classList.remove('spin-anim');
-  document.getElementById('bgSyncIndicator').style.display = 'none';
-}
+
+
 
   function togglePaymentUI(prefix) {
       const type = document.getElementById(prefix + 'PaymentType').value;
@@ -1423,54 +1368,9 @@ async function forceSync() {
       }
   }
 
-  function processFetchedData(res) {
-      rawPayments = res.payments || [];
-      rawEvents = res.events.map(ev => {
-        const pay = rawPayments.find(p => p['Event ID'] === ev['Event ID']);
-        return {
-            ...ev, 
-            'Event Date': normalizeDateStr(ev['Event Date']),
-            'Payment Type': pay?pay['Payment Type']:'', 
-            'Billing Status': pay?pay['Billing Status']:'', 
-            'Billing Status Date': normalizeDateStr(pay?pay['Billing Status Date']:''),
-            'GR Number': pay?pay['GR Number']:'',
-            'Invoice Number': pay?pay['Invoice Number']:'',
-            'Email Thread': pay?pay['Email Thread Title']:'',
-            'Amount': pay?pay['Amount']:'',
-            'Payment Notes': pay?pay['Payment Notes']:'',
-            'Notes': pay?pay['Notes']:'',
-            'Invoice URL': pay?pay['Invoice URL']:'',
-            'Check URL': pay?pay['Check URL']:''
-        };
-      });
-      updateCrewFilterDropdown(rawEvents);
-      applyFilters();
-  }
 
-  async function fetchAllData() {
-  const cachedData = localStorage.getItem('egm_dashboard_data');
 
-  if (cachedData) {
-      processFetchedData(JSON.parse(cachedData));
-      document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
-  }
 
-  try {
-      // A direct GET request triggers your backend's doGet() function
-      const response = await fetch(API_URL);
-      const res = await response.json();
-
-      document.getElementById('bgSyncIndicator').style.display = 'none';
-
-      if(res && res.success) {
-          localStorage.setItem('egm_dashboard_data', JSON.stringify(res));
-          processFetchedData(res);
-      }
-  } catch (error) {
-      document.getElementById('bgSyncIndicator').style.display = 'none';
-      console.error("Initial Fetch Error:", error);
-  }
-}
 
   function clearFilters() {
     ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
@@ -2261,23 +2161,14 @@ async function forceSync() {
   }
   
   async function deleteFullEvent() {
-      const eventId = document.getElementById('editEventId').value;
-      if (!eventId) return;
-      if(!confirm(`WARNING: Are you sure you want to permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) { return; }
-      
-      const ov = document.getElementById('submitOverlay');
-      document.getElementById('overlayText').innerText = "Deleting Event...";
-      ov.style.display = 'flex';
-      
-      const res = await callApi({ action: 'deleteEvent', eventId: eventId }, 'POST');
-      ov.style.display = 'none';
-      if (res && res.success) {
-          bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
-          fetchAllData();
-      } else {
-          alert("Error: " + (res ? res.error : "Unknown"));
-      }
-  }
+    const eventId = document.getElementById('editEventId').value;
+    if (!eventId || !confirm(`WARNING: Permanently delete project #${eventId}? This cannot be undone.`)) return;
+    
+    document.getElementById('submitOverlay').style.display = 'flex';
+    await db.collection("dashboard_events").doc(eventId).delete();
+    document.getElementById('submitOverlay').style.display = 'none';
+    bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
+}
 
   function readFileAsBase64(file) {
       return new Promise((resolve) => {
@@ -2321,79 +2212,49 @@ async function forceSync() {
   }
 
   // --- EVENT FORM SUBMISSIONS ---
-  document.getElementById('eventForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
-    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
-    obj.manpower = fd.getAll('manpower');
+  document.getElementById('overlayText').innerText = "Saving to Database...";
+    btn.disabled = true; ov.style.display = 'flex';
     
-    let rawServices = fd.getAll('services');
-    let finalServices = [];
-    rawServices.forEach(s => {
-        if (s === 'Photo') {
-            const count = document.getElementById('newSrvPhotoCount').value;
-            finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
-        } else if (s === 'Photo Souvenir Master') {
-            const isWithPrints = document.getElementById('newTypeWithPrints').checked;
-            if (isWithPrints) {
-                const booths = document.getElementById('newSrvPrintsBooth').value;
-                const count = document.getElementById('newSrvPrintsCount').value;
-                const size = document.getElementById('newSrvPrintsSize').value;
-                let details = [];
-                if(booths) details.push(`${booths} booth(s)`);
-                if(count) details.push(`${count} prints`);
-                if(size) details.push(size);
-                finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
-            } else {
-                const booths = document.getElementById('newSrvQRBooth').value;
-                finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
-            }
-        } else if (s === 'Frame Token') {
-            const count = document.getElementById('newSrvFrameCount').value;
-            finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
-        } else {
-            finalServices.push(s);
-        }
-    });
-    obj.services = finalServices;
-
-    const isLeave = document.getElementById('newTypeLeave').checked;
-    if (isLeave) {
-        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
-        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
-    } else {
-        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
-    }
-    
-    document.getElementById('overlayText').innerText = "Compressing Files...";
-    btn.disabled = true; ov.style.display='flex';
-    
-    const prefix = 'new';
-    const invFile = document.getElementById(prefix + 'InvoiceFile');
-    if (invFile && invFile.files[0]) {
-        let b64 = await readFileAsBase64(invFile.files[0]);
-        obj.invoiceBase64 = b64.base64; obj.invoiceFilename = b64.filename;
-    }
-    const chkFile = document.getElementById(prefix + 'CheckFile');
-    if (chkFile && chkFile.files[0]) {
-        let b64 = await readFileAsBase64(chkFile.files[0]);
-        obj.checkBase64 = b64.base64; obj.checkFilename = b64.filename;
-    }
-
-    document.getElementById('overlayText').innerText = "Saving Entry...";
-    const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
-    
-    ov.style.display='none'; btn.disabled=false;
-    if(res && res.success) { 
+    try {
+        const newId = await getNextEventId();
+        await db.collection("dashboard_events").doc(newId).set({
+            eventId: newId,
+            eventName: obj.eventName || "",
+            eventDate: obj.eventDate || "",
+            eventVenue: obj.eventVenue || "",
+            venueLink: obj.venueLink || "",
+            eventStatus: obj.eventStatus || "Pencil Booked",
+            avpRequired: obj.avp === "true",
+            services: (obj.services || []).join(", "),
+            startTime: obj.startTime || "",
+            endTime: obj.endTime || "",
+            callTime: obj.callTime || "",
+            manpower: (obj.manpower || []).join(", "),
+            contactPerson: obj.contactPerson || "",
+            contactNumber: obj.contactNumber || "",
+            notes: obj.notes || "",
+            paymentType: obj.paymentType || "",
+            emailThread: obj.emailThread || "",
+            billingStatus: obj.billingStatus || "",
+            billingStatusDate: obj.billingStatusDate || "",
+            grNumber: obj.grNumber || "",
+            invoiceNumber: obj.invoiceNumber || "",
+            amount: obj.amount || "0",
+            paymentNotes: obj.paymentNotes || "",
+            invoiceUrl: obj.invoiceUrl || "",
+            checkUrl: obj.checkUrl || ""
+        });
+        
         bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
         e.target.reset(); 
         document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
         document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
-        toggleAvpFields(false, 'new'); 
-        togglePaymentUI('new');
-        fetchAllData(); 
-    } else alert("Error: " + (res?res.error:"Unknown"));
-  };
+        toggleAvpFields(false, 'new'); togglePaymentUI('new');
+    } catch (err) {
+        alert("Error saving: " + err.message);
+    }
+    ov.style.display = 'none'; btn.disabled = false;
+};
 
   document.getElementById('addDayForm').onsubmit = async (e) => {
     e.preventDefault();
@@ -2443,83 +2304,42 @@ async function forceSync() {
     } else alert("Error: " + (res?res.error:"Unknown"));
   };
 
-  document.getElementById('editForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('editSubmitBtn'), ov = document.getElementById('submitOverlay');
-    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
-    obj.manpower = fd.getAll('manpower');
-    
-    let rawServices = fd.getAll('services');
-    let finalServices = [];
-    rawServices.forEach(s => {
-        if (s === 'Photo') {
-            const count = document.getElementById('editSrvPhotoCount').value;
-            finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
-        } else if (s === 'Photo Souvenir Master') {
-            const isWithPrints = document.getElementById('editTypeWithPrints').checked;
-            if (isWithPrints) {
-                const booths = document.getElementById('editSrvPrintsBooth').value;
-                const count = document.getElementById('editSrvPrintsCount').value;
-                const size = document.getElementById('editSrvPrintsSize').value;
-                let details = [];
-                if(booths) details.push(`${booths} booth(s)`);
-                if(count) details.push(`${count} prints`);
-                if(size) details.push(size);
-                finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
-            } else {
-                const booths = document.getElementById('editSrvQRBooth').value;
-                finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
-            }
-        } else if (s === 'Frame Token') {
-            const count = document.getElementById('editSrvFrameCount').value;
-            finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
-        } else {
-            finalServices.push(s);
-        }
-    });
-    obj.services = finalServices; 
-    
-    const isLeave = document.getElementById('editTypeLeave').checked;
-    if (isLeave) {
-        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
-        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
-    } else {
-        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
-    }
+  document.getElementById('overlayText').innerText = "Updating Database...";
+    btn.disabled = true; ov.style.display = 'flex';
 
-    document.getElementById('overlayText').innerText = "Compressing Files...";
-    btn.disabled=true; ov.style.display='flex';
-
-    const prefix = 'edit';
-    const invFile = document.getElementById(prefix + 'InvoiceFile');
-    const existingInv = document.getElementById('editExistingInvoiceUrl').value;
-    if (invFile && invFile.files[0]) {
-        if (existingInv && !confirm("You have selected a new Invoice document. This will overwrite the existing Invoice link. Continue?")) {
-            btn.disabled = false; ov.style.display = 'none'; return;
-        }
-        let b64 = await readFileAsBase64(invFile.files[0]);
-        obj.invoiceBase64 = b64.base64; obj.invoiceFilename = b64.filename;
-    }
-    
-    const chkFile = document.getElementById(prefix + 'CheckFile');
-    const existingChk = document.getElementById('editExistingCheckUrl').value;
-    if (chkFile && chkFile.files[0]) {
-        if (existingChk && !confirm("You have selected a new Check photo. This will overwrite the existing Check link. Continue?")) {
-            btn.disabled = false; ov.style.display = 'none'; return;
-        }
-        let b64 = await readFileAsBase64(chkFile.files[0]);
-        obj.checkBase64 = b64.base64; obj.checkFilename = b64.filename;
-    }
-    
-    document.getElementById('overlayText').innerText = "Updating...";
-    const res = await callApi({action:'editEvent', formObject: obj}, 'POST');
-    
-    ov.style.display='none'; btn.disabled=false;
-    if(res && res.success) { 
+    try {
+        await db.collection("dashboard_events").doc(obj.eventId).update({
+            eventName: obj.eventName || "",
+            eventDate: obj.eventDate || "",
+            eventVenue: obj.eventVenue || "",
+            venueLink: obj.venueLink || "",
+            eventStatus: obj.eventStatus || "Pencil Booked",
+            avpRequired: obj.avp === "true",
+            services: (obj.services || []).join(", "),
+            startTime: obj.startTime || "",
+            endTime: obj.endTime || "",
+            callTime: obj.callTime || "",
+            manpower: (obj.manpower || []).join(", "),
+            contactPerson: obj.contactPerson || "",
+            contactNumber: obj.contactNumber || "",
+            notes: obj.notes || "",
+            paymentType: obj.paymentType || "",
+            emailThread: obj.emailThread || "",
+            billingStatus: obj.billingStatus || "",
+            billingStatusDate: obj.billingStatusDate || "",
+            grNumber: obj.grNumber || "",
+            invoiceNumber: obj.invoiceNumber || "",
+            amount: obj.amount || "0",
+            paymentNotes: obj.paymentNotes || "",
+            invoiceUrl: obj.invoiceUrl || "",
+            checkUrl: obj.checkUrl || ""
+        });
         bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
-        fetchAllData(); 
-    } else alert("Error: " + (res?res.error:"Unknown"));
-  };
+    } catch (err) {
+        alert("Error updating: " + err.message);
+    }
+    ov.style.display = 'none'; btn.disabled = false;
+};
 
 
   // ==============================================================================
@@ -3062,43 +2882,58 @@ async function forceSync() {
       
       setTimeout(() => handleTabClick(activeTab), 400); 
   };
-  async function pollForUpdates() {
-      // Don't poll if the user is currently editing a form to prevent interruptions
-      const editModal = document.getElementById('editEventModal');
-      if (editModal && editModal.classList.contains('show')) return;
+// THE MAGIC REAL-TIME LISTENER
+// This instantly updates the dashboard the millisecond data changes in Firestore.
+db.collection("dashboard_events").onSnapshot((snapshot) => {
+    document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+    
+    const mappedEvents = [];
+    snapshot.forEach((doc) => {
+        const d = doc.data();
+        mappedEvents.push({
+            'Event ID': d.eventId,
+            'Event Name': d.eventName,
+            'Event Date': d.eventDate,
+            'Event Venue': d.eventVenue,
+            'Event Venue Link': d.venueLink,
+            'Event Status': d.eventStatus,
+            'AVP Required': d.avpRequired ? "TRUE" : "FALSE",
+            'Services': d.services,
+            'Event Start Time': d.startTime,
+            'Event End Time': d.endTime,
+            'Call Time': d.callTime,
+            'Manpower': d.manpower,
+            'Contact Person': d.contactPerson,
+            'Contact Number': d.contactNumber,
+            'Event Notes': d.notes,
+            'Payment Type': d.paymentType,
+            'Email Thread': d.emailThread,
+            'Billing Status': d.billingStatus,
+            'Billing Status Date': d.billingStatusDate,
+            'GR Number': d.grNumber,
+            'Invoice Number': d.invoiceNumber,
+            'Amount': d.amount,
+            'Payment Notes': d.paymentNotes,
+            'Invoice URL': d.invoiceUrl,
+            'Check URL': d.checkUrl
+        });
+    });
 
-      try {
-          // Use fetch directly to avoid triggering the visual loader
-          const response = await fetch(API_URL, {
-              method: 'POST',
-              body: JSON.stringify({ action: 'checkUpdate' })
-          });
-          
-          const res = await response.json();
+    rawEvents = mappedEvents;
+    updateCrewFilterDropdown(rawEvents);
+    applyFilters();
+    
+    setTimeout(() => { document.getElementById('bgSyncIndicator').style.display = 'none'; }, 500);
+});
 
-          if (res && res.success) {
-              // If we have a local timestamp, and the server timestamp is newer
-              if (localLastUpdate !== "0" && res.lastUpdate !== localLastUpdate) {
-                  console.log("Remote change detected! Syncing dashboard...");
-                  
-                  // Spin the sync icon to let the user know data is refreshing
-                  const icon = document.getElementById('syncIcon');
-                  if(icon) icon.classList.add('spin-anim');
-                  
-                  await fetchAllData();
-                  
-                  if(icon) icon.classList.remove('spin-anim');
-              }
-              // Update local timestamp
-              localLastUpdate = res.lastUpdate;
-          }
-      } catch (e) {
-          console.error("Polling error: ", e);
-      }
-  }
-
-  // Start checking every 8 seconds (8000 milliseconds)
-  setInterval(pollForUpdates, 8000);
+// Helper to get the next Event ID (egm0015)
+async function getNextEventId() {
+    const snapshot = await db.collection("dashboard_events").orderBy("eventId", "desc").limit(1).get();
+    if (snapshot.empty) return "egm0001";
+    const lastId = snapshot.docs[0].data().eventId;
+    const num = parseInt(lastId.replace('egm', ''), 10);
+    return 'egm' + ('0000' + (num + 1)).slice(-4);
+}
 </script>
 </body>
 </html>
