@@ -809,6 +809,7 @@
   <form id="editForm" class="d-flex flex-column">
   <input type="hidden" id="editEventId" name="eventId">
   <input type="hidden" id="editOriginalDate" name="originalDate">
+  <input type="hidden" id="editFirestoreDocId" name="firestoreDocId">
   
   <div class="d-flex mb-4 gap-2 border-bottom pb-3" id="editTypeToggleBlock">
       <input type="radio" class="btn-check" name="entryMode" id="editTypeEvent" value="event" onchange="toggleEntryMode('edit')">
@@ -2032,9 +2033,22 @@
     document.getElementById('editTypeWithPrints').checked = true;
     togglePhotoQRDetails('edit');
     
-    form.elements['eventId'].value = id;
+   form.elements['eventId'].value = id;
     form.elements['originalDate'].value = date || '';
+    form.elements['firestoreDocId'].value = e['Doc ID'] || '';
     form.elements['eventName'].value = e['Event Name'] || '';
+    
+    // THE FIX: Check if this is the Main Day and swap the delete button dynamically!
+    const isMainDay = (e['Doc ID'] === id) || (e['Doc ID'] === id + '_row0');
+    const deleteBtn = document.getElementById('editDeleteBtn');
+    
+    if (isMainDay) {
+        deleteBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> DELETE FULL PROJECT';
+        deleteBtn.onclick = () => deleteFullEvent(true);
+    } else {
+        deleteBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> DELETE THIS DAY ONLY';
+        deleteBtn.onclick = () => deleteFullEvent(false);
+    }
     
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
@@ -2219,24 +2233,35 @@
     if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
   }
   
-  async function deleteFullEvent() {
+  async function deleteFullEvent(isMain) {
       const eventId = document.getElementById('editEventId').value;
-      if (!eventId || !confirm(`WARNING: Permanently delete project #${eventId}? This cannot be undone.`)) return;
+      const docId = document.getElementById('editFirestoreDocId').value;
       
-      document.getElementById('submitOverlay').style.display = 'flex';
+      if (!eventId || !docId) return;
       
-      try {
-          // THE FIX: Find ALL documents that share this Event ID and delete them together
-          const snapshot = await db.collection("dashboard_events").where("eventId", "==", eventId).get();
-          const batch = db.batch();
+      if (isMain) {
+          if(!confirm(`WARNING: Permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) return;
           
-          snapshot.forEach(doc => {
-              batch.delete(doc.ref);
-          });
+          document.getElementById('submitOverlay').style.display = 'flex';
+          try {
+              // Batch delete: Finds every document that shares this Event ID and wipes them all
+              const snapshot = await db.collection("dashboard_events").where("eventId", "==", eventId).get();
+              const batch = db.batch();
+              snapshot.forEach(doc => batch.delete(doc.ref));
+              await batch.commit();
+          } catch (err) {
+              alert("Error deleting project: " + err.message);
+          }
+      } else {
+          if(!confirm(`Delete this specific shooting day?\n\nThe rest of project #${eventId} will remain intact.`)) return;
           
-          await batch.commit();
-      } catch (err) {
-          alert("Error deleting: " + err.message);
+          document.getElementById('submitOverlay').style.display = 'flex';
+          try {
+              // Single delete: Only targets this specific added day
+              await db.collection("dashboard_events").doc(docId).delete();
+          } catch (err) {
+              alert("Error deleting day: " + err.message);
+          }
       }
       
       document.getElementById('submitOverlay').style.display = 'none';
@@ -2501,43 +2526,34 @@
       document.getElementById('overlayText').innerText = "Updating Database...";
       btn.disabled = true; ov.style.display = 'flex';
 
-     try {
-          // THE FIX: Search Firebase for the specific day being edited
-          const snapshot = await db.collection("dashboard_events")
-              .where("eventId", "==", obj.eventId)
-              .where("eventDate", "==", obj.originalDate)
-              .get();
-
-          if (!snapshot.empty) {
-              const targetDocId = snapshot.docs[0].id; // Get the unique Firestore ID
-              
-              await db.collection("dashboard_events").doc(targetDocId).update({
-                  eventName: obj.eventName || "",
-                  eventDate: obj.eventDate || "",
-                  eventVenue: obj.eventVenue || "",
-                  venueLink: obj.venueLink || "",
-                  eventStatus: obj.eventStatus || "Pencil Booked",
-                  avpRequired: obj.avp === "true",
-                  services: (obj.services || []).join(", "),
-                  startTime: obj.startTime || "",
-                  endTime: obj.endTime || "",
-                  callTime: obj.callTime || "",
-                  manpower: (obj.manpower || []).join(", "),
-                  contactPerson: obj.contactPerson || "",
-                  contactNumber: obj.contactNumber || "",
-                  notes: obj.notes || "",
-                  paymentType: obj.paymentType || "",
-                  emailThread: obj.emailThread || "",
-                  billingStatus: obj.billingStatus || "",
-                  billingStatusDate: obj.billingStatusDate || "",
-                  grNumber: obj.grNumber || "",
-                  invoiceNumber: obj.invoiceNumber || "",
-                  amount: obj.amount || "0",
-                  paymentNotes: obj.paymentNotes || "",
-                  invoiceUrl: obj.invoiceUrl || "",
-                  checkUrl: obj.checkUrl || ""
-              });
-          }
+    try {
+          // THE FIX: We use obj.firestoreDocId so it updates the exact day you are looking at!
+          await db.collection("dashboard_events").doc(obj.firestoreDocId).update({
+              eventName: obj.eventName || "",
+              eventDate: obj.eventDate || "",
+              eventVenue: obj.eventVenue || "",
+              venueLink: obj.venueLink || "",
+              eventStatus: obj.eventStatus || "Pencil Booked",
+              avpRequired: obj.avp === "true",
+              services: (obj.services || []).join(", "),
+              startTime: obj.startTime || "",
+              endTime: obj.endTime || "",
+              callTime: obj.callTime || "",
+              manpower: (obj.manpower || []).join(", "),
+              contactPerson: obj.contactPerson || "",
+              contactNumber: obj.contactNumber || "",
+              notes: obj.notes || "",
+              paymentType: obj.paymentType || "",
+              emailThread: obj.emailThread || "",
+              billingStatus: obj.billingStatus || "",
+              billingStatusDate: obj.billingStatusDate || "",
+              grNumber: obj.grNumber || "",
+              invoiceNumber: obj.invoiceNumber || "",
+              amount: obj.amount || "0",
+              paymentNotes: obj.paymentNotes || "",
+              invoiceUrl: obj.invoiceUrl || "",
+              checkUrl: obj.checkUrl || ""
+          });
           bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
       } catch (err) {
           alert("Error updating: " + err.message);
@@ -3138,13 +3154,13 @@
 db.collection("dashboard_events").onSnapshot((snapshot) => {
     document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
     
-    const mappedEvents = [];
     snapshot.forEach((doc) => {
         const d = doc.data();
         mappedEvents.push({
-            'Event ID': d.eventId,
-            'Event Name': d.eventName,
-            'Event Date': d.eventDate,
+            'Doc ID': doc.id,
+            'Event ID': d.eventId || "",
+            'Event Name': d.eventName || "",
+            'Event Date': d.eventDate || "",
             'Event Venue': d.eventVenue,
             'Event Venue Link': d.venueLink,
             'Event Status': d.eventStatus,
