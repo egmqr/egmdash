@@ -2245,7 +2245,6 @@
   }
 
   // --- EVENT FORM SUBMISSIONS ---
-z// --- EVENT FORM SUBMISSIONS ---
   
   document.getElementById('eventForm').onsubmit = async (e) => {
       e.preventDefault();
@@ -2494,6 +2493,47 @@ z// --- EVENT FORM SUBMISSIONS ---
       ov.style.display = 'none'; btn.disabled = false;
   };
 
+  window.onload = () => {
+      const stickyHeaderEl = document.querySelector('.sticky-header');
+      if (stickyHeaderEl && window.ResizeObserver) {
+          new ResizeObserver(entries => {
+              for (let entry of entries) {
+                  document.documentElement.style.setProperty('--sticky-top', entry.target.offsetHeight + 'px');
+              }
+          }).observe(stickyHeaderEl);
+      }
+      
+      if (window.innerWidth >= 768) {
+          document.getElementById('filterCollapse').classList.add('show');
+      }
+
+      setTimeout(() => { fetchBoothEvents(); fetchExistingLogos(); }, 1500);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const activeTab = urlParams.get('tab') || 'calendar';
+      
+      if (activeTab === 'payments') {
+          if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
+          if(urlParams.get('grInv')) document.getElementById('fGrInv').value = urlParams.get('grInv');
+          if(urlParams.get('type')) {
+              document.getElementById('fPayType').value = urlParams.get('type');
+              updateFilterStatuses(); 
+          }
+          if(urlParams.get('status')) document.getElementById('fBillStatus').value = urlParams.get('status');
+      }
+      
+      currentTab = activeTab; 
+      setTimeout(() => handleTabClick(activeTab), 400); 
+  };
+
+  // We disabled manual syncing, but this stops the sync button from throwing an error
+  function forceSync() {
+      const icon = document.getElementById('syncIcon');
+      if(icon) {
+          icon.classList.add('spin-anim');
+          setTimeout(() => icon.classList.remove('spin-anim'), 1000);
+      }
+  }
   // ==============================================================================
   // PHOTOBOOTH GENERATOR FRONTEND INTEGRATION
   // ==============================================================================
