@@ -3154,6 +3154,9 @@
 db.collection("dashboard_events").onSnapshot((snapshot) => {
     document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
     
+    // THE FIX: We must define the array before we can push data into it!
+    const mappedEvents = [];
+    
     snapshot.forEach((doc) => {
         const d = doc.data();
         mappedEvents.push({
@@ -3161,34 +3164,38 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
             'Event ID': d.eventId || "",
             'Event Name': d.eventName || "",
             'Event Date': d.eventDate || "",
-            'Event Venue': d.eventVenue,
-            'Event Venue Link': d.venueLink,
-            'Event Status': d.eventStatus,
+            'Event Venue': d.eventVenue || "",
+            'Event Venue Link': d.venueLink || "",
+            'Event Status': d.eventStatus || "",
             'AVP Required': d.avpRequired ? "TRUE" : "FALSE",
-            'Services': d.services,
-            'Event Start Time': d.startTime,
-            'Event End Time': d.endTime,
-            'Call Time': d.callTime,
-            'Manpower': d.manpower,
-            'Contact Person': d.contactPerson,
-            'Contact Number': d.contactNumber,
-            'Event Notes': d.notes,
-            'Payment Type': d.paymentType,
-            'Email Thread': d.emailThread,
-            'Billing Status': d.billingStatus,
-            'Billing Status Date': d.billingStatusDate,
-            'GR Number': d.grNumber,
-            'Invoice Number': d.invoiceNumber,
-            'Amount': d.amount,
-            'Payment Notes': d.paymentNotes,
-            'Invoice URL': d.invoiceUrl,
-            'Check URL': d.checkUrl
+            'Services': d.services || "",
+            'Event Start Time': d.startTime || "",
+            'Event End Time': d.endTime || "",
+            'Call Time': d.callTime || "",
+            'Manpower': d.manpower || "",
+            'Contact Person': d.contactPerson || "",
+            'Contact Number': d.contactNumber || "",
+            'Event Notes': d.notes || "",
+            'Payment Type': d.paymentType || "",
+            'Email Thread': d.emailThread || "",
+            'Billing Status': d.billingStatus || "",
+            'Billing Status Date': d.billingStatusDate || "",
+            'GR Number': d.grNumber || "",
+            'Invoice Number': d.invoiceNumber || "",
+            'Amount': d.amount || "0",
+            'Payment Notes': d.paymentNotes || "",
+            'Invoice URL': d.invoiceUrl || "",
+            'Check URL': d.checkUrl || ""
         });
     });
 
     rawEvents = mappedEvents;
     updateCrewFilterDropdown(rawEvents);
     applyFilters();
+    
+    // Hide the initial full-page loader
+    const mainLoader = document.getElementById('loader');
+    if (mainLoader) mainLoader.style.display = 'none';
     
     setTimeout(() => { document.getElementById('bgSyncIndicator').style.display = 'none'; }, 500);
 });
