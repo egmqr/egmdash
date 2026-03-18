@@ -1127,24 +1127,17 @@
   let selectedExistingQrLogoId = "";
   let existingLogosCache = null;
 
+  // 1. We now let Firebase handle the persistent login state automatically
   function isAuthenticated() {
-      const exp = localStorage.getItem('egm_auth_exp');
-      if (exp && parseInt(exp) > Date.now()) {
-          return true;
-      }
-      
-      // If time expired, officially log out of Firebase
-      if (firebase.auth().currentUser) {
-          firebase.auth().signOut();
-      }
-      localStorage.removeItem('egm_auth_exp');
-      return false;
+      // Only return true if Firebase explicitly confirms the user is logged in
+      return firebase.auth().currentUser !== null;
   }
 
   function requireAuth(actionFunction) {
       if (isAuthenticated()) {
           actionFunction();
       } else {
+          // If not logged into Firebase, show the login modal!
           pendingAuthAction = actionFunction;
           document.getElementById('authPassword').value = '';
           document.getElementById('authError').style.display = 'none';
@@ -1153,6 +1146,12 @@
       }
   }
 
+  // Optional but recommended: Listen for Firebase restoring the session on page refresh
+  firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+          console.log("Firebase Auth Restored securely.");
+      }
+  });
   async function submitAuth() {
       const pass = document.getElementById('authPassword').value;
       if (!pass) return;
