@@ -655,10 +655,11 @@
             </div>
         </div>
 
-        <div class="row g-2 mb-2" id="newPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="newPaymentNotes" class="form-control form-control-sm"></div></div>
+        
         <div class="row g-2 mt-2" id="newPayInvUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-cloud-arrow-up"></i> Upload Invoice Doc</label><input type="file" id="newInvoiceFile" accept="image/*,.pdf" class="form-control form-control-sm"></div></div>
         <div class="row g-2 mt-2" id="newPayCheckUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-cloud-arrow-up"></i> Upload Check Photo</label><input type="file" id="newCheckFile" accept="image/*,.pdf" class="form-control form-control-sm"></div></div>
       </div>
+    <div class="row g-2 mb-2" id="newPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="newPaymentNotes" class="form-control form-control-sm"></div></div>
   </div>
   
   <div class="mb-4"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea></div>
@@ -946,10 +947,11 @@
             </div>
         </div>
 
-        <div class="row g-2 mb-2" id="editPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="editPaymentNotes" class="form-control form-control-sm"></div></div>
+        
         <div class="row g-2 mt-2" id="editPayInvUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-cloud-arrow-up"></i> Upload Invoice Doc</label><input type="file" id="editInvoiceFile" accept="image/*,.pdf" class="form-control form-control-sm"></div></div>
         <div class="row g-2 mt-2" id="editPayCheckUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-cloud-arrow-up"></i> Upload Check Photo</label><input type="file" id="editCheckFile" accept="image/*,.pdf" class="form-control form-control-sm"></div></div>
       </div>
+    <div class="row g-2 mb-2" id="editPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="editPaymentNotes" class="form-control form-control-sm"></div></div>
   </div>
   
   <div class="mb-4" id="editNotesBlock"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2"></textarea></div>
@@ -1269,12 +1271,11 @@ async function forceSync() {
       const amtGrp = document.getElementById(prefix + 'PayAmountGroup');
       const statGrp = document.getElementById(prefix + 'PayStatusGroup');
       const billGrp = document.getElementById(prefix + 'PayBillingGroup');
-      const noteGrp = document.getElementById(prefix + 'PayNotesGroup');
       const invUpGrp = document.getElementById(prefix + 'PayInvUploadGroup');
       const chkUpGrp = document.getElementById(prefix + 'PayCheckUploadGroup');
       const statusSel = document.getElementById(prefix + 'BillingStatus');
 
-      [amtGrp, statGrp, billGrp, noteGrp, invUpGrp, chkUpGrp].forEach(el => el.style.display = 'none');
+      [amtGrp, statGrp, billGrp, invUpGrp, chkUpGrp].forEach(el => el.style.display = 'none');
       statusSel.innerHTML = '';
       statusSel.disabled = false;
       
@@ -1287,9 +1288,6 @@ async function forceSync() {
       } else if (type === 'Cash ORCR') {
           amtGrp.style.display = 'block'; statGrp.style.display = 'block'; invUpGrp.style.display = 'block';
           statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
-      } else if (type === 'Online Transfer') {
-          amtGrp.style.display = 'block'; statGrp.style.display = 'block'; noteGrp.style.display = 'block';
-          statusSel.innerHTML = '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
       } else if (type === 'Billing') {
           statGrp.style.display = 'block'; billGrp.style.display = 'block'; invUpGrp.style.display = 'block';
           statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
@@ -1404,6 +1402,7 @@ async function forceSync() {
             'Invoice Number': pay?pay['Invoice Number']:'',
             'Email Thread': pay?pay['Email Thread Title']:'',
             'Amount': pay?pay['Amount']:'',
+            'Payment Notes': pay?pay['Payment Notes']:'',
             'Notes': pay?pay['Notes']:'',
             'Invoice URL': pay?pay['Invoice URL']:'',
             'Check URL': pay?pay['Check URL']:''
@@ -1762,7 +1761,10 @@ async function forceSync() {
         </td>
         <td style="min-width: 180px;">${nameDisplay}<br><span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${eventDateStr}</span></td>
         <td class="text-nowrap"><span class="badge bg-light text-dark border">${p['Payment Type']||'-'}</span>${amountStr}</td>
-        <td style="min-width: 180px;" class="text-truncate text-secondary" style="max-width: 250px;"><i class="bi bi-envelope me-1 opacity-50"></i> ${p['Email Thread']||'-'}<br><span class="small text-muted">${p['Notes']||''}</span></td>
+        <td style="min-width: 180px;" class="text-truncate text-secondary" style="max-width: 250px;">
+    <i class="bi bi-envelope me-1 opacity-50"></i> ${p['Email Thread']||'-'}<br>
+    <span class="small text-muted fw-bold fst-italic">Note: ${p['Payment Notes']||'None'}</span>
+</td>
         <td class="text-nowrap">${badge} <br><span class="text-muted fw-bold mt-1 d-block" style="font-size: 0.75rem;"><i class="bi bi-calendar2 me-1"></i>${dateStr}</span></td>
         <td class="text-nowrap">
             <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">GR: <span class="text-dark fw-bold badge bg-light border">${p['GR Number']||'--'}</span></span>
@@ -2136,7 +2138,7 @@ async function forceSync() {
         form.elements['grNumber'].value = e['GR Number'] || '';
         form.elements['invoiceNumber'].value = e['Invoice Number'] || '';
         form.elements['amount'].value = e['Amount'] || '';
-        form.elements['paymentNotes'].value = e['Notes'] || '';
+        form.elements['paymentNotes'].value = e['Payment Notes'] || '';
     }
     
     form.elements['eventDate'].value = toInputDate(e['Event Date']);
