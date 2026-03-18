@@ -1188,7 +1188,9 @@
  async function callApi(payload, method='GET', isSilent=false) {
     if(!isSilent) document.getElementById('loader').style.display='block';
     
-    let u = new URL(API_URL); 
+    // Safety check: Ensure the URL has no accidental spaces
+    const cleanUrl = API_URL.trim();
+    let u = new URL(cleanUrl); 
 
     try {
         if(method === 'GET') {
@@ -1202,26 +1204,28 @@
                 payload.password = localStorage.getItem('egm_auth_token') || '';
             }
             
-            // THE FORM WRAPPER: This absolutely prevents the CORS error.
-            const response = await fetch(API_URL, {
+            // THE MULTIPART FORM BYPASS
+            // By packaging the JSON into a native FormData object and omitting custom headers, 
+            // the browser treats this exactly like a standard HTML form submission.
+            // This is mathematically guaranteed to skip the CORS Preflight block!
+            const fd = new FormData();
+            fd.append('data', JSON.stringify(payload));
+
+            const response = await fetch(cleanUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                    'data': JSON.stringify(payload)
-                })
+                body: fd // DO NOT add headers here! The browser generates them automatically.
             });
 
+            // Read the response text first to prevent JSON parse crashes if Google errors out
             const text = await response.text(); 
             try {
                 const data = JSON.parse(text); 
                 if(!isSilent) document.getElementById('loader').style.display='none'; 
                 return data;
             } catch (jsonErr) {
-                console.error("Backend Error Response:", text);
+                console.error("Google returned an HTML error instead of JSON:", text);
                 if(!isSilent) document.getElementById('loader').style.display='none';
-                return { success: false, error: "Backend crash. See console for details." };
+                return { success: false, error: "Google intercepted the save request. See console." };
             }
         }
     } catch(e) {
