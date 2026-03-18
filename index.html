@@ -1264,7 +1264,7 @@
           statusSel.innerHTML = '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
       } else if (type === 'Cash ORCR') {
           amtGrp.style.display = 'block'; statGrp.style.display = 'block'; invUpGrp.style.display = 'block';
-          statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option>';
+          statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
       } else if (type === 'Online Transfer') {
           amtGrp.style.display = 'block'; statGrp.style.display = 'block'; noteGrp.style.display = 'block';
           statusSel.innerHTML = '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
@@ -1272,7 +1272,8 @@
           statGrp.style.display = 'block'; billGrp.style.display = 'block'; invUpGrp.style.display = 'block';
           statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
       } else if (type === 'Check') {
-          amtGrp.style.display = 'block'; chkUpGrp.style.display = 'block';
+          amtGrp.style.display = 'block'; statGrp.style.display = 'block'; chkUpGrp.style.display = 'block';
+          statusSel.innerHTML = '<option value="Pending Clearance">Pending Clearance</option><option value="Cleared / Paid">Cleared / Paid</option>';
       }
   }
   
@@ -1377,6 +1378,7 @@
       const currentStatus = statusSel.value;
       
       let options = '<option value="Unpaid">Unpaid / Processing</option><option value="">All Statuses</option>';
+      statusSel.disabled = false; // Enable by default
       
       if (type === 'Cash AR' || type === 'Online Transfer') {
           options += '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
@@ -1384,9 +1386,11 @@
           options += '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
       } else if (type === 'Billing') {
           options += '<option value="Pending Invoice">Pending Invoice</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
+      } else if (type === 'Check') {
+          options += '<option value="Pending Clearance">Pending Clearance</option><option value="Cleared / Paid">Cleared / Paid</option>';
       } else {
           // Default all options if no specific type is selected
-          options += '<option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
+          options += '<option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Pending Invoice">Pending Invoice</option><option value="Invoice Sent">Invoice Sent</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option><option value="Pending Clearance">Pending Clearance</option><option value="Cleared / Paid">Cleared / Paid</option>';
       }
       
       statusSel.innerHTML = options;
@@ -1444,7 +1448,7 @@
       if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
       if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
       
-      if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed'].includes(e['Billing Status'])); } 
+      if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed', 'Pending Invoice', 'Invoice Sent', 'Pending', 'Pending Clearance'].includes(e['Billing Status'])); }
       else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
       
       renderPayments(filtered);
