@@ -1191,33 +1191,41 @@
     let u = new URL(API_URL); 
 
     try {
-        let response;
         if(method === 'GET') {
             Object.keys(payload).forEach(k => u.searchParams.append(k, payload[k]));
-            response = await fetch(u);
+            const response = await fetch(u);
+            const data = await response.json(); 
+            if(!isSilent) document.getElementById('loader').style.display='none'; 
+            return data;
         } else {
             if (payload.action !== 'verifyPassword') {
                 payload.password = localStorage.getItem('egm_auth_token') || '';
             }
             
-            // THE MAGIC FIX: Setting Content-Type strictly to 'text/plain' 
-            // forces the browser to skip the CORS OPTIONS preflight check entirely!
-            response = await fetch(API_URL, {
+            // THE ULTIMATE FIX: 
+            // 1. NO custom headers block at all. 
+            // 2. redirect: 'follow' forces the browser to ride Google's internal 302 redirect.
+            const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'text/plain;charset=utf-8'
-                },
+                redirect: 'follow', 
                 body: JSON.stringify(payload)
             });
-        }
 
-        const data = await response.json(); 
-        if(!isSilent) document.getElementById('loader').style.display='none'; 
-        return data;
+            const text = await response.text(); 
+            try {
+                const data = JSON.parse(text); 
+                if(!isSilent) document.getElementById('loader').style.display='none'; 
+                return data;
+            } catch (jsonErr) {
+                console.error("CRASH: Google returned HTML instead of JSON:", text);
+                if(!isSilent) document.getElementById('loader').style.display='none';
+                return { success: false, error: "Google intercepted the save request." };
+            }
+        }
     } catch(e) {
         if(!isSilent) document.getElementById('loader').style.display='none';
         console.error("API Call Failed", e);
-        return { success: false, error: "Network Error: Google rejected the connection." };
+        return { success: false, error: "Network Error: " + e.message };
     }
   }
 
