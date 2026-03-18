@@ -2505,11 +2505,21 @@ async function forceSync() {
     document.getElementById('overlayText').innerText = "Updating...";
     const res = await callApi({action:'editEvent', formObject: obj}, 'POST');
     
-    ov.style.display='none'; btn.disabled=false;
     if(res && res.success) { 
+        // 1. Change the loading text so the user knows it's finalizing
+        document.getElementById('overlayText').innerText = "Syncing Dashboard...";
+        
+        // 2. Force a direct pull from the live sheet BEFORE closing the modal
+        await forceSync(); 
+        
+        // 3. Hide the modal and overlay now that the DOM is fully updated
         bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
-        fetchAllData(); 
-    } else alert("Error: " + (res?res.error:"Unknown"));
+    } else {
+        alert("Error: " + (res?res.error:"Unknown"));
+    }
+    
+    ov.style.display='none'; 
+    btn.disabled=false;
   };
 
 
