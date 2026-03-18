@@ -1199,34 +1199,25 @@
             if (payload.action !== 'verifyPassword') {
                 payload.password = localStorage.getItem('egm_auth_token') || '';
             }
-
-            // THE FIX: We package the JSON inside a standard Form submission wrapper.
-            // This guarantees the browser skips the CORS Preflight check entirely.
+            
+            // THE MAGIC FIX: Setting Content-Type strictly to 'text/plain' 
+            // forces the browser to skip the CORS OPTIONS preflight check entirely!
             response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'text/plain;charset=utf-8'
                 },
-                body: new URLSearchParams({
-                    'data': JSON.stringify(payload)
-                })
+                body: JSON.stringify(payload)
             });
         }
 
-        const text = await response.text(); 
-        try {
-            const data = JSON.parse(text); 
-            if(!isSilent) document.getElementById('loader').style.display='none'; 
-            return data;
-        } catch (jsonErr) {
-            console.error("Google returned an HTML error instead of JSON:", text);
-            if(!isSilent) document.getElementById('loader').style.display='none';
-            return { success: false, error: "Google blocked the request. Check your deployment settings." };
-        }
+        const data = await response.json(); 
+        if(!isSilent) document.getElementById('loader').style.display='none'; 
+        return data;
     } catch(e) {
         if(!isSilent) document.getElementById('loader').style.display='none';
         console.error("API Call Failed", e);
-        return { success: false, error: "Network Error: " + e.message };
+        return { success: false, error: "Network Error: Google rejected the connection." };
     }
   }
 
