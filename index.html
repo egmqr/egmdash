@@ -1189,32 +1189,43 @@
     if(!isSilent) document.getElementById('loader').style.display='block';
     
     let u = new URL(API_URL); 
-    
-    let fetchOptions = { 
-        method: method,
-        // This exact header bypasses Google's CORS "OPTIONS" preflight block:
-        headers: { "Content-Type": "text/plain;charset=utf-8" } 
-    };
-
-    if(method === 'GET') {
-        Object.keys(payload).forEach(k => u.searchParams.append(k, payload[k]));
-    } else {
-        if (payload.action !== 'verifyPassword') {
-            payload.password = localStorage.getItem('egm_auth_token') || '';
-        }
-        fetchOptions.body = JSON.stringify(payload);
-    }
 
     try {
-        const r = await fetch(u, fetchOptions);
-        const d = await r.json(); 
-        if(!isSilent) document.getElementById('loader').style.display='none'; 
-        return d;
+        let response;
+        if(method === 'GET') {
+            Object.keys(payload).forEach(k => u.searchParams.append(k, payload[k]));
+            response = await fetch(u);
+        } else {
+            if (payload.action !== 'verifyPassword') {
+                payload.password = localStorage.getItem('egm_auth_token') || '';
+            }
+            
+            // We pass the string directly into the body with ZERO headers. 
+            // This forces the browser to send a "Simple Request", completely bypassing the CORS Preflight block.
+            response = await fetch(u, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+        }
+
+        // We read it as raw text first. If Google crashes and returns an HTML login page, 
+        // this catches it gracefully instead of violently breaking the app.
+        const text = await response.text(); 
+        
+        try {
+            const data = JSON.parse(text); 
+            if(!isSilent) document.getElementById('loader').style.display='none'; 
+            return data;
+        } catch (jsonErr) {
+            console.error("CRASH: Google returned HTML instead of JSON data:", text);
+            if(!isSilent) document.getElementById('loader').style.display='none';
+            alert("Google blocked the save request. This usually means your Google Account's Workspace settings are blocking public web apps.");
+            return { success: false, error: "Backend blocked by Google." };
+        }
     } catch(e) {
         if(!isSilent) document.getElementById('loader').style.display='none';
         console.error("API Call Failed", e);
-        alert("Network Error: Make sure your API_URL is correct and you aren't running this from a local file:/// address.");
-        return { success: false, error: e.toString() };
+        return { success: false, error: "Network Error: " + e.message };
     }
   }
 
