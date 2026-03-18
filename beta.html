@@ -1883,7 +1883,8 @@
   }
 
   function openAddDayModal(id) {
-     const e = rawEvents.find(ev => String(ev['Event ID']) === String(id) && (!date || String(ev['Event Date']) === String(date)));
+     // FIX 1: Removed the broken 'date' reference
+     const e = rawEvents.find(ev => String(ev['Event ID']) === String(id));
      if(!e) return;
      
      const form = document.getElementById('addDayForm');
@@ -1979,7 +1980,11 @@
      }
      
      document.getElementById('addDayEventId').value = id;
-     new bootstrap.Modal(document.getElementById('addDayModal')).show();
+     
+     // FIX 2: Safely get the existing modal instance or create a new one!
+     const modalEl = document.getElementById('addDayModal');
+     const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+     modal.show();
   }
 
   function openEditModal(id, date, fromCalendar = false) {
@@ -2153,7 +2158,11 @@
     });
     
     setEditFormState(isReadOnly);
-    new bootstrap.Modal(document.getElementById('editEventModal')).show();
+    
+    // Safely get or create modal
+    const modalEl = document.getElementById('editEventModal');
+    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    modal.show();
   }
 
   function openUploadModal(eventId) {
