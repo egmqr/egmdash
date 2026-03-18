@@ -1715,15 +1715,19 @@
       let eventDateStr = p['Event Date'] ? new Date(p['Event Date']).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '-';
 
       let actionHtml = '';
+      
+      // If the payment type requires an invoice and the URL exists, show the View badge
       if (['Cash ORCR', 'Billing', 'Online Transfer ORCR', 'Check ORCR'].includes(p['Payment Type'])) {
-          actionHtml += p['Invoice URL'] 
-              ? `<a href="${p['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none">View Inv</a> <button class="btn btn-sm btn-outline-secondary py-0 px-1 me-1 mb-1" title="Overwrite Invoice" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Invoice', true))"><i class="bi bi-arrow-repeat"></i></button>` 
-              : `<button class="btn btn-sm btn-outline-primary py-0 px-1 me-1 mb-1" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Invoice', false))">Upload Inv</button>`;
+          if (p['Invoice URL']) {
+              actionHtml += `<a href="${p['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 mb-1 text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>View Inv</a> `;
+          }
       }
+      
+      // If the payment type requires a check and the URL exists, show the View badge
       if (['Check', 'Check AR', 'Check ORCR'].includes(p['Payment Type'])) {
-          actionHtml += p['Check URL'] 
-              ? `<a href="${p['Check URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none">View Check</a> <button class="btn btn-sm btn-outline-secondary py-0 px-1 me-1 mb-1" title="Overwrite Check" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Check', true))"><i class="bi bi-arrow-repeat"></i></button>` 
-              : `<button class="btn btn-sm btn-outline-primary py-0 px-1 me-1 mb-1" style="font-size:0.6rem;" onclick="requireAuth(()=>openPaymentDocModal('${p['Event ID']}', 'Check', false))">Upload Check</button>`;
+          if (p['Check URL']) {
+              actionHtml += `<a href="${p['Check URL']}" target="_blank" class="badge bg-success text-white me-1 mb-1 text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>View Check</a>`;
+          }
       }
 
       let amountStr = p['Amount'] ? `<br><strong class="text-success">₱${Number(p['Amount']).toLocaleString()}</strong>` : '';
