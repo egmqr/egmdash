@@ -2200,14 +2200,28 @@
   }
   
   async function deleteFullEvent() {
-    const eventId = document.getElementById('editEventId').value;
-    if (!eventId || !confirm(`WARNING: Permanently delete project #${eventId}? This cannot be undone.`)) return;
-    
-    document.getElementById('submitOverlay').style.display = 'flex';
-    await db.collection("dashboard_events").doc(eventId).delete();
-    document.getElementById('submitOverlay').style.display = 'none';
-    bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
-}
+      const eventId = document.getElementById('editEventId').value;
+      if (!eventId || !confirm(`WARNING: Permanently delete project #${eventId}? This cannot be undone.`)) return;
+      
+      document.getElementById('submitOverlay').style.display = 'flex';
+      
+      try {
+          // THE FIX: Find ALL documents that share this Event ID and delete them together
+          const snapshot = await db.collection("dashboard_events").where("eventId", "==", eventId).get();
+          const batch = db.batch();
+          
+          snapshot.forEach(doc => {
+              batch.delete(doc.ref);
+          });
+          
+          await batch.commit();
+      } catch (err) {
+          alert("Error deleting: " + err.message);
+      }
+      
+      document.getElementById('submitOverlay').style.display = 'none';
+      bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
+  }
 
   function readFileAsBase64(file) {
       return new Promise((resolve) => {
@@ -2385,10 +2399,12 @@
       try {
           const baseDoc = await db.collection("dashboard_events").doc(obj.eventId).get();
           const baseData = baseDoc.exists ? baseDoc.data() : {};
-          const newId = await getNextEventId();
           
-          await db.collection("dashboard_events").doc(newId).set({
-              eventId: newId,
+          // THE FIX: We create a unique Firestore Document ID, but KEEP the original eventId!
+          const uniqueDocId = obj.eventId + "_" + Date.now();
+          
+          await db.collection("dashboard_events").doc(uniqueDocId).set({
+              eventId: obj.eventId, // <-- Keeps it attached to egm0015
               eventName: obj.eventName || baseData.eventName || "",
               eventDate: obj.eventDate || "",
               eventVenue: baseData.eventVenue || "",
@@ -2465,33 +2481,43 @@
       document.getElementById('overlayText').innerText = "Updating Database...";
       btn.disabled = true; ov.style.display = 'flex';
 
-      try {
-          await db.collection("dashboard_events").doc(obj.eventId).update({
-              eventName: obj.eventName || "",
-              eventDate: obj.eventDate || "",
-              eventVenue: obj.eventVenue || "",
-              venueLink: obj.venueLink || "",
-              eventStatus: obj.eventStatus || "Pencil Booked",
-              avpRequired: obj.avp === "true",
-              services: (obj.services || []).join(", "),
-              startTime: obj.startTime || "",
-              endTime: obj.endTime || "",
-              callTime: obj.callTime || "",
-              manpower: (obj.manpower || []).join(", "),
-              contactPerson: obj.contactPerson || "",
-              contactNumber: obj.contactNumber || "",
-              notes: obj.notes || "",
-              paymentType: obj.paymentType || "",
-              emailThread: obj.emailThread || "",
-              billingStatus: obj.billingStatus || "",
-              billingStatusDate: obj.billingStatusDate || "",
-              grNumber: obj.grNumber || "",
-              invoiceNumber: obj.invoiceNumber || "",
-              amount: obj.amount || "0",
-              paymentNotes: obj.paymentNotes || "",
-              invoiceUrl: obj.invoiceUrl || "",
-              checkUrl: obj.checkUrl || ""
-          });
+     try {
+          // THE FIX: Search Firebase for the specific day being edited
+          const snapshot = await db.collection("dashboard_events")
+              .where("eventId", "==", obj.eventId)
+              .where("eventDate", "==", obj.originalDate)
+              .get();
+
+          if (!snapshot.empty) {
+              const targetDocId = snapshot.docs[0].id; // Get the unique Firestore ID
+              
+              await db.collection("dashboard_events").doc(targetDocId).update({
+                  eventName: obj.eventName || "",
+                  eventDate: obj.eventDate || "",
+                  eventVenue: obj.eventVenue || "",
+                  venueLink: obj.venueLink || "",
+                  eventStatus: obj.eventStatus || "Pencil Booked",
+                  avpRequired: obj.avp === "true",
+                  services: (obj.services || []).join(", "),
+                  startTime: obj.startTime || "",
+                  endTime: obj.endTime || "",
+                  callTime: obj.callTime || "",
+                  manpower: (obj.manpower || []).join(", "),
+                  contactPerson: obj.contactPerson || "",
+                  contactNumber: obj.contactNumber || "",
+                  notes: obj.notes || "",
+                  paymentType: obj.paymentType || "",
+                  emailThread: obj.emailThread || "",
+                  billingStatus: obj.billingStatus || "",
+                  billingStatusDate: obj.billingStatusDate || "",
+                  grNumber: obj.grNumber || "",
+                  invoiceNumber: obj.invoiceNumber || "",
+                  amount: obj.amount || "0",
+                  paymentNotes: obj.paymentNotes || "",
+                  invoiceUrl: obj.invoiceUrl || "",
+                  checkUrl: obj.checkUrl || ""
+              });
+          }
           bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
       } catch (err) {
           alert("Error updating: " + err.message);
