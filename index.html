@@ -654,7 +654,7 @@
       </select>
       
       <div id="newDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-        <div class="row g-2 mb-2" id="newPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success"></div></div></div>
+        <div class="row g-2 mb-2" id="newPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success" value="0"></div></div></div>
         <div class="row g-2 mb-2" id="newPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark"></select></div></div>
         
         <div id="newPayBillingGroup" style="display:none;">
@@ -948,7 +948,7 @@
       </select>
       
       <div id="editDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-        <div class="row g-2 mb-2" id="editPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" id="editAmount" class="form-control border-start-0 fw-bold text-success"></div></div></div>
+        <div class="row g-2 mb-2" id="editPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" id="editAmount" class="form-control border-start-0 fw-bold text-success" value="0"></div></div></div>
         <div class="row g-2 mb-2" id="editPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="editBillingStatus" class="form-select form-select-sm fw-bold text-dark"></select></div></div>
         
         <div id="editPayBillingGroup" style="display:none;">
@@ -2154,7 +2154,7 @@ async function forceSync() {
         form.elements['billingStatusDate'].value = toInputDate(e['Billing Status Date']);
         form.elements['grNumber'].value = e['GR Number'] || '';
         form.elements['invoiceNumber'].value = e['Invoice Number'] || '';
-        form.elements['amount'].value = e['Amount'] || '';
+        form.elements['amount'].value = e['Amount'] || '0';
         form.elements['paymentNotes'].value = e['Payment Notes'] || '';
     }
     
