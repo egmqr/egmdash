@@ -298,17 +298,18 @@
           <div class="col-6 col-md-3">
               <span class="form-label-sm">Billing Status</span>
               <select id="fBillStatus" class="form-select form-select-sm" onchange="updateFilterTypes(); applyFilters()">
-                  <option value="Unpaid" selected>Unpaid / Processing</option>
-                  <option value="">All Statuses</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Pending Invoice">Pending Invoice</option>
-                  <option value="Invoice Sent">Invoice Sent</option>
-                  <option value="GR Pending">GR Pending</option>
-                  <option value="GR Received">GR Received</option>
-                  <option value="GR Processed">GR Processed</option>
-                  <option value="Payment released">Payment released</option>
-              </select>
+    <option value="Unpaid" selected>Unpaid / Processing</option>
+    <option value="">All Statuses</option>
+    <option value="Pending">Pending</option>
+    <option value="Paid">Paid</option>
+    <option value="Pending Invoice">Pending Invoice</option>
+    <option value="Invoice Uploaded">Invoice Uploaded</option>
+    <option value="Invoice Sent">Invoice Sent</option>
+    <option value="GR Pending">GR Pending</option>
+    <option value="GR Received">GR Received</option>
+    <option value="GR Processed">GR Processed</option>
+    <option value="Payment released">Payment released</option>
+</select>
           </div>
           <div class="col-6 col-md-2 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
         </div>
@@ -1348,9 +1349,11 @@ async function forceSync() {
   function updateFilterTypes() {
       const status = document.getElementById('fBillStatus').value;
       const typeSel = document.getElementById('fPayType');
+      
       if (['GR Pending', 'GR Received', 'GR Processed', 'Payment released'].includes(status)) {
           if (typeSel.value !== 'Billing') { typeSel.value = 'Billing'; updateFilterStatuses(); document.getElementById('fBillStatus').value = status; }
       } else if (['Invoice Sent', 'Invoice Uploaded'].includes(status)) {
+          // If the user selects an invoice status, ensure the Payment Type is one that supports invoices
           if (!['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR', 'Billing'].includes(typeSel.value)) { 
               typeSel.value = 'Cash ORCR'; updateFilterStatuses(); document.getElementById('fBillStatus').value = status; 
           }
@@ -1495,7 +1498,7 @@ async function forceSync() {
       if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
       if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
       
-      if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed', 'Pending Invoice', 'Invoice Sent', 'Pending', 'Pending Clearance'].includes(e['Billing Status'])); } 
+      if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed', 'Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Pending', 'Pending Clearance'].includes(e['Billing Status'])); } 
       else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
       
       renderPayments(filtered);
@@ -2273,7 +2276,8 @@ async function forceSync() {
           
           if (file.type === 'application/pdf') {
               const reader = new FileReader();
-              reader.onload = e => resolve({ filename: file.name, mimeType: file.type, base64: e.target.result.split(',')[1] });
+              // FIX: Send the full data URL so the backend can parse the mimeType correctly
+              reader.onload = e => resolve({ filename: file.name, mimeType: file.type, base64: e.target.result });
               reader.readAsDataURL(file);
               return;
           }
@@ -2298,7 +2302,8 @@ async function forceSync() {
                   ctx.drawImage(img, 0, 0, width, height);
                   
                   const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                  resolve({ filename: file.name.split('.')[0] + '.jpg', mimeType: 'image/jpeg', base64: dataUrl.split(',')[1] });
+                  // FIX: Send the full dataUrl instead of splitting it
+                  resolve({ filename: file.name.split('.')[0] + '.jpg', mimeType: 'image/jpeg', base64: dataUrl });
               };
               img.src = e.target.result;
           };
