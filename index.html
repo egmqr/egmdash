@@ -1389,11 +1389,23 @@
       const typeSel = document.getElementById('fPayType');
       
       if (['GR Pending', 'GR Received', 'GR Processed', 'Payment released'].includes(status)) {
-          if (typeSel.value !== 'Billing') { typeSel.value = 'Billing'; updateFilterStatuses(); document.getElementById('fBillStatus').value = status; }
-      } else if (['Invoice Sent', 'Invoice Uploaded'].includes(status)) {
-          // If the user selects an invoice status, ensure the Payment Type is one that supports invoices
+          if (typeSel.value !== 'Billing') { 
+              typeSel.value = 'Billing'; 
+              updateFilterStatuses(); 
+              document.getElementById('fBillStatus').value = status; 
+          }
+      } else if (status === 'Invoice Uploaded') {
+          // THE FIX: Reset Payment Type to "All Types" (empty string) when Invoice Uploaded is selected
+          if (typeSel.value !== '') {
+              typeSel.value = ''; 
+              updateFilterStatuses(); 
+              document.getElementById('fBillStatus').value = status; 
+          }
+      } else if (status === 'Invoice Sent') {
           if (!['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR', 'Billing'].includes(typeSel.value)) { 
-              typeSel.value = 'Cash ORCR'; updateFilterStatuses(); document.getElementById('fBillStatus').value = status; 
+              typeSel.value = 'Cash ORCR'; 
+              updateFilterStatuses(); 
+              document.getElementById('fBillStatus').value = status; 
           }
       }
   }
