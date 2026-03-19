@@ -2192,9 +2192,9 @@
             if (invDisplay) {
                 if (currentInv) {
                     invDisplay.innerHTML = `
-                        <div class="d-flex align-items-center mt-1" id="invBadgeContainer">
+                        <div class="d-flex align-items-center mt-1">
                             <a href="${currentInv}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> Current Invoice Link</a>
-                            <span class="badge bg-danger ms-3 shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editInvoiceUrl').value=''; document.getElementById('invBadgeContainer').style.display='none';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
+                            <span class="badge bg-danger ms-3 shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editInvoiceUrl').value=''; document.getElementById('editInvoiceLinkDisplay').innerHTML='';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
                         </div>`;
                 } else {
                     invDisplay.innerHTML = '';
@@ -2206,9 +2206,9 @@
             if (chkDisplay) {
                 if (currentChk) {
                     chkDisplay.innerHTML = `
-                        <div class="d-flex align-items-center mt-1" id="chkBadgeContainer">
+                        <div class="d-flex align-items-center mt-1">
                             <a href="${currentChk}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> Current Check Link</a>
-                            <span class="badge bg-danger ms-3 shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editCheckUrl').value=''; document.getElementById('chkBadgeContainer').style.display='none';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
+                            <span class="badge bg-danger ms-3 shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editCheckUrl').value=''; document.getElementById('editCheckLinkDisplay').innerHTML='';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
                         </div>`;
                 } else {
                     chkDisplay.innerHTML = '';
