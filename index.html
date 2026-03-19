@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -658,7 +656,7 @@
       
       <div id="newDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
         <div class="row g-2 mb-2" id="newPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success" value="0"></div></div></div>
-        <div class="row g-2 mb-2" id="newPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark"></select></div></div>
+        <div class="row g-2 mb-2" id="newPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('new')"></select></div></div>
         
         <div id="newPayBillingGroup" style="display:none;">
             <div class="mb-2"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
@@ -964,7 +962,7 @@
       
       <div id="editDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
         <div class="row g-2 mb-2" id="editPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" id="editAmount" class="form-control border-start-0 fw-bold text-success" value="0"></div></div></div>
-        <div class="row g-2 mb-2" id="editPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="editBillingStatus" class="form-select form-select-sm fw-bold text-dark"></select></div></div>
+        <div class="row g-2 mb-2" id="editPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="editBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('edit')"></select></div></div>
         
         <div id="editPayBillingGroup" style="display:none;">
             <div class="mb-2"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
@@ -1343,8 +1341,28 @@
           statGrp.style.display = 'block'; billGrp.style.display = 'block'; invUpGrp.style.display = 'block';
           statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
       }
+  // ... existing togglePaymentUI logic ...
+      checkInvoiceRequired(prefix);
   }
-  
+  // Forces the Invoice URL to be required based on Billing Status
+  function checkInvoiceRequired(prefix) {
+      const status = document.getElementById(prefix + 'BillingStatus').value;
+      const invoiceInput = document.getElementById(prefix + 'InvoiceUrl');
+      
+      if (!invoiceInput) return;
+
+      // If the status is any of these, lock the field as REQUIRED
+      const requiredStatuses = [
+          'Invoice Uploaded', 'Invoice Sent', 'GR Pending', 
+          'GR Received', 'GR Processed', 'Payment released'
+      ];
+      
+      if (requiredStatuses.includes(status)) {
+          invoiceInput.setAttribute('required', 'required');
+      } else {
+          invoiceInput.removeAttribute('required');
+      }
+  }
   function updateFilterStatuses() {
       const type = document.getElementById('fPayType').value;
       const statusSel = document.getElementById('fBillStatus');
@@ -2156,7 +2174,12 @@
         togglePaymentUI('edit');
         
         setTimeout(() => {
-            if(e['Billing Status']) form.elements['billingStatus'].value = e['Billing Status'];
+            if(e['Billing Status']) {
+                form.elements['billingStatus'].value = e['Billing Status'];
+            }
+            
+            // THE FIX: Trigger the required check when opening the modal!
+            checkInvoiceRequired('edit');
             
             // THE FIX: Populate the new URL text inputs directly!
             form.elements['invoiceUrl'].value = e['Invoice URL'] || '';
