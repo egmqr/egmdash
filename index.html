@@ -799,7 +799,12 @@
   <button type="submit" class="btn btn-success w-100 py-3 fw-bold shadow-sm" id="addDaySubmitBtn"><i class="bi bi-check2-circle me-1"></i> SAVE NEW DAY</button>
 </form></div></div></div></div>
 
-<div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-pencil-square me-2"></i> Event Details</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
+<div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom">
+  <h6 class="fw-bold mb-0 text-uppercase text-secondary d-flex align-items-center">
+    <i class="bi bi-pencil-square me-2"></i> Event Details 
+    <span id="editEventIdDisplay" class="badge bg-secondary bg-opacity-10 text-secondary border ms-2" style="font-size: 0.75rem; letter-spacing: 0.5px; text-transform: none;"></span>
+</h6>
+  <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
     
   <div id="editAuthWarning" class="alert alert-warning small py-2 mb-3 shadow-sm border-0 align-items-center justify-content-between" style="display:none;">
       <span><i class="bi bi-eye-fill me-1"></i> <strong>View-Only.</strong> Login to make changes.</span>
@@ -822,10 +827,7 @@
  <div id="editGeneralFields">
       <div class="row g-2 mb-3 align-items-center">
         <div class="col-8 col-md-10">
-            <div class="d-flex align-items-baseline gap-2 mb-1">
-                <label class="form-label-sm mb-0">Event Name</label>
-                <span id="editEventIdDisplay" class="badge badge-soft-dark px-2 py-0 text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px;"></span>
-            </div>
+            <label class="form-label-sm">Event Name</label>
             <input type="text" name="eventName" class="form-control fw-bold">
         </div>
         <div class="col-4 col-md-2 mt-4 pt-1">
