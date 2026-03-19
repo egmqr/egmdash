@@ -2088,8 +2088,24 @@
     form.elements['firestoreDocId'].value = e['Doc ID'] || '';
     form.elements['eventName'].value = e['Event Name'] || '';
     
-    // THE FIX: Check if this is the Main Day and swap the delete button dynamically!
-    const isMainDay = (e['Doc ID'] === id) || (e['Doc ID'] === id + '_row0');
+    // 1. Find EVERY day attached to this Event ID
+    const allDays = rawEvents.filter(ev => String(ev['Event ID']) === String(id));
+    
+    // 2. Sort them chronologically by Date (and Time if dates match)
+    allDays.sort((a, b) => {
+        let dateA = a['Event Date'] || '9999-99-99';
+        let dateB = b['Event Date'] || '9999-99-99';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        
+        let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
+        let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
+        return timeA.localeCompare(timeB);
+    });
+
+    // 3. The true "Main Day" is whichever day is currently first in the timeline
+    const firstDayDocId = allDays.length > 0 ? allDays[0]['Doc ID'] : null;
+    const isMainDay = (e['Doc ID'] === firstDayDocId);
+    
     const deleteBtn = document.getElementById('editDeleteBtn');
     
     if (isMainDay) {
