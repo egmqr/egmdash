@@ -1470,7 +1470,6 @@
     if(currentTab === 'events' || currentTab === 'calendar') {
       const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
       
-      // CALENDAR & LIST VIEW: Show everything by default!
       let filtered = rawEvents; 
       
       if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n) || (e['Event Venue'] && e['Event Venue'].toLowerCase().includes(n)));
@@ -1481,8 +1480,17 @@
       if(s) filtered = filtered.filter(e => e['Event Status'] === s);
       
       filteredEventsCache = filtered; 
-      renderEvents(filtered, !n && !dF && !dT && !c && !s);
-      renderCalendar(filtered);
+      
+      // THE FIX FOR LIST VIEW:
+      // Hide Pencil Booked & Cancelled from the List View by default
+      let listFiltered = filtered;
+      if (!s) { 
+          listFiltered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
+      }
+      
+      // Render the List view without tentative events, but render the Calendar with everything!
+      renderEvents(listFiltered, !n && !dF && !dT && !c && !s);
+      renderCalendar(filtered); 
       
     } else if (currentTab === 'payments') {
       const q=document.getElementById('fPaySearch').value.toLowerCase(), 
@@ -1490,8 +1498,9 @@
             t=document.getElementById('fPayType').value, 
             s=document.getElementById('fBillStatus').value;
             
-      // PAYMENTS VIEW: Exclude Pencil Booked entirely!
-      let filtered = rawEvents.filter(e => e['Event Status'] !== 'Pencil Booked');
+      // THE FIX FOR PAYMENTS VIEW:
+      // Exclude Pencil Booked and Cancelled entirely!
+      let filtered = rawEvents.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
       
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
       if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
