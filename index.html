@@ -819,10 +819,13 @@
       <label class="btn btn-outline-danger btn-sm fw-bold d-flex align-items-center justify-content-center" style="flex: 1; font-size: 0.8rem;" for="editTypeLeave"><i class="bi bi-airplane me-1"></i> Crew Leave</label>
   </div>
 
-  <div id="editGeneralFields">
+ <div id="editGeneralFields">
       <div class="row g-2 mb-3 align-items-center">
         <div class="col-8 col-md-10">
-            <label class="form-label-sm">Event Name</label>
+            <div class="d-flex align-items-baseline gap-2 mb-1">
+                <label class="form-label-sm mb-0">Event Name</label>
+                <span id="editEventIdDisplay" class="badge badge-soft-dark px-2 py-0 text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px;"></span>
+            </div>
             <input type="text" name="eventName" class="form-control fw-bold">
         </div>
         <div class="col-4 col-md-2 mt-4 pt-1">
@@ -2146,7 +2149,9 @@
     form.elements['originalDate'].value = date || '';
     form.elements['firestoreDocId'].value = e['Doc ID'] || '';
     form.elements['eventName'].value = e['Event Name'] || '';
-    
+    // Populate the visual Event ID badge above the Event Name
+    const idDisplay = document.getElementById('editEventIdDisplay');
+    if (idDisplay) idDisplay.innerText = '#' + id;
     // 1. Find EVERY day attached to this Event ID
     const allDays = rawEvents.filter(ev => String(ev['Event ID']) === String(id));
     
