@@ -2178,25 +2178,43 @@
                 form.elements['billingStatus'].value = e['Billing Status'];
             }
             
-            // THE FIX: Trigger the required check when opening the modal!
+            // Trigger the required check when opening the modal
             checkInvoiceRequired('edit');
             
-            // THE FIX: Populate the new URL text inputs directly!
-            form.elements['invoiceUrl'].value = e['Invoice URL'] || '';
-            form.elements['checkUrl'].value = e['Check URL'] || '';
+            // 1. Populate the text inputs with the current database links
+            const currentInv = e['Invoice URL'] || '';
+            const currentChk = e['Check URL'] || '';
+            form.elements['invoiceUrl'].value = currentInv;
+            form.elements['checkUrl'].value = currentChk;
             
-            // Keep the clickable display links just in case you want to test them fast
+            // 2. Create the "View" and "Remove" badges for the Invoice
             const invDisplay = document.getElementById('editInvoiceLinkDisplay');
             if (invDisplay) {
-                invDisplay.innerHTML = e['Invoice URL'] ? `<a href="${e['Invoice URL']}" target="_blank" class="small fw-bold text-success text-decoration-none mt-1 d-inline-block"><i class="bi bi-box-arrow-up-right"></i> Current Invoice Link</a>` : '';
+                if (currentInv) {
+                    invDisplay.innerHTML = `
+                        <div class="d-flex align-items-center mt-1" id="invBadgeContainer">
+                            <a href="${currentInv}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> Current Invoice Link</a>
+                            <span class="badge bg-danger ms-3 shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editInvoiceUrl').value=''; document.getElementById('invBadgeContainer').style.display='none';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
+                        </div>`;
+                } else {
+                    invDisplay.innerHTML = '';
+                }
             }
             
+            // 3. Create the "View" and "Remove" badges for the Check
             const chkDisplay = document.getElementById('editCheckLinkDisplay');
             if (chkDisplay) {
-                chkDisplay.innerHTML = e['Check URL'] ? `<a href="${e['Check URL']}" target="_blank" class="small fw-bold text-success text-decoration-none mt-1 d-inline-block"><i class="bi bi-box-arrow-up-right"></i> Test Check Link</a>` : '';
+                if (currentChk) {
+                    chkDisplay.innerHTML = `
+                        <div class="d-flex align-items-center mt-1" id="chkBadgeContainer">
+                            <a href="${currentChk}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> Current Check Link</a>
+                            <span class="badge bg-danger ms-3 shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editCheckUrl').value=''; document.getElementById('chkBadgeContainer').style.display='none';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
+                        </div>`;
+                } else {
+                    chkDisplay.innerHTML = '';
+                }
             }
         }, 10);
-
         form.elements['emailThread'].value = e['Email Thread'] || '';
         form.elements['billingStatusDate'].value = toInputDate(e['Billing Status Date']);
         form.elements['grNumber'].value = e['GR Number'] || '';
