@@ -1191,23 +1191,36 @@
   function toggleTheme() {
       const body = document.body;
       const isDark = body.classList.toggle('dark-mode');
+      
+      // Save the explicit choice to the browser
       localStorage.setItem('egm_theme', isDark ? 'dark' : 'light');
       
       const icon = document.getElementById('themeIcon');
-      if (isDark) {
-          icon.className = 'bi bi-sun-fill text-warning';
-      } else {
-          icon.className = 'bi bi-moon-fill text-secondary';
+      if (icon) {
+          if (isDark) {
+              icon.className = 'bi bi-sun-fill text-warning';
+          } else {
+              icon.className = 'bi bi-moon-fill text-secondary';
+          }
       }
   }
 
   function applySavedTheme() {
+      // Only look at the dashboard's internal saved memory
       const savedTheme = localStorage.getItem('egm_theme');
-      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      const icon = document.getElementById('themeIcon');
+
+      // Rule: Default to Light Mode UNLESS they specifically saved 'dark'
+      if (savedTheme === 'dark') {
           document.body.classList.add('dark-mode');
-          document.getElementById('themeIcon').className = 'bi bi-sun-fill text-warning';
+          if (icon) icon.className = 'bi bi-sun-fill text-warning';
+      } else {
+          document.body.classList.remove('dark-mode');
+          if (icon) icon.className = 'bi bi-moon-fill text-secondary';
       }
   }
+  
+  // Run this exactly once when the page loads
   applySavedTheme();
 
   function formatAMPM(t) {
