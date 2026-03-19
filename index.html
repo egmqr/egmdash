@@ -1363,50 +1363,75 @@
           invoiceInput.removeAttribute('required');
       }
   }
+  // THE UX MAGIC: A Master Map defining exactly which Statuses belong to which Payment Types
+  const PAY_MAPS = {
+      'Cash AR': ['Pending', 'Paid'],
+      'Cash ORCR': ['Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Paid'],
+      'Online Transfer AR': ['Pending', 'Paid'],
+      'Online Transfer ORCR': ['Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Paid'],
+      'Billing': ['Pending Invoice', 'Invoice Uploaded', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'],
+      'Check AR': ['Pending', 'Paid'],
+      'Check ORCR': ['Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Paid']
+  };
+
+  const ALL_PAY_TYPES = Object.keys(PAY_MAPS);
+  const ALL_STATUSES = ['Pending', 'Paid', 'Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
+
+  // RULE 1: Triggered when Payment Type changes -> Updates Billing Status dropdown
   function updateFilterStatuses() {
-      const type = document.getElementById('fPayType').value;
+      const typeSel = document.getElementById('fPayType');
       const statusSel = document.getElementById('fBillStatus');
-      const currentStatus = statusSel.value;
-      let options = '<option value="Unpaid">Unpaid / Processing</option><option value="">All Statuses</option>';
-      statusSel.disabled = false;
       
-      if (['Cash AR', 'Online Transfer AR', 'Check AR'].includes(type)) {
-          options += '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
-      } else if (['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR'].includes(type)) {
-          options += '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
-      } else if (type === 'Billing') {
-          options += '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
-      } else {
-          options += '<option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="Invoice Sent">Invoice Sent</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
+      const currentType = typeSel.value;
+      const currentStatus = statusSel.value;
+      
+      // 1. Determine which statuses are allowed based on the selected Type
+      let validStatuses = ALL_STATUSES;
+      if (currentType) {
+          validStatuses = PAY_MAPS[currentType] || [];
       }
-      statusSel.innerHTML = options;
-      if (options.includes(`value="${currentStatus}"`)) statusSel.value = currentStatus;
-      else statusSel.value = type ? "" : "Unpaid"; 
+      
+      // 2. Rebuild the Billing Status dropdown with only the allowed options
+      let optionsHtml = '<option value="Unpaid">Unpaid / Processing</option><option value="">All Statuses</option>';
+      validStatuses.forEach(s => {
+          optionsHtml += `<option value="${s}">${s}</option>`;
+      });
+      statusSel.innerHTML = optionsHtml;
+      
+      // 3. Keep the current status if it's still applicable; otherwise gently reset to Unpaid
+      if (validStatuses.includes(currentStatus) || currentStatus === 'Unpaid' || currentStatus === '') {
+          statusSel.value = currentStatus;
+      } else {
+          statusSel.value = 'Unpaid'; 
+      }
   }
 
+  // RULE 2: Triggered when Billing Status changes -> Updates Payment Type dropdown
   function updateFilterTypes() {
-      const status = document.getElementById('fBillStatus').value;
+      const statusSel = document.getElementById('fBillStatus');
       const typeSel = document.getElementById('fPayType');
       
-      if (['GR Pending', 'GR Received', 'GR Processed', 'Payment released'].includes(status)) {
-          if (typeSel.value !== 'Billing') { 
-              typeSel.value = 'Billing'; 
-              updateFilterStatuses(); 
-              document.getElementById('fBillStatus').value = status; 
-          }
-      } else if (status === 'Invoice Uploaded') {
-          // THE FIX: Reset Payment Type to "All Types" (empty string) when Invoice Uploaded is selected
-          if (typeSel.value !== '') {
-              typeSel.value = ''; 
-              updateFilterStatuses(); 
-              document.getElementById('fBillStatus').value = status; 
-          }
-      } else if (status === 'Invoice Sent') {
-          if (!['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR', 'Billing'].includes(typeSel.value)) { 
-              typeSel.value = 'Cash ORCR'; 
-              updateFilterStatuses(); 
-              document.getElementById('fBillStatus').value = status; 
-          }
+      const currentStatus = statusSel.value;
+      const currentType = typeSel.value;
+      
+      // 1. Determine which Types are allowed based on the selected Status
+      let validTypes = ALL_PAY_TYPES;
+      if (currentStatus && currentStatus !== 'Unpaid') {
+          validTypes = ALL_PAY_TYPES.filter(type => PAY_MAPS[type] && PAY_MAPS[type].includes(currentStatus));
+      }
+      
+      // 2. Rebuild the Payment Type dropdown with only the allowed options
+      let optionsHtml = '<option value="">All Types</option>';
+      validTypes.forEach(t => {
+          optionsHtml += `<option value="${t}">${t}</option>`;
+      });
+      typeSel.innerHTML = optionsHtml;
+      
+      // 3. Keep the current type if it's still applicable; otherwise gently reset to All Types
+      if (validTypes.includes(currentType) || currentType === '') {
+          typeSel.value = currentType;
+      } else {
+          typeSel.value = '';
       }
   }
 
