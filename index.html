@@ -1469,7 +1469,8 @@
 
     if(currentTab === 'events' || currentTab === 'calendar') {
       const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
-      let filtered = rawEvents;
+      // THE FIX: Automatically exclude Pencil Booked events from the Payments tab
+      let filtered = rawEvents.filter(e => e['Event Status'] !== 'Pencil Booked');
       
       if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n) || (e['Event Venue'] && e['Event Venue'].toLowerCase().includes(n)));
       if(dF) { filtered = filtered.filter(e => e['Event Date'] >= dF); } 
