@@ -1254,6 +1254,7 @@
   let currentBoothMode = 'view';
   let allFetchedBoothEvents = [];
   let currentViewBooths = [];
+  let boothDetailsCache = {};
   let cropper = null;
   let croppedLogoPayload = null; 
   let croppedQrLogoPayload = null; 
@@ -3137,12 +3138,26 @@ function handleAddCustomService(inputId, containerId) {
       const selectedId = document.getElementById('boothEventSelect').value;
       if (!selectedId) { setBoothMode(currentBoothMode); return; }
       
-      const ov = document.getElementById('submitOverlay');
-      document.getElementById('overlayText').innerText = "Loading details...";
-      ov.style.display = 'flex';
-      
-      const details = await callApi({ action: "getBoothDetails", eventId: selectedId }, 'POST');
-      ov.style.display = 'none';
+      let details;
+
+      // 1. Check if we already downloaded this booth's details
+      if (boothDetailsCache[selectedId]) {
+          details = boothDetailsCache[selectedId];
+      } else {
+          // 2. If not, show the loader and fetch it from the backend
+          const ov = document.getElementById('submitOverlay');
+          document.getElementById('overlayText').innerText = "Loading details...";
+          ov.style.display = 'flex';
+          
+          details = await callApi({ action: "getBoothDetails", eventId: selectedId }, 'POST');
+          ov.style.display = 'none';
+          
+          // 3. Save it to memory so we never have to load it again!
+          if (details && details.success !== false) {
+              boothDetailsCache[selectedId] = details;
+          }
+      }
+
       if (details && details.success === false) return;
 
       if (details) {
@@ -3427,6 +3442,7 @@ function handleAddCustomService(inputId, containerId) {
       ov.style.display = 'none';
       
       if (res && res.success) {
+          boothDetailsCache = {};
           fetchBoothEvents(); 
           if (actionName === "updateBoothSetup") {
               setBoothMode('view');
@@ -3455,6 +3471,7 @@ function handleAddCustomService(inputId, containerId) {
       ov.style.display = 'none';
       
       if (res && res.success) {
+        boothDetailsCache = {};
           fetchBoothEvents();
           setBoothMode('edit');
       } else {
