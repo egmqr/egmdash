@@ -614,7 +614,7 @@
                       <div class="input-group input-group-sm">
                           <input type="number" id="newSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
                           <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
-                      </div>
+                      </div><div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
                   </div>
               </div>
 
@@ -623,6 +623,12 @@
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
+          </div>
+          
+          <div class="input-group input-group-sm mt-3">
+              <span class="input-group-text bg-white"><i class="bi bi-plus-circle text-muted"></i></span>
+              <input type="text" id="newCustomServiceInput" class="form-control border-start-0" placeholder="Add custom service...">
+              <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomService('newCustomServiceInput', 'newServicesContainer')">ADD</button>
           </div>
       </div>
   </div>
@@ -835,6 +841,12 @@
           <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
           <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
       </div>
+      
+      <div class="input-group input-group-sm mt-3">
+          <span class="input-group-text bg-white"><i class="bi bi-plus-circle text-muted"></i></span>
+          <input type="text" id="addDayCustomServiceInput" class="form-control border-start-0" placeholder="Add custom service...">
+          <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomService('addDayCustomServiceInput', 'addDayServicesContainer')">ADD</button>
+      </div>
   </div>
   
   <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
@@ -987,6 +999,12 @@
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
+          </div>
+
+          <div class="input-group input-group-sm mt-3">
+              <span class="input-group-text bg-white"><i class="bi bi-plus-circle text-muted"></i></span>
+              <input type="text" id="editCustomServiceInput" class="form-control border-start-0" placeholder="Add custom service...">
+              <button id="editServiceAddBtn" class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomService('editCustomServiceInput', 'editServicesContainer')">ADD</button>
           </div>
       </div>
   </div>
@@ -2046,6 +2064,9 @@
           if(el.id !== 'editSubmitBtn' && el.id !== 'editDeleteBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') { el.disabled = isReadOnly; }
       });
       document.getElementById('editCrewAddBtn').disabled = isReadOnly;
+      if (document.getElementById('editServiceAddBtn')) {
+          document.getElementById('editServiceAddBtn').disabled = isReadOnly;
+      }
       
       if (isReadOnly) {
           document.getElementById('editSubmitBtn').style.display = 'none';
