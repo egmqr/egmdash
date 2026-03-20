@@ -3003,31 +3003,9 @@ function handleAddCustomService(inputId, containerId) {
 
       setTimeout(() => { fetchBoothEvents(); fetchExistingLogos(); }, 1500);
 
+      // Just grab the tab and load it! The filter inputs are handled before this now.
       const urlParams = new URLSearchParams(window.location.search);
       const activeTab = urlParams.get('tab') || 'calendar';
-      
-      // Load Payment Filters
-      if (activeTab === 'payments') {
-          if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
-          if(urlParams.get('grInv')) document.getElementById('fGrInv').value = urlParams.get('grInv');
-          if(urlParams.get('type')) {
-              document.getElementById('fPayType').value = urlParams.get('type');
-              updateFilterStatuses(); 
-          }
-          if(urlParams.get('status')) document.getElementById('fBillStatus').value = urlParams.get('status');
-      } 
-      // Load Events & Calendar Filters
-      else if (activeTab === 'events' || activeTab === 'calendar') {
-          if(urlParams.get('fName')) document.getElementById('fName').value = urlParams.get('fName');
-          if(urlParams.get('fDateFrom')) document.getElementById('fDateFrom').value = urlParams.get('fDateFrom');
-          if(urlParams.get('fDateTo')) document.getElementById('fDateTo').value = urlParams.get('fDateTo');
-          if(urlParams.get('fCrew')) {
-              // Pre-inject the crew name so the dropdown accepts it before the real data loads
-              document.getElementById('fCrew').innerHTML = `<option value="${urlParams.get('fCrew')}">${urlParams.get('fCrew')}</option>`;
-              document.getElementById('fCrew').value = urlParams.get('fCrew');
-          }
-          if(urlParams.get('fStatus')) document.getElementById('fStatus').value = urlParams.get('fStatus');
-      }
       
       currentTab = activeTab; 
       setTimeout(() => handleTabClick(activeTab), 400); 
@@ -3624,6 +3602,36 @@ function handleAddCustomService(inputId, containerId) {
           setTimeout(() => icon.classList.remove('spin-anim'), 1000);
       }
   }
+
+  // --- INSTANT URL FILTER HYDRATION ---
+  // This runs immediately so Firebase doesn't accidentally erase the URL!
+  (function loadFiltersFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const activeTab = urlParams.get('tab') || 'calendar';
+      
+      if (activeTab === 'payments') {
+          if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
+          if(urlParams.get('grInv')) document.getElementById('fGrInv').value = urlParams.get('grInv');
+          if(urlParams.get('type')) {
+              document.getElementById('fPayType').value = urlParams.get('type');
+              updateFilterStatuses(); 
+          }
+          if(urlParams.get('status')) document.getElementById('fBillStatus').value = urlParams.get('status');
+      } 
+      else if (activeTab === 'events' || activeTab === 'calendar') {
+          if(urlParams.get('fName')) document.getElementById('fName').value = urlParams.get('fName');
+          if(urlParams.get('fDateFrom')) document.getElementById('fDateFrom').value = urlParams.get('fDateFrom');
+          if(urlParams.get('fDateTo')) document.getElementById('fDateTo').value = urlParams.get('fDateTo');
+          if(urlParams.get('fCrew')) {
+              // Pre-inject the crew name so the dropdown accepts it before the real data loads
+              document.getElementById('fCrew').innerHTML = `<option value="${urlParams.get('fCrew')}">${urlParams.get('fCrew')}</option>`;
+              document.getElementById('fCrew').value = urlParams.get('fCrew');
+          }
+          if(urlParams.get('fStatus')) document.getElementById('fStatus').value = urlParams.get('fStatus');
+      }
+  })();
+  // ------------------------------------
+
 // THE MAGIC REAL-TIME LISTENER
 db.collection("dashboard_events").onSnapshot((snapshot) => {
     document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
