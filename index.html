@@ -1399,7 +1399,11 @@
       addCustomCrewCheckbox(input.value, containerId, true);
       input.value = '';
   }
-
+function handleAddCustomService(inputId, containerId) {
+      const input = document.getElementById(inputId);
+      addCustomServiceCheckbox(input.value, containerId, true);
+      input.value = '';
+  }
   function addCustomCrewCheckbox(name, containerId, checkDefault = true) {
       if(!name || name.trim() === '') return;
       name = name.trim();
