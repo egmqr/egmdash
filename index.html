@@ -505,12 +505,25 @@
               <form id="expenseForm">
                   <div class="row g-3 mb-3">
                       <div class="col-12 col-md-6">
-                          <label class="form-label-sm">Date of Expense</label>
+                          <label class="form-label-sm">Date of Event <span class="fw-normal text-muted" style="text-transform: none;">(NOT DATE SUBMITTED)</span></label>
                           <input type="date" name="expenseDate" class="form-control form-control-sm fw-bold" required>
                       </div>
                       <div class="col-12 col-md-6">
                           <label class="form-label-sm">Submitted By</label>
-                          <input type="text" name="expenseName" class="form-control form-control-sm fw-bold" placeholder="e.g. Edgar" required>
+                          <select name="expenseName" class="form-select form-select-sm fw-bold text-dark" required>
+                              <option value="">-- Select Name --</option>
+                              <option value="Mael">Mael</option>
+                              <option value="Francis">Francis</option>
+                              <option value="Jenielyn">Jenielyn</option>
+                              <option value="Jops">Jops</option>
+                              <option value="Grace">Grace</option>
+                              <option value="Tina">Tina</option>
+                              <option value="Lexie">Lexie</option>
+                              <option value="Mayne">Mayne</option>
+                              <option value="Athan">Athan</option>
+                              <option value="Jovert">Jovert</option>
+                              <option value="Edgar">Edgar</option>
+                          </select>
                       </div>
                   </div>
                   
@@ -541,8 +554,8 @@
                   </div>
                   
                   <div class="mb-4">
-                      <label class="form-label-sm">Receipt / Proof of Payment (Optional)</label>
-                      <input type="file" id="expenseReceiptFile" accept="image/*,.pdf" class="form-control form-control-sm">
+                      <label class="form-label-sm text-primary">Receipt / Proof of Payment <span class="text-danger">*</span></label>
+                      <input type="file" id="expenseReceiptFile" accept="image/*,.pdf" class="form-control form-control-sm" required>
                   </div>
                   
                   <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="expenseSubmitBtn"><i class="bi bi-send me-1"></i> SUBMIT EXPENSE</button>
