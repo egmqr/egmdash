@@ -3103,17 +3103,48 @@ function handleAddCustomService(inputId, containerId) {
       }
   }
 
-  async function fetchBoothEvents() {
+  async function fetchBoothEvents(forceRefresh = false) {
+      // 1. If we already have the list and aren't forcing a refresh, load instantly from memory!
+      if (!forceRefresh && allFetchedBoothEvents.length > 0) {
+          if (currentBoothMode === 'edit' || currentBoothMode === 'view') {
+              renderBoothDropdown(allFetchedBoothEvents);
+          }
+          return;
+      }
+
+      // 2. Otherwise, fetch from the database
       const res = await callApi({ action: "getBoothList" }, 'POST', true);
       if (res && res.success === false) return;
       
       const select = document.getElementById('boothEventSelect');
       if (!Array.isArray(res)) {
-          select.innerHTML = '<option value="">Error loading booths</option>';
+          if (select) select.innerHTML = '<option value="">Error loading booths</option>';
           return;
       }
+      
+      // 3. Save to memory
       allFetchedBoothEvents = res; 
-      if (currentBoothMode === 'edit' || currentBoothMode === 'view') renderBoothDropdown(allFetchedBoothEvents);
+      if (currentBoothMode === 'edit' || currentBoothMode === 'view') {
+          renderBoothDropdown(allFetchedBoothEvents);
+      }
+  }
+
+  async function fetchExistingLogos(forceRefresh = false) {
+      // 1. Check memory first
+      if (!forceRefresh && existingLogosCache) { 
+          renderExistingLogos(existingLogosCache); 
+          return; 
+      }
+      
+      document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-muted fst-italic">Loading logos...</span>';
+      const res = await callApi({ action: "getExistingLogos" }, 'POST', true);
+      
+      if (res && res.success) {
+          existingLogosCache = res.logos;
+          renderExistingLogos(res.logos);
+      } else {
+          document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-danger">Failed to load logos.</span>';
+      }
   }
  
   function renderBoothDropdown(eventsArray) {
@@ -3325,18 +3356,6 @@ function handleAddCustomService(inputId, containerId) {
       document.getElementById('boothLightboxImg').src = "";
   }
 
-  async function fetchExistingLogos() {
-      if (existingLogosCache) { renderExistingLogos(existingLogosCache); return; }
-      document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-muted fst-italic">Loading logos...</span>';
-      const res = await callApi({ action: "getExistingLogos" }, 'POST', true);
-      if (res && res.success) {
-          existingLogosCache = res.logos;
-          renderExistingLogos(res.logos);
-      } else {
-          document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-danger">Failed to load logos.</span>';
-      }
-  }
-
   function renderExistingLogos(logos) {
       const container = document.getElementById('existingLogoGallery');
       if (logos.length === 0) {
@@ -3442,14 +3461,15 @@ function handleAddCustomService(inputId, containerId) {
       ov.style.display = 'none';
       
       if (res && res.success) {
-          boothDetailsCache = {};
-          fetchBoothEvents(); 
-          if (actionName === "updateBoothSetup") {
+          boothDetailsCache = {}; // Wipe the details memory
+          fetchBoothEvents(true); // Force the dropdown to grab the new project!
+          
+          if (actionName === "updateBoothSetup" || actionName === "generateBoothSetup") {
               setBoothMode('view');
-              setTimeout(() => { document.getElementById('boothEventSelect').value = eventId; loadBoothEventDetails(); }, 100);
-          } else if (actionName === "generateBoothSetup") {
-              setBoothMode('view');
-              setTimeout(() => { document.getElementById('boothEventSelect').value = eventId; loadBoothEventDetails(); }, 100);
+              setTimeout(() => { 
+                  document.getElementById('boothEventSelect').value = eventId; 
+                  loadBoothEventDetails(); 
+              }, 100);
           }
       } else {
           alert("Error: " + (res ? res.error || res.message : "Failed to process booth."));
@@ -3471,8 +3491,8 @@ function handleAddCustomService(inputId, containerId) {
       ov.style.display = 'none';
       
       if (res && res.success) {
-        boothDetailsCache = {};
-          fetchBoothEvents();
+          boothDetailsCache = {}; // Wipe the details memory
+          fetchBoothEvents(true); // Force the dropdown to remove the deleted project!
           setBoothMode('edit');
       } else {
           alert("Error: " + (res ? res.error || res.message : "Failed to delete."));
