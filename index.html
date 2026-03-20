@@ -264,9 +264,14 @@
         <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
         <li class="nav-item"><a class="nav-link" id="p-tab" onclick="handleTabClick('payments')"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
       </ul>
-      <button id="filterToggleBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
-        <i class="bi bi-sliders"></i> <span class="d-none d-sm-inline">Filters</span>
-      </button>
+      <div class="d-flex gap-2">
+        <button id="copyFilterLinkBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" onclick="copyCurrentUrl()" title="Copy link with active filters">
+          <i class="bi bi-link-45deg fs-6"></i> <span class="d-none d-sm-inline">Share View</span>
+        </button>
+        <button id="filterToggleBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
+          <i class="bi bi-sliders"></i> <span class="d-none d-sm-inline">Filters</span>
+        </button>
+      </div>
     </div>
 
     <div class="collapse mt-2" id="filterCollapse">
@@ -1352,7 +1357,23 @@
   
   // Run this exactly once when the page loads
   applySavedTheme();
-
+  function copyCurrentUrl() {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+          const btn = document.getElementById('copyFilterLinkBtn');
+          const originalHtml = btn.innerHTML;
+          btn.innerHTML = '<i class="bi bi-check2"></i> <span class="d-none d-sm-inline">Copied!</span>';
+          btn.classList.replace('btn-light', 'btn-success');
+          btn.classList.replace('border-secondary-subtle', 'border-success');
+          btn.classList.add('text-white');
+          
+          setTimeout(() => {
+              btn.innerHTML = originalHtml;
+              btn.classList.replace('btn-success', 'btn-light');
+              btn.classList.replace('border-success', 'border-secondary-subtle');
+              btn.classList.remove('text-white');
+          }, 2000);
+      });
+  }
   function formatAMPM(t) {
       if(!t || t==='--' || t.trim()==='') return '--:--';
       const match = t.trim().match(/(\d+):(\d+)\s*(AM|PM|am|pm)?/i);
@@ -1655,6 +1676,7 @@ function handleAddCustomService(inputId, containerId) {
   function applyFilters() {
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
+    let url = new URL(window.location);
 
     if(currentTab === 'events' || currentTab === 'calendar') {
       const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
@@ -1670,25 +1692,32 @@ function handleAddCustomService(inputId, containerId) {
       
       filteredEventsCache = filtered; 
       
-      // THE FIX FOR LIST VIEW:
-      // Hide Pencil Booked & Cancelled from the List View by default
       let listFiltered = filtered;
       if (!s) { 
           listFiltered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
       }
       
-      // Render the List view without tentative events, but render the Calendar with everything!
       renderEvents(listFiltered, !n && !dF && !dT && !c && !s);
       renderCalendar(filtered); 
+
+      // Push active Event filters to the URL
+      url.searchParams.set('tab', currentTab);
+      if(n) url.searchParams.set('fName', n); else url.searchParams.delete('fName');
+      if(dF) url.searchParams.set('fDateFrom', dF); else url.searchParams.delete('fDateFrom');
+      if(dT) url.searchParams.set('fDateTo', dT); else url.searchParams.delete('fDateTo');
+      if(c) url.searchParams.set('fCrew', c); else url.searchParams.delete('fCrew');
+      if(s) url.searchParams.set('fStatus', s); else url.searchParams.delete('fStatus');
       
+      // Clean up Payment URL params
+      ['q', 'grInv', 'type', 'status'].forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url);
+
     } else if (currentTab === 'payments') {
       const q=document.getElementById('fPaySearch').value.toLowerCase(), 
             grInv=document.getElementById('fGrInv').value.toLowerCase(),
             t=document.getElementById('fPayType').value, 
             s=document.getElementById('fBillStatus').value;
             
-      // THE FIX FOR PAYMENTS VIEW:
-      // Exclude Pencil Booked and Cancelled entirely!
       let filtered = rawEvents.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
       
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
@@ -1700,13 +1729,67 @@ function handleAddCustomService(inputId, containerId) {
       
       renderPayments(filtered);
       
-      let url = new URL(window.location);
+      // Push active Payment filters to the URL
       url.searchParams.set('tab', 'payments');
       if(q) url.searchParams.set('q', q); else url.searchParams.delete('q');
       if(grInv) url.searchParams.set('grInv', grInv); else url.searchParams.delete('grInv');
       if(t) url.searchParams.set('type', t); else url.searchParams.delete('type');
       if(s && s !== 'Unpaid') url.searchParams.set('status', s); else url.searchParams.delete('status');
+
+      // Clean up Event URL params
+      ['fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus'].forEach(p => url.searchParams.delete(p));
       window.history.replaceState({}, '', url);
+    }
+  }
+
+  function switchTab(t) {
+    currentTab = t;
+    document.getElementById('events-view').style.display = t==='events'?'block':'none';
+    document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
+    document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
+    document.getElementById('booth-view').style.display = t==='booth'?'block':'none';
+    
+    document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar') ? 'block' : 'none';
+    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
+    
+    const filterBtn = document.getElementById('filterToggleBtn');
+    const filterCollapseEl = document.getElementById('filterCollapse');
+    const copyLinkBtn = document.getElementById('copyFilterLinkBtn');
+
+    if (t === 'booth') {
+        filterBtn.classList.remove('d-flex'); filterBtn.classList.add('d-none');
+        copyLinkBtn.classList.remove('d-flex'); copyLinkBtn.classList.add('d-none');
+        if (filterCollapseEl.classList.contains('show')) {
+            let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
+            bsCollapse.hide();
+        }
+    } else {
+        filterBtn.classList.remove('d-none'); filterBtn.classList.add('d-flex');
+        copyLinkBtn.classList.remove('d-none'); copyLinkBtn.classList.add('d-flex');
+        if (window.innerWidth >= 768) {
+            if (!filterCollapseEl.classList.contains('show')) {
+                let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
+                bsCollapse.show();
+            }
+        }
+    }
+    
+    document.getElementById('e-tab').classList.toggle('active', t==='events');
+    document.getElementById('c-tab').classList.toggle('active', t==='calendar');
+    document.getElementById('b-tab').classList.toggle('active', t==='booth');
+    document.getElementById('p-tab').classList.toggle('active', t==='payments');
+    
+    if (t === 'booth') {
+        if (currentBoothMode === 'new') { setBoothMode('view'); } 
+        else { setBoothMode(currentBoothMode); }
+        
+        // Clean URL for Booth tab manually since applyFilters isn't called
+        let url = new URL(window.location);
+        url.searchParams.set('tab', 'booth');
+        ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus'].forEach(p => url.searchParams.delete(p));
+        window.history.replaceState({}, '', url);
+    } else {
+        applyFilters(); 
     }
   }
 
@@ -2026,56 +2109,7 @@ function handleAddCustomService(inputId, containerId) {
       else { switchTab(tabName); }
   }
 
-  function switchTab(t) {
-    currentTab = t;
-    document.getElementById('events-view').style.display = t==='events'?'block':'none';
-    document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
-    document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
-    document.getElementById('booth-view').style.display = t==='booth'?'block':'none';
-    
-    document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar') ? 'block' : 'none';
-    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
-    
-    const filterBtn = document.getElementById('filterToggleBtn');
-    const filterCollapseEl = document.getElementById('filterCollapse');
-
-    if (t === 'booth') {
-        filterBtn.classList.remove('d-flex');
-        filterBtn.classList.add('d-none');
-        if (filterCollapseEl.classList.contains('show')) {
-            let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
-            bsCollapse.hide();
-        }
-    } else {
-        filterBtn.classList.remove('d-none');
-        filterBtn.classList.add('d-flex');
-        if (window.innerWidth >= 768) {
-            if (!filterCollapseEl.classList.contains('show')) {
-                let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
-                bsCollapse.show();
-            }
-        }
-    }
-    
-    document.getElementById('e-tab').classList.toggle('active', t==='events');
-    document.getElementById('c-tab').classList.toggle('active', t==='calendar');
-    document.getElementById('b-tab').classList.toggle('active', t==='booth');
-    document.getElementById('p-tab').classList.toggle('active', t==='payments');
-    
-    if (t === 'booth') {
-        if (currentBoothMode === 'new') { setBoothMode('view'); } 
-        else { setBoothMode(currentBoothMode); }
-    } else {
-        applyFilters(); 
-    }
-
-    let url = new URL(window.location);
-    url.searchParams.set('tab', t);
-    if (t !== 'payments') {
-        url.searchParams.delete('q'); url.searchParams.delete('grInv'); url.searchParams.delete('type'); url.searchParams.delete('status');
-    }
-    window.history.replaceState({}, '', url);
-  }
+  
 
   function setEditFormState(isReadOnly) {
       const form = document.getElementById('editForm');
@@ -2882,7 +2916,7 @@ function handleAddCustomService(inputId, containerId) {
   };
 
   window.onload = () => {
-    localStorage.removeItem('egm_auth_exp'); 
+      localStorage.removeItem('egm_auth_exp'); 
       const stickyHeaderEl = document.querySelector('.sticky-header');
       if (stickyHeaderEl && window.ResizeObserver) {
           new ResizeObserver(entries => {
@@ -2901,6 +2935,7 @@ function handleAddCustomService(inputId, containerId) {
       const urlParams = new URLSearchParams(window.location.search);
       const activeTab = urlParams.get('tab') || 'calendar';
       
+      // Load Payment Filters
       if (activeTab === 'payments') {
           if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
           if(urlParams.get('grInv')) document.getElementById('fGrInv').value = urlParams.get('grInv');
@@ -2909,6 +2944,18 @@ function handleAddCustomService(inputId, containerId) {
               updateFilterStatuses(); 
           }
           if(urlParams.get('status')) document.getElementById('fBillStatus').value = urlParams.get('status');
+      } 
+      // Load Events & Calendar Filters
+      else if (activeTab === 'events' || activeTab === 'calendar') {
+          if(urlParams.get('fName')) document.getElementById('fName').value = urlParams.get('fName');
+          if(urlParams.get('fDateFrom')) document.getElementById('fDateFrom').value = urlParams.get('fDateFrom');
+          if(urlParams.get('fDateTo')) document.getElementById('fDateTo').value = urlParams.get('fDateTo');
+          if(urlParams.get('fCrew')) {
+              // Pre-inject the crew name so the dropdown accepts it before the real data loads
+              document.getElementById('fCrew').innerHTML = `<option value="${urlParams.get('fCrew')}">${urlParams.get('fCrew')}</option>`;
+              document.getElementById('fCrew').value = urlParams.get('fCrew');
+          }
+          if(urlParams.get('fStatus')) document.getElementById('fStatus').value = urlParams.get('fStatus');
       }
       
       currentTab = activeTab; 
