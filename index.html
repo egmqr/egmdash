@@ -627,6 +627,34 @@
       </div>
   </div>
 
+  <div id="newCrewBlock">
+      <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
+      <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+          <div class="row px-2 g-2" id="newCrewContainer">
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+          </div>
+          <div class="input-group input-group-sm mt-3">
+              <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
+              <input type="text" id="newCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
+              <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('newCustomCrewInput', 'newCrewContainer')">ADD</button>
+          </div>
+      </div>
+  </div>
+
   <div id="newNotesBlock" class="mb-4">
       <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
       <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea>
@@ -959,6 +987,34 @@
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
+          </div>
+      </div>
+  </div>
+
+  <div id="editCrewBlock">
+      <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
+      <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+          <div class="row px-2 g-2" id="editCrewContainer">
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+          </div>
+          <div class="input-group input-group-sm mt-3">
+              <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
+              <input type="text" id="editCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
+              <button id="editCrewAddBtn" class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('editCustomCrewInput', 'editCrewContainer')">ADD</button>
           </div>
       </div>
   </div>
@@ -1505,10 +1561,15 @@
   }
 
   function toggleAvpFields(isAvp, prefix) { 
-      document.getElementById(prefix + 'AvpHiddenFields').style.display = isAvp ? 'none' : 'flex'; 
-      document.getElementById(prefix + 'ServicesContactFields').style.display = isAvp ? 'none' : 'block'; 
-      document.getElementById(prefix + 'DateTimeBlock').style.display = isAvp ? 'none' : 'block'; 
-      document.getElementById(prefix + 'CrewBlock').style.display = isAvp ? 'none' : 'block'; 
+      const avpFields = document.getElementById(prefix + 'AvpHiddenFields');
+      const services = document.getElementById(prefix + 'ServicesContactFields');
+      const dateTime = document.getElementById(prefix + 'DateTimeBlock');
+      const crew = document.getElementById(prefix + 'CrewBlock');
+      
+      if(avpFields) avpFields.style.display = isAvp ? 'none' : 'flex'; 
+      if(services) services.style.display = isAvp ? 'none' : 'block'; 
+      if(dateTime) dateTime.style.display = isAvp ? 'none' : 'block'; 
+      if(crew) crew.style.display = isAvp ? 'none' : 'block'; 
       
       const formId = prefix === 'new' ? 'eventForm' : 'editForm';
       const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
