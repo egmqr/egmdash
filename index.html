@@ -1819,6 +1819,14 @@ function handleAddCustomService(inputId, containerId) {
                   }
               }).join('') : '-';
 
+              // --- ADDED: Format the Date beautifully for the Card ---
+              let displayDateString = e['Event Date'];
+              if (displayDateString && displayDateString.includes('-')) {
+                  const dParts = displayDateString.split('-');
+                  const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
+                  displayDateString = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+              }
+
               html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
                     <div class="d-flex justify-content-between mb-3 align-items-center">
                         <div>
@@ -1830,17 +1838,26 @@ function handleAddCustomService(inputId, containerId) {
                     </div>
                     
                     <h5 class="fw-bold mb-1 lh-sm text-dark">${e['Event Name']}</h5>
-                    <p class="small text-muted mb-4"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> ${venueDisplay}</p>
+                    <p class="small text-muted mb-3"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> ${venueDisplay}</p>
                     
-                    <div class="small text-secondary">
-                        <div class="d-flex mb-2 align-items-start">
-                            <i class="card-icon bi bi-clock-fill text-primary opacity-75"></i> 
-                            <div>
-                                <span class="d-block mb-1"><strong class="text-dark">Call:</strong> <span class="text-danger fw-bold">${formatAMPM(e['Call Time'])}</span></span>
-                                <span class="d-block"><strong class="text-dark">Shoot:</strong> ${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</span>
+                    <div class="bg-light p-3 rounded-3 border mb-3">
+                        <div class="d-flex align-items-center mb-2 pb-2 border-bottom border-secondary-subtle">
+                            <i class="bi bi-calendar2-event-fill text-primary fs-5 me-2"></i>
+                            <span class="fw-bold text-dark" style="font-size: 0.95rem; letter-spacing: 0.3px;">${displayDateString}</span>
+                        </div>
+                        <div class="row g-2 small">
+                            <div class="col-6">
+                                <span class="text-muted d-block mb-1" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Call Time</span>
+                                <span class="text-danger fw-bold"><i class="bi bi-alarm text-danger opacity-75 me-1"></i>${formatAMPM(e['Call Time'])}</span>
+                            </div>
+                            <div class="col-6 border-start border-secondary-subtle">
+                                <span class="text-muted d-block mb-1 ms-2" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Shoot Time</span>
+                                <span class="text-dark fw-bold ms-2"><i class="bi bi-camera-video-fill text-primary opacity-75 me-1"></i>${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</span>
                             </div>
                         </div>
-                        
+                    </div>
+                    
+                    <div class="small text-secondary">
                         <div class="d-flex mb-2 align-items-start">
                             <i class="card-icon bi bi-list-check text-secondary opacity-75 mt-1"></i>
                             <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Services:</strong><br>${servicesBadges}</div>
@@ -1848,11 +1865,11 @@ function handleAddCustomService(inputId, containerId) {
                         
                         <div class="d-flex mb-3 align-items-start">
                             <i class="card-icon bi bi-people-fill text-info opacity-75 mt-1"></i> 
-                            <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-light text-dark border me-1 mb-2 fw-bold px-2 py-1 text-wrap" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '-'}</div>
+                            <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-dark border border-secondary-subtle me-1 mb-2 fw-bold px-2 py-1 text-wrap shadow-sm" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '-'}</div>
                         </div>
                         
-                        <div class="bg-light p-2 rounded-3 border mb-3">
-                            <p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2 text-dark">${e['Contact Number']}</span></p>
+                        <div class="bg-white p-2 rounded-3 border mb-3 shadow-sm">
+                            <p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2 text-dark fw-medium">${e['Contact Number']}</span></p>
                         </div>
                         
                         <p class="mb-0 text-muted fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
