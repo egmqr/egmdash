@@ -627,58 +627,91 @@
       </div>
   </div>
 
-  <div id="newCrewBlock">
-      <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
-      <div class="mb-4 p-3 bg-light rounded border shadow-sm">
-          <div class="row px-2 g-2" id="newCrewContainer">
-              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
-          </div>
-          <div class="input-group input-group-sm mt-3">
-              <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
-              <input type="text" id="newCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
-              <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('newCustomCrewInput', 'newCrewContainer')">ADD</button>
-          </div>
-      </div>
+  <div id="newNotesBlock" class="mb-4">
+      <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
+      <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea>
   </div>
 
   <div id="newPaymentFields">
       <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
       <select name="paymentType" id="newPaymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('new')">
           <option value="">-- Choose Payment Method --</option>
-<option>Cash AR</option>
-<option>Cash ORCR</option>
-<option>Online Transfer AR</option>
-<option>Online Transfer ORCR</option>
-<option>Billing</option>
-<option>Check AR</option>
-<option>Check ORCR</option>
+          <option>Cash AR</option>
+          <option>Cash ORCR</option>
+          <option>Online Transfer AR</option>
+          <option>Online Transfer ORCR</option>
+          <option>Billing</option>
+          <option>Check AR</option>
+          <option>Check ORCR</option>
       </select>
       
       <div id="newDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-        <div class="row g-2 mb-2" id="newPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success" value="0"></div></div></div>
-        <div class="row g-2 mb-2" id="newPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('new')"></select></div></div>
-       <div class="mb-2" id="newPayEmailGroup"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
-        <div id="newPayBillingGroup" style="display:none;"><div class="row g-2 mb-2"><div class="col-12 col-md-4"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div><div class="col-12 col-md-4"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div><div class="col-12 col-md-4"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div></div></div>
-      <div class="row g-2 mt-2" id="newPayInvUploadGroup">
-    <div class="col-12">
-        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
-        <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
-    </div>
-</div>
-<div class="row g-2 mt-2" id="newPayCheckUploadGroup">
-    <div class="col-12">
-        <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
-        <input type="url" name="checkUrl" id="newCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
-    </div>
-</div>  
-       
-        
+          <div class="row g-3 mb-3" id="newPayAmountGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Amount</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white fw-bold">₱</span>
+                      <input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success" value="0">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayStatusGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Status</label>
+                  <select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('new')"></select>
+              </div>
+          </div>
+
+          <div id="newPayBillingGroup" style="display:none;" class="mb-3">
+              <div class="row g-3">
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">Status Date</label>
+                      <input type="date" name="billingStatusDate" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">GR Number</label>
+                      <input type="text" name="grNumber" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">Invoice Number</label>
+                      <input type="text" name="invoiceNumber" class="form-control form-control-sm">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayEmailGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Email Thread Title</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
+                      <input type="text" name="emailThread" class="form-control border-start-0">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayInvUploadGroup">
+              <div class="col-12">
+                  <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+                  <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayCheckUploadGroup">
+              <div class="col-12">
+                  <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
+                  <input type="url" name="checkUrl" id="newCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+              </div>
+          </div>
+          
+          <div class="row g-3" id="newPayNotesGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Payment Notes</label>
+                  <input type="text" name="paymentNotes" id="newPaymentNotes" class="form-control form-control-sm">
+              </div>
+          </div>
       </div>
-    <div class="row g-2 mb-2" id="newPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="newPaymentNotes" class="form-control form-control-sm"></div></div>
   </div>
-  
-  <div class="mb-4"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea></div>
-  
   <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="submitBtn"><i class="bi bi-check2-circle me-1"></i> CREATE ENTRY</button>
 </form></div></div></div></div>
 
@@ -930,64 +963,99 @@
       </div>
   </div>
 
-  <div id="editCrewBlock">
-      <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
-      <div class="mb-4 p-3 bg-light rounded border shadow-sm">
-          <div class="row px-2 g-2" id="editCrewContainer">
-              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
-          </div>
-          <div class="input-group input-group-sm mt-3">
-              <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
-              <input type="text" id="editCustomCrewInput" class="form-control border-start-0" placeholder="Add custom crew member...">
-              <button id="editCrewAddBtn" class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomCrew('editCustomCrewInput', 'editCrewContainer')">ADD</button>
-          </div>
-      </div>
+  <div id="editNotesBlock" class="mb-4">
+      <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
+      <textarea name="notes" class="form-control form-control-sm" rows="2"></textarea>
   </div>
 
   <div id="editPaymentFields">
       <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
       <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('edit')">
           <option value="">-- Choose Payment Method --</option>
-<option>Cash AR</option>
-<option>Cash ORCR</option>
-<option>Online Transfer AR</option>
-<option>Online Transfer ORCR</option>
-<option>Billing</option>
-<option>Check AR</option>
-<option>Check ORCR</option>
+          <option>Cash AR</option>
+          <option>Cash ORCR</option>
+          <option>Online Transfer AR</option>
+          <option>Online Transfer ORCR</option>
+          <option>Billing</option>
+          <option>Check AR</option>
+          <option>Check ORCR</option>
       </select>
       
       <div id="editDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-        <div class="row g-2 mb-2" id="editPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" id="editAmount" class="form-control border-start-0 fw-bold text-success" value="0"></div></div></div>
-        <div class="row g-2 mb-2" id="editPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="editBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('edit')"></select></div></div>       
-        <div class="mb-2" id="editPayEmailGroup"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div><div id="editPayBillingGroup" style="display:none;"><div class="row g-2 mb-2"><div class="col-12 col-md-4"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div><div class="col-12 col-md-4"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div><div class="col-12 col-md-4"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div></div></div>
-<div class="row g-2 mt-2" id="editPayInvUploadGroup">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-            <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
-            <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
-        </div>
-        <input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
-        <div id="editInvoiceLinkDisplay" class="mt-1"></div>
-    </div>
-</div>
-<div class="row g-2 mt-2" id="editPayCheckUploadGroup">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-            <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
-            <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
-        </div>
-        <input type="url" name="checkUrl" id="editCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
-        <div id="editCheckLinkDisplay" class="mt-1"></div>
-    </div>
-</div>
-      
-        </div>
-    <div class="row g-2 mb-2" id="editPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="editPaymentNotes" class="form-control form-control-sm"></div></div>
+          <div class="row g-3 mb-3" id="editPayAmountGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Amount</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white fw-bold">₱</span>
+                      <input type="number" step="0.01" name="amount" id="editAmount" class="form-control border-start-0 fw-bold text-success" value="0">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="editPayStatusGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Status</label>
+                  <select name="billingStatus" id="editBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('edit')"></select>
+              </div>
+          </div>
+
+          <div id="editPayBillingGroup" style="display:none;" class="mb-3">
+              <div class="row g-3">
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">Status Date</label>
+                      <input type="date" name="billingStatusDate" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">GR Number</label>
+                      <input type="text" name="grNumber" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">Invoice Number</label>
+                      <input type="text" name="invoiceNumber" class="form-control form-control-sm">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="editPayEmailGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Email Thread Title</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
+                      <input type="text" name="emailThread" class="form-control border-start-0">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="editPayInvUploadGroup">
+              <div class="col-12">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+                      <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
+                  </div>
+                  <input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+                  <div id="editInvoiceLinkDisplay" class="mt-1"></div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="editPayCheckUploadGroup">
+              <div class="col-12">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
+                      <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
+                  </div>
+                  <input type="url" name="checkUrl" id="editCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+                  <div id="editCheckLinkDisplay" class="mt-1"></div>
+              </div>
+          </div>
+          
+          <div class="row g-3" id="editPayNotesGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Payment Notes</label>
+                  <input type="text" name="paymentNotes" id="editPaymentNotes" class="form-control form-control-sm">
+              </div>
+          </div>
+      </div>
   </div>
-  
-  <div class="mb-4" id="editNotesBlock"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2"></textarea></div>
-  
   <button type="submit" class="btn btn-warning w-100 py-3 fw-bold shadow-sm mb-2" id="editSubmitBtn"><i class="bi bi-cloud-arrow-up me-1"></i> SAVE CHANGES</button>
   <button type="button" class="btn btn-outline-danger w-100 py-2 fw-bold shadow-sm" id="editDeleteBtn" onclick="deleteFullEvent()"><i class="bi bi-trash3 me-1"></i> DELETE FULL PROJECT</button>
 </form></div></div></div></div>
@@ -2106,7 +2174,8 @@
         toggleBlock.parentNode.insertBefore(paymentBlock, toggleBlock.nextSibling);
         paymentBlock.classList.add('border-bottom', 'pb-3', 'mb-4');
     } else {
-        notesBlock.parentNode.insertBefore(paymentBlock, notesBlock);
+        // FIXED: insert after notes block so it stays at the bottom!
+        notesBlock.parentNode.insertBefore(paymentBlock, notesBlock.nextSibling);
         paymentBlock.classList.remove('border-bottom', 'pb-3', 'mb-4');
     }
 
