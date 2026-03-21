@@ -1925,7 +1925,7 @@ function handleAddCustomService(inputId, containerId) {
                           <div>
                               <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
                               <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
-                              <span onclick="requireAuth(() => openEditModal('${e['Event ID']}', '${e['Event Date']}'))" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
+                              <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
                               <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
                           </div>
                       </div>
@@ -2084,7 +2084,7 @@ function handleAddCustomService(inputId, containerId) {
 
           dayEvents.forEach(e => {
               if (e['Event Name'] === 'Crew Leave') {
-                  eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="openEditModal('${e['Event ID']}', '${e['Event Date']}', true)" title="Leave: ${e['Manpower']}">
+                  eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="openEditModal('${e['Doc ID']}', true)" title="Leave: ${e['Manpower']}">
                       <span class="opacity-75">✈️</span> <strong>${e['Manpower'] || 'Leave'}</strong>
                   </div>`;
               } else {
@@ -2093,7 +2093,7 @@ function handleAddCustomService(inputId, containerId) {
                   else if(e['Event Status'] === 'Cancelled') pillClass = 'cal-status-cancelled';
                   
                   const timePrefix = e['Event Start Time'] ? `${formatAMPM(e['Event Start Time'])} ` : '';
-                  eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Event ID']}', '${e['Event Date']}', true)" title="${e['Event Name']}">
+                  eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Doc ID']}', true)" title="${e['Event Name']}">
                       <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
                   </div>`;
               }
@@ -2160,7 +2160,7 @@ function handleAddCustomService(inputId, containerId) {
       html += `<tr>
         <td class="fw-bold text-nowrap text-secondary">
             #${p['Event ID']}
-            <span onclick="requireAuth(() => openEditModal('${p['Event ID']}', '${p['Event Date']}'))" class="edit-trigger ms-1 px-1" title="Edit Entry"><i class="bi bi-pencil-square"></i></span>
+            <span onclick="requireAuth(() => openEditModal('${p['Doc ID']}'))" class="edit-trigger ms-1 px-1" title="Edit Entry"><i class="bi bi-pencil-square"></i></span>
         </td>
         <td style="min-width: 180px;">${nameDisplay}<br><span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${eventDateStr}</span></td>
         <td class="text-nowrap"><span class="badge bg-light text-dark border">${p['Payment Type']||'-'}</span>${amountStr}</td>
@@ -2370,14 +2370,19 @@ function handleAddCustomService(inputId, containerId) {
      modal.show();
   }
 
-  function openEditModal(id, date, fromCalendar = false) {
-    const e = rawEvents.find(ev => ev['Event ID'] === id && (!date || ev['Event Date'] === date));
+  function openEditModal(docId, fromCalendar = false) {
+    // 1. Search strictly by the unique Firestore Document ID
+    const e = rawEvents.find(ev => String(ev['Doc ID']) === String(docId));
     if(!e) return;
+    
+    // 2. Extract the variables needed for the rest of the form
+    const id = e['Event ID'];
+    const date = e['Event Date'];
     const isReadOnly = fromCalendar && !isAuthenticated();
 
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
-    const isPast = date && date < todayStr; 
+    const isPast = date && date < todayStr;
     
     const paymentBlock = document.getElementById('editPaymentFields');
     const toggleBlock = document.getElementById('editTypeToggleBlock');
