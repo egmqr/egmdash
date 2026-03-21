@@ -1757,12 +1757,16 @@ function handleAddCustomService(inputId, containerId) {
       
       filteredEventsCache = filtered; 
       
+      // Check if the user is actively using ANY filter
+      const isDefaultView = (!n && !dF && !dT && !c && !s);
       let listFiltered = filtered;
-      if (!s) { 
+      
+      // Hide Pencil Booked & Cancelled ONLY if no filters are actively applied
+      if (isDefaultView) { 
           listFiltered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
       }
       
-      renderEvents(listFiltered, !n && !dF && !dT && !c && !s);
+      renderEvents(listFiltered, isDefaultView);
       renderCalendar(filtered); 
 
       // Push active Event filters to the URL
@@ -1783,6 +1787,7 @@ function handleAddCustomService(inputId, containerId) {
             t=document.getElementById('fPayType').value, 
             s=document.getElementById('fBillStatus').value;
             
+      // Payments view always hides Pencil Booked and Cancelled
       let filtered = rawEvents.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
       
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
