@@ -2165,7 +2165,7 @@ function handleAddCustomService(inputId, containerId) {
       const multiDayCount = eventCounts[p['Event ID']];
       
       // UX BONUS: Add a badge if this payment covers multiple days/locations
-      const multiBadge = multiDayCount > 1 ? `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle ms-1" style="font-size: 0.65rem;">+${multiDayCount - 1} Day/Loc</span>` : '';
+     const multiBadge = multiDayCount > 1 ? `<span class="badge badge-teal ms-1" style="font-size: 0.65rem;">+${multiDayCount - 1} Day/Loc</span>` : '';
       
       const nameDisplay = isAvp ? `<span class="fw-bold text-dark">${p['Event Name']}</span> <span class="badge badge-avp rounded-pill shadow-sm">AVP</span> ${multiBadge}` : `<span class="fw-bold text-dark">${p['Event Name']}</span> ${multiBadge}`;
       
