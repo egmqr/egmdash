@@ -827,6 +827,23 @@
       <input type="text" name="eventName" id="addDayEventNameInput" class="form-control fw-bold" required>
   </div>
   
+  <div class="row g-2 mb-3" id="addDayVenueBlock">
+      <div class="col-12 col-md-6">
+          <label class="form-label-sm">Venue / Location</label>
+          <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span>
+              <input type="text" name="eventVenue" id="addDayEventVenueInput" class="form-control border-start-0 ps-0">
+          </div>
+      </div>
+      <div class="col-12 col-md-6">
+          <label class="form-label-sm">Google Maps Link</label>
+          <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span>
+              <input type="url" name="venueLink" id="addDayVenueLinkInput" class="form-control border-start-0 ps-0" placeholder="http://maps.google.com/...">
+          </div>
+      </div>
+  </div>
+  
   <div class="mb-4" id="addDayStatusBlock"><label class="form-label-sm">Day Status</label><select name="eventStatus" class="form-select form-select-sm fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option></select></div>
   
   <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
@@ -1990,7 +2007,7 @@ function handleAddCustomService(inputId, containerId) {
                     <div class="d-flex justify-content-between mb-3 align-items-center">
                         <div>
                             <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
-                            <span onclick="requireAuth(() => openEditModal('${e['Event ID']}', '${e['Event Date']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
+                            <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
                             <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
                         </div>
                         <span class="badge ${statusBadgeClass} px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>
@@ -2111,7 +2128,28 @@ function handleAddCustomService(inputId, containerId) {
   function renderPayments(data) {
     let html = '';
     const uniqueDataMap = new Map();
-    data.forEach(item => { if (item['Event Name'] !== 'Crew Leave' && !uniqueDataMap.has(item['Event ID'])) uniqueDataMap.set(item['Event ID'], item); });
+    const eventCounts = {}; // Track how many days/locations are under this ID
+
+    data.forEach(item => { 
+        if (item['Event Name'] !== 'Crew Leave') {
+            const id = item['Event ID'];
+            
+            // Count how many times this Event ID appears
+            eventCounts[id] = (eventCounts[id] || 0) + 1;
+
+            if (!uniqueDataMap.has(id)) { 
+                uniqueDataMap.set(id, item); 
+            } else {
+                // THE FIX: If the Map grabbed a child document (blank payment info) first,
+                // but this current document HAS payment info (the Parent), overwrite it!
+                const existing = uniqueDataMap.get(id);
+                if (!existing['Payment Type'] && item['Payment Type']) {
+                    uniqueDataMap.set(id, item);
+                }
+            }
+        } 
+    });
+
     const uniqueData = Array.from(uniqueDataMap.values());
     uniqueData.sort((a, b) => {
         let dateA = a['Event Date'] || ''; let dateB = b['Event Date'] || ''; return dateB.localeCompare(dateA); 
@@ -2124,9 +2162,15 @@ function handleAddCustomService(inputId, containerId) {
 
     uniqueData.forEach(p => {
       const isAvp = p['AVP Required'] === 'TRUE';
-      const nameDisplay = isAvp ? `<span class="fw-bold text-dark">${p['Event Name']}</span> <span class="badge badge-avp rounded-pill shadow-sm">AVP</span>` : `<span class="fw-bold text-dark">${p['Event Name']}</span>`;
+      const multiDayCount = eventCounts[p['Event ID']];
+      
+      // UX BONUS: Add a badge if this payment covers multiple days/locations
+      const multiBadge = multiDayCount > 1 ? `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle ms-1" style="font-size: 0.65rem;">+${multiDayCount - 1} Day/Loc</span>` : '';
+      
+      const nameDisplay = isAvp ? `<span class="fw-bold text-dark">${p['Event Name']}</span> <span class="badge badge-avp rounded-pill shadow-sm">AVP</span> ${multiBadge}` : `<span class="fw-bold text-dark">${p['Event Name']}</span> ${multiBadge}`;
       
       let badgeClass = 'badge-soft-dark';
+// ... (The rest of your existing renderPayments code continues exactly the same from here down)
       if(p['Payment Type'] === 'Billing') badgeClass = 'badge-soft-warning';
       else if(p['Payment Type']) badgeClass = 'badge-soft-success';
       
@@ -2295,6 +2339,7 @@ function handleAddCustomService(inputId, containerId) {
          document.getElementById('addDayNameBlock').style.display = 'none';
          document.getElementById('addDayEventNameInput').removeAttribute('required');
          document.getElementById('addDayEventNameInput').value = 'Crew Leave';
+       
      } else {
          document.getElementById('addDayHeader').innerHTML = `<i class="bi bi-calendar-plus me-2"></i> Add Day to Project <span class="badge bg-light border text-secondary ms-1">#${id}</span>`;
          document.getElementById('addDayStatusBlock').style.display = 'block';
@@ -2302,6 +2347,8 @@ function handleAddCustomService(inputId, containerId) {
          document.getElementById('addDayNameBlock').style.display = 'block';
          document.getElementById('addDayEventNameInput').setAttribute('required', 'required');
          document.getElementById('addDayEventNameInput').value = e['Event Name'];
+         document.getElementById('addDayEventVenueInput').value = e['Event Venue'] || '';
+         document.getElementById('addDayVenueLinkInput').value = e['Event Venue Link'] || '';
          
          const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
          const sInputs = form.elements['services'];
@@ -2887,8 +2934,8 @@ function handleAddCustomService(inputId, containerId) {
               eventId: obj.eventId, // <-- Keeps it attached to egm0015
               eventName: obj.eventName || baseData.eventName || "",
               eventDate: obj.eventDate || "",
-              eventVenue: baseData.eventVenue || "",
-              venueLink: baseData.venueLink || "",
+              eventVenue: obj.eventVenue || baseData.eventVenue || "", // Now captures unique venue
+              venueLink: obj.venueLink || baseData.venueLink || "", // Now captures unique map link
               eventStatus: obj.eventStatus || "Pencil Booked",
               avpRequired: baseData.avpRequired || false,
               services: obj.services.length > 0 ? obj.services.join(", ") : (baseData.services || ""),
