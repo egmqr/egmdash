@@ -962,6 +962,8 @@
       <button type="button" class="btn btn-dark btn-sm fw-bold py-1 px-2 shadow-sm" style="font-size: 0.7rem;" onclick="unlockEditModal()">LOGIN</button>
   </div>
 
+  <ul class="nav nav-pills mb-3 border-bottom pb-3" id="editMultiDayNav" style="display:none;"></ul>
+
   <form id="editForm" class="d-flex flex-column">
   <input type="hidden" id="editEventId" name="eventId">
   <input type="hidden" id="editOriginalDate" name="originalDate">
@@ -2488,7 +2490,38 @@ function handleAddCustomService(inputId, containerId) {
     // 3. The true "Main Day" is whichever day is currently first in the timeline
     const firstDayDocId = allDays.length > 0 ? allDays[0]['Doc ID'] : null;
     const isMainDay = (e['Doc ID'] === firstDayDocId);
-    
+    // --- MULTI-DAY TAB NAVIGATION ---
+    const multiDayNav = document.getElementById('editMultiDayNav');
+    if (allDays.length > 1) {
+        multiDayNav.style.display = 'flex';
+        let tabsHtml = '';
+        
+        allDays.forEach((day, index) => {
+            const isActive = day['Doc ID'] === docId ? 'active shadow-sm' : 'bg-white border';
+            const label = index === 0 ? '<i class="bi bi-star-fill text-warning me-1"></i> Main Day' : `Day ${index + 1}`;
+            
+            // Format the date for the sub-label
+            let tabDate = '';
+            if (day['Event Date'] && day['Event Date'].includes('-')) {
+                const dParts = day['Event Date'].split('-');
+                const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
+                tabDate = `<span class="d-block mt-1 ${day['Doc ID'] === docId ? 'text-white opacity-75' : 'text-muted'}" style="font-size:0.65rem; font-weight: 500;">${dObj.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</span>`;
+            }
+
+            tabsHtml += `
+            <li class="nav-item">
+                <a class="nav-link ${isActive} px-3 py-2 text-center" style="cursor:pointer; line-height: 1.1; min-width: 80px;" onclick="openEditModal('${day['Doc ID']}', ${fromCalendar})">
+                    <span style="font-size: 0.8rem; font-weight: 700;">${label}</span>
+                    ${tabDate}
+                </a>
+            </li>`;
+        });
+        multiDayNav.innerHTML = tabsHtml;
+    } else {
+        multiDayNav.style.display = 'none';
+        multiDayNav.innerHTML = '';
+    }
+    // --------------------------------
     const deleteBtn = document.getElementById('editDeleteBtn');
     
     if (isMainDay) {
