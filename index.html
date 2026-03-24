@@ -2496,21 +2496,46 @@ function handleAddCustomService(inputId, containerId) {
         multiDayNav.style.display = 'flex';
         let tabsHtml = '';
         
-        allDays.forEach((day, index) => {
-            const isActive = day['Doc ID'] === docId ? 'active shadow-sm' : 'bg-white border';
-            const label = index === 0 ? '<i class="bi bi-star-fill text-warning me-1"></i> Main Day' : `Day ${index + 1}`;
+        // 1. Find all unique dates to assign the base "Day X" numbers
+        const uniqueDates = [...new Set(allDays.map(d => d['Event Date']))];
+        
+        // 2. Count how many events happen on each specific date
+        const dateCounts = {};
+        allDays.forEach(d => {
+            const dateStr = d['Event Date'];
+            dateCounts[dateStr] = (dateCounts[dateStr] || 0) + 1;
+        });
+
+        // 3. Keep a running tally as we generate the tabs
+        const currentEventIndex = {};
+
+        allDays.forEach((day) => {
+            const dateStr = day['Event Date'];
+            const dayNumber = uniqueDates.indexOf(dateStr) + 1; // 1-based index
             
-            // Format the date for the sub-label
+            // Track which event number this is for this specific date
+            currentEventIndex[dateStr] = (currentEventIndex[dateStr] || 0) + 1;
+            
+            // Build the top label
+            let label = `Day ${dayNumber}`;
+            if (dateCounts[dateStr] > 1) {
+                label += ` (Event ${currentEventIndex[dateStr]})`;
+            }
+
+            const isActive = day['Doc ID'] === docId ? 'active shadow-sm' : 'bg-white border text-secondary';
+            
+            // Build the date sub-label
             let tabDate = '';
-            if (day['Event Date'] && day['Event Date'].includes('-')) {
-                const dParts = day['Event Date'].split('-');
+            if (dateStr && dateStr.includes('-')) {
+                const dParts = dateStr.split('-');
                 const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
-                tabDate = `<span class="d-block mt-1 ${day['Doc ID'] === docId ? 'text-white opacity-75' : 'text-muted'}" style="font-size:0.65rem; font-weight: 500;">${dObj.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</span>`;
+                const textClass = day['Doc ID'] === docId ? 'text-white opacity-75' : 'text-muted';
+                tabDate = `<span class="d-block mt-1 ${textClass}" style="font-size:0.65rem; font-weight: 500;">${dObj.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</span>`;
             }
 
             tabsHtml += `
             <li class="nav-item">
-                <a class="nav-link ${isActive} px-3 py-2 text-center" style="cursor:pointer; line-height: 1.1; min-width: 80px;" onclick="openEditModal('${day['Doc ID']}', ${fromCalendar})">
+                <a class="nav-link ${isActive} px-3 py-2 text-center" style="cursor:pointer; line-height: 1.1; min-width: 90px;" onclick="openEditModal('${day['Doc ID']}', ${fromCalendar})">
                     <span style="font-size: 0.8rem; font-weight: 700;">${label}</span>
                     ${tabDate}
                 </a>
