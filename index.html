@@ -2498,6 +2498,8 @@ function handleAddCustomService(inputId, containerId) {
         deleteBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> DELETE THIS DAY ONLY';
         deleteBtn.onclick = () => deleteFullEvent(false);
     }
+    const paymentBlockSection = document.getElementById('editPaymentFields');
+    paymentBlockSection.style.display = isMainDay ? 'block' : 'none';
     
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
