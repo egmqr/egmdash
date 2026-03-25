@@ -243,7 +243,7 @@
   <div class="sticky-header">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="fw-bold mb-0 d-flex align-items-center" style="letter-spacing: -0.5px;">EGM <span class="text-primary ms-1">Ops</span> 
-          <i class="bi bi-arrow-repeat text-primary ms-2" id="syncIcon" style="cursor: pointer; font-size: 1.3rem;" onclick="forceSync()" title="Force Sync with Google Sheets"></i>
+          <i class="bi bi-arrow-repeat text-primary ms-2" id="syncIcon" style="cursor: pointer; font-size: 1.3rem;" onclick="forceSync()" title="Refresh App"></i>
           <span id="bgSyncIndicator" class="bg-sync-indicator ms-3"><div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 0.8rem; height: 0.8rem; border-width: 0.15em;"></div> Syncing</span>
       </h4>
       
@@ -3128,14 +3128,7 @@ function handleAddCustomService(inputId, containerId) {
       setTimeout(() => handleTabClick(activeTab), 400); 
   };
 
-  // We disabled manual syncing, but this stops the sync button from throwing an error
-  function forceSync() {
-      const icon = document.getElementById('syncIcon');
-      if(icon) {
-          icon.classList.add('spin-anim');
-          setTimeout(() => icon.classList.remove('spin-anim'), 1000);
-      }
-  }
+
   // ==============================================================================
   // PHOTOBOOTH GENERATOR FRONTEND INTEGRATION
   // ==============================================================================
@@ -3711,14 +3704,7 @@ function handleAddCustomService(inputId, containerId) {
       setTimeout(() => handleTabClick(activeTab), 400); 
   };
 
-  // We disabled manual syncing, but this stops the button from causing an error
   function forceSync() {
-      const icon = document.getElementById('syncIcon');
-      if(icon) {
-          icon.classList.add('spin-anim');
-          setTimeout(() => icon.classList.remove('spin-anim'), 1000);
-      }
-  }
 
   // --- INSTANT URL FILTER HYDRATION ---
   // This runs immediately so Firebase doesn't accidentally erase the URL!
