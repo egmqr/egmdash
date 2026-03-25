@@ -2262,7 +2262,7 @@ function handleAddCustomService(inputId, containerId) {
 
     uniqueData.forEach(p => {
       const isAvp = p['AVP Required'] === 'TRUE';
-      const multiDayCount = eventCounts[p['Event ID']];
+      const multiDayCount = absoluteEventCounts[p['Event ID']];
       
       // UX BONUS: Add a badge if this payment covers multiple days/locations
      const multiBadge = multiDayCount > 1 ? `<span class="badge badge-teal ms-1" style="font-size: 0.65rem;">+${multiDayCount - 1} Day/Loc</span>` : '';
