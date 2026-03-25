@@ -2025,7 +2025,7 @@ function handleAddCustomService(inputId, containerId) {
                   html += `<div class="col-12 col-md-6 col-lg-4">
                     <div class="card leave-card p-2 p-md-3" style="height: auto !important;">
                       <div class="d-flex justify-content-between align-items-center mb-2">
-                          <div>
+                          <div style="z-index: 30;">
                               <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
                               <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
                               <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
@@ -2033,14 +2033,6 @@ function handleAddCustomService(inputId, containerId) {
                           </div>
                       </div>
                       <div class="text-danger fw-bold mb-2 small"><i class="bi bi-calendar2-event opacity-75 me-1"></i> ${leaveDateString}</div>
-                      <div class="mb-1">
-                          <div>
-                              <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
-                              <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
-                              <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
-                              <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
-                          </div>
-                      </div>
                       <div class="mb-1">
                           <div style="line-height: 1.6;">
                               ${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-2 fw-bold px-2 py-1 text-wrap" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}
@@ -2238,108 +2230,122 @@ function handleAddCustomService(inputId, containerId) {
 
   function renderPayments(data) {
     let html = '';
-    
-    // 1. Get the ABSOLUTE count of days per event from the unfiltered database
+    const q = document.getElementById('fPaySearch') ? document.getElementById('fPaySearch').value.toLowerCase().trim() : '';
+    const grInv = document.getElementById('fGrInv') ? document.getElementById('fGrInv').value.toLowerCase().trim() : '';
+    const isSearching = q.length > 0 || grInv.length > 0;
+
     const absoluteEventCounts = {};
+    const projectMainDays = {};
+    const projectPaymentData = {};
+    
+    // 1. Group and Sort ALL raw events to find the true chronological Main Day and Payment Data
+    const grouped = {};
     rawEvents.forEach(item => {
         if (item['Event Name'] !== 'Crew Leave') {
             const id = item['Event ID'];
             absoluteEventCounts[id] = (absoluteEventCounts[id] || 0) + 1;
+            if (!grouped[id]) grouped[id] = [];
+            grouped[id].push(item);
         }
     });
 
-    // 2. Only show the TRUE Main Day (where Doc ID exactly matches Event ID)
-    // 2. Smart Grouping: Find the TRUE Main Day even for legacy events
-    const uniqueDataMap = new Map();
-    data.forEach(item => {
-        if (item['Event Name'] !== 'Crew Leave') {
-            const id = item['Event ID'];
-            if (!uniqueDataMap.has(id)) {
-                uniqueDataMap.set(id, item);
-            } else {
-                const existing = uniqueDataMap.get(id);
-                // 1. Strict match wins immediately (egm0015 === egm0015)
-                if (item['Doc ID'] === id) {
-                    uniqueDataMap.set(id, item);
-                }
-                // 2. Parent documents usually don't have underscores (Added days look like egm0015_17123456)
-                else if (existing['Doc ID'] !== id && !item['Doc ID'].includes('_') && existing['Doc ID'].includes('_')) {
-                    uniqueDataMap.set(id, item);
-                }
-                // 3. Fallback: Prefer the one with actual payment info
-                else if (!existing['Payment Type'] && item['Payment Type']) {
-                    uniqueDataMap.set(id, item);
-                }
-            }
-        }
-    });
+    for (let id in grouped) {
+        let days = grouped[id];
+        // Sort chronologically
+        days.sort((a, b) => {
+            let dateA = a['Event Date'] || '9999-99-99';
+            let dateB = b['Event Date'] || '9999-99-99';
+            if (dateA !== dateB) return dateA.localeCompare(dateB);
+            let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
+            let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
+            return timeA.localeCompare(timeB);
+        });
+        
+        projectMainDays[id] = days[0]['Doc ID']; // Chronologically first is ALWAYS Main Day
+        
+        // Hunt for the document that actually holds the payment info
+        let payDoc = days.find(d => d['Payment Type']) || days[0];
+        projectPaymentData[id] = payDoc;
+    }
 
-    const uniqueData = Array.from(uniqueDataMap.values());
-    uniqueData.sort((a, b) => {
+    // 2. Filter the table data based on whether the user is actively searching
+    let displayData = [];
+    if (isSearching) {
+        // If searching by ID/Name/Invoice, show all matches (Main Days and Added Days)
+        displayData = data.filter(item => item['Event Name'] !== 'Crew Leave');
+    } else {
+        // Default view: ONLY show the true Main Day for each project
+        displayData = data.filter(item => item['Doc ID'] === projectMainDays[item['Event ID']] && item['Event Name'] !== 'Crew Leave');
+    }
+
+    // Sort the final display rows
+    displayData.sort((a, b) => {
         let dateA = a['Event Date'] || ''; let dateB = b['Event Date'] || ''; return dateB.localeCompare(dateA); 
     });
 
-    if (uniqueData.length === 0) {
+    if (displayData.length === 0) {
         document.getElementById('p-body').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>No payment records found.</td></tr>';
         return;
     }
 
-    uniqueData.forEach(p => {
+    displayData.forEach(p => {
+      const evId = p['Event ID'];
+      const payData = projectPaymentData[evId]; // Pull financial data from the smart source!
+      
       const isAvp = p['AVP Required'] === 'TRUE';
-      const multiDayCount = absoluteEventCounts[p['Event ID']];
+      const multiDayCount = absoluteEventCounts[evId];
       
       // UX BONUS: Add a badge if this payment covers multiple days/locations
-     const multiBadge = multiDayCount > 1 ? `<span class="badge badge-teal ms-1" style="font-size: 0.65rem;">+${multiDayCount - 1} Day/Loc</span>` : '';
+      const multiBadge = multiDayCount > 1 ? `<span class="badge badge-teal ms-1" style="font-size: 0.65rem;">+${multiDayCount - 1} Day/Loc</span>` : '';
       
       const nameDisplay = isAvp ? `<span class="fw-bold text-dark">${p['Event Name']}</span> <span class="badge badge-avp rounded-pill shadow-sm">AVP</span> ${multiBadge}` : `<span class="fw-bold text-dark">${p['Event Name']}</span> ${multiBadge}`;
       
       let badgeClass = 'badge-soft-dark';
-// ... (The rest of your existing renderPayments code continues exactly the same from here down)
-      if(p['Payment Type'] === 'Billing') badgeClass = 'badge-soft-warning';
-      else if(p['Payment Type']) badgeClass = 'badge-soft-success';
+      if(payData['Payment Type'] === 'Billing') badgeClass = 'badge-soft-warning';
+      else if(payData['Payment Type']) badgeClass = 'badge-soft-success';
       
-      if(p['Billing Status'] === 'GR Pending') badgeClass = 'badge-yellow';
-      if(p['Billing Status'] === 'GR Received') badgeClass = 'badge-orange';
-      if(p['Billing Status'] === 'GR Processed') badgeClass = 'badge-teal';
-      if(p['Billing Status'] === 'Payment released') badgeClass = 'badge-go-green';
+      if(payData['Billing Status'] === 'GR Pending') badgeClass = 'badge-yellow';
+      if(payData['Billing Status'] === 'GR Received') badgeClass = 'badge-orange';
+      if(payData['Billing Status'] === 'GR Processed') badgeClass = 'badge-teal';
+      if(payData['Billing Status'] === 'Payment released') badgeClass = 'badge-go-green';
 
-      let badge = `<span class="badge ${badgeClass} px-2 py-1 rounded-pill">${p['Billing Status']||'Pending'}</span>`;
-      let dateStr = p['Billing Status Date'] ? new Date(p['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
+      let badge = `<span class="badge ${badgeClass} px-2 py-1 rounded-pill">${payData['Billing Status']||'Pending'}</span>`;
+      let dateStr = payData['Billing Status Date'] ? new Date(payData['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
       let eventDateStr = p['Event Date'] ? new Date(p['Event Date']).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '-';
 
       let actionHtml = '';
       
       // If the payment type requires an invoice and the URL exists, show the View badge
-      if (['Cash ORCR', 'Billing', 'Online Transfer ORCR', 'Check ORCR'].includes(p['Payment Type'])) {
-          if (p['Invoice URL']) {
-              actionHtml += `<a href="${p['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 mb-1 text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>View Inv</a> `;
+      if (['Cash ORCR', 'Billing', 'Online Transfer ORCR', 'Check ORCR'].includes(payData['Payment Type'])) {
+          if (payData['Invoice URL']) {
+              actionHtml += `<a href="${payData['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 mb-1 text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>View Inv</a> `;
           }
       }
       
       // If the payment type requires a check and the URL exists, show the View badge
-      if (['Check', 'Check AR', 'Check ORCR'].includes(p['Payment Type'])) {
-          if (p['Check URL']) {
-              actionHtml += `<a href="${p['Check URL']}" target="_blank" class="badge bg-success text-white me-1 mb-1 text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>View Check</a>`;
+      if (['Check', 'Check AR', 'Check ORCR'].includes(payData['Payment Type'])) {
+          if (payData['Check URL']) {
+              actionHtml += `<a href="${payData['Check URL']}" target="_blank" class="badge bg-success text-white me-1 mb-1 text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>View Check</a>`;
           }
       }
 
-      let amountStr = p['Amount'] ? `<br><strong class="text-success">₱${Number(p['Amount']).toLocaleString()}</strong>` : '';
+      let amountStr = payData['Amount'] ? `<br><strong class="text-success">₱${Number(payData['Amount']).toLocaleString()}</strong>` : '';
 
       html += `<tr>
         <td class="fw-bold text-nowrap text-secondary">
-            #${p['Event ID']}
+            #${evId}
             <span onclick="requireAuth(() => openEditModal('${p['Doc ID']}'))" class="edit-trigger ms-1 px-1" title="Edit Entry"><i class="bi bi-pencil-square"></i></span>
         </td>
         <td style="min-width: 180px;">${nameDisplay}<br><span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${eventDateStr}</span></td>
-        <td class="text-nowrap"><span class="badge bg-light text-dark border">${p['Payment Type']||'-'}</span>${amountStr}</td>
+        <td class="text-nowrap"><span class="badge bg-light text-dark border">${payData['Payment Type']||'-'}</span>${amountStr}</td>
         <td class="text-secondary" style="min-width: 180px; max-width: 250px;">
-            <div class="text-truncate" title="${p['Email Thread']||'-'}"><i class="bi bi-envelope me-1 opacity-50"></i> ${p['Email Thread']||'-'}</div>
-            <div class="small text-muted fw-bold fst-italic text-wrap text-break mt-1" style="line-height: 1.3;">Note: ${p['Payment Notes']||'None'}</div>
+            <div class="text-truncate" title="${payData['Email Thread']||'-'}"><i class="bi bi-envelope me-1 opacity-50"></i> ${payData['Email Thread']||'-'}</div>
+            <div class="small text-muted fw-bold fst-italic text-wrap text-break mt-1" style="line-height: 1.3;">Note: ${payData['Payment Notes']||'None'}</div>
         </td>
         <td class="text-nowrap">${badge} <br><span class="text-muted fw-bold mt-1 d-block" style="font-size: 0.75rem;"><i class="bi bi-calendar2 me-1"></i>${dateStr}</span></td>
         <td class="text-nowrap">
-            <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">GR: <span class="text-dark fw-bold badge bg-light border">${p['GR Number']||'--'}</span></span>
-            <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">INV: <span class="text-dark fw-bold badge bg-light border">${p['Invoice Number']||'--'}</span></span>
+            <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">GR: <span class="text-dark fw-bold badge bg-light border">${payData['GR Number']||'--'}</span></span>
+            <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">INV: <span class="text-dark fw-bold badge bg-light border">${payData['Invoice Number']||'--'}</span></span>
             ${actionHtml}
         </td>
       </tr>`;
@@ -2609,12 +2615,12 @@ function handleAddCustomService(inputId, containerId) {
         return timeA.localeCompare(timeB);
     });
 
-    // 3. Smart identification of the TRUE "Main Day" (handles older legacy database entries)
-    let mainEvent = allDays.find(ev => ev['Doc ID'] === id); // Best guess: Strict Match
-    if (!mainEvent) mainEvent = allDays.find(ev => !ev['Doc ID'].includes('_')); // Second guess: Parents don't have underscores
-    if (!mainEvent) mainEvent = allDays[0]; // Fallback: Chronologically first
-    
+   // 3. The true "Main Day" is ALWAYS the chronologically first event in the sorted array!
+    const mainEvent = allDays[0];
     const isMainDay = (e['Doc ID'] === mainEvent['Doc ID']);
+    
+    // 4. Hunt for the document that currently holds the actual payment data
+    const paymentSourceEvent = allDays.find(ev => ev['Payment Type']) || mainEvent;
     // --- MULTI-DAY TAB NAVIGATION ---
     const multiDayNav = document.getElementById('editMultiDayNav');
     if (allDays.length > 1) {
@@ -2761,20 +2767,21 @@ function handleAddCustomService(inputId, containerId) {
         });
         
         // Use 'mainEvent' instead of 'e' so Added Days copy the main payment data
-        form.elements['paymentType'].value = mainEvent['Payment Type'] || '';
+        // Use 'paymentSourceEvent' so we copy the actual money data no matter which day originally held it
+        form.elements['paymentType'].value = paymentSourceEvent['Payment Type'] || '';
         togglePaymentUI('edit');
         
         setTimeout(() => {
-            if(mainEvent['Billing Status']) {
-                form.elements['billingStatus'].value = mainEvent['Billing Status'];
+            if(paymentSourceEvent['Billing Status']) {
+                form.elements['billingStatus'].value = paymentSourceEvent['Billing Status'];
             }
             
             // Trigger the required check when opening the modal
             checkInvoiceRequired('edit');
             
             // 1. Populate the text inputs with the current database links
-            const currentInv = mainEvent['Invoice URL'] || '';
-            const currentChk = mainEvent['Check URL'] || '';
+            const currentInv = paymentSourceEvent['Invoice URL'] || '';
+            const currentChk = paymentSourceEvent['Check URL'] || '';
             form.elements['invoiceUrl'].value = currentInv;
             form.elements['checkUrl'].value = currentChk;
             
@@ -2806,12 +2813,12 @@ function handleAddCustomService(inputId, containerId) {
                 }
             }
         }, 10);
-        form.elements['emailThread'].value = mainEvent['Email Thread'] || '';
-        form.elements['billingStatusDate'].value = toInputDate(mainEvent['Billing Status Date']);
-        form.elements['grNumber'].value = mainEvent['GR Number'] || '';
-        form.elements['invoiceNumber'].value = mainEvent['Invoice Number'] || '';
-        form.elements['amount'].value = mainEvent['Amount'] || '0';
-        form.elements['paymentNotes'].value = mainEvent['Payment Notes'] || '';
+        form.elements['emailThread'].value = paymentSourceEvent['Email Thread'] || '';
+        form.elements['billingStatusDate'].value = toInputDate(paymentSourceEvent['Billing Status Date']);
+        form.elements['grNumber'].value = paymentSourceEvent['GR Number'] || '';
+        form.elements['invoiceNumber'].value = paymentSourceEvent['Invoice Number'] || '';
+        form.elements['amount'].value = paymentSourceEvent['Amount'] || '0';
+        form.elements['paymentNotes'].value = paymentSourceEvent['Payment Notes'] || '';
         
         // Gray out and disable editing of the payment block if it is an Added Day
         const paymentBlockSection = document.getElementById('editPaymentFields');
