@@ -1780,9 +1780,9 @@ function handleAddCustomService(inputId, containerId) {
       const isDefaultView = (!n && !dF && !dT && !c && !s);
       let listFiltered = filtered;
       
-      // Hide Pencil Booked & Cancelled ONLY if no filters are actively applied
+      // Hide ONLY Pencil Booked if no filters are actively applied (Cancelled stays visible)
       if (isDefaultView) { 
-          listFiltered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
+          listFiltered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked');
       }
       
       renderEvents(listFiltered, isDefaultView);
@@ -1806,8 +1806,8 @@ function handleAddCustomService(inputId, containerId) {
             t=document.getElementById('fPayType').value, 
             s=document.getElementById('fBillStatus').value;
             
-      // Payments view always hides Pencil Booked and Cancelled
-      let filtered = rawEvents.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
+      // Start with ALL events so they remain searchable
+      let filtered = rawEvents;
       
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
       if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
@@ -1815,6 +1815,11 @@ function handleAddCustomService(inputId, containerId) {
       
       if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed', 'Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Pending', 'Pending Clearance'].includes(e['Billing Status'])); } 
       else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
+
+      // Hide Pencil Booked and Cancelled IF the user is NOT actively typing a text search
+      if (!q && !grInv) {
+          filtered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
+      }
       
       renderPayments(filtered);
       
