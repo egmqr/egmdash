@@ -110,6 +110,52 @@
     .table-custom th { background-color: #f1f5f9; color: #475569; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; transition: background-color 0.3s ease, color 0.3s ease; }
     .table-custom td { vertical-align: middle; color: #334155; border-bottom: 1px solid #f1f5f9; transition: border-color 0.3s ease; }
 
+
+    /* --- EVENT CARD STATUS STYLES --- */
+    .stamp-container {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: none; /* Crucial: lets clicks pass right through to buttons! */
+        z-index: 20; /* Overlays on top of all card content */
+        overflow: hidden;
+    }
+    .status-stamp {
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        font-weight: 900;
+        text-transform: uppercase;
+        transform: rotate(-25deg);
+        padding: 0.5rem 1.5rem;
+        border: 4px solid;
+        border-radius: 12px;
+        white-space: nowrap;
+        letter-spacing: 0.1rem;
+    }
+    .stamp-cancelled { 
+        color: rgba(220, 53, 69, 0.45); 
+        border-color: rgba(220, 53, 69, 0.45); 
+    }
+    .stamp-pencil { 
+        color: rgba(108, 117, 125, 0.45); 
+        border-color: rgba(108, 117, 125, 0.45); 
+    }
+    
+    .card-cancelled { 
+        border: 2px solid rgba(220, 53, 69, 0.8) !important; 
+    }
+    .card-pencil { 
+        border: 2px solid rgba(108, 117, 125, 0.8) !important; 
+        background-color: #f8fafc !important; 
+        opacity: 0.85; 
+        filter: grayscale(40%); 
+    }
+    .card-confirmed { 
+        border: 2px solid #0d9488 !important; 
+        background-color: rgba(13, 148, 136, 0.08) !important; 
+    }
+    /* -------------------------------- */
+
+    
     /* BOOTH QR STYLES */
     .booth-color-input-wrapper { display: flex; gap: 8px; align-items: center; }
     .booth-color-input-wrapper input[type="color"] { width: 44px; height: 44px; padding: 0; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; background: none; flex-shrink: 0; }
@@ -148,7 +194,7 @@
     .logo-gallery-item { width: 40px; height: 40px; flex-shrink: 0; border: 2px solid transparent; border-radius: 8px; cursor: pointer; object-fit: contain; background: #fff; padding: 2px; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .logo-gallery-item:hover { border-color: #cbd5e1; transform: translateY(-2px);}
     .logo-gallery-item.selected { border-color: #0d9488; }
-
+    
     /* DARK MODE */
     body.dark-mode { background-color: #121212; color: #d1d5db; }
     .dark-mode .card, .dark-mode .filter-panel, .dark-mode .calendar-container, .dark-mode .table-custom, .dark-mode .modal-content { background: #1e1e1e !important; border-color: #333333 !important; }
@@ -1981,10 +2027,25 @@ function handleAddCustomService(inputId, containerId) {
                   });
               });
 
-              let statusBadgeClass = 'badge-soft-dark';
-              if(e['Event Status'] === 'Confirmed') statusBadgeClass = 'badge-soft-success';
-              else if(e['Event Status'] === 'Cancelled') statusBadgeClass = 'badge-soft-warning';
+              // --- NEW CARD STYLING LOGIC ---
+              let cardCustomClass = '';
+              let stampHtml = '';
+              let statusPillHtml = '';
 
+              if (e['Event Status'] === 'Confirmed') {
+                  cardCustomClass = 'card-confirmed';
+                  statusPillHtml = `<span class="badge badge-soft-success px-2 py-1 shadow-sm rounded-pill">Confirmed</span>`;
+              } else if (e['Event Status'] === 'Cancelled') {
+                  cardCustomClass = 'card-cancelled';
+                  stampHtml = `<div class="stamp-container"><div class="status-stamp stamp-cancelled">CANCELLED</div></div>`;
+              } else if (e['Event Status'] === 'Pencil Booked') {
+                  cardCustomClass = 'card-pencil';
+                  stampHtml = `<div class="stamp-container"><div class="status-stamp stamp-pencil">PENCIL BOOKED</div></div>`;
+              } else {
+                  // Fallback just in case
+                  statusPillHtml = `<span class="badge badge-soft-dark px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>`;
+              }
+              // ------------------------------
               let venueDisplay = `<span class="fw-medium text-dark">${e['Event Venue'] || 'No Venue Set'}</span>`;
               if (e['Event Venue Link']) {
                   venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
@@ -2010,14 +2071,15 @@ function handleAddCustomService(inputId, containerId) {
                   displayDateString = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
               }
 
-              html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
+              html += `<div class="col-12 col-md-6 col-lg-4">
+                  <div class="card p-3 p-md-4 ${cardCustomClass}" style="position: relative; overflow: hidden;">
+                    ${stampHtml}
                     <div class="d-flex justify-content-between mb-3 align-items-center">
-                        <div>
-                            <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
+                        <div style="z-index: 30;"> <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
                             <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
                             <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
                         </div>
-                        <span class="badge ${statusBadgeClass} px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>
+                        ${statusPillHtml}
                     </div>
                     
                     <h5 class="fw-bold mb-1 lh-sm text-dark">${e['Event Name']}</h5>
