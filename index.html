@@ -2014,9 +2014,26 @@ function handleAddCustomService(inputId, containerId) {
             evs.forEach(e => {
               
               if (e['Event Name'] === 'Crew Leave') {
+                  // Format the date for the Leave Card
+                  let leaveDateString = e['Event Date'];
+                  if (leaveDateString && leaveDateString.includes('-')) {
+                      const dParts = leaveDateString.split('-');
+                      const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
+                      leaveDateString = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+                  }
+
                   html += `<div class="col-12 col-md-6 col-lg-4">
                     <div class="card leave-card p-2 p-md-3" style="height: auto !important;">
                       <div class="d-flex justify-content-between align-items-center mb-2">
+                          <div>
+                              <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
+                              <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
+                              <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
+                              <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
+                          </div>
+                      </div>
+                      <div class="text-danger fw-bold mb-2 small"><i class="bi bi-calendar2-event opacity-75 me-1"></i> ${leaveDateString}</div>
+                      <div class="mb-1">
                           <div>
                               <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
                               <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
@@ -2221,30 +2238,19 @@ function handleAddCustomService(inputId, containerId) {
 
   function renderPayments(data) {
     let html = '';
-    const uniqueDataMap = new Map();
-    const eventCounts = {}; // Track how many days/locations are under this ID
-
-    data.forEach(item => { 
+    
+    // 1. Get the ABSOLUTE count of days per event from the unfiltered database
+    const absoluteEventCounts = {};
+    rawEvents.forEach(item => {
         if (item['Event Name'] !== 'Crew Leave') {
             const id = item['Event ID'];
-            
-            // Count how many times this Event ID appears
-            eventCounts[id] = (eventCounts[id] || 0) + 1;
-
-            if (!uniqueDataMap.has(id)) { 
-                uniqueDataMap.set(id, item); 
-            } else {
-                // THE FIX: If the Map grabbed a child document (blank payment info) first,
-                // but this current document HAS payment info (the Parent), overwrite it!
-                const existing = uniqueDataMap.get(id);
-                if (!existing['Payment Type'] && item['Payment Type']) {
-                    uniqueDataMap.set(id, item);
-                }
-            }
-        } 
+            absoluteEventCounts[id] = (absoluteEventCounts[id] || 0) + 1;
+        }
     });
 
-    const uniqueData = Array.from(uniqueDataMap.values());
+    // 2. Only show the TRUE Main Day (where Doc ID exactly matches Event ID)
+    const uniqueData = data.filter(item => item['Doc ID'] === item['Event ID'] && item['Event Name'] !== 'Crew Leave');
+    
     uniqueData.sort((a, b) => {
         let dateA = a['Event Date'] || ''; let dateB = b['Event Date'] || ''; return dateB.localeCompare(dateA); 
     });
@@ -2580,8 +2586,11 @@ function handleAddCustomService(inputId, containerId) {
     });
 
     // 3. The true "Main Day" is whichever day is currently first in the timeline
-    const firstDayDocId = allDays.length > 0 ? allDays[0]['Doc ID'] : null;
-    const isMainDay = (e['Doc ID'] === firstDayDocId);
+    // 3. The true "Main Day" is the document where Doc ID exactly matches the Event ID
+    const isMainDay = (e['Doc ID'] === e['Event ID']);
+    
+    // 4. Grab the Main Day's data so Added Days can copy its payment details
+    const mainEvent = rawEvents.find(ev => ev['Doc ID'] === e['Event ID']) || e;
     // --- MULTI-DAY TAB NAVIGATION ---
     const multiDayNav = document.getElementById('editMultiDayNav');
     if (allDays.length > 1) {
@@ -2727,20 +2736,21 @@ function handleAddCustomService(inputId, containerId) {
             }
         });
         
-        form.elements['paymentType'].value = e['Payment Type'] || '';
+        // Use 'mainEvent' instead of 'e' so Added Days copy the main payment data
+        form.elements['paymentType'].value = mainEvent['Payment Type'] || '';
         togglePaymentUI('edit');
         
         setTimeout(() => {
-            if(e['Billing Status']) {
-                form.elements['billingStatus'].value = e['Billing Status'];
+            if(mainEvent['Billing Status']) {
+                form.elements['billingStatus'].value = mainEvent['Billing Status'];
             }
             
             // Trigger the required check when opening the modal
             checkInvoiceRequired('edit');
             
             // 1. Populate the text inputs with the current database links
-            const currentInv = e['Invoice URL'] || '';
-            const currentChk = e['Check URL'] || '';
+            const currentInv = mainEvent['Invoice URL'] || '';
+            const currentChk = mainEvent['Check URL'] || '';
             form.elements['invoiceUrl'].value = currentInv;
             form.elements['checkUrl'].value = currentChk;
             
@@ -2772,12 +2782,23 @@ function handleAddCustomService(inputId, containerId) {
                 }
             }
         }, 10);
-        form.elements['emailThread'].value = e['Email Thread'] || '';
-        form.elements['billingStatusDate'].value = toInputDate(e['Billing Status Date']);
-        form.elements['grNumber'].value = e['GR Number'] || '';
-        form.elements['invoiceNumber'].value = e['Invoice Number'] || '';
-        form.elements['amount'].value = e['Amount'] || '0';
-        form.elements['paymentNotes'].value = e['Payment Notes'] || '';
+        form.elements['emailThread'].value = mainEvent['Email Thread'] || '';
+        form.elements['billingStatusDate'].value = toInputDate(mainEvent['Billing Status Date']);
+        form.elements['grNumber'].value = mainEvent['GR Number'] || '';
+        form.elements['invoiceNumber'].value = mainEvent['Invoice Number'] || '';
+        form.elements['amount'].value = mainEvent['Amount'] || '0';
+        form.elements['paymentNotes'].value = mainEvent['Payment Notes'] || '';
+        
+        // Gray out and disable editing of the payment block if it is an Added Day
+        const paymentBlockSection = document.getElementById('editPaymentFields');
+        paymentBlockSection.style.display = 'block'; // Always show it
+        if (!isMainDay) {
+            paymentBlockSection.style.opacity = '0.5';
+            paymentBlockSection.style.pointerEvents = 'none';
+        } else {
+            paymentBlockSection.style.opacity = '1';
+            paymentBlockSection.style.pointerEvents = 'auto';
+        }
     }
     
     form.elements['eventDate'].value = toInputDate(e['Event Date']);
