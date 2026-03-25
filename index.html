@@ -2249,8 +2249,32 @@ function handleAddCustomService(inputId, containerId) {
     });
 
     // 2. Only show the TRUE Main Day (where Doc ID exactly matches Event ID)
-    const uniqueData = data.filter(item => item['Doc ID'] === item['Event ID'] && item['Event Name'] !== 'Crew Leave');
-    
+    // 2. Smart Grouping: Find the TRUE Main Day even for legacy events
+    const uniqueDataMap = new Map();
+    data.forEach(item => {
+        if (item['Event Name'] !== 'Crew Leave') {
+            const id = item['Event ID'];
+            if (!uniqueDataMap.has(id)) {
+                uniqueDataMap.set(id, item);
+            } else {
+                const existing = uniqueDataMap.get(id);
+                // 1. Strict match wins immediately (egm0015 === egm0015)
+                if (item['Doc ID'] === id) {
+                    uniqueDataMap.set(id, item);
+                }
+                // 2. Parent documents usually don't have underscores (Added days look like egm0015_17123456)
+                else if (existing['Doc ID'] !== id && !item['Doc ID'].includes('_') && existing['Doc ID'].includes('_')) {
+                    uniqueDataMap.set(id, item);
+                }
+                // 3. Fallback: Prefer the one with actual payment info
+                else if (!existing['Payment Type'] && item['Payment Type']) {
+                    uniqueDataMap.set(id, item);
+                }
+            }
+        }
+    });
+
+    const uniqueData = Array.from(uniqueDataMap.values());
     uniqueData.sort((a, b) => {
         let dateA = a['Event Date'] || ''; let dateB = b['Event Date'] || ''; return dateB.localeCompare(dateA); 
     });
@@ -2585,12 +2609,12 @@ function handleAddCustomService(inputId, containerId) {
         return timeA.localeCompare(timeB);
     });
 
-    // 3. The true "Main Day" is whichever day is currently first in the timeline
-    // 3. The true "Main Day" is the document where Doc ID exactly matches the Event ID
-    const isMainDay = (e['Doc ID'] === e['Event ID']);
+    // 3. Smart identification of the TRUE "Main Day" (handles older legacy database entries)
+    let mainEvent = allDays.find(ev => ev['Doc ID'] === id); // Best guess: Strict Match
+    if (!mainEvent) mainEvent = allDays.find(ev => !ev['Doc ID'].includes('_')); // Second guess: Parents don't have underscores
+    if (!mainEvent) mainEvent = allDays[0]; // Fallback: Chronologically first
     
-    // 4. Grab the Main Day's data so Added Days can copy its payment details
-    const mainEvent = rawEvents.find(ev => ev['Doc ID'] === e['Event ID']) || e;
+    const isMainDay = (e['Doc ID'] === mainEvent['Doc ID']);
     // --- MULTI-DAY TAB NAVIGATION ---
     const multiDayNav = document.getElementById('editMultiDayNav');
     if (allDays.length > 1) {
