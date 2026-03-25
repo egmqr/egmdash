@@ -1856,8 +1856,23 @@ function handleAddCustomService(inputId, containerId) {
           listFiltered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked');
       }
       
+      // --- CALENDAR AUTO-JUMP LOGIC ---
+      if (isDefaultView) {
+          // 1. If search is cleared, snap calendar back to the current real-world month
+          currentCalendarDate = new Date();
+      } else if (filtered.length > 0) {
+          // 2. If searching, find the chronologically earliest date among the filtered results
+          const earliestDate = filtered.map(e => e['Event Date']).filter(Boolean).sort()[0];
+          if (earliestDate) {
+              const dParts = earliestDate.split('-');
+              // 3. Jump the calendar to the month and year of that first hit
+              currentCalendarDate = new Date(dParts[0], dParts[1] - 1, 1);
+          }
+      }
+      // --------------------------------
+      
       renderEvents(listFiltered, isDefaultView);
-      renderCalendar(filtered); 
+      renderCalendar(filtered);
 
       // Push active Event filters to the URL
       url.searchParams.set('tab', currentTab);
