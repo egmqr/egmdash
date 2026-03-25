@@ -2232,7 +2232,16 @@ function handleAddCustomService(inputId, containerId) {
     let html = '';
     const q = document.getElementById('fPaySearch') ? document.getElementById('fPaySearch').value.toLowerCase().trim() : '';
     const grInv = document.getElementById('fGrInv') ? document.getElementById('fGrInv').value.toLowerCase().trim() : '';
-    const isSearching = q.length > 0 || grInv.length > 0;
+    const payType = document.getElementById('fPayType') ? document.getElementById('fPayType').value : '';
+    const billStatus = document.getElementById('fBillStatus') ? document.getElementById('fBillStatus').value : 'Unpaid';
+    
+    const hasTextSearch = q.length > 0 || grInv.length > 0;
+    
+    // Check if the user is explicitly filtering by payment (ignoring the default "Unpaid" or "All Statuses")
+    const hasExplicitPaymentFilter = payType !== '' || (billStatus !== '' && billStatus !== 'Unpaid');
+
+    // ONLY show added days if searching by text AND no specific payment filters are applied
+    const showAllDays = hasTextSearch && !hasExplicitPaymentFilter;
 
     const absoluteEventCounts = {};
     const projectMainDays = {};
@@ -2268,13 +2277,13 @@ function handleAddCustomService(inputId, containerId) {
         projectPaymentData[id] = payDoc;
     }
 
-    // 2. Filter the table data based on whether the user is actively searching
+    // 2. Filter the table data based on our smart rules
     let displayData = [];
-    if (isSearching) {
-        // If searching by ID/Name/Invoice, show all matches (Main Days and Added Days)
+    if (showAllDays) {
+        // Text search WITHOUT specific payment filters: Show Main Days and Added Days
         displayData = data.filter(item => item['Event Name'] !== 'Crew Leave');
     } else {
-        // Default view: ONLY show the true Main Day for each project
+        // Default view OR Explicit Payment Filter: ONLY show the true Main Day
         displayData = data.filter(item => item['Doc ID'] === projectMainDays[item['Event ID']] && item['Event Name'] !== 'Crew Leave');
     }
 
