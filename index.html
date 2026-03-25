@@ -3705,6 +3705,21 @@ function handleAddCustomService(inputId, containerId) {
   };
 
   function forceSync() {
+      const icon = document.getElementById('syncIcon');
+      if (icon) icon.classList.add('spin-anim');
+
+      // Bring up the main loader so the user knows it's actively refreshing
+      const loader = document.getElementById('loader');
+      if (loader) {
+          loader.style.display = 'block';
+          loader.innerHTML = '<div class="spinner-border text-primary" role="status"></div><div class="mt-2 fw-bold small text-muted">Refreshing App...</div>';
+      }
+
+      // Add a tiny 300ms delay so the animation actually plays before the browser blanks the screen
+      setTimeout(() => {
+          window.location.reload();
+      }, 300);
+  }
 
   // --- INSTANT URL FILTER HYDRATION ---
   // This runs immediately so Firebase doesn't accidentally erase the URL!
