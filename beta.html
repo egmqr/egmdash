@@ -467,6 +467,7 @@
                   </div>
                   <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm ms-1" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
                   <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm ms-1" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
+                  <button class="btn btn-secondary btn-sm fw-bold px-3 shadow-sm ms-1" onclick="openPayrollHistory()"><i class="bi bi-clock-history me-1"></i> HISTORY</button>
               </div>
           </div>
 
@@ -1465,6 +1466,30 @@
       <button class="btn btn-dark w-100 py-2 fw-bold shadow-sm" onclick="saveRates()"><i class="bi bi-save me-1"></i> SAVE RATES</button>
   </div>
 </div></div></div>
+  <div class="modal fade" id="payrollHistoryModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
+  <div class="modal-header bg-secondary text-white border-0">
+      <h6 class="fw-bold mb-0 letter-spacing-1"><i class="bi bi-clock-history me-2"></i> Payroll History Vault</h6>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+  </div>
+  <div class="modal-body p-0">
+      <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle small">
+              <thead class="bg-light">
+                  <tr>
+                      <th class="py-3 px-3">Date Logged</th>
+                      <th class="py-3">Crew Name</th>
+                      <th class="py-3">Cutoff Period</th>
+                      <th class="py-3 text-end">Net Pay</th>
+                      <th class="py-3 px-3"></th>
+                  </tr>
+              </thead>
+              <tbody id="prHistoryBody">
+                  <tr><td colspan="5" class="text-center py-5 text-muted">Loading history...</td></tr>
+              </tbody>
+          </table>
+      </div>
+  </div>
+</div></div></div>
 <div class="modal fade" id="payrollModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
   <div class="modal-header bg-danger text-white border-0">
       <h6 class="fw-bold mb-0 text-uppercase letter-spacing-1 d-flex align-items-center"><i class="bi bi-receipt-cutoff me-2"></i> <span id="prModalName">Crew Member</span>'s Payslip</h6>
@@ -1534,9 +1559,13 @@
               </div>
           </div>
           
-          <div class="d-flex gap-2 mt-4">
+          <div class="d-flex gap-2 mt-4" id="prActiveButtons">
               <button class="btn btn-light border w-50 fw-bold shadow-sm" onclick="document.getElementById('prFinalCardView').style.display='none'; document.getElementById('prBuilderView').style.display='block';"><i class="bi bi-arrow-left me-1"></i> EDIT MATH</button>
               <button class="btn btn-success w-50 fw-bold shadow-sm" onclick="logPayslipToDatabase()"><i class="bi bi-cloud-arrow-up me-1"></i> LOG TO SHEET</button>
+          </div>
+          
+          <div class="d-flex gap-2 mt-4" id="prHistoryButtons" style="display:none;">
+              <button class="btn btn-secondary w-100 fw-bold shadow-sm" onclick="bootstrap.Modal.getInstance(document.getElementById('payrollModal')).hide(); new bootstrap.Modal(document.getElementById('payrollHistoryModal')).show();"><i class="bi bi-arrow-left me-1"></i> BACK TO HISTORY</button>
           </div>
       </div>
       
@@ -4805,6 +4834,110 @@ async function getNextEventId() {
       } else {
           alert("Error saving payslip: " + (res ? res.error || res.message : "Unknown error"));
       }
+  }
+  // ==============================================================================
+  // PAYROLL HISTORY VAULT
+  // ==============================================================================
+  let payrollHistoryCache = [];
+
+  async function openPayrollHistory() {
+      const tbody = document.getElementById('prHistoryBody');
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-secondary me-2"></div> Fetching vault data...</td></tr>';
+      
+      new bootstrap.Modal(document.getElementById('payrollHistoryModal')).show();
+
+      // Call the backend to pull everything from the "Payroll Logs" sheet
+      const res = await callApi({ action: 'getSheetData', sheetName: 'Payroll Logs' }, 'POST', true);
+      
+      if (res && res.success && res.data) {
+          // Reverse it so the newest payouts are at the top
+          payrollHistoryCache = res.data.reverse(); 
+          renderPayrollHistory();
+      } else {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i>No history found, or the "Payroll Logs" tab is missing.</td></tr>';
+      }
+  }
+
+  function renderPayrollHistory() {
+      const tbody = document.getElementById('prHistoryBody');
+      if (payrollHistoryCache.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-3 d-block mb-2 opacity-50"></i>Vault is empty.</td></tr>';
+          return;
+      }
+
+      let html = '';
+      payrollHistoryCache.forEach((row, index) => {
+          // Format the timestamp nicely
+          let d = new Date(row['Timestamp']);
+          let dateStr = isNaN(d) ? row['Timestamp'] : d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'});
+          
+          html += `<tr>
+              <td class="text-muted px-3">${dateStr}</td>
+              <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2 opacity-50"></i>${row['Crew Name']}</td>
+              <td><span class="badge bg-light border text-dark">${row['Cutoff Start']} to ${row['Cutoff End']}</span></td>
+              <td class="text-end fw-bold text-success">₱${Number(row['Final Net Pay']).toLocaleString()}</td>
+              <td class="text-end px-3"><button class="btn btn-sm btn-outline-secondary py-1 fw-bold shadow-sm" style="font-size:0.7rem;" onclick="viewHistoricalPayslip(${index})"><i class="bi bi-eye me-1"></i> VIEW</button></td>
+          </tr>`;
+      });
+      tbody.innerHTML = html;
+  }
+
+  function viewHistoricalPayslip(index) {
+      const row = payrollHistoryCache[index];
+      
+      // Close the History List Modal
+      bootstrap.Modal.getInstance(document.getElementById('payrollHistoryModal')).hide();
+      
+      // Inject the historical text
+      document.getElementById('prModalName').innerText = row['Crew Name'] + " (Historical)";
+      document.getElementById('slipName').innerText = row['Crew Name'];
+      document.getElementById('slipDates').innerText = `${row['Cutoff Start']} to ${row['Cutoff End']}`;
+      
+      // Unpack the JSON math string from Google Sheets
+      let items = [];
+      try {
+          items = JSON.parse(row['Itemized Data (JSON)']);
+      } catch(e) { console.error("Could not parse JSON", e); }
+      
+      // Rebuild the itemized rows exactly as they were
+      let slipHtml = '';
+      items.forEach(item => {
+          slipHtml += `
+          <div class="d-flex justify-content-between border-bottom border-dashed border-secondary-subtle py-2">
+              <div>
+                  <span class="fw-bold text-dark d-block">#${item.id}</span>
+                  <span class="text-muted" style="font-size:0.75rem;">${item.date} | Role: ${item.role}</span>
+              </div>
+              <div class="text-end">
+                  <span class="d-block fw-bold text-dark">₱${Number(item.base).toLocaleString()}</span>
+                  ${item.extra > 0 ? `<span class="d-block text-success" style="font-size:0.75rem;">+ ₱${Number(item.extra).toLocaleString()} extra</span>` : ''}
+              </div>
+          </div>`;
+      });
+      
+      let expenses = Number(row['Reimbursements/Expenses']) || 0;
+      let misc = Number(row['Misc/Bonus']) || 0;
+      
+      if (expenses > 0 || misc > 0) {
+          slipHtml += `<div class="bg-light p-2 rounded mt-3">`;
+          if (expenses > 0) slipHtml += `<div class="d-flex justify-content-between text-primary fw-bold"><span style="font-size:0.8rem;">REIMBURSEMENTS</span><span>₱${expenses.toLocaleString()}</span></div>`;
+          if (misc > 0) slipHtml += `<div class="d-flex justify-content-between text-success fw-bold"><span style="font-size:0.8rem;">MISC BONUS</span><span>₱${misc.toLocaleString()}</span></div>`;
+          slipHtml += `</div>`;
+      }
+      
+      document.getElementById('slipItems').innerHTML = slipHtml;
+      document.getElementById('slipTotal').innerText = Number(row['Final Net Pay']).toLocaleString();
+      
+      // Force the Modal to open directly to the Final Card View
+      document.getElementById('prBuilderView').style.display = 'none';
+      document.getElementById('prFinalCardView').style.display = 'block';
+      
+      // Swap the buttons: Hide the Edit/Save buttons, show the "Back to History" button
+      document.getElementById('prActiveButtons').style.display = 'none';
+      document.getElementById('prHistoryButtons').style.display = 'flex';
+      
+      // Pop open the Payslip Modal
+      setTimeout(() => { new bootstrap.Modal(document.getElementById('payrollModal')).show(); }, 300);
   }
 </script>
 </body>
