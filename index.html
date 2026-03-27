@@ -84,6 +84,8 @@
     .calendar-day.empty { background: #f8fafc; cursor: default; }
     .calendar-day.today { background: #f0fdfa; }
     .date-number { font-weight: 600; font-size: 0.85rem; color: #475569; align-self: flex-end; margin-bottom: 4px; transition: color 0.3s ease;}
+    .cal-add-btn { cursor: pointer; font-size: 0.85rem; transition: all 0.2s ease; }
+    .cal-add-btn:hover { opacity: 1 !important; transform: scale(1.15); color: #0d9488 !important; }
     .calendar-day.today .date-number { background: #0d9488; color: #fff; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
     .cal-event-pill { width: 100%; font-size: 0.7rem; font-weight: 500; padding: 4px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-align: left; transition: 0.2s; border: 1px solid transparent; margin-bottom: 2px; line-height: 1.2; display: block; }
     .cal-event-pill:hover { opacity: 0.8; transform: scale(0.98); }
@@ -1026,7 +1028,10 @@
   <h6 class="fw-bold mb-0 text-uppercase text-secondary d-flex align-items-center">
     <i class="bi bi-pencil-square me-2"></i> Event Details 
     <span id="editEventIdDisplay" class="badge bg-secondary bg-opacity-10 text-secondary border ms-2" style="font-size: 0.75rem; letter-spacing: 0.5px; text-transform: none;"></span>
-</h6>
+  </h6>
+  <div class="ms-auto me-3">
+      <button type="button" class="btn btn-sm btn-outline-primary fw-bold shadow-sm" id="editModalAddDayBtn" style="font-size: 0.7rem; letter-spacing: 0.5px;"><i class="bi bi-calendar-plus me-1"></i> ADD DAY</button>
+  </div>
   <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
     
   <div id="editAuthWarning" class="alert alert-warning small py-2 mb-3 shadow-sm border-0 align-items-center justify-content-between" style="display:none;">
@@ -2277,7 +2282,13 @@ function handleAddCustomService(inputId, containerId) {
               }
           });
           
-          html += `<div class="${dayClass}"><div class="date-number">${d}</div>${eventsHtml}</div>`;
+          html += `<div class="${dayClass}">
+                      <div class="d-flex justify-content-between align-items-start mb-1 w-100">
+                          <i class="bi bi-plus-square-fill text-secondary opacity-25 cal-add-btn" onclick="requireAuth(() => openNewEventWithDate('${currentDateStr}'))" title="New Entry on ${currentDateStr}"></i>
+                          <div class="date-number mb-0">${d}</div>
+                      </div>
+                      ${eventsHtml}
+                   </div>`;
       }
       
       const totalCells = firstDay + daysInMonth;
@@ -2489,7 +2500,21 @@ function handleAddCustomService(inputId, containerId) {
       ov.style.display = 'none';
       if (res.success) {  } else { alert("Error: " + res.error); }
   }
-
+  function openNewEventWithDate(dateStr) {
+      openNewEventModal(); // This opens and resets the modal normally
+      
+      // Inject the specific calendar date into the inputs after the modal renders
+      setTimeout(() => {
+          const form = document.getElementById('eventForm');
+          if (form && form.elements['eventDate']) {
+              form.elements['eventDate'].value = dateStr;
+              
+              // If it's a Leave, sync the End Date too
+              const endDateInput = document.getElementById('newEventEndDate');
+              if(endDateInput) endDateInput.value = dateStr;
+          }
+      }, 50);
+  }
   function openNewEventModal() {
       document.getElementById('eventForm').reset();
       ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
@@ -2925,7 +2950,16 @@ function handleAddCustomService(inputId, containerId) {
             addCustomCrewCheckbox(c, 'editCrewContainer', true);
         }
     });
-    
+    // Wire up the new "Add Day" button in the modal header
+    const editModalAddDayBtn = document.getElementById('editModalAddDayBtn');
+    if (editModalAddDayBtn) {
+        editModalAddDayBtn.onclick = () => {
+            bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
+            setTimeout(() => requireAuth(() => openAddDayModal(id)), 300);
+        };
+        // Hide the button if they are in View-Only mode
+        editModalAddDayBtn.style.display = isReadOnly ? 'none' : 'inline-block';
+    }
     // Ensure the modal state matches Firebase Auth
     setEditFormState(isReadOnly);
     
