@@ -2370,7 +2370,7 @@ function handleAddCustomService(inputId, containerId) {
                           <div style="z-index: 30;">
                               <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
                               <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
-                              <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
+                              <span onclick="openEditModal('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
                               <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
                           </div>
                       </div>
@@ -2452,7 +2452,7 @@ function handleAddCustomService(inputId, containerId) {
                     ${stampHtml}
                     <div class="d-flex justify-content-between mb-3 align-items-center">
                         <div style="z-index: 30;"> <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
-                            <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
+                            <span onclick="openEditModal('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
                             <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
                         </div>
                         ${statusPillHtml}
@@ -2546,7 +2546,7 @@ function handleAddCustomService(inputId, containerId) {
 
           dayEvents.forEach(e => {
               if (e['Event Name'] === 'Crew Leave') {
-                  eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="openEditModal('${e['Doc ID']}', true)" title="Leave: ${e['Manpower']}">
+                  eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="openEditModal('${e['Doc ID']}')" title="Leave: ${e['Manpower']}">
                       <span class="opacity-75">✈️</span> <strong>${e['Manpower'] || 'Leave'}</strong>
                   </div>`;
               } else {
@@ -2555,7 +2555,7 @@ function handleAddCustomService(inputId, containerId) {
                   else if(e['Event Status'] === 'Cancelled') pillClass = 'cal-status-cancelled';
                   
                   const timePrefix = e['Event Start Time'] ? `${formatAMPM(e['Event Start Time'])} ` : '';
-                  eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Doc ID']}', true)" title="${e['Event Name']}">
+                  eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Doc ID']}')" title="${e['Event Name']}">
                       <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
                   </div>`;
               }
@@ -2691,7 +2691,7 @@ function handleAddCustomService(inputId, containerId) {
       html += `<tr>
         <td class="fw-bold text-nowrap text-secondary">
             #${evId}
-            <span onclick="requireAuth(() => openEditModal('${p['Doc ID']}'))" class="edit-trigger ms-1 px-1" title="Edit Entry"><i class="bi bi-pencil-square"></i></span>
+            <span onclick="openEditModal('${p['Doc ID']}')" class="edit-trigger ms-1 px-1" title="Edit Entry"><i class="bi bi-pencil-square"></i></span>
         </td>
         <td style="min-width: 180px;">${nameDisplay}<br><span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${eventDateStr}</span></td>
         <td class="text-nowrap"><span class="badge bg-light text-dark border">${payData['Payment Type']||'-'}</span>${amountStr}</td>
@@ -2724,39 +2724,40 @@ function handleAddCustomService(inputId, containerId) {
       const allElements = form.querySelectorAll('input, select, textarea, button');
       
       allElements.forEach(el => {
+          // Never disable the close button, theme toggle, or the save button (we handle Save visibility separately)
           if(el.id === 'themeToggleBtn' || el.id === 'editSubmitBtn' || el.classList.contains('btn-close')) return;
           
           if (isReadOnly) {
-              el.disabled = true; // Complete lockdown for unauthenticated users viewing calendar
+              el.disabled = true; // Non-admin/Unauthenticated: All disabled
           } else if (role === 'editor') {
-              // Editors can ONLY interact with fields that have the 'editor-field' class
+              // Editors: Only elements with the 'editor-field' class are enabled
               if (el.classList.contains('editor-field')) {
                   el.disabled = false;
               } else {
                   el.disabled = true;
               }
           } else {
-              // Admins get everything
-              el.disabled = false;
+              el.disabled = false; // Admin: All enabled
           }
       });
 
-      // Special logic for buttons
+      // Special button logic
       if (document.getElementById('editCrewAddBtn')) document.getElementById('editCrewAddBtn').disabled = (isReadOnly || role === 'editor');
       if (document.getElementById('editServiceAddBtn')) document.getElementById('editServiceAddBtn').disabled = (isReadOnly || role === 'editor');
       
+      // Visibility toggles
       if (isReadOnly) {
           document.getElementById('editSubmitBtn').style.display = 'none';
           document.getElementById('editDeleteBtn').style.display = 'none';
-          document.getElementById('editModalAddDayBtn').style.display = 'none';
+          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = 'none';
           document.getElementById('editAuthWarning').style.setProperty('display', 'flex', 'important');
       } else {
           document.getElementById('editSubmitBtn').style.display = 'block';
           document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
           
-          // Editors cannot delete or add days
+          // Editors cannot delete projects or add days
           document.getElementById('editDeleteBtn').style.display = role === 'admin' ? 'block' : 'none';
-          document.getElementById('editModalAddDayBtn').style.display = role === 'admin' ? 'inline-block' : 'none';
+          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = role === 'admin' ? 'inline-block' : 'none';
       }
   }
 
@@ -2937,7 +2938,7 @@ function handleAddCustomService(inputId, containerId) {
      modal.show();
   }
 
-  function openEditModal(docId, fromCalendar = false) {
+  function openEditModal(docId) {
     // 1. Search strictly by the unique Firestore Document ID
     const e = rawEvents.find(ev => String(ev['Doc ID']) === String(docId));
     if(!e) return;
@@ -2945,7 +2946,11 @@ function handleAddCustomService(inputId, containerId) {
     // 2. Extract the variables needed for the rest of the form
     const id = e['Event ID'];
     const date = e['Event Date'];
-    const isReadOnly = fromCalendar && !isAuthenticated();
+    
+    // 3. Determine access level (View-Only, Editor, or Admin)
+    const role = getUserRole();
+    const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+    const isReadOnly = !role || isExpired;
 
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
@@ -3056,7 +3061,7 @@ function handleAddCustomService(inputId, containerId) {
 
             tabsHtml += `
             <li class="nav-item">
-                <a class="nav-link ${isActive} px-3 py-2 text-center" style="cursor:pointer; line-height: 1.1; min-width: 90px;" onclick="openEditModal('${day['Doc ID']}', ${fromCalendar})">
+                <a class="nav-link ${isActive} px-3 py-2 text-center" style="cursor:pointer; line-height: 1.1; min-width: 90px;" onclick="openEditModal('${day['Doc ID']}')">
                     <span style="font-size: 0.8rem; font-weight: 700;">${label}</span>
                     ${tabDate}
                 </a>
@@ -4506,7 +4511,7 @@ async function getNextEventId() {
 
           html += `<tr>
               <td>
-                  <strong class="text-dark">#${e['Event ID']}</strong> <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-primary" title="Open Editor"><i class="bi bi-pencil-square"></i></span><br>
+                  <strong class="text-dark">#${e['Event ID']}</strong> <span onclick="openEditModal('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-primary" title="Open Editor"><i class="bi bi-pencil-square"></i></span><br>
                   <span class="fw-bold">${e['Event Name']}</span><br>
                   <span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${e['Event Date']}</span>
                   ${sentUI}
