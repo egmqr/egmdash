@@ -334,7 +334,7 @@
      <ul class="nav nav-pills" id="appTabs">
         <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-card-list me-1"></i> Events</a></li>
         <li class="nav-item"><a class="nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
-        <li class="nav-item"><a class="nav-link" id="eq-tab" onclick="handleTabClick('editqueue')"><i class="bi bi-film me-1"></i> Edit Queue</a></li>
+        <li class="nav-item"><a class="nav-link" id="eq-tab" onclick="handleTabClick('editqueue')"><i class="bi bi-film me-1"></i> Editing Queue</a></li>
         <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), true)"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
         <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), true)"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
         <li class="nav-item"><a class="nav-link" id="ex-tab" onclick="handleTabClick('expenses')"><i class="bi bi-receipt me-1"></i> Expenses</a></li>
@@ -361,7 +361,20 @@
           <div class="col-12 col-md-1 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
         </div>
       </div>
-
+<div class="filter-panel" id="editQueueFilters" style="display:none;">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-5"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fEqSearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="renderEditingQueue(rawEvents)"></div>
+          <div class="col-12 col-md-5"><span class="form-label-sm">Status</span>
+             <select id="fEqStatus" class="form-select form-select-sm" onchange="renderEditingQueue(rawEvents)">
+                 <option value="All">All Statuses</option>
+                 <option value="RAW Uploaded" selected>RAW Uploaded</option>
+                 <option value="Completed">Completed</option>
+                 <option value="Sent to Client">Sent to Client</option>
+             </select>
+          </div>
+          <div class="col-12 col-md-2 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
+        </div>
+      </div>
       <div class="filter-panel" id="paymentFilters" style="display:none;">
         <div class="row g-2 align-items-end">
           <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
@@ -405,14 +418,7 @@
   
   <div class="px-2 px-md-0">
       <div id="editqueue-view" style="display:none;">
-          <h4 class="fw-bold mb-4 mt-2 d-flex justify-content-between align-items-center">Editing Queue 
-             <select id="fEqStatus" class="form-select form-select-sm w-auto shadow-sm fw-bold border-secondary-subtle" onchange="renderEditingQueue(filteredEventsCache)">
-                 <option value="All">All Statuses</option>
-                 <option value="RAW Uploaded" selected>RAW Uploaded</option>
-                 <option value="Completed">Completed</option>
-                 <option value="Sent to Client">Sent to Client</option>
-             </select>
-          </h4>
+          <h4 class="fw-bold mb-4 mt-2 d-flex justify-content-between align-items-center">Editing Queue</h4>
           <div class="table-custom bg-white shadow-sm"><div class="table-responsive">
               <table class="table table-hover mb-0 align-middle">
                   <thead><tr><th class="py-3 px-3">Event Info</th><th class="py-3">Editor</th><th class="py-3">RAW Status</th><th class="py-3">Completed Status</th><th class="py-3">48h Deadline</th></tr></thead>
@@ -2135,14 +2141,15 @@ function handleAddCustomService(inputId, containerId) {
 
 
   function clearFilters() {
-    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
+    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType','fEqSearch'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
     if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
+    if(document.getElementById('fEqStatus')) document.getElementById('fEqStatus').value = 'RAW Uploaded';
     updateFilterStatuses();
     
-    // Explicitly reset the calendar to the current month when the Clear button is clicked!
     currentCalendarDate = new Date(); 
     
     applyFilters();
+    renderEditingQueue(rawEvents);
   }
 
   function applyFilters() {
@@ -2247,8 +2254,9 @@ function handleAddCustomService(inputId, containerId) {
     document.getElementById('booth-view').style.display = t==='booth'?'block':'none';
     document.getElementById('expenses-view').style.display = t==='expenses'?'block':'none';
     
-    document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar' || t==='editqueue') ? 'block' : 'none';
-    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
+    document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar') ? 'block' : 'none';
+    document.getElementById('editQueueFilters').style.display = t==='editqueue' ? 'block' : 'none';
+    document.getElementById('paymentFilters').style.display = t==='payments' ? 'block' : 'none';
     
     const filterBtn = document.getElementById('filterToggleBtn');
     const filterCollapseEl = document.getElementById('filterCollapse');
@@ -2274,8 +2282,10 @@ function handleAddCustomService(inputId, containerId) {
     
     document.getElementById('e-tab').classList.toggle('active', t==='events');
     document.getElementById('c-tab').classList.toggle('active', t==='calendar');
-    document.getElementById('b-tab').classList.toggle('active', t==='booth');
+    document.getElementById('eq-tab').classList.toggle('active', t==='editqueue');
     document.getElementById('p-tab').classList.toggle('active', t==='payments');
+    document.getElementById('pr-tab').classList.toggle('active', t==='payroll');
+    document.getElementById('b-tab').classList.toggle('active', t==='booth');
     document.getElementById('ex-tab').classList.toggle('active', t==='expenses');
     
     if (t === 'booth') {
@@ -2361,7 +2371,7 @@ function handleAddCustomService(inputId, containerId) {
                               <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
                               <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
                               <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
-                              <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
+                              <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
                           </div>
                       </div>
                       <div class="text-danger fw-bold mb-2 small"><i class="bi bi-calendar2-event opacity-75 me-1"></i> ${leaveDateString}</div>
@@ -2443,7 +2453,7 @@ function handleAddCustomService(inputId, containerId) {
                     <div class="d-flex justify-content-between mb-3 align-items-center">
                         <div style="z-index: 30;"> <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
                             <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
-                            <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
+                            <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
                         </div>
                         ${statusPillHtml}
                     </div>
@@ -2553,7 +2563,7 @@ function handleAddCustomService(inputId, containerId) {
           
           html += `<div class="${dayClass}">
                       <div class="d-flex justify-content-between align-items-start mb-1 w-100">
-                          <i class="bi bi-plus-square-fill text-secondary opacity-25 cal-add-btn" onclick="requireAuth(() => openNewEventWithDate('${currentDateStr}'))" title="New Entry on ${currentDateStr}"></i>
+                          <i class="bi bi-plus-square-fill text-secondary opacity-25 cal-add-btn" onclick="requireAuth(() => openNewEventWithDate('${currentDateStr}'), true)" title="New Entry on ${currentDateStr}"></i>
                           <div class="date-number mb-0">${d}</div>
                       </div>
                       ${eventsHtml}
@@ -4432,11 +4442,16 @@ async function getNextEventId() {
   };
   function renderEditingQueue(data) {
       let html = '';
-      const filterStatus = document.getElementById('fEqStatus').value;
+      const filterStatus = document.getElementById('fEqStatus') ? document.getElementById('fEqStatus').value : 'All';
+      const searchQ = document.getElementById('fEqSearch') ? document.getElementById('fEqSearch').value.toLowerCase().trim() : '';
       const now = new Date();
 
       // Filter logic specifically for the Editing Tab
       let eqData = data.filter(e => e['Event Name'] !== 'Crew Leave');
+
+      if (searchQ) {
+          eqData = eqData.filter(e => e['Event ID'].toLowerCase().includes(searchQ) || e['Event Name'].toLowerCase().includes(searchQ));
+      }
 
       if (filterStatus === 'RAW Uploaded') {
           eqData = eqData.filter(e => e['RAW Link'] && !e['Edited Link'] && !e['Sent to Client']);
