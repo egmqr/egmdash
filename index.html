@@ -1073,10 +1073,11 @@
   <div id="editDateTimeBlock">
       <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
       <div class="row g-2 mb-4">
-          <div class="col-6 col-md-3"><label class="form-label-sm">Event Date</label><input type="date" name="eventDate" class="form-control form-control-sm" required></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-3" id="editDateCol"><label class="form-label-sm" id="editDateLabel">Event Date</label><input type="date" name="eventDate" id="editEventDate" class="form-control form-control-sm" required></div>
+          <div class="col-6 col-md-3" id="editEndDateCol" style="display:none;"><label class="form-label-sm text-danger">End Date</label><input type="date" name="eventEndDate" id="editEventEndDate" class="form-control form-control-sm border-danger text-danger" disabled title="To add days to an existing leave, use the 'Add Another Leave Day' button."></div>
+          <div class="col-6 col-md-3" id="editCallTimeCol"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
+          <div class="col-6 col-md-3" id="editStartTimeCol"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-3" id="editEndTimeCol"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
       </div>
   </div>
     
@@ -1830,7 +1831,14 @@ function handleAddCustomService(inputId, containerId) {
           // UX Magic: Morph the Date row for Leaves
           if (dateLabel) dateLabel.innerText = "Start Date";
           if (endDateCol) endDateCol.style.display = 'block';
-          if (endDateInput) endDateInput.setAttribute('required', 'required');
+          
+          // Require end date for NEW leaves, but disable requirement for EDITS
+          if (prefix === 'new') {
+              if (endDateInput) endDateInput.setAttribute('required', 'required');
+          } else {
+              if (endDateInput) endDateInput.removeAttribute('required');
+          }
+
           if (callTimeCol) callTimeCol.style.display = 'none';
           if (startTimeCol) startTimeCol.style.display = 'none';
           if (endTimeCol) endTimeCol.style.display = 'none';
@@ -1843,7 +1851,7 @@ function handleAddCustomService(inputId, containerId) {
           toggleAvpFields(isAvp, prefix);
 
           // Revert the Date row for normal Events
-          if (dateLabel) dateLabel.innerText = "Date";
+          if (dateLabel) dateLabel.innerText = "Event Date";
           if (endDateCol) endDateCol.style.display = 'none';
           if (endDateInput) endDateInput.removeAttribute('required');
           if (callTimeCol) callTimeCol.style.display = 'block';
@@ -2892,6 +2900,7 @@ function handleAddCustomService(inputId, containerId) {
     }
     
     form.elements['eventDate'].value = toInputDate(e['Event Date']);
+    if (document.getElementById('editEventEndDate')) document.getElementById('editEventEndDate').value = toInputDate(e['Event Date']); // Auto-fills the disabled end date
     form.elements['callTime'].value = to24Hour(e['Call Time']);
     form.elements['startTime'].value = to24Hour(e['Event Start Time']);
     form.elements['endTime'].value = to24Hour(e['Event End Time']);
