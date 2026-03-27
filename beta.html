@@ -2956,21 +2956,33 @@ function handleAddCustomService(inputId, containerId) {
     const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
     const isReadOnly = !role || isExpired;
 
-    const todayDate = new Date();
+   const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
     const isPast = date && date < todayStr;
     
     const paymentBlock = document.getElementById('editPaymentFields');
     const toggleBlock = document.getElementById('editTypeToggleBlock');
     const notesBlock = document.getElementById('editNotesBlock');
+    const editingSection = document.getElementById('editEditingSection');
 
+    // 1. Payment Block Logic
     if (isPast) {
         toggleBlock.parentNode.insertBefore(paymentBlock, toggleBlock.nextSibling);
         paymentBlock.classList.add('border-bottom', 'pb-3', 'mb-4');
     } else {
-        // FIXED: insert after notes block so it stays at the bottom!
         notesBlock.parentNode.insertBefore(paymentBlock, notesBlock.nextSibling);
         paymentBlock.classList.remove('border-bottom', 'pb-3', 'mb-4');
+    }
+
+    // 2. Editing Section Logic (Context-Aware)
+    if (editingSection) {
+        if (currentTab === 'editqueue') {
+            // If in the Editing Queue, snap the Editing Section to the absolute top!
+            toggleBlock.parentNode.insertBefore(editingSection, toggleBlock.nextSibling);
+        } else {
+            // Otherwise, keep it in its normal place beneath the Notes
+            notesBlock.parentNode.insertBefore(editingSection, notesBlock.nextSibling);
+        }
     }
 
     document.querySelectorAll('#editCrewContainer .custom-crew-cb').forEach(el => el.remove());
