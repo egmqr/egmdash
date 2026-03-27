@@ -4314,6 +4314,8 @@ function handleAddCustomService(inputId, containerId) {
   window.addEventListener('scroll', checkStickyHeaders, {passive: true});
 
   window.onload = () => {
+      applyRoleUI(); // <-- This line tells the Sign Out button to appear if you are already logged in!
+      
       const stickyHeaderEl = document.querySelector('.sticky-header');
       if (stickyHeaderEl && window.ResizeObserver) {
           new ResizeObserver(entries => {
