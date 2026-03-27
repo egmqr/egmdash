@@ -3219,12 +3219,12 @@ function handleAddCustomService(inputId, containerId) {
         form.elements['amount'].value = paymentSourceEvent['Amount'] || '0';
         form.elements['paymentNotes'].value = paymentSourceEvent['Payment Notes'] || '';
         
-        // Gray out and disable editing of the payment block if it is an Added Day
+       // Lock the payment block if: it's an Added Day, the user is an Editor, or the user is View-Only
         const paymentBlockSection = document.getElementById('editPaymentFields');
         paymentBlockSection.style.display = 'block'; // Always show it
-        if (!isMainDay) {
+        if (!isMainDay || role === 'editor' || isReadOnly) {
             paymentBlockSection.style.opacity = '0.5';
-            paymentBlockSection.style.pointerEvents = 'none';
+            paymentBlockSection.style.pointerEvents = 'none'; // Kills all clicks, including links!
         } else {
             paymentBlockSection.style.opacity = '1';
             paymentBlockSection.style.pointerEvents = 'auto';
