@@ -327,6 +327,9 @@
           <button id="themeToggleBtn" class="btn btn-light border-secondary-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center" onclick="toggleTheme()" title="Toggle Dark Mode" style="width: 38px; height: 34px;">
             <i id="themeIcon" class="bi bi-moon-fill text-secondary"></i>
           </button>
+          <button id="logoutBtn" class="btn btn-outline-danger btn-sm shadow-sm align-items-center justify-content-center" onclick="signOut()" title="Sign Out / Switch Account" style="width: 38px; height: 34px; display: none;">
+            <i class="bi bi-box-arrow-right fs-6"></i>
+          </button>
       </div>
     </div>
 
@@ -1697,7 +1700,10 @@
       
       if (role && !isExpired) {
           if (requiresAdmin && role !== 'admin') {
-              alert("Admin access required for this action.");
+              // Smart Upgrade Prompt
+              if (confirm("Admin access is required for this action. Would you like to sign out of your Editor account to switch to Admin?")) {
+                  signOut();
+              }
               return;
           }
           actionFunction();
@@ -1750,10 +1756,23 @@
   function applyRoleUI() {
       const role = getUserRole();
       const newEntryBtn = document.getElementById('newEntryBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      
       if (newEntryBtn) {
           // Hide New Entry button entirely if the user is an editor
           newEntryBtn.style.display = (role === 'editor') ? 'none' : 'flex';
       }
+      
+      if (logoutBtn) {
+          // Show the Sign Out button only if someone is currently logged in
+          logoutBtn.style.display = role ? 'flex' : 'none';
+      }
+  }
+
+  function signOut() {
+      localStorage.removeItem('egm_auth_role');
+      localStorage.removeItem('egm_auth_exp');
+      window.location.reload(); // Refresh immediately to lock down the UI
   }
 
   function toggleTheme() {
