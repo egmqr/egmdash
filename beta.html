@@ -321,7 +321,7 @@
       </h4>
       
       <div class="d-flex align-items-center gap-2">
-          <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-1" onclick="requireAuth(() => openNewEventModal())">
+          <button id="newEntryBtn" class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm align-items-center gap-1" style="display: flex;" onclick="requireAuth(() => openNewEventModal(), true)">
             <i class="bi bi-plus-lg"></i> <span class="d-none d-sm-inline">New Entry</span>
           </button>
           <button id="themeToggleBtn" class="btn btn-light border-secondary-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center" onclick="toggleTheme()" title="Toggle Dark Mode" style="width: 38px; height: 34px;">
@@ -422,8 +422,48 @@
       </div>
 
       <div id="payroll-view" style="display:none;">
-          <h4 class="fw-bold mb-4 mt-2 text-danger"><i class="bi bi-lock-fill me-2"></i>Admin Payroll</h4>
-          <div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm">Payroll Engine loading in Phase 2...</div>
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 mt-2 gap-3">
+              <h4 class="fw-bold mb-0 text-danger d-flex align-items-center"><i class="bi bi-cash-coin me-2"></i> Payroll Engine</h4>
+              
+              <div class="bg-white p-2 rounded-3 border shadow-sm d-flex flex-wrap gap-2 align-items-end">
+                  <div class="px-2">
+                      <span class="form-label-sm text-secondary">Preset Cutoffs</span><br>
+                      <div class="btn-group btn-group-sm">
+                          <button class="btn btn-outline-secondary fw-bold" onclick="setCutoffDates(26, 10)">26th - 10th</button>
+                          <button class="btn btn-outline-secondary fw-bold" onclick="setCutoffDates(11, 25)">11th - 25th</button>
+                      </div>
+                  </div>
+                  <div class="border-start ps-2">
+                      <span class="form-label-sm text-secondary">Start Date</span>
+                      <input type="date" id="prStartDate" class="form-control form-control-sm fw-bold">
+                  </div>
+                  <div>
+                      <span class="form-label-sm text-secondary">End Date</span>
+                      <input type="date" id="prEndDate" class="form-control form-control-sm fw-bold">
+                  </div>
+                  <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm ms-1" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
+                  <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm ms-1" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
+              </div>
+          </div>
+
+          <div class="table-custom bg-white shadow-sm">
+              <div class="table-responsive">
+                  <table class="table table-hover mb-0 align-middle">
+                      <thead>
+                          <tr>
+                              <th class="py-3 px-3">Crew Member</th>
+                              <th class="py-3 text-center">Shoots</th>
+                              <th class="py-3 text-center">Edits</th>
+                              <th class="py-3 text-end">Est. Base Pay</th>
+                              <th class="py-3 px-3 text-end">Action</th>
+                          </tr>
+                      </thead>
+                      <tbody id="pr-body">
+                          <tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-calendar2-range fs-2 d-block mb-2 opacity-50"></i>Select a cutoff period and click Compute.</td></tr>
+                      </tbody>
+                  </table>
+              </div>
+          </div>
       </div>
       <div id="events-view" style="display:none;">
           <h4 class="fw-bold mb-4 mt-2" id="upcomingEventsHeader">Upcoming Events</h4>
@@ -1391,7 +1431,93 @@
   </div>
   <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="submitPaymentDocUpload()">UPLOAD</button>
 </div></div></div></div>
+  <div class="modal fade" id="ratesModal" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
+  <div class="modal-header bg-warning border-bottom">
+      <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-sliders me-1"></i> Manage Base Rates</h6>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <div class="modal-body p-3">
+      <div id="ratesListContainer" class="row g-2 mb-3"></div>
+      <button class="btn btn-dark w-100 py-2 fw-bold shadow-sm" onclick="saveRates()"><i class="bi bi-save me-1"></i> SAVE RATES</button>
+  </div>
+</div></div></div>
+<div class="modal fade" id="payrollModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
+  <div class="modal-header bg-danger text-white border-0">
+      <h6 class="fw-bold mb-0 text-uppercase letter-spacing-1 d-flex align-items-center"><i class="bi bi-receipt-cutoff me-2"></i> <span id="prModalName">Crew Member</span>'s Payslip</h6>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+  </div>
+  <div class="modal-body p-0" style="background-color: #f8fafc;">
+      
+      <div id="prBuilderView" class="p-3 p-md-4">
+          <div class="alert alert-info small py-2 mb-4 shadow-sm border-0 d-flex align-items-center">
+              <i class="bi bi-info-circle-fill me-2 fs-5"></i> 
+              Cutoff Period: <strong class="ms-1" id="prModalCutoffDates"></strong>
+          </div>
+          
+          <h6 class="fw-bold text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Itemized Events</h6>
+          <div id="prModalEventsList" class="mb-4"></div>
+          
+          <div class="row g-3 mb-4 border-top pt-3">
+              <div class="col-12 col-md-6">
+                  <label class="form-label-sm text-primary">Add Reimbursements / Expenses</label>
+                  <div class="input-group input-group-sm shadow-sm">
+                      <span class="input-group-text bg-white fw-bold">₱</span>
+                      <input type="number" id="prGlobalExpenses" class="form-control fw-bold" value="0" oninput="calculateLivePayslipTotals()">
+                  </div>
+              </div>
+              <div class="col-12 col-md-6">
+                  <label class="form-label-sm text-success">Add Misc. Bonus Pay</label>
+                  <div class="input-group input-group-sm shadow-sm">
+                      <span class="input-group-text bg-white fw-bold">₱</span>
+                      <input type="number" id="prGlobalMisc" class="form-control fw-bold" value="0" oninput="calculateLivePayslipTotals()">
+                  </div>
+              </div>
+          </div>
+          
+          <div class="bg-dark text-white p-3 rounded-3 shadow-sm d-flex justify-content-between align-items-center">
+              <span class="fw-bold text-uppercase opacity-75" style="letter-spacing: 1px;">Net Payout</span>
+              <h3 class="fw-bold mb-0 text-success">₱ <span id="prLiveTotal">0</span></h3>
+          </div>
+          
+          <button class="btn btn-danger w-100 py-3 fw-bold shadow-sm mt-4" onclick="transitionToPayslipCard()"><i class="bi bi-file-earmark-ruled me-1"></i> GENERATE DIGITAL PAYSLIP</button>
+      </div>
 
+      <div id="prFinalCardView" class="p-3 p-md-5" style="display:none;">
+          <div class="card border-0 shadow" style="border-radius: 1rem; overflow: hidden;">
+              <div class="bg-dark text-white p-4 text-center position-relative">
+                  <i class="bi bi-check-circle-fill text-success position-absolute" style="font-size: 3rem; top: -15px; right: -10px; opacity: 0.2;"></i>
+                  <h4 class="fw-bold mb-0 letter-spacing-1">EGM PRODUCTIONS</h4>
+                  <p class="small mb-0 opacity-75">PAYMENT VOUCHER</p>
+              </div>
+              <div class="p-4 bg-white">
+                  <div class="d-flex justify-content-between mb-4 pb-3 border-bottom border-secondary-subtle">
+                      <div>
+                          <span class="d-block small text-muted fw-bold text-uppercase">Issued To</span>
+                          <h5 class="fw-bold text-dark mb-0" id="slipName">Name</h5>
+                      </div>
+                      <div class="text-end">
+                          <span class="d-block small text-muted fw-bold text-uppercase">Cutoff Period</span>
+                          <span class="fw-bold text-dark small" id="slipDates">Dates</span>
+                      </div>
+                  </div>
+                  
+                  <div id="slipItems" class="mb-4 small"></div>
+                  
+                  <div class="d-flex justify-content-between align-items-end pt-3 border-top border-2 border-dark">
+                      <span class="fw-bold text-dark text-uppercase" style="letter-spacing: 1px;">Total Net Pay</span>
+                      <h3 class="fw-bold mb-0 text-success">₱ <span id="slipTotal">0</span></h3>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="d-flex gap-2 mt-4">
+              <button class="btn btn-light border w-50 fw-bold shadow-sm" onclick="document.getElementById('prFinalCardView').style.display='none'; document.getElementById('prBuilderView').style.display='block';"><i class="bi bi-arrow-left me-1"></i> EDIT MATH</button>
+              <button class="btn btn-success w-50 fw-bold shadow-sm" onclick="logPayslipToDatabase()"><i class="bi bi-cloud-arrow-up me-1"></i> LOG TO SHEET</button>
+          </div>
+      </div>
+      
+  </div>
+</div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
@@ -1468,7 +1594,75 @@
   let currentCalendarDate = new Date(); 
   
   const baseCrew = ["Edgar","Francis","Mael","Lexie","Athan","Jovert","May","Tina","Jops","Grace","Jun","Tatalino","Joram","Roy","Smile"];
+  // --- DYNAMIC PAYROLL RATES ENGINE ---
+  const DEFAULT_CREW_RATE = 1500;
+  const DEFAULT_EDITOR_RATE = 2000;
+  
+  let currentPayrollData = {}; 
+  let activePayrollPerson = null;
 
+  function getCrewRate(name, role) {
+      let savedRates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
+      if (savedRates[name] !== undefined) return parseFloat(savedRates[name]);
+      return role === 'Editor' ? DEFAULT_EDITOR_RATE : DEFAULT_CREW_RATE;
+  }
+
+  function openRatesModal() {
+      const container = document.getElementById('ratesListContainer');
+      let html = '';
+      
+      // Combine your base crew and editors into one alphabetical list
+      let allNames = new Set([...baseCrew, "Athan", "Jovert", "May", "Tina", "Grace", "Jops"]);
+      
+      Array.from(allNames).sort().forEach(name => {
+          let currentRate = getCrewRate(name, 'Crew'); // Pulls custom rate if it exists
+          html += `
+          <div class="col-12 d-flex justify-content-between align-items-center mb-1 border-bottom pb-2">
+              <span class="fw-bold text-secondary" style="font-size: 0.85rem;">${name}</span>
+              <div class="input-group input-group-sm" style="width: 110px;">
+                  <span class="input-group-text bg-light text-muted">₱</span>
+                  <input type="number" class="form-control fw-bold text-dark rate-input" data-name="${name}" value="${currentRate}">
+              </div>
+          </div>`;
+      });
+      container.innerHTML = html;
+      new bootstrap.Modal(document.getElementById('ratesModal')).show();
+  }
+
+  function saveRates() {
+      let rates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
+      document.querySelectorAll('.rate-input').forEach(input => {
+          let name = input.getAttribute('data-name');
+          let val = parseFloat(input.value);
+          if (!isNaN(val)) rates[name] = val;
+      });
+      localStorage.setItem('egm_crew_rates', JSON.stringify(rates));
+      bootstrap.Modal.getInstance(document.getElementById('ratesModal')).hide();
+      alert("Rates saved successfully! If you already computed payroll, click COMPUTE again to apply the new rates.");
+  }
+  // -----------------------------
+
+  // Helper: Auto-set dates based on the 11-25 or 26-10 rules
+  function setCutoffDates(startDay, endDay) {
+      const now = new Date();
+      let startMonth = now.getMonth();
+      let endMonth = now.getMonth();
+      let startYear = now.getFullYear();
+      let endYear = now.getFullYear();
+
+      if (startDay === 26) {
+          startMonth -= 1;
+          if (startMonth < 0) { startMonth = 11; startYear -= 1; }
+      }
+
+      const sDate = new Date(startYear, startMonth, startDay);
+      const eDate = new Date(endYear, endMonth, endDay);
+
+      document.getElementById('prStartDate').value = sDate.toISOString().split('T')[0];
+      document.getElementById('prEndDate').value = eDate.toISOString().split('T')[0];
+  }
+
+  
   // --- BOOTH QR CONSTANTS ---
   const MASTER_QR_URL = "https://webqr.createdbyegm.com/";
   const NETLIFY_BASE_URL = "https://gallery.createdbyegm.com/main.html";
@@ -1544,6 +1738,16 @@
       }
       btn.innerHTML = originalText;
       btn.disabled = false;
+      applyRoleUI();
+  }
+
+  function applyRoleUI() {
+      const role = getUserRole();
+      const newEntryBtn = document.getElementById('newEntryBtn');
+      if (newEntryBtn) {
+          // Hide New Entry button entirely if the user is an editor
+          newEntryBtn.style.display = (role === 'editor') ? 'none' : 'flex';
+      }
   }
 
   function toggleTheme() {
@@ -4299,6 +4503,249 @@ async function getNextEventId() {
           </tr>`;
       });
       document.getElementById('eq-body').innerHTML = html;
+  }
+  // ==============================================================================
+  // ADMIN PAYROLL ENGINE
+  // ==============================================================================
+
+  // Helper: Auto-set dates based on the 11-25 or 26-10 rules
+  function setCutoffDates(startDay, endDay) {
+      const now = new Date();
+      let startMonth = now.getMonth();
+      let endMonth = now.getMonth();
+      let startYear = now.getFullYear();
+      let endYear = now.getFullYear();
+
+      if (startDay === 26) {
+          // 26th of last month to 10th of current month
+          startMonth -= 1;
+          if (startMonth < 0) { startMonth = 11; startYear -= 1; }
+      }
+
+      const sDate = new Date(startYear, startMonth, startDay);
+      const eDate = new Date(endYear, endMonth, endDay);
+
+      document.getElementById('prStartDate').value = sDate.toISOString().split('T')[0];
+      document.getElementById('prEndDate').value = eDate.toISOString().split('T')[0];
+  }
+
+  // Engine: Aggregate the data using the Dynamic Rates
+  function runPayrollEngine() {
+      const start = document.getElementById('prStartDate').value;
+      const end = document.getElementById('prEndDate').value;
+      if (!start || !end) return alert("Please select a Start and End date for the cutoff.");
+
+      currentPayrollData = {}; // Reset global math
+
+      const validEvents = rawEvents.filter(e => {
+          return e['Event Date'] >= start && e['Event Date'] <= end && 
+                 e['Event Status'] === 'Confirmed' && e['Event Name'] !== 'Crew Leave';
+      });
+
+      validEvents.forEach(e => {
+          // 1. Process Crew
+          if (e['Manpower']) {
+              const crewArray = e['Manpower'].split(',').map(c => c.trim()).filter(Boolean);
+              crewArray.forEach(c => {
+                  if (!currentPayrollData[c]) initPayrollPerson(c);
+                  let rate = getCrewRate(c, 'Crew'); // Pulls individual rate!
+                  currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: 0 });
+                  currentPayrollData[c].totalBase += rate;
+              });
+          }
+          // 2. Process Editor
+          if (e['Editor Assigned']) {
+              const editor = e['Editor Assigned'].trim();
+              if (!currentPayrollData[editor]) initPayrollPerson(editor);
+              let rate = getCrewRate(editor, 'Editor'); // Pulls individual rate!
+              currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: 0 });
+              currentPayrollData[editor].totalBase += rate;
+          }
+      });
+
+      renderPayrollTable();
+  }
+
+  function initPayrollPerson(name) {
+      currentPayrollData[name] = { events: [], totalBase: 0, expenses: 0, misc: 0, finalTotal: 0 };
+  }
+
+  // UI: Draw the Main Table
+  function renderPayrollTable() {
+      const tbody = document.getElementById('pr-body');
+      let html = '';
+      
+      const names = Object.keys(currentPayrollData).sort();
+      if (names.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>No crew members had confirmed events in this timeframe.</td></tr>';
+          return;
+      }
+
+      names.forEach(name => {
+          const data = currentPayrollData[name];
+          const shootCount = data.events.filter(e => e.role === 'Crew').length;
+          const editCount = data.events.filter(e => e.role === 'Editor').length;
+          
+          html += `<tr>
+              <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2"></i>${name}</td>
+              <td class="text-center"><span class="badge bg-light text-dark border">${shootCount}</span></td>
+              <td class="text-center"><span class="badge bg-light text-dark border">${editCount}</span></td>
+              <td class="text-end fw-bold text-success">₱${data.totalBase.toLocaleString()}</td>
+              <td class="text-end px-3">
+                  <button class="btn btn-sm btn-danger fw-bold shadow-sm py-1" onclick="openPayrollModal('${name}')" style="font-size:0.75rem;">GENERATE SLIP <i class="bi bi-chevron-right"></i></button>
+              </td>
+          </tr>`;
+      });
+      tbody.innerHTML = html;
+  }
+
+  // Modal: Open and build the interactive calculator
+  function openPayrollModal(name) {
+      activePayrollPerson = name;
+      const data = currentPayrollData[name];
+      
+      document.getElementById('prModalName').innerText = name;
+      document.getElementById('prModalCutoffDates').innerText = `${document.getElementById('prStartDate').value} to ${document.getElementById('prEndDate').value}`;
+      
+      // Reset global inputs
+      document.getElementById('prGlobalExpenses').value = data.expenses || 0;
+      document.getElementById('prGlobalMisc').value = data.misc || 0;
+      
+      // Build Itemized List
+      let eventsHtml = '';
+      data.events.sort((a,b) => a.doc['Event Date'].localeCompare(b.doc['Event Date'])).forEach((item, index) => {
+          let roleBadge = item.role === 'Editor' ? 'bg-info text-dark' : 'bg-secondary text-white';
+          eventsHtml += `
+          <div class="bg-white p-3 rounded-3 border shadow-sm mb-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+              <div>
+                  <span class="d-block small text-muted fw-bold mb-1"><i class="bi bi-calendar-event me-1"></i>${item.doc['Event Date']}</span>
+                  <strong class="text-dark">#${item.doc['Event ID']} - ${item.doc['Event Name']}</strong>
+                  <span class="badge ${roleBadge} ms-2 shadow-sm">${item.role}</span>
+              </div>
+              <div class="d-flex align-items-center gap-3">
+                  <div class="text-end">
+                      <span class="d-block text-muted" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Base Rate</span>
+                      <strong class="text-success">₱${item.basePay.toLocaleString()}</strong>
+                  </div>
+                  <div>
+                      <span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">+ Extra Pay</span>
+                      <div class="input-group input-group-sm" style="width: 100px;">
+                          <span class="input-group-text bg-light text-muted">₱</span>
+                          <input type="number" class="form-control fw-bold pr-event-extra" data-index="${index}" value="${item.extraPay}" oninput="calculateLivePayslipTotals()">
+                      </div>
+                  </div>
+              </div>
+          </div>`;
+      });
+      
+      document.getElementById('prModalEventsList').innerHTML = eventsHtml;
+      
+      // Reset Views
+      document.getElementById('prBuilderView').style.display = 'block';
+      document.getElementById('prFinalCardView').style.display = 'none';
+      
+      calculateLivePayslipTotals(); // Do initial math
+      
+      new bootstrap.Modal(document.getElementById('payrollModal')).show();
+  }
+
+  // Math: Live calculation based on inputs
+  function calculateLivePayslipTotals() {
+      if(!activePayrollPerson) return;
+      const data = currentPayrollData[activePayrollPerson];
+      
+      // Save Extras back to state
+      document.querySelectorAll('.pr-event-extra').forEach(input => {
+          let idx = input.getAttribute('data-index');
+          data.events[idx].extraPay = parseFloat(input.value) || 0;
+      });
+      
+      data.expenses = parseFloat(document.getElementById('prGlobalExpenses').value) || 0;
+      data.misc = parseFloat(document.getElementById('prGlobalMisc').value) || 0;
+      
+      // Calculate Grand Total
+      let total = data.totalBase;
+      data.events.forEach(ev => total += ev.extraPay);
+      total += data.expenses;
+      total += data.misc;
+      
+      data.finalTotal = total;
+      document.getElementById('prLiveTotal').innerText = total.toLocaleString();
+  }
+
+  // UI: Morph the builder into a digital card
+  function transitionToPayslipCard() {
+      if(!activePayrollPerson) return;
+      calculateLivePayslipTotals(); // Lock in final math
+      const data = currentPayrollData[activePayrollPerson];
+      
+      document.getElementById('slipName').innerText = activePayrollPerson;
+      document.getElementById('slipDates').innerText = `${document.getElementById('prStartDate').value} to ${document.getElementById('prEndDate').value}`;
+      
+      let slipHtml = '';
+      data.events.forEach(item => {
+          slipHtml += `
+          <div class="d-flex justify-content-between border-bottom border-dashed border-secondary-subtle py-2">
+              <div>
+                  <span class="fw-bold text-dark d-block">#${item.doc['Event ID']} - ${item.doc['Event Name']}</span>
+                  <span class="text-muted" style="font-size:0.75rem;">${item.doc['Event Date']} | Role: ${item.role}</span>
+              </div>
+              <div class="text-end">
+                  <span class="d-block fw-bold text-dark">₱${item.basePay.toLocaleString()}</span>
+                  ${item.extraPay > 0 ? `<span class="d-block text-success" style="font-size:0.75rem;">+ ₱${item.extraPay.toLocaleString()} extra</span>` : ''}
+              </div>
+          </div>`;
+      });
+      
+      if (data.expenses > 0 || data.misc > 0) {
+          slipHtml += `<div class="bg-light p-2 rounded mt-3">`;
+          if (data.expenses > 0) slipHtml += `<div class="d-flex justify-content-between text-primary fw-bold"><span style="font-size:0.8rem;">REIMBURSEMENTS</span><span>₱${data.expenses.toLocaleString()}</span></div>`;
+          if (data.misc > 0) slipHtml += `<div class="d-flex justify-content-between text-success fw-bold"><span style="font-size:0.8rem;">MISC BONUS</span><span>₱${data.misc.toLocaleString()}</span></div>`;
+          slipHtml += `</div>`;
+      }
+      
+      document.getElementById('slipItems').innerHTML = slipHtml;
+      document.getElementById('slipTotal').innerText = data.finalTotal.toLocaleString();
+      
+      document.getElementById('prBuilderView').style.display = 'none';
+      document.getElementById('prFinalCardView').style.display = 'block';
+  }
+
+  // Backend: Send the generated payslip to Apps Script
+  async function logPayslipToDatabase() {
+      if(!activePayrollPerson) return;
+      const data = currentPayrollData[activePayrollPerson];
+      
+      if(!confirm(`Submit final payroll of ₱${data.finalTotal.toLocaleString()} for ${activePayrollPerson} to Google Sheets?`)) return;
+      
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = "Logging to Google Sheets...";
+      ov.style.display = 'flex';
+
+      // Package everything into a clean JSON object for Apps Script
+      const payload = {
+          action: 'logPayroll',
+          crewName: activePayrollPerson,
+          cutoffStart: document.getElementById('prStartDate').value,
+          cutoffEnd: document.getElementById('prEndDate').value,
+          totalBasePay: data.totalBase,
+          totalExpenses: data.expenses,
+          totalMisc: data.misc,
+          finalNetPay: data.finalTotal,
+          itemizedEvents: JSON.stringify(data.events.map(e => ({
+              id: e.doc['Event ID'], date: e.doc['Event Date'], role: e.role, base: e.basePay, extra: e.extraPay
+          })))
+      };
+
+      const res = await callApi(payload, 'POST');
+      ov.style.display = 'none';
+      
+      if (res && res.success) {
+          alert(`Payslip for ${activePayrollPerson} successfully logged!`);
+          bootstrap.Modal.getInstance(document.getElementById('payrollModal')).hide();
+      } else {
+          alert("Error saving payslip: " + (res ? res.error || res.message : "Unknown error"));
+      }
   }
 </script>
 </body>
