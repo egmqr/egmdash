@@ -84,11 +84,13 @@
     .calendar-day.empty { background: #f8fafc; cursor: default; }
     .calendar-day.today { background: #f0fdfa; }
     .date-number { font-weight: 600; font-size: 0.85rem; color: #475569; align-self: flex-end; margin-bottom: 4px; transition: color 0.3s ease;}
+    .cal-add-btn { cursor: pointer; font-size: 0.85rem; transition: all 0.2s ease; }
+    .cal-add-btn:hover { opacity: 1 !important; transform: scale(1.15); color: #0d9488 !important; }
     .calendar-day.today .date-number { background: #0d9488; color: #fff; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
     .cal-event-pill { width: 100%; font-size: 0.7rem; font-weight: 500; padding: 4px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-align: left; transition: 0.2s; border: 1px solid transparent; margin-bottom: 2px; line-height: 1.2; display: block; }
     .cal-event-pill:hover { opacity: 0.8; transform: scale(0.98); }
     .cal-status-confirmed { background-color: #dcfce7; color: #047857; border-color: #a7f3d0; }
-    .cal-status-pencil { background-color: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+    .cal-status-pencil { background-color: #e5e7eb; color: #4b5563; border-color: #9ca3af; border-style: dashed; }
     .cal-status-cancelled { background-color: #fee2e2; color: #b91c1c; border-color: #fca5a5; text-decoration: line-through; opacity: 0.7; }
     .cal-status-leave { background-color: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
 
@@ -110,6 +112,52 @@
     .table-custom th { background-color: #f1f5f9; color: #475569; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; transition: background-color 0.3s ease, color 0.3s ease; }
     .table-custom td { vertical-align: middle; color: #334155; border-bottom: 1px solid #f1f5f9; transition: border-color 0.3s ease; }
 
+
+    /* --- EVENT CARD STATUS STYLES --- */
+    .stamp-container {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: none; /* Crucial: lets clicks pass right through to buttons! */
+        z-index: 20; /* Overlays on top of all card content */
+        overflow: hidden;
+    }
+    .status-stamp {
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        font-weight: 900;
+        text-transform: uppercase;
+        transform: rotate(-25deg);
+        padding: 0.5rem 1.5rem;
+        border: 4px solid;
+        border-radius: 12px;
+        white-space: nowrap;
+        letter-spacing: 0.1rem;
+    }
+    .stamp-cancelled { 
+        color: rgba(220, 53, 69, 0.45); 
+        border-color: rgba(220, 53, 69, 0.45); 
+    }
+    .stamp-pencil { 
+        color: rgba(108, 117, 125, 0.45); 
+        border-color: rgba(108, 117, 125, 0.45); 
+    }
+    
+    .card-cancelled { 
+        border: 2px solid rgba(220, 53, 69, 0.8) !important; 
+    }
+    .card-pencil { 
+        border: 2px solid rgba(108, 117, 125, 0.8) !important; 
+        background-color: #f8fafc !important; 
+        opacity: 0.85; 
+        filter: grayscale(40%); 
+    }
+    .card-confirmed { 
+        border: 2px solid #0d9488 !important; 
+        background-color: rgba(13, 148, 136, 0.08) !important; 
+    }
+    /* -------------------------------- */
+
+    
     /* BOOTH QR STYLES */
     .booth-color-input-wrapper { display: flex; gap: 8px; align-items: center; }
     .booth-color-input-wrapper input[type="color"] { width: 44px; height: 44px; padding: 0; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; background: none; flex-shrink: 0; }
@@ -148,7 +196,7 @@
     .logo-gallery-item { width: 40px; height: 40px; flex-shrink: 0; border: 2px solid transparent; border-radius: 8px; cursor: pointer; object-fit: contain; background: #fff; padding: 2px; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .logo-gallery-item:hover { border-color: #cbd5e1; transform: translateY(-2px);}
     .logo-gallery-item.selected { border-color: #0d9488; }
-
+    
     /* DARK MODE */
     body.dark-mode { background-color: #121212; color: #d1d5db; }
     .dark-mode .card, .dark-mode .filter-panel, .dark-mode .calendar-container, .dark-mode .table-custom, .dark-mode .modal-content { background: #1e1e1e !important; border-color: #333333 !important; }
@@ -199,7 +247,32 @@
     .dark-mode .calendar-day.empty { background: #121212; }
     .dark-mode .calendar-day.today { background: #134e4a; } 
     .dark-mode .date-number { color: #9ca3af; }
+    /* --- DARK MODE CARD STATUS OVERRIDES --- */
+    .dark-mode .card-cancelled {
+        border-color: rgba(220, 53, 69, 0.5) !important;
+        background-color: rgba(220, 53, 69, 0.05) !important; /* Adds a super subtle dark-red tint */
+    }
+    .dark-mode .stamp-cancelled {
+        color: rgba(220, 53, 69, 0.25); /* Dims the stamp so it doesn't neon-burn the screen */
+        border-color: rgba(220, 53, 69, 0.25);
+    }
 
+    .dark-mode .card-pencil {
+        border-color: rgba(108, 117, 125, 0.4) !important;
+        background-color: #121212 !important; /* Sinks it deeper into the background than standard cards (#1e1e1e) */
+        opacity: 0.75;
+        filter: grayscale(50%) brightness(0.8);
+    }
+    .dark-mode .stamp-pencil {
+        color: rgba(156, 163, 175, 0.2); 
+        border-color: rgba(156, 163, 175, 0.2);
+    }
+
+    .dark-mode .card-confirmed {
+        border-color: rgba(13, 148, 136, 0.5) !important;
+        background-color: rgba(13, 148, 136, 0.1) !important; /* Keeps the premium teal glow, but calibrated for dark screens */
+    }
+    /* --------------------------------------- */
     /* Booth specific dark mode */
     .dark-mode .booth-color-input-wrapper input[type="color"] { border-color: #333333; }
     .dark-mode .booth-file-btn { background-color: #2b2b2b; color: #d1d5db; border-color: #444444; }
@@ -212,7 +285,7 @@
     .dark-mode .booth-mini-btn:hover { background-color: #444444; }
     .dark-mode .logo-gallery-item { background: #333; }
     .dark-mode .logo-gallery-item.selected { border-color: #0d9488; }
-    .dark-mode .booth-thumbnail-label { color: #9ca3af; }
+    .dark-mode .cal-status-pencil { background-color: #374151; color: #9ca3af; border-color: #4b5563; border-style: dashed; }
   </style>
 </head>
 <body>
@@ -243,7 +316,7 @@
   <div class="sticky-header">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="fw-bold mb-0 d-flex align-items-center" style="letter-spacing: -0.5px;">EGM <span class="text-primary ms-1">Ops</span> 
-          <i class="bi bi-arrow-repeat text-primary ms-2" id="syncIcon" style="cursor: pointer; font-size: 1.3rem;" onclick="forceSync()" title="Force Sync with Google Sheets"></i>
+          <i class="bi bi-arrow-repeat text-primary ms-2" id="syncIcon" style="cursor: pointer; font-size: 1.3rem;" onclick="forceSync()" title="Refresh App"></i>
           <span id="bgSyncIndicator" class="bg-sync-indicator ms-3"><div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 0.8rem; height: 0.8rem; border-width: 0.15em;"></div> Syncing</span>
       </h4>
       
@@ -258,15 +331,23 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center pb-2">
-      <ul class="nav nav-pills" id="appTabs">
-        <li class="nav-item"><a class="nav-link" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-card-list me-1"></i> List</a></li>
-        <li class="nav-item"><a class="nav-link active" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
+     <ul class="nav nav-pills" id="appTabs">
+        <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-card-list me-1"></i> Events</a></li>
+        <li class="nav-item"><a class="nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
+        <li class="nav-item"><a class="nav-link" id="eq-tab" onclick="handleTabClick('editqueue')"><i class="bi bi-film me-1"></i> Edit Queue</a></li>
+        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), true)"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
+        <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), true)"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
+        <li class="nav-item"><a class="nav-link" id="ex-tab" onclick="handleTabClick('expenses')"><i class="bi bi-receipt me-1"></i> Expenses</a></li>
         <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
-        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="handleTabClick('payments')"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
       </ul>
-      <button id="filterToggleBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
-        <i class="bi bi-sliders"></i> <span class="d-none d-sm-inline">Filters</span>
-      </button>
+      <div class="d-flex gap-2">
+        <button id="copyFilterLinkBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" onclick="copyCurrentUrl()" title="Copy link with active filters">
+          <i class="bi bi-link-45deg fs-6"></i> <span class="d-none d-sm-inline">Share View</span>
+        </button>
+        <button id="filterToggleBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
+          <i class="bi bi-sliders"></i> <span class="d-none d-sm-inline">Filters</span>
+        </button>
+      </div>
     </div>
 
     <div class="collapse mt-2" id="filterCollapse">
@@ -323,7 +404,27 @@
   </div>
   
   <div class="px-2 px-md-0">
-      
+      <div id="editqueue-view" style="display:none;">
+          <h4 class="fw-bold mb-4 mt-2 d-flex justify-content-between align-items-center">Editing Queue 
+             <select id="fEqStatus" class="form-select form-select-sm w-auto shadow-sm fw-bold border-secondary-subtle" onchange="renderEditingQueue(filteredEventsCache)">
+                 <option value="All">All Statuses</option>
+                 <option value="RAW Uploaded" selected>RAW Uploaded</option>
+                 <option value="Completed">Completed</option>
+                 <option value="Sent to Client">Sent to Client</option>
+             </select>
+          </h4>
+          <div class="table-custom bg-white shadow-sm"><div class="table-responsive">
+              <table class="table table-hover mb-0 align-middle">
+                  <thead><tr><th class="py-3 px-3">Event Info</th><th class="py-3">Editor</th><th class="py-3">RAW Status</th><th class="py-3">Completed Status</th><th class="py-3">48h Deadline</th></tr></thead>
+                  <tbody id="eq-body" class="small"></tbody>
+              </table>
+          </div></div>
+      </div>
+
+      <div id="payroll-view" style="display:none;">
+          <h4 class="fw-bold mb-4 mt-2 text-danger"><i class="bi bi-lock-fill me-2"></i>Admin Payroll</h4>
+          <div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm">Payroll Engine loading in Phase 2...</div>
+      </div>
       <div id="events-view" style="display:none;">
           <h4 class="fw-bold mb-4 mt-2" id="upcomingEventsHeader">Upcoming Events</h4>
           <div id="events-list" class="row g-3"></div>
@@ -493,6 +594,69 @@
               </div>
           </div>
       </div>
+      <div id="expenses-view" style="display:none;">
+          <h4 class="fw-bold mb-4 mt-2">Log an Expense</h4>
+          <div class="card p-3 p-md-4" style="max-width: 600px; margin: 0 auto;">
+              <form id="expenseForm">
+                  <div class="row g-3 mb-3">
+                      <div class="col-12 col-md-6">
+                          <label class="form-label-sm">Date of Event <span class="fw-normal text-muted" style="text-transform: none;">(NOT DATE SUBMITTED)</span></label>
+                          <input type="date" name="expenseDate" class="form-control form-control-sm fw-bold" required>
+                      </div>
+                      <div class="col-12 col-md-6">
+                          <label class="form-label-sm">Submitted By</label>
+                          <select name="expenseName" class="form-select form-select-sm fw-bold text-dark" required>
+                              <option value="">-- Select Name --</option>
+                              <option value="Mael">Mael</option>
+                              <option value="Francis">Francis</option>
+                              <option value="Jenielyn">Jenielyn</option>
+                              <option value="Jops">Jops</option>
+                              <option value="Grace">Grace</option>
+                              <option value="Tina">Tina</option>
+                              <option value="Lexie">Lexie</option>
+                              <option value="Mayne">Mayne</option>
+                              <option value="Athan">Athan</option>
+                              <option value="Jovert">Jovert</option>
+                              <option value="Edgar">Edgar</option>
+                          </select>
+                      </div>
+                  </div>
+                  
+                  <div class="row g-3 mb-3">
+                      <div class="col-12 col-md-6">
+                          <label class="form-label-sm">Category</label>
+                          <select name="expenseCategory" class="form-select form-select-sm fw-bold text-dark" required>
+                              <option value="">-- Select Category --</option>
+                              <option>Meals / Food</option>
+                              <option>Transportation / Gas</option>
+                              <option>Equipment / Gear</option>
+                              <option>Permits / Fees</option>
+                              <option>Miscellaneous</option>
+                          </select>
+                      </div>
+                      <div class="col-12 col-md-6">
+                          <label class="form-label-sm">Amount</label>
+                          <div class="input-group input-group-sm">
+                              <span class="input-group-text bg-white fw-bold">₱</span>
+                              <input type="number" step="0.01" name="expenseAmount" class="form-control border-start-0 fw-bold text-danger" placeholder="0.00" required>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div class="mb-3">
+                      <label class="form-label-sm">Description / Item Details</label>
+                      <textarea name="expenseDescription" class="form-control form-control-sm" rows="2" placeholder="What was this expense for?" required></textarea>
+                  </div>
+                  
+                  <div class="mb-4">
+                      <label class="form-label-sm text-primary">Receipt / Proof of Payment <span class="text-danger">*</span></label>
+                      <input type="file" id="expenseReceiptFile" accept="image/*,.pdf" class="form-control form-control-sm" required>
+                  </div>
+                  
+                  <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="expenseSubmitBtn"><i class="bi bi-send me-1"></i> SUBMIT EXPENSE</button>
+              </form>
+          </div>
+      </div>
   </div>
 </div>
 
@@ -537,10 +701,11 @@
   <div id="newDateTimeBlock">
       <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
       <div class="row g-2 mb-4">
-          <div class="col-6 col-md-3"><label class="form-label-sm">Date</label><input type="date" name="eventDate" class="form-control form-control-sm" required></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-3" id="newDateCol"><label class="form-label-sm" id="newDateLabel">Date</label><input type="date" name="eventDate" id="newEventDate" class="form-control form-control-sm" required onchange="autoFillEndDate('new')"></div>
+          <div class="col-6 col-md-3" id="newEndDateCol" style="display:none;"><label class="form-label-sm text-danger">End Date</label><input type="date" name="eventEndDate" id="newEventEndDate" class="form-control form-control-sm border-danger text-danger"></div>
+          <div class="col-6 col-md-3" id="newCallTimeCol"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
+          <div class="col-6 col-md-3" id="newStartTimeCol"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-3" id="newEndTimeCol"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
       </div>
   </div>
     
@@ -614,7 +779,7 @@
                       <div class="input-group input-group-sm">
                           <input type="number" id="newSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
                           <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
-                      </div>
+                      </div><div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
                   </div>
               </div>
 
@@ -624,6 +789,12 @@
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
           </div>
+          
+          <div class="input-group input-group-sm mt-3">
+              <span class="input-group-text bg-white"><i class="bi bi-plus-circle text-muted"></i></span>
+              <input type="text" id="newCustomServiceInput" class="form-control border-start-0" placeholder="Add custom service...">
+              <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomService('newCustomServiceInput', 'newServicesContainer')">ADD</button>
+          </div>
       </div>
   </div>
 
@@ -631,7 +802,21 @@
       <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
       <div class="mb-4 p-3 bg-light rounded border shadow-sm">
           <div class="row px-2 g-2" id="newCrewContainer">
-              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
           </div>
           <div class="input-group input-group-sm mt-3">
               <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
@@ -641,39 +826,91 @@
       </div>
   </div>
 
+  <div id="newNotesBlock" class="mb-4">
+      <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
+      <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea>
+  </div>
+
   <div id="newPaymentFields">
       <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
       <select name="paymentType" id="newPaymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('new')">
           <option value="">-- Choose Payment Method --</option>
-<option>Cash AR</option>
-<option>Cash ORCR</option>
-<option>Online Transfer AR</option>
-<option>Online Transfer ORCR</option>
-<option>Billing</option>
-<option>Check AR</option>
-<option>Check ORCR</option>
+          <option>Cash AR</option>
+          <option>Cash ORCR</option>
+          <option>Online Transfer AR</option>
+          <option>Online Transfer ORCR</option>
+          <option>Billing</option>
+          <option>Check AR</option>
+          <option>Check ORCR</option>
       </select>
       
       <div id="newDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-        <div class="row g-2 mb-2" id="newPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success" value="0"></div></div></div>
-        <div class="row g-2 mb-2" id="newPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark"></select></div></div>
-        
-        <div id="newPayBillingGroup" style="display:none;">
-            <div class="mb-2"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
-            <div class="row g-2 mb-2">
-                <div class="col-12 col-md-4"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
-                <div class="col-12 col-md-4"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div>
-                <div class="col-12 col-md-4"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
-            </div>
-        </div>
-      <div class="row g-2 mt-2" id="newPayInvUploadGroup"><div class="col-12"> <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label><div class="input-group input-group-sm"><input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control" placeholder="Paste link here..."><a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a></div></div></div>
-      <div class="row g-2 mt-2" id="newPayCheckUploadGroup"> <div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label><div class="input-group input-group-sm"><input type="url" name="checkUrl" id="newCheckUrl" class="form-control" placeholder="Paste link here..."><a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a></div></div></div>
-    </div>
-    <div class="row g-2 mb-2" id="newPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="newPaymentNotes" class="form-control form-control-sm"></div></div>
+          <div class="row g-3 mb-3" id="newPayAmountGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Amount</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white fw-bold">₱</span>
+                      <input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success" value="0">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayStatusGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Status</label>
+                  <select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('new')"></select>
+              </div>
+          </div>
+
+          <div id="newPayBillingGroup" style="display:none;" class="mb-3">
+              <div class="row g-3">
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">Status Date</label>
+                      <input type="date" name="billingStatusDate" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">GR Number</label>
+                      <input type="text" name="grNumber" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">Invoice Number</label>
+                      <input type="text" name="invoiceNumber" class="form-control form-control-sm">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayEmailGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Email Thread Title</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
+                      <input type="text" name="emailThread" class="form-control border-start-0">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayInvUploadGroup">
+              <div class="col-12">
+                  <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+                  <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayCheckUploadGroup">
+              <div class="col-12">
+                  <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
+                  <input type="url" name="checkUrl" id="newCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+              </div>
+          </div>
+          
+          <div class="row g-3" id="newPayNotesGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Payment Notes</label>
+                  <input type="text" name="paymentNotes" id="newPaymentNotes" class="form-control form-control-sm">
+              </div>
+          </div>
+      </div>
   </div>
-  
-  <div class="mb-4"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea></div>
-  
   <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="submitBtn"><i class="bi bi-check2-circle me-1"></i> CREATE ENTRY</button>
 </form></div></div></div></div>
 
@@ -684,6 +921,23 @@
   <div class="mb-3" id="addDayNameBlock">
       <label class="form-label-sm">Event Name (For this specific day)</label>
       <input type="text" name="eventName" id="addDayEventNameInput" class="form-control fw-bold" required>
+  </div>
+  
+  <div class="row g-2 mb-3" id="addDayVenueBlock">
+      <div class="col-12 col-md-6">
+          <label class="form-label-sm">Venue / Location</label>
+          <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span>
+              <input type="text" name="eventVenue" id="addDayEventVenueInput" class="form-control border-start-0 ps-0">
+          </div>
+      </div>
+      <div class="col-12 col-md-6">
+          <label class="form-label-sm">Google Maps Link</label>
+          <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span>
+              <input type="url" name="venueLink" id="addDayVenueLinkInput" class="form-control border-start-0 ps-0" placeholder="http://maps.google.com/...">
+          </div>
+      </div>
   </div>
   
   <div class="mb-4" id="addDayStatusBlock"><label class="form-label-sm">Day Status</label><select name="eventStatus" class="form-select form-select-sm fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option></select></div>
@@ -769,6 +1023,12 @@
           <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
           <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
       </div>
+      
+      <div class="input-group input-group-sm mt-3">
+          <span class="input-group-text bg-white"><i class="bi bi-plus-circle text-muted"></i></span>
+          <input type="text" id="addDayCustomServiceInput" class="form-control border-start-0" placeholder="Add custom service...">
+          <button class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomService('addDayCustomServiceInput', 'addDayServicesContainer')">ADD</button>
+      </div>
   </div>
   
   <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
@@ -786,16 +1046,27 @@
   <button type="submit" class="btn btn-success w-100 py-3 fw-bold shadow-sm" id="addDaySubmitBtn"><i class="bi bi-check2-circle me-1"></i> SAVE NEW DAY</button>
 </form></div></div></div></div>
 
-<div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom"><h6 class="fw-bold mb-0 text-uppercase text-secondary"><i class="bi bi-pencil-square me-2"></i> Event Details</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
+<div class="modal fade" id="editEventModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-light border-bottom">
+  <h6 class="fw-bold mb-0 text-uppercase text-secondary d-flex align-items-center">
+    <i class="bi bi-pencil-square me-2"></i> Event Details 
+    <span id="editEventIdDisplay" class="badge bg-secondary bg-opacity-10 text-secondary border ms-2" style="font-size: 0.75rem; letter-spacing: 0.5px; text-transform: none;"></span>
+  </h6>
+  <div class="ms-auto me-3">
+      <button type="button" class="btn btn-sm btn-outline-primary fw-bold shadow-sm" id="editModalAddDayBtn" style="font-size: 0.7rem; letter-spacing: 0.5px;"><i class="bi bi-calendar-plus me-1"></i> ADD DAY</button>
+  </div>
+  <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 p-md-4">
     
   <div id="editAuthWarning" class="alert alert-warning small py-2 mb-3 shadow-sm border-0 align-items-center justify-content-between" style="display:none;">
       <span><i class="bi bi-eye-fill me-1"></i> <strong>View-Only.</strong> Login to make changes.</span>
       <button type="button" class="btn btn-dark btn-sm fw-bold py-1 px-2 shadow-sm" style="font-size: 0.7rem;" onclick="unlockEditModal()">LOGIN</button>
   </div>
 
+  <ul class="nav nav-pills mb-3 border-bottom pb-3" id="editMultiDayNav" style="display:none;"></ul>
+
   <form id="editForm" class="d-flex flex-column">
   <input type="hidden" id="editEventId" name="eventId">
   <input type="hidden" id="editOriginalDate" name="originalDate">
+  <input type="hidden" id="editFirestoreDocId" name="firestoreDocId">
   
   <div class="d-flex mb-4 gap-2 border-bottom pb-3" id="editTypeToggleBlock">
       <input type="radio" class="btn-check" name="entryMode" id="editTypeEvent" value="event" onchange="toggleEntryMode('edit')">
@@ -805,7 +1076,7 @@
       <label class="btn btn-outline-danger btn-sm fw-bold d-flex align-items-center justify-content-center" style="flex: 1; font-size: 0.8rem;" for="editTypeLeave"><i class="bi bi-airplane me-1"></i> Crew Leave</label>
   </div>
 
-  <div id="editGeneralFields">
+ <div id="editGeneralFields">
       <div class="row g-2 mb-3 align-items-center">
         <div class="col-8 col-md-10">
             <label class="form-label-sm">Event Name</label>
@@ -829,10 +1100,11 @@
   <div id="editDateTimeBlock">
       <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
       <div class="row g-2 mb-4">
-          <div class="col-6 col-md-3"><label class="form-label-sm">Event Date</label><input type="date" name="eventDate" class="form-control form-control-sm" required></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-3" id="editDateCol"><label class="form-label-sm" id="editDateLabel">Event Date</label><input type="date" name="eventDate" id="editEventDate" class="form-control form-control-sm" required></div>
+          <div class="col-6 col-md-3" id="editEndDateCol" style="display:none;"><label class="form-label-sm text-danger">End Date</label><input type="date" name="eventEndDate" id="editEventEndDate" class="form-control form-control-sm border-danger text-danger" disabled title="To add days to an existing leave, use the 'Add Another Leave Day' button."></div>
+          <div class="col-6 col-md-3" id="editCallTimeCol"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
+          <div class="col-6 col-md-3" id="editStartTimeCol"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-3" id="editEndTimeCol"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
       </div>
   </div>
     
@@ -916,6 +1188,12 @@
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
               <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
           </div>
+
+          <div class="input-group input-group-sm mt-3">
+              <span class="input-group-text bg-white"><i class="bi bi-plus-circle text-muted"></i></span>
+              <input type="text" id="editCustomServiceInput" class="form-control border-start-0" placeholder="Add custom service...">
+              <button id="editServiceAddBtn" class="btn btn-outline-primary fw-bold px-3" type="button" onclick="handleAddCustomService('editCustomServiceInput', 'editServicesContainer')">ADD</button>
+          </div>
       </div>
   </div>
 
@@ -923,7 +1201,21 @@
       <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
       <div class="mb-4 p-3 bg-light rounded border shadow-sm">
           <div class="row px-2 g-2" id="editCrewContainer">
-              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
           </div>
           <div class="input-group input-group-sm mt-3">
               <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
@@ -933,39 +1225,139 @@
       </div>
   </div>
 
+  <div id="editNotesBlock" class="mb-4">
+      <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
+      <textarea name="notes" class="form-control form-control-sm" rows="2"></textarea>
+  </div>
+<div id="editEditingSection" class="p-3 mb-4 rounded border border-info border-opacity-25" style="background-color: rgba(13, 202, 240, 0.05);">
+      <div class="section-title text-info mb-3"><i class="bi bi-film me-1"></i> Editing Workflow</div>
+      
+      <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm">Editor Assigned</label>
+              <div class="input-group input-group-sm">
+                  <select name="editorAssigned" id="editEditorSelect" class="form-select border-end-0 fw-bold editor-field">
+                      <option value="">-- Select Editor --</option>
+                      <option>Athan</option><option>Jovert</option><option>May</option>
+                      <option>Tina</option><option>Grace</option><option>Jops</option>
+                  </select>
+                  <input type="text" name="customEditor" id="editCustomEditor" class="form-control editor-field" placeholder="Or custom name...">
+              </div>
+          </div>
+          <div class="col-12 col-md-6 d-flex align-items-end pb-1">
+              <div class="form-check form-switch">
+                  <input class="form-check-input admin-only-field" type="checkbox" name="sentToClient" id="editSentToClient">
+                  <label class="form-check-label small fw-bold text-dark" for="editSentToClient">Mark as Sent to Client</label>
+                  <div class="small text-muted" id="editSentStamp" style="font-size:0.65rem;"></div>
+              </div>
+          </div>
+      </div>
+
+      <div class="row g-3">
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm text-secondary"><i class="bi bi-cloud-arrow-up"></i> RAW Files Link</label>
+              <input type="url" name="rawLink" id="editRawLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+              <div class="small text-muted mt-1" id="editRawStamp" style="font-size:0.65rem;"></div>
+          </div>
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm text-success"><i class="bi bi-check-circle"></i> Completed Files Link</label>
+              <input type="url" name="editedLink" id="editEditedLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+              <div class="small text-muted mt-1" id="editEditedStamp" style="font-size:0.65rem;"></div>
+          </div>
+      </div>
+      
+      <input type="hidden" name="rawTimestamp" id="editRawTimestamp">
+      <input type="hidden" name="editedTimestamp" id="editEditedTimestamp">
+      <input type="hidden" name="sentTimestamp" id="editSentTimestamp">
+  </div>
   <div id="editPaymentFields">
       <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
       <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('edit')">
           <option value="">-- Choose Payment Method --</option>
-<option>Cash AR</option>
-<option>Cash ORCR</option>
-<option>Online Transfer AR</option>
-<option>Online Transfer ORCR</option>
-<option>Billing</option>
-<option>Check AR</option>
-<option>Check ORCR</option>
+          <option>Cash AR</option>
+          <option>Cash ORCR</option>
+          <option>Online Transfer AR</option>
+          <option>Online Transfer ORCR</option>
+          <option>Billing</option>
+          <option>Check AR</option>
+          <option>Check ORCR</option>
       </select>
       
       <div id="editDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-        <div class="row g-2 mb-2" id="editPayAmountGroup"><div class="col-12"><label class="form-label-sm">Amount</label><div class="input-group input-group-sm"><span class="input-group-text bg-white fw-bold">₱</span><input type="number" step="0.01" name="amount" id="editAmount" class="form-control border-start-0 fw-bold text-success" value="0"></div></div></div>
-        <div class="row g-2 mb-2" id="editPayStatusGroup"><div class="col-12"><label class="form-label-sm">Status</label><select name="billingStatus" id="editBillingStatus" class="form-select form-select-sm fw-bold text-dark"></select></div></div>
-        
-        <div id="editPayBillingGroup" style="display:none;">
-            <div class="mb-2"><label class="form-label-sm">Email Thread Title</label><div class="input-group input-group-sm"><span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span><input type="text" name="emailThread" class="form-control border-start-0"></div></div>
-            <div class="row g-2 mb-2">
-                <div class="col-12 col-md-4"><label class="form-label-sm">Status Date</label><input type="date" name="billingStatusDate" class="form-control form-control-sm"></div>
-                <div class="col-12 col-md-4"><label class="form-label-sm">GR Number</label><input type="text" name="grNumber" class="form-control form-control-sm"></div>
-                <div class="col-12 col-md-4"><label class="form-label-sm">Invoice Number</label><input type="text" name="invoiceNumber" class="form-control form-control-sm"></div>
-            </div>
-        </div>
-        <div class="row g-2 mt-2" id="editPayInvUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label><div class="input-group input-group-sm"><input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control" placeholder="Paste link here..."><a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a></div><div id="editInvoiceLinkDisplay" class="mt-1"></div></div></div>
-        <div class="row g-2 mt-2" id="editPayCheckUploadGroup"><div class="col-12"><label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label><div class="input-group input-group-sm"><input type="url" name="checkUrl" id="editCheckUrl" class="form-control" placeholder="Paste link here..."><a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=drive_link" target="_blank" class="btn btn-outline-primary fw-bold px-3">UPLOAD FILES HERE</a></div><div id="editCheckLinkDisplay" class="mt-1"></div></div></div>
-</div>
-    <div class="row g-2 mb-2" id="editPayNotesGroup"><div class="col-12"><label class="form-label-sm">Payment Notes</label><input type="text" name="paymentNotes" id="editPaymentNotes" class="form-control form-control-sm"></div></div>
+          <div class="row g-3 mb-3" id="editPayAmountGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Amount</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white fw-bold">₱</span>
+                      <input type="number" step="0.01" name="amount" id="editAmount" class="form-control border-start-0 fw-bold text-success" value="0">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="editPayStatusGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Status</label>
+                  <select name="billingStatus" id="editBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('edit')"></select>
+              </div>
+          </div>
+
+          <div id="editPayBillingGroup" style="display:none;" class="mb-3">
+              <div class="row g-3">
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">Status Date</label>
+                      <input type="date" name="billingStatusDate" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">GR Number</label>
+                      <input type="text" name="grNumber" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-12 col-md-4">
+                      <label class="form-label-sm">Invoice Number</label>
+                      <input type="text" name="invoiceNumber" class="form-control form-control-sm">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="editPayEmailGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Email Thread Title</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
+                      <input type="text" name="emailThread" class="form-control border-start-0">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="editPayInvUploadGroup">
+              <div class="col-12">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+                      <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
+                  </div>
+                  <input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+                  <div id="editInvoiceLinkDisplay" class="mt-1"></div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="editPayCheckUploadGroup">
+              <div class="col-12">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
+                      <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
+                  </div>
+                  <input type="url" name="checkUrl" id="editCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+                  <div id="editCheckLinkDisplay" class="mt-1"></div>
+              </div>
+          </div>
+          
+          <div class="row g-3" id="editPayNotesGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Payment Notes</label>
+                  <input type="text" name="paymentNotes" id="editPaymentNotes" class="form-control form-control-sm">
+              </div>
+          </div>
+      </div>
   </div>
-  
-  <div class="mb-4" id="editNotesBlock"><label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2"></textarea></div>
-  
   <button type="submit" class="btn btn-warning w-100 py-3 fw-bold shadow-sm mb-2" id="editSubmitBtn"><i class="bi bi-cloud-arrow-up me-1"></i> SAVE CHANGES</button>
   <button type="button" class="btn btn-outline-danger w-100 py-2 fw-bold shadow-sm" id="editDeleteBtn" onclick="deleteFullEvent()"><i class="bi bi-trash3 me-1"></i> DELETE FULL PROJECT</button>
 </form></div></div></div></div>
@@ -1001,6 +1393,69 @@
 </div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+<script>
+  // PASTE YOUR FIREBASE CONFIG HERE
+  const firebaseConfig = {
+    apiKey: "AIzaSyADWnFhu2xZwGQERFsxP-Xl_OlEaJ6N3NM",
+    authDomain: "event-database-78db0.firebaseapp.com",
+    projectId: "event-database-78db0",
+    storageBucket: "event-database-78db0.appspot.com",
+    messagingSenderId: "130288942287",
+    appId: "1:130288942287:web:68d24ee8d0ef1ae9408bba"
+  };
+  
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // 🔥 THE MAGIC FIX: Enable Local Caching so data loads in milliseconds
+  db.enablePersistence({ synchronizeTabs: true })
+    .catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn("Multiple tabs open, persistence can only be enabled in one.");
+        } else if (err.code == 'unimplemented') {
+            console.warn("The current browser does not support local caching.");
+        }
+    });
+
+  // Restored for Photobooth Generator Google Drive operations
+  async function callApi(payloadData, method = 'POST', isSilent = false) {
+    if (!isSilent) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'block';
+    }
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payloadData),
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const result = await response.json();
+      if (!isSilent) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+      }
+      if (result.status === "error") {
+          console.error("Backend error:", result.message);
+          alert("Server Error: " + result.message); 
+          return null;
+      }
+      return result;
+    } catch (error) {
+      if (!isSilent) {
+          const loader = document.getElementById('loader');
+          if (loader) loader.style.display = 'none';
+      }
+      console.error("Fetch/Network Error:", error);
+      return { error: error.message };
+    }
+  }
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
@@ -1008,20 +1463,21 @@
   // This is your permanently designated Apps Script URL
   const API_URL = 'https://script.google.com/macros/s/AKfycbwYMEUmPOR9spn-_jC3WousZ9L5s8aksFrZwYDTGwW-N54S9q7P1BY-_KIVVEzi1TU/exec';
   let localLastUpdate = "0";
-  let rawEvents = [], rawPayments = [], currentTab = 'calendar';
+  let rawEvents = [], rawPayments = [], currentTab = 'events';
   let filteredEventsCache = []; 
   let currentCalendarDate = new Date(); 
   
   const baseCrew = ["Edgar","Francis","Mael","Lexie","Athan","Jovert","May","Tina","Jops","Grace","Jun","Tatalino","Joram","Roy","Smile"];
 
   // --- BOOTH QR CONSTANTS ---
-  const MASTER_QR_URL = "https://egmqr.vercel.app/";
-  const NETLIFY_BASE_URL = "https://egmgallery.vercel.app/main.html";
+  const MASTER_QR_URL = "https://webqr.createdbyegm.com/";
+  const NETLIFY_BASE_URL = "https://gallery.createdbyegm.com/main.html";
   const BACKUP_MASTER_QR_URL = "https://egmqr.github.io/web/";
-  const BACKUP_NETLIFY_BASE_URL = "https://egmqr.github.io/photo-viewer/main.html";
+  const BACKUP_NETLIFY_BASE_URL = "https://egmqr.github.io/photo-viewer/main.html";;
   let currentBoothMode = 'view';
   let allFetchedBoothEvents = [];
   let currentViewBooths = [];
+  let boothDetailsCache = {};
   let cropper = null;
   let croppedLogoPayload = null; 
   let croppedQrLogoPayload = null; 
@@ -1030,21 +1486,27 @@
   let selectedExistingQrLogoId = "";
   let existingLogosCache = null;
 
-  function isAuthenticated() {
-      const exp = localStorage.getItem('egm_auth_exp');
-      if (exp && parseInt(exp) > Date.now()) return true;
-      localStorage.removeItem('egm_auth_token');
-      return false;
+  // THE NEW FIREBASE GATEKEEPER (Dual-Role)
+  function getUserRole() {
+      return localStorage.getItem('egm_auth_role') || null;
   }
 
-  function requireAuth(actionFunction) {
-      if (isAuthenticated()) {
+  function requireAuth(actionFunction, requiresAdmin = false) {
+      const role = getUserRole();
+      const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+      
+      if (role && !isExpired) {
+          if (requiresAdmin && role !== 'admin') {
+              alert("Admin access required for this action.");
+              return;
+          }
           actionFunction();
       } else {
           pendingAuthAction = actionFunction;
           document.getElementById('authPassword').value = '';
           document.getElementById('authError').style.display = 'none';
-          new bootstrap.Modal(document.getElementById('authModal')).show();
+          const authModal = bootstrap.Modal.getInstance(document.getElementById('authModal')) || new bootstrap.Modal(document.getElementById('authModal'));
+          authModal.show();
           setTimeout(() => document.getElementById('authPassword').focus(), 500);
       }
   }
@@ -1055,53 +1517,86 @@
 
       const btn = document.getElementById('authSubmitBtn');
       const originalText = btn.innerHTML;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>VERIFYING...';
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>VERIFYING...';
       btn.disabled = true;
 
-      const res = await callApi({ action: 'verifyPassword', password: pass }, 'POST'); 
+      // Custom Role Checking
+      if (pass === "egmadmin") {
+          localStorage.setItem('egm_auth_role', 'admin');
+          localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000)); // 12 hours
+          finalizeAuth(btn, originalText);
+      } else if (pass === "editors1") {
+          localStorage.setItem('egm_auth_role', 'editor');
+          localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000));
+          finalizeAuth(btn, originalText);
+      } else {
+          document.getElementById('authError').innerText = "Incorrect Password!";
+          document.getElementById('authError').style.display = 'block';
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+      }
+  }
 
+  function finalizeAuth(btn, originalText) {
+      bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
+      if (pendingAuthAction) {
+          setTimeout(() => { pendingAuthAction(); pendingAuthAction = null; }, 300);
+      }
       btn.innerHTML = originalText;
       btn.disabled = false;
-
-      if (res && res.success) {
-          localStorage.setItem('egm_auth_exp', Date.now() + 3600000); // 1 hr
-          localStorage.setItem('egm_auth_token', pass); 
-          bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
-          
-          if (pendingAuthAction) {
-              setTimeout(() => {
-                  pendingAuthAction();
-                  pendingAuthAction = null;
-              }, 300);
-          }
-      } else {
-          document.getElementById('authError').innerText = res.error || "Incorrect Password!";
-          document.getElementById('authError').style.display = 'block';
-      }
   }
 
   function toggleTheme() {
       const body = document.body;
       const isDark = body.classList.toggle('dark-mode');
+      
+      // Save the explicit choice to the browser
       localStorage.setItem('egm_theme', isDark ? 'dark' : 'light');
       
       const icon = document.getElementById('themeIcon');
-      if (isDark) {
-          icon.className = 'bi bi-sun-fill text-warning';
-      } else {
-          icon.className = 'bi bi-moon-fill text-secondary';
+      if (icon) {
+          if (isDark) {
+              icon.className = 'bi bi-sun-fill text-warning';
+          } else {
+              icon.className = 'bi bi-moon-fill text-secondary';
+          }
       }
   }
 
   function applySavedTheme() {
+      // Only look at the dashboard's internal saved memory
       const savedTheme = localStorage.getItem('egm_theme');
-      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      const icon = document.getElementById('themeIcon');
+
+      // Rule: Default to Light Mode UNLESS they specifically saved 'dark'
+      if (savedTheme === 'dark') {
           document.body.classList.add('dark-mode');
-          document.getElementById('themeIcon').className = 'bi bi-sun-fill text-warning';
+          if (icon) icon.className = 'bi bi-sun-fill text-warning';
+      } else {
+          document.body.classList.remove('dark-mode');
+          if (icon) icon.className = 'bi bi-moon-fill text-secondary';
       }
   }
+  
+  // Run this exactly once when the page loads
   applySavedTheme();
-
+  function copyCurrentUrl() {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+          const btn = document.getElementById('copyFilterLinkBtn');
+          const originalHtml = btn.innerHTML;
+          btn.innerHTML = '<i class="bi bi-check2"></i> <span class="d-none d-sm-inline">Copied!</span>';
+          btn.classList.replace('btn-light', 'btn-success');
+          btn.classList.replace('border-secondary-subtle', 'border-success');
+          btn.classList.add('text-white');
+          
+          setTimeout(() => {
+              btn.innerHTML = originalHtml;
+              btn.classList.replace('btn-success', 'btn-light');
+              btn.classList.replace('border-success', 'border-secondary-subtle');
+              btn.classList.remove('text-white');
+          }, 2000);
+      });
+  }
   function formatAMPM(t) {
       if(!t || t==='--' || t.trim()==='') return '--:--';
       const match = t.trim().match(/(\d+):(\d+)\s*(AM|PM|am|pm)?/i);
@@ -1148,7 +1643,11 @@
       addCustomCrewCheckbox(input.value, containerId, true);
       input.value = '';
   }
-
+function handleAddCustomService(inputId, containerId) {
+      const input = document.getElementById(inputId);
+      addCustomServiceCheckbox(input.value, containerId, true);
+      input.value = '';
+  }
   function addCustomCrewCheckbox(name, containerId, checkDefault = true) {
       if(!name || name.trim() === '') return;
       name = name.trim();
@@ -1199,81 +1698,9 @@
       select.value = currentVal; 
   }
 
-  async function callApi(payloadData, method = 'POST', isSilent = false) {
-    if (!isSilent) {
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.display = 'block';
-    }
-
-    try {
-      // Regardless of what parameter is passed, we MUST use POST
-      // to bypass the preflight CORS security check on Apps Script Web Apps.
-      // Your backend script parses the action out of the payload.
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify(payloadData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (!isSilent) {
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.display = 'none';
-      }
-
-      if (result.status === "error") {
-          console.error("Backend caught an error:", result.message);
-          alert("Server Error: " + result.message); 
-          return null;
-      }
-
-      return result;
-
-    } catch (error) {
-      if (!isSilent) {
-          const loader = document.getElementById('loader');
-          if (loader) loader.style.display = 'none';
-      }
-      console.error("Fetch/Network Error:", error);
-      return { error: error.message };
-    }
-  }
-
-  // Replace your existing forceSync function with this:
-async function forceSync() {
-  const icon = document.getElementById('syncIcon');
-  icon.classList.add('spin-anim');
-  document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
   
-  try {
-      // Route specifically to the 'getSheetData' action in your backend
-      const [eventsRes, paymentsRes] = await Promise.all([
-          callApi({action: 'getSheetData', sheetName: 'EVENTS'}, 'POST', true),
-          callApi({action: 'getSheetData', sheetName: 'PAYMENTS'}, 'POST', true)
-      ]);
-      
-      if (eventsRes && eventsRes.success && paymentsRes && paymentsRes.success) {
-          // Map the nested .data array to match the structure processFetchedData expects
-          const combined = { events: eventsRes.data, payments: paymentsRes.data };
-          localStorage.setItem('egm_dashboard_data', JSON.stringify(combined));
-          processFetchedData(combined);
-      } else {
-          alert("Manual Sync Error: " + (eventsRes?.error || paymentsRes?.error || "Unknown error"));
-      }
-  } catch (e) {
-      alert("Sync failed. Check connection.");
-  }
-  
-  icon.classList.remove('spin-anim');
-  document.getElementById('bgSyncIndicator').style.display = 'none';
-}
+
+
 
   function togglePaymentUI(prefix) {
       const type = document.getElementById(prefix + 'PaymentType').value;
@@ -1305,48 +1732,110 @@ async function forceSync() {
           statGrp.style.display = 'block'; billGrp.style.display = 'block'; invUpGrp.style.display = 'block';
           statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
       }
+  // ... existing togglePaymentUI logic ...
+      checkInvoiceRequired(prefix);
   }
-  
-  function updateFilterStatuses() {
-      const type = document.getElementById('fPayType').value;
-      const statusSel = document.getElementById('fBillStatus');
-      const currentStatus = statusSel.value;
-      let options = '<option value="Unpaid">Unpaid / Processing</option><option value="">All Statuses</option>';
-      statusSel.disabled = false;
+  // Forces the Invoice URL to be required based on Billing Status
+  function checkInvoiceRequired(prefix) {
+      const status = document.getElementById(prefix + 'BillingStatus').value;
+      const invoiceInput = document.getElementById(prefix + 'InvoiceUrl');
       
-      if (['Cash AR', 'Online Transfer AR', 'Check AR'].includes(type)) {
-          options += '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
-      } else if (['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR'].includes(type)) {
-          options += '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
-      } else if (type === 'Billing') {
-          options += '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
+      if (!invoiceInput) return;
+
+      // If the status is any of these, lock the field as REQUIRED
+      const requiredStatuses = [
+          'Invoice Uploaded', 'Invoice Sent', 'GR Pending', 
+          'GR Received', 'GR Processed', 'Payment released'
+      ];
+      
+      if (requiredStatuses.includes(status)) {
+          invoiceInput.setAttribute('required', 'required');
       } else {
-          options += '<option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="Invoice Sent">Invoice Sent</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
+          invoiceInput.removeAttribute('required');
       }
-      statusSel.innerHTML = options;
-      if (options.includes(`value="${currentStatus}"`)) statusSel.value = currentStatus;
-      else statusSel.value = type ? "" : "Unpaid"; 
+  }
+  // THE UX MAGIC: A Master Map defining exactly which Statuses belong to which Payment Types
+  const PAY_MAPS = {
+      'Cash AR': ['Pending', 'Paid'],
+      'Cash ORCR': ['Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Paid'],
+      'Online Transfer AR': ['Pending', 'Paid'],
+      'Online Transfer ORCR': ['Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Paid'],
+      'Billing': ['Pending Invoice', 'Invoice Uploaded', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'],
+      'Check AR': ['Pending', 'Paid'],
+      'Check ORCR': ['Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Paid']
+  };
+
+  const ALL_PAY_TYPES = Object.keys(PAY_MAPS);
+  const ALL_STATUSES = ['Pending', 'Paid', 'Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
+
+  // RULE 1: Triggered when Payment Type changes -> Updates Billing Status dropdown
+  function updateFilterStatuses() {
+      const typeSel = document.getElementById('fPayType');
+      const statusSel = document.getElementById('fBillStatus');
+      
+      const currentType = typeSel.value;
+      const currentStatus = statusSel.value;
+      
+      // 1. Determine which statuses are allowed based on the selected Type
+      let validStatuses = ALL_STATUSES;
+      if (currentType) {
+          validStatuses = PAY_MAPS[currentType] || [];
+      }
+      
+      // 2. Rebuild the Billing Status dropdown with only the allowed options
+      let optionsHtml = '<option value="Unpaid">Unpaid / Processing</option><option value="">All Statuses</option>';
+      validStatuses.forEach(s => {
+          optionsHtml += `<option value="${s}">${s}</option>`;
+      });
+      statusSel.innerHTML = optionsHtml;
+      
+      // 3. Keep the current status if it's still applicable; otherwise gently reset to Unpaid
+      if (validStatuses.includes(currentStatus) || currentStatus === 'Unpaid' || currentStatus === '') {
+          statusSel.value = currentStatus;
+      } else {
+          statusSel.value = 'Unpaid'; 
+      }
   }
 
+  // RULE 2: Triggered when Billing Status changes -> Updates Payment Type dropdown
   function updateFilterTypes() {
-      const status = document.getElementById('fBillStatus').value;
+      const statusSel = document.getElementById('fBillStatus');
       const typeSel = document.getElementById('fPayType');
       
-      if (['GR Pending', 'GR Received', 'GR Processed', 'Payment released'].includes(status)) {
-          if (typeSel.value !== 'Billing') { typeSel.value = 'Billing'; updateFilterStatuses(); document.getElementById('fBillStatus').value = status; }
-      } else if (['Invoice Sent', 'Invoice Uploaded'].includes(status)) {
-          // If the user selects an invoice status, ensure the Payment Type is one that supports invoices
-          if (!['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR', 'Billing'].includes(typeSel.value)) { 
-              typeSel.value = 'Cash ORCR'; updateFilterStatuses(); document.getElementById('fBillStatus').value = status; 
-          }
+      const currentStatus = statusSel.value;
+      const currentType = typeSel.value;
+      
+      // 1. Determine which Types are allowed based on the selected Status
+      let validTypes = ALL_PAY_TYPES;
+      if (currentStatus && currentStatus !== 'Unpaid') {
+          validTypes = ALL_PAY_TYPES.filter(type => PAY_MAPS[type] && PAY_MAPS[type].includes(currentStatus));
+      }
+      
+      // 2. Rebuild the Payment Type dropdown with only the allowed options
+      let optionsHtml = '<option value="">All Types</option>';
+      validTypes.forEach(t => {
+          optionsHtml += `<option value="${t}">${t}</option>`;
+      });
+      typeSel.innerHTML = optionsHtml;
+      
+      // 3. Keep the current type if it's still applicable; otherwise gently reset to All Types
+      if (validTypes.includes(currentType) || currentType === '') {
+          typeSel.value = currentType;
+      } else {
+          typeSel.value = '';
       }
   }
 
   function toggleAvpFields(isAvp, prefix) { 
-      document.getElementById(prefix + 'AvpHiddenFields').style.display = isAvp ? 'none' : 'flex'; 
-      document.getElementById(prefix + 'ServicesContactFields').style.display = isAvp ? 'none' : 'block'; 
-      document.getElementById(prefix + 'DateTimeBlock').style.display = isAvp ? 'none' : 'block'; 
-      document.getElementById(prefix + 'CrewBlock').style.display = isAvp ? 'none' : 'block'; 
+      const avpFields = document.getElementById(prefix + 'AvpHiddenFields');
+      const services = document.getElementById(prefix + 'ServicesContactFields');
+      const dateTime = document.getElementById(prefix + 'DateTimeBlock');
+      const crew = document.getElementById(prefix + 'CrewBlock');
+      
+      if(avpFields) avpFields.style.display = isAvp ? 'none' : 'flex'; 
+      if(services) services.style.display = isAvp ? 'none' : 'block'; 
+      if(dateTime) dateTime.style.display = isAvp ? 'none' : 'block'; 
+      if(crew) crew.style.display = isAvp ? 'none' : 'block'; 
       
       const formId = prefix === 'new' ? 'eventForm' : 'editForm';
       const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
@@ -1367,6 +1856,15 @@ async function forceSync() {
       }
   }
 
+  function autoFillEndDate(prefix) {
+      const start = document.getElementById(prefix + 'EventDate');
+      const end = document.getElementById(prefix + 'EventEndDate');
+      // If end date is empty or earlier than start date, auto-sync them!
+      if (start && end && start.value) {
+          if (!end.value || end.value < start.value) { end.value = start.value; }
+      }
+  }
+
   function toggleEntryMode(prefix) {
       const isLeave = document.getElementById(prefix + 'TypeLeave').checked;
       const generalBlock = document.getElementById(prefix + 'GeneralFields');
@@ -1379,6 +1877,14 @@ async function forceSync() {
       const eventNameInput = document.querySelector(`#${formId} input[name="eventName"]`);
       const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
 
+      // Dynamic Date/Time UI Elements
+      const dateLabel = document.getElementById(prefix + 'DateLabel');
+      const endDateCol = document.getElementById(prefix + 'EndDateCol');
+      const callTimeCol = document.getElementById(prefix + 'CallTimeCol');
+      const startTimeCol = document.getElementById(prefix + 'StartTimeCol');
+      const endTimeCol = document.getElementById(prefix + 'EndTimeCol');
+      const endDateInput = document.getElementById(prefix + 'EventEndDate');
+
       if (isLeave) {
           generalBlock.style.display = 'none';
           servicesBlock.style.display = 'none';
@@ -1387,78 +1893,63 @@ async function forceSync() {
           if(crewBlock) crewBlock.style.display = 'block';
           if(eventNameInput) eventNameInput.removeAttribute('required');
           if(dateInput) dateInput.setAttribute('required', 'required');
+
+          // UX Magic: Morph the Date row for Leaves
+          if (dateLabel) dateLabel.innerText = "Start Date";
+          if (endDateCol) endDateCol.style.display = 'block';
+          
+          // Require end date for NEW leaves, but disable requirement for EDITS
+          if (prefix === 'new') {
+              if (endDateInput) endDateInput.setAttribute('required', 'required');
+          } else {
+              if (endDateInput) endDateInput.removeAttribute('required');
+          }
+
+          if (callTimeCol) callTimeCol.style.display = 'none';
+          if (startTimeCol) startTimeCol.style.display = 'none';
+          if (endTimeCol) endTimeCol.style.display = 'none';
+
       } else {
           generalBlock.style.display = 'block';
           paymentBlock.style.display = 'block';
           if(eventNameInput) eventNameInput.setAttribute('required', 'required');
           const isAvp = document.getElementById(prefix + 'AvpCheck').checked;
           toggleAvpFields(isAvp, prefix);
+
+          // Revert the Date row for normal Events
+          if (dateLabel) dateLabel.innerText = "Event Date";
+          if (endDateCol) endDateCol.style.display = 'none';
+          if (endDateInput) endDateInput.removeAttribute('required');
+          if (callTimeCol) callTimeCol.style.display = 'block';
+          if (startTimeCol) startTimeCol.style.display = 'block';
+          if (endTimeCol) endTimeCol.style.display = 'block';
       }
   }
 
-  function processFetchedData(res) {
-      rawPayments = res.payments || [];
-      rawEvents = res.events.map(ev => {
-        const pay = rawPayments.find(p => p['Event ID'] === ev['Event ID']);
-        return {
-            ...ev, 
-            'Event Date': normalizeDateStr(ev['Event Date']),
-            'Payment Type': pay?pay['Payment Type']:'', 
-            'Billing Status': pay?pay['Billing Status']:'', 
-            'Billing Status Date': normalizeDateStr(pay?pay['Billing Status Date']:''),
-            'GR Number': pay?pay['GR Number']:'',
-            'Invoice Number': pay?pay['Invoice Number']:'',
-            'Email Thread': pay?pay['Email Thread Title']:'',
-            'Amount': pay?pay['Amount']:'',
-            'Payment Notes': pay?pay['Payment Notes']:'',
-            'Notes': pay?pay['Notes']:'',
-            'Invoice URL': pay?pay['Invoice URL']:'',
-            'Check URL': pay?pay['Check URL']:''
-        };
-      });
-      updateCrewFilterDropdown(rawEvents);
-      applyFilters();
-  }
 
-  async function fetchAllData() {
-  const cachedData = localStorage.getItem('egm_dashboard_data');
 
-  if (cachedData) {
-      processFetchedData(JSON.parse(cachedData));
-      document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
-  }
 
-  try {
-      // A direct GET request triggers your backend's doGet() function
-      const response = await fetch(API_URL);
-      const res = await response.json();
-
-      document.getElementById('bgSyncIndicator').style.display = 'none';
-
-      if(res && res.success) {
-          localStorage.setItem('egm_dashboard_data', JSON.stringify(res));
-          processFetchedData(res);
-      }
-  } catch (error) {
-      document.getElementById('bgSyncIndicator').style.display = 'none';
-      console.error("Initial Fetch Error:", error);
-  }
-}
 
   function clearFilters() {
     ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
     if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
     updateFilterStatuses();
+    
+    // Explicitly reset the calendar to the current month when the Clear button is clicked!
+    currentCalendarDate = new Date(); 
+    
     applyFilters();
   }
 
   function applyFilters() {
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
-
+    let url = new URL(window.location);
+    if(currentTab === 'editqueue') renderEditingQueue(filtered);
     if(currentTab === 'events' || currentTab === 'calendar') {
       const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
-      let filtered = rawEvents;
+      
+      let filtered = rawEvents; 
       
       if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n) || (e['Event Venue'] && e['Event Venue'].toLowerCase().includes(n)));
       if(dF) { filtered = filtered.filter(e => e['Event Date'] >= dF); } 
@@ -1468,30 +1959,136 @@ async function forceSync() {
       if(s) filtered = filtered.filter(e => e['Event Status'] === s);
       
       filteredEventsCache = filtered; 
-      renderEvents(filtered, !n && !dF && !dT && !c && !s);
+      
+      // Check if the user is actively using ANY filter
+      const isDefaultView = (!n && !dF && !dT && !c && !s);
+      let listFiltered = filtered;
+      
+      // Hide ONLY Pencil Booked if no filters are actively applied (Cancelled stays visible)
+      if (isDefaultView) { 
+          listFiltered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked');
+      }
+      
+      // --- CALENDAR AUTO-JUMP LOGIC ---
+      // We no longer force a jump to today on background saves, keeping you exactly on the month you are editing!
+      if (!isDefaultView && filtered.length > 0) {
+          // If actively searching, find the earliest date among the filtered results
+          const earliestDate = filtered.map(e => e['Event Date']).filter(Boolean).sort()[0];
+          if (earliestDate) {
+              const dParts = earliestDate.split('-');
+              // Jump the calendar to the month and year of that first hit
+              currentCalendarDate = new Date(dParts[0], dParts[1] - 1, 1);
+          }
+      }
+      // --------------------------------
+      
+      renderEvents(listFiltered, isDefaultView);
       renderCalendar(filtered);
+
+      // Push active Event filters to the URL
+      url.searchParams.set('tab', currentTab);
+      if(n) url.searchParams.set('fName', n); else url.searchParams.delete('fName');
+      if(dF) url.searchParams.set('fDateFrom', dF); else url.searchParams.delete('fDateFrom');
+      if(dT) url.searchParams.set('fDateTo', dT); else url.searchParams.delete('fDateTo');
+      if(c) url.searchParams.set('fCrew', c); else url.searchParams.delete('fCrew');
+      if(s) url.searchParams.set('fStatus', s); else url.searchParams.delete('fStatus');
+      
+      // Clean up Payment URL params
+      ['q', 'grInv', 'type', 'status'].forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url);
+
     } else if (currentTab === 'payments') {
       const q=document.getElementById('fPaySearch').value.toLowerCase(), 
             grInv=document.getElementById('fGrInv').value.toLowerCase(),
             t=document.getElementById('fPayType').value, 
             s=document.getElementById('fBillStatus').value;
+            
+      // Start with ALL events so they remain searchable
       let filtered = rawEvents;
+      
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
       if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
       if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
       
       if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed', 'Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Pending', 'Pending Clearance'].includes(e['Billing Status'])); } 
       else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
+
+      // Hide Pencil Booked and Cancelled IF the user is NOT actively typing a text search
+      if (!q && !grInv) {
+          filtered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
+      }
       
       renderPayments(filtered);
       
-      let url = new URL(window.location);
+      // Push active Payment filters to the URL
       url.searchParams.set('tab', 'payments');
       if(q) url.searchParams.set('q', q); else url.searchParams.delete('q');
       if(grInv) url.searchParams.set('grInv', grInv); else url.searchParams.delete('grInv');
       if(t) url.searchParams.set('type', t); else url.searchParams.delete('type');
       if(s && s !== 'Unpaid') url.searchParams.set('status', s); else url.searchParams.delete('status');
+
+      // Clean up Event URL params
+      ['fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus'].forEach(p => url.searchParams.delete(p));
       window.history.replaceState({}, '', url);
+    }
+  }
+
+  function switchTab(t) {
+    currentTab = t;
+    document.getElementById('events-view').style.display = t==='events'?'block':'none';
+    document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
+    document.getElementById('editqueue-view').style.display = t==='editqueue'?'block':'none';
+    document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
+    document.getElementById('payroll-view').style.display = t==='payroll'?'block':'none';
+    document.getElementById('booth-view').style.display = t==='booth'?'block':'none';
+    document.getElementById('expenses-view').style.display = t==='expenses'?'block':'none';
+    
+    document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar' || t==='editqueue') ? 'block' : 'none';
+    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
+    
+    const filterBtn = document.getElementById('filterToggleBtn');
+    const filterCollapseEl = document.getElementById('filterCollapse');
+    const copyLinkBtn = document.getElementById('copyFilterLinkBtn');
+
+    if (t === 'booth' || t === 'expenses') {
+        filterBtn.classList.remove('d-flex'); filterBtn.classList.add('d-none');
+        if(copyLinkBtn) { copyLinkBtn.classList.remove('d-flex'); copyLinkBtn.classList.add('d-none'); }
+        if (filterCollapseEl.classList.contains('show')) {
+            let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
+            bsCollapse.hide();
+        }
+    } else {
+        filterBtn.classList.remove('d-none'); filterBtn.classList.add('d-flex');
+        if(copyLinkBtn) { copyLinkBtn.classList.remove('d-none'); copyLinkBtn.classList.add('d-flex'); }
+        if (window.innerWidth >= 768) {
+            if (!filterCollapseEl.classList.contains('show')) {
+                let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
+                bsCollapse.show();
+            }
+        }
+    }
+    
+    document.getElementById('e-tab').classList.toggle('active', t==='events');
+    document.getElementById('c-tab').classList.toggle('active', t==='calendar');
+    document.getElementById('b-tab').classList.toggle('active', t==='booth');
+    document.getElementById('p-tab').classList.toggle('active', t==='payments');
+    document.getElementById('ex-tab').classList.toggle('active', t==='expenses');
+    
+    if (t === 'booth') {
+        if (currentBoothMode === 'new') { setBoothMode('view'); } 
+        else { setBoothMode(currentBoothMode); }
+        
+        let url = new URL(window.location);
+        url.searchParams.set('tab', 'booth');
+        ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus'].forEach(p => url.searchParams.delete(p));
+        window.history.replaceState({}, '', url);
+    } else if (t === 'expenses') {
+        let url = new URL(window.location);
+        url.searchParams.set('tab', 'expenses');
+        ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus'].forEach(p => url.searchParams.delete(p));
+        window.history.replaceState({}, '', url);
+    } else {
+        applyFilters(); 
     }
   }
 
@@ -1545,16 +2142,25 @@ async function forceSync() {
             evs.forEach(e => {
               
               if (e['Event Name'] === 'Crew Leave') {
+                  // Format the date for the Leave Card
+                  let leaveDateString = e['Event Date'];
+                  if (leaveDateString && leaveDateString.includes('-')) {
+                      const dParts = leaveDateString.split('-');
+                      const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
+                      leaveDateString = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+                  }
+
                   html += `<div class="col-12 col-md-6 col-lg-4">
                     <div class="card leave-card p-2 p-md-3" style="height: auto !important;">
                       <div class="d-flex justify-content-between align-items-center mb-2">
-                          <div>
+                          <div style="z-index: 30;">
                               <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
                               <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
-                              <span onclick="requireAuth(() => openEditModal('${e['Event ID']}', '${e['Event Date']}'))" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
+                              <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
                               <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
                           </div>
                       </div>
+                      <div class="text-danger fw-bold mb-2 small"><i class="bi bi-calendar2-event opacity-75 me-1"></i> ${leaveDateString}</div>
                       <div class="mb-1">
                           <div style="line-height: 1.6;">
                               ${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-2 fw-bold px-2 py-1 text-wrap" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}
@@ -1583,10 +2189,25 @@ async function forceSync() {
                   });
               });
 
-              let statusBadgeClass = 'badge-soft-dark';
-              if(e['Event Status'] === 'Confirmed') statusBadgeClass = 'badge-soft-success';
-              else if(e['Event Status'] === 'Cancelled') statusBadgeClass = 'badge-soft-warning';
+              // --- NEW CARD STYLING LOGIC ---
+              let cardCustomClass = '';
+              let stampHtml = '';
+              let statusPillHtml = '';
 
+              if (e['Event Status'] === 'Confirmed') {
+                  cardCustomClass = 'card-confirmed';
+                  statusPillHtml = `<span class="badge badge-soft-success px-2 py-1 shadow-sm rounded-pill">Confirmed</span>`;
+              } else if (e['Event Status'] === 'Cancelled') {
+                  cardCustomClass = 'card-cancelled';
+                  stampHtml = `<div class="stamp-container"><div class="status-stamp stamp-cancelled">CANCELLED</div></div>`;
+              } else if (e['Event Status'] === 'Pencil Booked') {
+                  cardCustomClass = 'card-pencil';
+                  stampHtml = `<div class="stamp-container"><div class="status-stamp stamp-pencil">PENCIL BOOKED</div></div>`;
+              } else {
+                  // Fallback just in case
+                  statusPillHtml = `<span class="badge badge-soft-dark px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>`;
+              }
+              // ------------------------------
               let venueDisplay = `<span class="fw-medium text-dark">${e['Event Venue'] || 'No Venue Set'}</span>`;
               if (e['Event Venue Link']) {
                   venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
@@ -1604,28 +2225,46 @@ async function forceSync() {
                   }
               }).join('') : '-';
 
-              html += `<div class="col-12 col-md-6 col-lg-4"><div class="card p-3 p-md-4">
+              // --- ADDED: Format the Date beautifully for the Card ---
+              let displayDateString = e['Event Date'];
+              if (displayDateString && displayDateString.includes('-')) {
+                  const dParts = displayDateString.split('-');
+                  const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
+                  displayDateString = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+              }
+
+              html += `<div class="col-12 col-md-6 col-lg-4">
+                  <div class="card p-3 p-md-4 ${cardCustomClass}" style="position: relative; overflow: hidden;">
+                    ${stampHtml}
                     <div class="d-flex justify-content-between mb-3 align-items-center">
-                        <div>
-                            <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
-                            <span onclick="requireAuth(() => openEditModal('${e['Event ID']}', '${e['Event Date']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
+                        <div style="z-index: 30;"> <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
+                            <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
                             <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
                         </div>
-                        <span class="badge ${statusBadgeClass} px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>
+                        ${statusPillHtml}
                     </div>
                     
                     <h5 class="fw-bold mb-1 lh-sm text-dark">${e['Event Name']}</h5>
-                    <p class="small text-muted mb-4"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> ${venueDisplay}</p>
+                    <p class="small text-muted mb-3"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> ${venueDisplay}</p>
                     
-                    <div class="small text-secondary">
-                        <div class="d-flex mb-2 align-items-start">
-                            <i class="card-icon bi bi-clock-fill text-primary opacity-75"></i> 
-                            <div>
-                                <span class="d-block mb-1"><strong class="text-dark">Call:</strong> <span class="text-danger fw-bold">${formatAMPM(e['Call Time'])}</span></span>
-                                <span class="d-block"><strong class="text-dark">Shoot:</strong> ${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</span>
+                    <div class="bg-light p-3 rounded-3 border mb-3">
+                        <div class="d-flex align-items-center mb-2 pb-2 border-bottom border-secondary-subtle">
+                            <i class="bi bi-calendar2-event-fill text-primary fs-5 me-2"></i>
+                            <span class="fw-bold text-dark" style="font-size: 0.95rem; letter-spacing: 0.3px;">${displayDateString}</span>
+                        </div>
+                        <div class="row g-2 small">
+                            <div class="col-6">
+                                <span class="text-muted d-block mb-1" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Call Time</span>
+                                <span class="text-danger fw-bold"><i class="bi bi-alarm text-danger opacity-75 me-1"></i>${formatAMPM(e['Call Time'])}</span>
+                            </div>
+                            <div class="col-6 border-start border-secondary-subtle">
+                                <span class="text-muted d-block mb-1 ms-2" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Shoot Time</span>
+                                <span class="text-dark fw-bold ms-2"><i class="bi bi-camera-video-fill text-primary opacity-75 me-1"></i>${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</span>
                             </div>
                         </div>
-                        
+                    </div>
+                    
+                    <div class="small text-secondary">
                         <div class="d-flex mb-2 align-items-start">
                             <i class="card-icon bi bi-list-check text-secondary opacity-75 mt-1"></i>
                             <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Services:</strong><br>${servicesBadges}</div>
@@ -1633,11 +2272,11 @@ async function forceSync() {
                         
                         <div class="d-flex mb-3 align-items-start">
                             <i class="card-icon bi bi-people-fill text-info opacity-75 mt-1"></i> 
-                            <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-light text-dark border me-1 mb-2 fw-bold px-2 py-1 text-wrap" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '-'}</div>
+                            <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-dark border border-secondary-subtle me-1 mb-2 fw-bold px-2 py-1 text-wrap shadow-sm" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '-'}</div>
                         </div>
                         
-                        <div class="bg-light p-2 rounded-3 border mb-3">
-                            <p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2 text-dark">${e['Contact Number']}</span></p>
+                        <div class="bg-white p-2 rounded-3 border mb-3 shadow-sm">
+                            <p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2 text-dark fw-medium">${e['Contact Number']}</span></p>
                         </div>
                         
                         <p class="mb-0 text-muted fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
@@ -1693,7 +2332,7 @@ async function forceSync() {
 
           dayEvents.forEach(e => {
               if (e['Event Name'] === 'Crew Leave') {
-                  eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="openEditModal('${e['Event ID']}', '${e['Event Date']}', true)" title="Leave: ${e['Manpower']}">
+                  eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="openEditModal('${e['Doc ID']}', true)" title="Leave: ${e['Manpower']}">
                       <span class="opacity-75">✈️</span> <strong>${e['Manpower'] || 'Leave'}</strong>
                   </div>`;
               } else {
@@ -1702,13 +2341,19 @@ async function forceSync() {
                   else if(e['Event Status'] === 'Cancelled') pillClass = 'cal-status-cancelled';
                   
                   const timePrefix = e['Event Start Time'] ? `${formatAMPM(e['Event Start Time'])} ` : '';
-                  eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Event ID']}', '${e['Event Date']}', true)" title="${e['Event Name']}">
+                  eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Doc ID']}', true)" title="${e['Event Name']}">
                       <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
                   </div>`;
               }
           });
           
-          html += `<div class="${dayClass}"><div class="date-number">${d}</div>${eventsHtml}</div>`;
+          html += `<div class="${dayClass}">
+                      <div class="d-flex justify-content-between align-items-start mb-1 w-100">
+                          <i class="bi bi-plus-square-fill text-secondary opacity-25 cal-add-btn" onclick="requireAuth(() => openNewEventWithDate('${currentDateStr}'))" title="New Entry on ${currentDateStr}"></i>
+                          <div class="date-number mb-0">${d}</div>
+                      </div>
+                      ${eventsHtml}
+                   </div>`;
       }
       
       const totalCells = firstDay + daysInMonth;
@@ -1719,64 +2364,131 @@ async function forceSync() {
 
   function renderPayments(data) {
     let html = '';
-    const uniqueDataMap = new Map();
-    data.forEach(item => { if (item['Event Name'] !== 'Crew Leave' && !uniqueDataMap.has(item['Event ID'])) uniqueDataMap.set(item['Event ID'], item); });
-    const uniqueData = Array.from(uniqueDataMap.values());
-    uniqueData.sort((a, b) => {
+    const q = document.getElementById('fPaySearch') ? document.getElementById('fPaySearch').value.toLowerCase().trim() : '';
+    const grInv = document.getElementById('fGrInv') ? document.getElementById('fGrInv').value.toLowerCase().trim() : '';
+    const payType = document.getElementById('fPayType') ? document.getElementById('fPayType').value : '';
+    const billStatus = document.getElementById('fBillStatus') ? document.getElementById('fBillStatus').value : 'Unpaid';
+    
+    const hasTextSearch = q.length > 0 || grInv.length > 0;
+    
+    // Check if the user is explicitly filtering by payment (ignoring the default "Unpaid" or "All Statuses")
+    const hasExplicitPaymentFilter = payType !== '' || (billStatus !== '' && billStatus !== 'Unpaid');
+
+    // ONLY show added days if searching by text AND no specific payment filters are applied
+    const showAllDays = hasTextSearch && !hasExplicitPaymentFilter;
+
+    const absoluteEventCounts = {};
+    const projectMainDays = {};
+    const projectPaymentData = {};
+    
+    // 1. Group and Sort ALL raw events to find the true chronological Main Day and Payment Data
+    const grouped = {};
+    rawEvents.forEach(item => {
+        if (item['Event Name'] !== 'Crew Leave') {
+            const id = item['Event ID'];
+            absoluteEventCounts[id] = (absoluteEventCounts[id] || 0) + 1;
+            if (!grouped[id]) grouped[id] = [];
+            grouped[id].push(item);
+        }
+    });
+
+    for (let id in grouped) {
+        let days = grouped[id];
+        // Sort chronologically
+        days.sort((a, b) => {
+            let dateA = a['Event Date'] || '9999-99-99';
+            let dateB = b['Event Date'] || '9999-99-99';
+            if (dateA !== dateB) return dateA.localeCompare(dateB);
+            let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
+            let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
+            return timeA.localeCompare(timeB);
+        });
+        
+        projectMainDays[id] = days[0]['Doc ID']; // Chronologically first is ALWAYS Main Day
+        
+        // Hunt for the document that actually holds the payment info
+        let payDoc = days.find(d => d['Payment Type']) || days[0];
+        projectPaymentData[id] = payDoc;
+    }
+
+    // 2. Filter the table data based on our smart rules
+    let displayData = [];
+    if (showAllDays) {
+        // Text search WITHOUT specific payment filters: Show Main Days and Added Days
+        displayData = data.filter(item => item['Event Name'] !== 'Crew Leave');
+    } else {
+        // Default view OR Explicit Payment Filter: ONLY show the true Main Day
+        displayData = data.filter(item => item['Doc ID'] === projectMainDays[item['Event ID']] && item['Event Name'] !== 'Crew Leave');
+    }
+
+    // Sort the final display rows
+    displayData.sort((a, b) => {
         let dateA = a['Event Date'] || ''; let dateB = b['Event Date'] || ''; return dateB.localeCompare(dateA); 
     });
 
-    if (uniqueData.length === 0) {
+    if (displayData.length === 0) {
         document.getElementById('p-body').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>No payment records found.</td></tr>';
         return;
     }
 
-    uniqueData.forEach(p => {
+    displayData.forEach(p => {
+      const evId = p['Event ID'];
+      const payData = projectPaymentData[evId]; // Pull financial data from the smart source!
+      
       const isAvp = p['AVP Required'] === 'TRUE';
-      const nameDisplay = isAvp ? `<span class="fw-bold text-dark">${p['Event Name']}</span> <span class="badge badge-avp rounded-pill shadow-sm">AVP</span>` : `<span class="fw-bold text-dark">${p['Event Name']}</span>`;
+      const multiDayCount = absoluteEventCounts[evId];
+      
+      // UX BONUS: Add a badge if this payment covers multiple days/locations
+      const multiBadge = multiDayCount > 1 ? `<span class="badge badge-teal ms-1" style="font-size: 0.65rem;">+${multiDayCount - 1} Day/Loc</span>` : '';
+      
+      const nameDisplay = isAvp ? `<span class="fw-bold text-dark">${p['Event Name']}</span> <span class="badge badge-avp rounded-pill shadow-sm">AVP</span> ${multiBadge}` : `<span class="fw-bold text-dark">${p['Event Name']}</span> ${multiBadge}`;
       
       let badgeClass = 'badge-soft-dark';
-      if(p['Payment Type'] === 'Billing') badgeClass = 'badge-soft-warning';
-      else if(p['Payment Type']) badgeClass = 'badge-soft-success';
+      if(payData['Payment Type'] === 'Billing') badgeClass = 'badge-soft-warning';
+      else if(payData['Payment Type']) badgeClass = 'badge-soft-success';
       
-      if(p['Billing Status'] === 'GR Pending') badgeClass = 'badge-yellow';
-      if(p['Billing Status'] === 'GR Received') badgeClass = 'badge-orange';
-      if(p['Billing Status'] === 'GR Processed') badgeClass = 'badge-teal';
-      if(p['Billing Status'] === 'Payment released') badgeClass = 'badge-go-green';
+      if(payData['Billing Status'] === 'GR Pending') badgeClass = 'badge-yellow';
+      if(payData['Billing Status'] === 'GR Received') badgeClass = 'badge-orange';
+      if(payData['Billing Status'] === 'GR Processed') badgeClass = 'badge-teal';
+      if(payData['Billing Status'] === 'Payment released') badgeClass = 'badge-go-green';
 
-      let badge = `<span class="badge ${badgeClass} px-2 py-1 rounded-pill">${p['Billing Status']||'Pending'}</span>`;
-      let dateStr = p['Billing Status Date'] ? new Date(p['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
+      let badge = `<span class="badge ${badgeClass} px-2 py-1 rounded-pill">${payData['Billing Status']||'Pending'}</span>`;
+      let dateStr = payData['Billing Status Date'] ? new Date(payData['Billing Status Date']).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
       let eventDateStr = p['Event Date'] ? new Date(p['Event Date']).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '-';
 
-     let actionHtml = '';
-      if (['Cash ORCR', 'Billing', 'Online Transfer ORCR', 'Check ORCR'].includes(p['Payment Type'])) {
-          if (p['Invoice URL']) {
-              actionHtml += `<a href="${p['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none shadow-sm"><i class="bi bi-box-arrow-up-right me-1"></i>View Inv</a> `;
-          }
-      }
-      if (['Check', 'Check AR', 'Check ORCR'].includes(p['Payment Type'])) {
-          if (p['Check URL']) {
-              actionHtml += `<a href="${p['Check URL']}" target="_blank" class="badge bg-success text-white me-1 text-decoration-none shadow-sm"><i class="bi bi-box-arrow-up-right me-1"></i>View Check</a> `;
-          }
-      }
+      let actionHtml = '';
+      
+      // If the payment type requires an invoice and the URL exists, show the View badge
+      if (['Cash ORCR', 'Billing', 'Online Transfer ORCR', 'Check ORCR'].includes(payData['Payment Type'])) {
+          if (payData['Invoice URL']) {
+              actionHtml += `<a href="${payData['Invoice URL']}" target="_blank" class="badge bg-success text-white me-1 mb-1 text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>View Inv</a> `;
+          }
+      }
+      
+      // If the payment type requires a check and the URL exists, show the View badge
+      if (['Check', 'Check AR', 'Check ORCR'].includes(payData['Payment Type'])) {
+          if (payData['Check URL']) {
+              actionHtml += `<a href="${payData['Check URL']}" target="_blank" class="badge bg-success text-white me-1 mb-1 text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>View Check</a>`;
+          }
+      }
 
-      let amountStr = p['Amount'] ? `<br><strong class="text-success">₱${Number(p['Amount']).toLocaleString()}</strong>` : '';
+      let amountStr = payData['Amount'] ? `<br><strong class="text-success">₱${Number(payData['Amount']).toLocaleString()}</strong>` : '';
 
       html += `<tr>
         <td class="fw-bold text-nowrap text-secondary">
-            #${p['Event ID']}
-            <span onclick="requireAuth(() => openEditModal('${p['Event ID']}', '${p['Event Date']}'))" class="edit-trigger ms-1 px-1" title="Edit Entry"><i class="bi bi-pencil-square"></i></span>
+            #${evId}
+            <span onclick="requireAuth(() => openEditModal('${p['Doc ID']}'))" class="edit-trigger ms-1 px-1" title="Edit Entry"><i class="bi bi-pencil-square"></i></span>
         </td>
         <td style="min-width: 180px;">${nameDisplay}<br><span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${eventDateStr}</span></td>
-        <td class="text-nowrap"><span class="badge bg-light text-dark border">${p['Payment Type']||'-'}</span>${amountStr}</td>
+        <td class="text-nowrap"><span class="badge bg-light text-dark border">${payData['Payment Type']||'-'}</span>${amountStr}</td>
         <td class="text-secondary" style="min-width: 180px; max-width: 250px;">
-            <div class="text-truncate" title="${p['Email Thread']||'-'}"><i class="bi bi-envelope me-1 opacity-50"></i> ${p['Email Thread']||'-'}</div>
-            <div class="small text-muted fw-bold fst-italic text-wrap text-break mt-1" style="line-height: 1.3;">Note: ${p['Payment Notes']||'None'}</div>
+            <div class="text-truncate" title="${payData['Email Thread']||'-'}"><i class="bi bi-envelope me-1 opacity-50"></i> ${payData['Email Thread']||'-'}</div>
+            <div class="small text-muted fw-bold fst-italic text-wrap text-break mt-1" style="line-height: 1.3;">Note: ${payData['Payment Notes']||'None'}</div>
         </td>
         <td class="text-nowrap">${badge} <br><span class="text-muted fw-bold mt-1 d-block" style="font-size: 0.75rem;"><i class="bi bi-calendar2 me-1"></i>${dateStr}</span></td>
         <td class="text-nowrap">
-            <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">GR: <span class="text-dark fw-bold badge bg-light border">${p['GR Number']||'--'}</span></span>
-            <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">INV: <span class="text-dark fw-bold badge bg-light border">${p['Invoice Number']||'--'}</span></span>
+            <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">GR: <span class="text-dark fw-bold badge bg-light border">${payData['GR Number']||'--'}</span></span>
+            <span class="d-block text-muted mb-1" style="font-size: 0.75rem;">INV: <span class="text-dark fw-bold badge bg-light border">${payData['Invoice Number']||'--'}</span></span>
             ${actionHtml}
         </td>
       </tr>`;
@@ -1790,74 +2502,47 @@ async function forceSync() {
       else { switchTab(tabName); }
   }
 
-  function switchTab(t) {
-    currentTab = t;
-    document.getElementById('events-view').style.display = t==='events'?'block':'none';
-    document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
-    document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
-    document.getElementById('booth-view').style.display = t==='booth'?'block':'none';
-    
-    document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar') ? 'block' : 'none';
-    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
-    
-    const filterBtn = document.getElementById('filterToggleBtn');
-    const filterCollapseEl = document.getElementById('filterCollapse');
-
-    if (t === 'booth') {
-        filterBtn.classList.remove('d-flex');
-        filterBtn.classList.add('d-none');
-        if (filterCollapseEl.classList.contains('show')) {
-            let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
-            bsCollapse.hide();
-        }
-    } else {
-        filterBtn.classList.remove('d-none');
-        filterBtn.classList.add('d-flex');
-        if (window.innerWidth >= 768) {
-            if (!filterCollapseEl.classList.contains('show')) {
-                let bsCollapse = bootstrap.Collapse.getInstance(filterCollapseEl) || new bootstrap.Collapse(filterCollapseEl, {toggle: false});
-                bsCollapse.show();
-            }
-        }
-    }
-    
-    document.getElementById('e-tab').classList.toggle('active', t==='events');
-    document.getElementById('c-tab').classList.toggle('active', t==='calendar');
-    document.getElementById('b-tab').classList.toggle('active', t==='booth');
-    document.getElementById('p-tab').classList.toggle('active', t==='payments');
-    
-    if (t === 'booth') {
-        if (currentBoothMode === 'new') { setBoothMode('view'); } 
-        else { setBoothMode(currentBoothMode); }
-    } else {
-        applyFilters(); 
-    }
-
-    let url = new URL(window.location);
-    url.searchParams.set('tab', t);
-    if (t !== 'payments') {
-        url.searchParams.delete('q'); url.searchParams.delete('grInv'); url.searchParams.delete('type'); url.searchParams.delete('status');
-    }
-    window.history.replaceState({}, '', url);
-  }
+  
 
   function setEditFormState(isReadOnly) {
+      const role = getUserRole();
       const form = document.getElementById('editForm');
-      const elements = form.querySelectorAll('input, select, textarea, button');
+      const allElements = form.querySelectorAll('input, select, textarea, button');
       
-      elements.forEach(el => {
-          if(el.id !== 'editSubmitBtn' && el.id !== 'editDeleteBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') { el.disabled = isReadOnly; }
+      allElements.forEach(el => {
+          if(el.id === 'themeToggleBtn' || el.id === 'editSubmitBtn' || el.classList.contains('btn-close')) return;
+          
+          if (isReadOnly) {
+              el.disabled = true; // Complete lockdown for unauthenticated users viewing calendar
+          } else if (role === 'editor') {
+              // Editors can ONLY interact with fields that have the 'editor-field' class
+              if (el.classList.contains('editor-field')) {
+                  el.disabled = false;
+              } else {
+                  el.disabled = true;
+              }
+          } else {
+              // Admins get everything
+              el.disabled = false;
+          }
       });
-      document.getElementById('editCrewAddBtn').disabled = isReadOnly;
+
+      // Special logic for buttons
+      if (document.getElementById('editCrewAddBtn')) document.getElementById('editCrewAddBtn').disabled = (isReadOnly || role === 'editor');
+      if (document.getElementById('editServiceAddBtn')) document.getElementById('editServiceAddBtn').disabled = (isReadOnly || role === 'editor');
       
       if (isReadOnly) {
           document.getElementById('editSubmitBtn').style.display = 'none';
           document.getElementById('editDeleteBtn').style.display = 'none';
+          document.getElementById('editModalAddDayBtn').style.display = 'none';
           document.getElementById('editAuthWarning').style.setProperty('display', 'flex', 'important');
       } else {
           document.getElementById('editSubmitBtn').style.display = 'block';
-          document.getElementById('editDeleteBtn').style.display = 'block';
           document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
+          
+          // Editors cannot delete or add days
+          document.getElementById('editDeleteBtn').style.display = role === 'admin' ? 'block' : 'none';
+          document.getElementById('editModalAddDayBtn').style.display = role === 'admin' ? 'inline-block' : 'none';
       }
   }
 
@@ -1897,9 +2582,23 @@ async function forceSync() {
       const res = await callApi({ action: 'uploadPaymentDoc', base64Data: b64Data.base64, filename: b64Data.filename, eventId: eventId, docType: docType }, 'POST');
       
       ov.style.display = 'none';
-      if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+      if (res.success) {  } else { alert("Error: " + res.error); }
   }
-
+  function openNewEventWithDate(dateStr) {
+      openNewEventModal(); // This opens and resets the modal normally
+      
+      // Inject the specific calendar date into the inputs after the modal renders
+      setTimeout(() => {
+          const form = document.getElementById('eventForm');
+          if (form && form.elements['eventDate']) {
+              form.elements['eventDate'].value = dateStr;
+              
+              // If it's a Leave, sync the End Date too
+              const endDateInput = document.getElementById('newEventEndDate');
+              if(endDateInput) endDateInput.value = dateStr;
+          }
+      }, 50);
+  }
   function openNewEventModal() {
       document.getElementById('eventForm').reset();
       ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
@@ -1917,7 +2616,8 @@ async function forceSync() {
   }
 
   function openAddDayModal(id) {
-     const e = rawEvents.find(ev => String(ev['Event ID']) === String(id) && (!date || String(ev['Event Date']) === String(date)));
+     // FIX 1: Removed the broken 'date' reference
+     const e = rawEvents.find(ev => String(ev['Event ID']) === String(id));
      if(!e) return;
      
      const form = document.getElementById('addDayForm');
@@ -1945,6 +2645,7 @@ async function forceSync() {
          document.getElementById('addDayNameBlock').style.display = 'none';
          document.getElementById('addDayEventNameInput').removeAttribute('required');
          document.getElementById('addDayEventNameInput').value = 'Crew Leave';
+       
      } else {
          document.getElementById('addDayHeader').innerHTML = `<i class="bi bi-calendar-plus me-2"></i> Add Day to Project <span class="badge bg-light border text-secondary ms-1">#${id}</span>`;
          document.getElementById('addDayStatusBlock').style.display = 'block';
@@ -1952,6 +2653,8 @@ async function forceSync() {
          document.getElementById('addDayNameBlock').style.display = 'block';
          document.getElementById('addDayEventNameInput').setAttribute('required', 'required');
          document.getElementById('addDayEventNameInput').value = e['Event Name'];
+         document.getElementById('addDayEventVenueInput').value = e['Event Venue'] || '';
+         document.getElementById('addDayVenueLinkInput').value = e['Event Venue Link'] || '';
          
          const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
          const sInputs = form.elements['services'];
@@ -2013,17 +2716,26 @@ async function forceSync() {
      }
      
      document.getElementById('addDayEventId').value = id;
-     new bootstrap.Modal(document.getElementById('addDayModal')).show();
+     
+     // FIX 2: Safely get the existing modal instance or create a new one!
+     const modalEl = document.getElementById('addDayModal');
+     const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+     modal.show();
   }
 
-  function openEditModal(id, date, fromCalendar = false) {
-    const e = rawEvents.find(ev => ev['Event ID'] === id && (!date || ev['Event Date'] === date));
+  function openEditModal(docId, fromCalendar = false) {
+    // 1. Search strictly by the unique Firestore Document ID
+    const e = rawEvents.find(ev => String(ev['Doc ID']) === String(docId));
     if(!e) return;
+    
+    // 2. Extract the variables needed for the rest of the form
+    const id = e['Event ID'];
+    const date = e['Event Date'];
     const isReadOnly = fromCalendar && !isAuthenticated();
 
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
-    const isPast = date && date < todayStr; 
+    const isPast = date && date < todayStr;
     
     const paymentBlock = document.getElementById('editPaymentFields');
     const toggleBlock = document.getElementById('editTypeToggleBlock');
@@ -2033,7 +2745,8 @@ async function forceSync() {
         toggleBlock.parentNode.insertBefore(paymentBlock, toggleBlock.nextSibling);
         paymentBlock.classList.add('border-bottom', 'pb-3', 'mb-4');
     } else {
-        notesBlock.parentNode.insertBefore(paymentBlock, notesBlock);
+        // FIXED: insert after notes block so it stays at the bottom!
+        notesBlock.parentNode.insertBefore(paymentBlock, notesBlock.nextSibling);
         paymentBlock.classList.remove('border-bottom', 'pb-3', 'mb-4');
     }
 
@@ -2057,9 +2770,101 @@ async function forceSync() {
     document.getElementById('editTypeWithPrints').checked = true;
     togglePhotoQRDetails('edit');
     
-    form.elements['eventId'].value = id;
+   form.elements['eventId'].value = id;
     form.elements['originalDate'].value = date || '';
+    form.elements['firestoreDocId'].value = e['Doc ID'] || '';
     form.elements['eventName'].value = e['Event Name'] || '';
+    // Populate the visual Event ID badge above the Event Name
+    const idDisplay = document.getElementById('editEventIdDisplay');
+    if (idDisplay) idDisplay.innerText = '#' + id;
+    // 1. Find EVERY day attached to this Event ID
+    const allDays = rawEvents.filter(ev => String(ev['Event ID']) === String(id));
+    
+    // 2. Sort them chronologically by Date (and Time if dates match)
+    allDays.sort((a, b) => {
+        let dateA = a['Event Date'] || '9999-99-99';
+        let dateB = b['Event Date'] || '9999-99-99';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        
+        let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
+        let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
+        return timeA.localeCompare(timeB);
+    });
+
+   // 3. The true "Main Day" is ALWAYS the chronologically first event in the sorted array!
+    const mainEvent = allDays[0];
+    const isMainDay = (e['Doc ID'] === mainEvent['Doc ID']);
+    
+    // 4. Hunt for the document that currently holds the actual payment data
+    const paymentSourceEvent = allDays.find(ev => ev['Payment Type']) || mainEvent;
+    // --- MULTI-DAY TAB NAVIGATION ---
+    const multiDayNav = document.getElementById('editMultiDayNav');
+    if (allDays.length > 1) {
+        multiDayNav.style.display = 'flex';
+        let tabsHtml = '';
+        
+        // 1. Find all unique dates to assign the base "Day X" numbers
+        const uniqueDates = [...new Set(allDays.map(d => d['Event Date']))];
+        
+        // 2. Count how many events happen on each specific date
+        const dateCounts = {};
+        allDays.forEach(d => {
+            const dateStr = d['Event Date'];
+            dateCounts[dateStr] = (dateCounts[dateStr] || 0) + 1;
+        });
+
+        // 3. Keep a running tally as we generate the tabs
+        const currentEventIndex = {};
+
+        allDays.forEach((day) => {
+            const dateStr = day['Event Date'];
+            const dayNumber = uniqueDates.indexOf(dateStr) + 1; // 1-based index
+            
+            // Track which event number this is for this specific date
+            currentEventIndex[dateStr] = (currentEventIndex[dateStr] || 0) + 1;
+            
+            // Build the top label
+            let label = `Day ${dayNumber}`;
+            if (dateCounts[dateStr] > 1) {
+                label += ` (Event ${currentEventIndex[dateStr]})`;
+            }
+
+            const isActive = day['Doc ID'] === docId ? 'active shadow-sm' : 'bg-white border text-secondary';
+            
+            // Build the date sub-label
+            let tabDate = '';
+            if (dateStr && dateStr.includes('-')) {
+                const dParts = dateStr.split('-');
+                const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
+                const textClass = day['Doc ID'] === docId ? 'text-white opacity-75' : 'text-muted';
+                tabDate = `<span class="d-block mt-1 ${textClass}" style="font-size:0.65rem; font-weight: 500;">${dObj.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</span>`;
+            }
+
+            tabsHtml += `
+            <li class="nav-item">
+                <a class="nav-link ${isActive} px-3 py-2 text-center" style="cursor:pointer; line-height: 1.1; min-width: 90px;" onclick="openEditModal('${day['Doc ID']}', ${fromCalendar})">
+                    <span style="font-size: 0.8rem; font-weight: 700;">${label}</span>
+                    ${tabDate}
+                </a>
+            </li>`;
+        });
+        multiDayNav.innerHTML = tabsHtml;
+    } else {
+        multiDayNav.style.display = 'none';
+        multiDayNav.innerHTML = '';
+    }
+    // --------------------------------
+    const deleteBtn = document.getElementById('editDeleteBtn');
+    
+    if (isMainDay) {
+        deleteBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> DELETE FULL PROJECT';
+        deleteBtn.onclick = () => deleteFullEvent(true);
+    } else {
+        deleteBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> DELETE THIS DAY ONLY';
+        deleteBtn.onclick = () => deleteFullEvent(false);
+    }
+    const paymentBlockSection = document.getElementById('editPaymentFields');
+    paymentBlockSection.style.display = isMainDay ? 'block' : 'none';
     
     if (e['Event Name'] === 'Crew Leave') {
         document.getElementById('editTypeLeave').checked = true;
@@ -2137,29 +2942,74 @@ async function forceSync() {
             }
         });
         
-        form.elements['paymentType'].value = e['Payment Type'] || '';
+        // Use 'mainEvent' instead of 'e' so Added Days copy the main payment data
+        // Use 'paymentSourceEvent' so we copy the actual money data no matter which day originally held it
+        form.elements['paymentType'].value = paymentSourceEvent['Payment Type'] || '';
         togglePaymentUI('edit');
         
         setTimeout(() => {
-            if(e['Billing Status']) form.elements['billingStatus'].value = e['Billing Status'];
+            if(paymentSourceEvent['Billing Status']) {
+                form.elements['billingStatus'].value = paymentSourceEvent['Billing Status'];
+            }
             
-            // Map directly to your new URL inputs
-            document.getElementById('editInvoiceUrl').value = e['Invoice URL'] || '';
-            document.getElementById('editCheckUrl').value = e['Check URL'] || '';
+            // Trigger the required check when opening the modal
+            checkInvoiceRequired('edit');
             
-            document.getElementById('editInvoiceLinkDisplay').innerHTML = e['Invoice URL'] ? `<a href="${e['Invoice URL']}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> View Current Invoice</a>` : '';
-            document.getElementById('editCheckLinkDisplay').innerHTML = e['Check URL'] ? `<a href="${e['Check URL']}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> View Current Check</a>` : '';
+            // 1. Populate the text inputs with the current database links
+            const currentInv = paymentSourceEvent['Invoice URL'] || '';
+            const currentChk = paymentSourceEvent['Check URL'] || '';
+            form.elements['invoiceUrl'].value = currentInv;
+            form.elements['checkUrl'].value = currentChk;
+            
+            // 2. Create the "View" and "Remove" badges for the Invoice
+            const invDisplay = document.getElementById('editInvoiceLinkDisplay');
+            if (invDisplay) {
+                if (currentInv) {
+                    invDisplay.innerHTML = `
+                        <div class="d-flex align-items-center mt-1">
+                            <a href="${currentInv}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> Current Invoice Link</a>
+                            <span class="badge bg-danger ms-3 shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editInvoiceUrl').value=''; document.getElementById('editInvoiceLinkDisplay').innerHTML='';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
+                        </div>`;
+                } else {
+                    invDisplay.innerHTML = '';
+                }
+            }
+            
+            // 3. Create the "View" and "Remove" badges for the Check
+            const chkDisplay = document.getElementById('editCheckLinkDisplay');
+            if (chkDisplay) {
+                if (currentChk) {
+                    chkDisplay.innerHTML = `
+                        <div class="d-flex align-items-center mt-1">
+                            <a href="${currentChk}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> Current Check Link</a>
+                            <span class="badge bg-danger ms-3 shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editCheckUrl').value=''; document.getElementById('editCheckLinkDisplay').innerHTML='';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
+                        </div>`;
+                } else {
+                    chkDisplay.innerHTML = '';
+                }
+            }
         }, 10);
-
-        form.elements['emailThread'].value = e['Email Thread'] || '';
-        form.elements['billingStatusDate'].value = toInputDate(e['Billing Status Date']);
-        form.elements['grNumber'].value = e['GR Number'] || '';
-        form.elements['invoiceNumber'].value = e['Invoice Number'] || '';
-        form.elements['amount'].value = e['Amount'] || '0';
-        form.elements['paymentNotes'].value = e['Payment Notes'] || '';
+        form.elements['emailThread'].value = paymentSourceEvent['Email Thread'] || '';
+        form.elements['billingStatusDate'].value = toInputDate(paymentSourceEvent['Billing Status Date']);
+        form.elements['grNumber'].value = paymentSourceEvent['GR Number'] || '';
+        form.elements['invoiceNumber'].value = paymentSourceEvent['Invoice Number'] || '';
+        form.elements['amount'].value = paymentSourceEvent['Amount'] || '0';
+        form.elements['paymentNotes'].value = paymentSourceEvent['Payment Notes'] || '';
+        
+        // Gray out and disable editing of the payment block if it is an Added Day
+        const paymentBlockSection = document.getElementById('editPaymentFields');
+        paymentBlockSection.style.display = 'block'; // Always show it
+        if (!isMainDay) {
+            paymentBlockSection.style.opacity = '0.5';
+            paymentBlockSection.style.pointerEvents = 'none';
+        } else {
+            paymentBlockSection.style.opacity = '1';
+            paymentBlockSection.style.pointerEvents = 'auto';
+        }
     }
     
     form.elements['eventDate'].value = toInputDate(e['Event Date']);
+    if (document.getElementById('editEventEndDate')) document.getElementById('editEventEndDate').value = toInputDate(e['Event Date']); // Auto-fills the disabled end date
     form.elements['callTime'].value = to24Hour(e['Call Time']);
     form.elements['startTime'].value = to24Hour(e['Event Start Time']);
     form.elements['endTime'].value = to24Hour(e['Event End Time']);
@@ -2184,9 +3034,32 @@ async function forceSync() {
             addCustomCrewCheckbox(c, 'editCrewContainer', true);
         }
     });
-    
+    // Wire up the new "Add Day" button in the modal header
+    const editModalAddDayBtn = document.getElementById('editModalAddDayBtn');
+    if (editModalAddDayBtn) {
+        editModalAddDayBtn.onclick = () => {
+            bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
+            setTimeout(() => requireAuth(() => openAddDayModal(id)), 300);
+        };
+        // Hide the button if they are in View-Only mode
+        editModalAddDayBtn.style.display = isReadOnly ? 'none' : 'inline-block';
+    }
+    // Ensure the modal state matches Firebase Auth
     setEditFormState(isReadOnly);
-    new bootstrap.Modal(document.getElementById('editEventModal')).show();
+    
+    // THE FIX: If they try to open an edit modal from the list and aren't logged in,
+    // the requireAuth() used in the button will handle it. 
+    // If they come from the Calendar (View-Only mode), this shows the warning.
+    if (isReadOnly) {
+        document.getElementById('editAuthWarning').style.setProperty('display', 'flex', 'important');
+    } else {
+        document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
+    }
+    
+    // Safely get or create modal
+    const modalEl = document.getElementById('editEventModal');
+    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    modal.show();
   }
 
   function openUploadModal(eventId) {
@@ -2216,7 +3089,7 @@ async function forceSync() {
       }, 'POST');
       
       ov.style.display = 'none';
-      if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+      if (res.success) {  } else { alert("Error: " + res.error); }
     };
     reader.readAsDataURL(file);
   }
@@ -2229,26 +3102,42 @@ async function forceSync() {
 
     const res = await callApi({ action: 'deleteFile', eventId: eventId, fileId: fileId }, 'POST');
     ov.style.display = 'none';
-    if (res.success) { fetchAllData(); } else { alert("Error: " + res.error); }
+    if (res.success) {  } else { alert("Error: " + res.error); }
   }
   
-  async function deleteFullEvent() {
+  async function deleteFullEvent(isMain) {
       const eventId = document.getElementById('editEventId').value;
-      if (!eventId) return;
-      if(!confirm(`WARNING: Are you sure you want to permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) { return; }
+      const docId = document.getElementById('editFirestoreDocId').value;
       
-      const ov = document.getElementById('submitOverlay');
-      document.getElementById('overlayText').innerText = "Deleting Event...";
-      ov.style.display = 'flex';
+      if (!eventId || !docId) return;
       
-      const res = await callApi({ action: 'deleteEvent', eventId: eventId }, 'POST');
-      ov.style.display = 'none';
-      if (res && res.success) {
-          bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
-          fetchAllData();
+      if (isMain) {
+          if(!confirm(`WARNING: Permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) return;
+          
+          document.getElementById('submitOverlay').style.display = 'flex';
+          try {
+              // Batch delete: Finds every document that shares this Event ID and wipes them all
+              const snapshot = await db.collection("dashboard_events").where("eventId", "==", eventId).get();
+              const batch = db.batch();
+              snapshot.forEach(doc => batch.delete(doc.ref));
+              await batch.commit();
+          } catch (err) {
+              alert("Error deleting project: " + err.message);
+          }
       } else {
-          alert("Error: " + (res ? res.error : "Unknown"));
+          if(!confirm(`Delete this specific shooting day?\n\nThe rest of project #${eventId} will remain intact.`)) return;
+          
+          document.getElementById('submitOverlay').style.display = 'flex';
+          try {
+              // Single delete: Only targets this specific added day
+              await db.collection("dashboard_events").doc(docId).delete();
+          } catch (err) {
+              alert("Error deleting day: " + err.message);
+          }
       }
+      
+      document.getElementById('submitOverlay').style.display = 'none';
+      bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
   }
 
   function readFileAsBase64(file) {
@@ -2293,181 +3182,307 @@ async function forceSync() {
   }
 
   // --- EVENT FORM SUBMISSIONS ---
+  
   document.getElementById('eventForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('submitBtn'), ov = document.getElementById('submitOverlay');
-    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
-    obj.manpower = fd.getAll('manpower');
-    
-    let rawServices = fd.getAll('services');
-    let finalServices = [];
-    rawServices.forEach(s => {
-        if (s === 'Photo') {
-            const count = document.getElementById('newSrvPhotoCount').value;
-            finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
-        } else if (s === 'Photo Souvenir Master') {
-            const isWithPrints = document.getElementById('newTypeWithPrints').checked;
-            if (isWithPrints) {
-                const booths = document.getElementById('newSrvPrintsBooth').value;
-                const count = document.getElementById('newSrvPrintsCount').value;
-                const size = document.getElementById('newSrvPrintsSize').value;
-                let details = [];
-                if(booths) details.push(`${booths} booth(s)`);
-                if(count) details.push(`${count} prints`);
-                if(size) details.push(size);
-                finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
-            } else {
-                const booths = document.getElementById('newSrvQRBooth').value;
-                finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
-            }
-        } else if (s === 'Frame Token') {
-            const count = document.getElementById('newSrvFrameCount').value;
-            finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
-        } else {
-            finalServices.push(s);
-        }
-    });
-    obj.services = finalServices;
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const ov = document.getElementById('submitOverlay');
+      const fd = new FormData(e.target);
+      const obj = Object.fromEntries(fd.entries());
+      
+      obj.manpower = fd.getAll('manpower');
+      let rawServices = fd.getAll('services');
+      let finalServices = [];
+      
+      rawServices.forEach(s => {
+          if (s === 'Photo') {
+              const count = document.getElementById('newSrvPhotoCount').value;
+              finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
+          } else if (s === 'Photo Souvenir Master') {
+              const isWithPrints = document.getElementById('newTypeWithPrints').checked;
+              if (isWithPrints) {
+                  const booths = document.getElementById('newSrvPrintsBooth').value;
+                  const count = document.getElementById('newSrvPrintsCount').value;
+                  const size = document.getElementById('newSrvPrintsSize').value;
+                  let details = [];
+                  if(booths) details.push(`${booths} booth(s)`);
+                  if(count) details.push(`${count} prints`);
+                  if(size) details.push(size);
+                  finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
+              } else {
+                  const booths = document.getElementById('newSrvQRBooth').value;
+                  finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
+              }
+          } else if (s === 'Frame Token') {
+              const count = document.getElementById('newSrvFrameCount').value;
+              finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
+          } else {
+              finalServices.push(s);
+          }
+      });
+      obj.services = finalServices;
 
-    const isLeave = document.getElementById('newTypeLeave').checked;
-    if (isLeave) {
-        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
-        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
-    } else {
-        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
-    }
-    
-    document.getElementById('overlayText').innerText = "Updating...";
-    btn.disabled=true; ov.style.display='flex';
+      const isLeave = document.getElementById('newTypeLeave').checked;
+      let eventDatesArray = [];
 
-    document.getElementById('overlayText').innerText = "Saving Entry...";
-    const res = await callApi({action:'addNewEvent', formObject:obj}, 'POST');
-    
-    ov.style.display='none'; btn.disabled=false;
-    if(res && res.success) { 
-        bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
-        e.target.reset(); 
-        document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
-        document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
-        toggleAvpFields(false, 'new'); 
-        togglePaymentUI('new');
-        fetchAllData(); 
-    } else alert("Error: " + (res?res.error:"Unknown"));
+      if (isLeave) {
+          if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+          obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
+          
+          // --- CALCULATE DATE RANGE ---
+          let current = new Date(obj.eventDate);
+          let end = new Date(obj.eventEndDate || obj.eventDate);
+          
+          // Loop through the days and build an array of dates
+          while (current <= end) {
+              const year = current.getFullYear();
+              const month = String(current.getMonth() + 1).padStart(2, '0');
+              const day = String(current.getDate()).padStart(2, '0');
+              eventDatesArray.push(`${year}-${month}-${day}`);
+              current.setDate(current.getDate() + 1); // Move to next day
+          }
+      } else {
+          if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+          eventDatesArray.push(obj.eventDate); // Standard events just get 1 date here
+      }
+      
+      document.getElementById('overlayText').innerText = "Saving to Database...";
+      btn.disabled = true; ov.style.display = 'flex';
+      
+      try {
+          const newId = await getNextEventId();
+          const batch = db.batch(); // Use a Firebase Batch to push everything instantly
+
+          // Loop through our array of dates. If it's a 1-day event, it loops once. If it's a 5-day leave, it loops 5 times!
+          eventDatesArray.forEach((dateStr, index) => {
+              // The first day gets the exact Event ID. Subsequent days get a unique timestamped ID.
+              let docId = (index === 0) ? newId : `${newId}_${Date.now()}_${index}`;
+              let docRef = db.collection("dashboard_events").doc(docId);
+              
+              batch.set(docRef, {
+                  eventId: newId,
+                  eventName: obj.eventName || "",
+                  eventDate: dateStr, // Assign the unique date from our loop
+                  eventVenue: obj.eventVenue || "",
+                  venueLink: obj.venueLink || "",
+                  eventStatus: obj.eventStatus || "Pencil Booked",
+                  avpRequired: obj.avp === "true",
+                  services: (obj.services || []).join(", "),
+                  startTime: obj.startTime || "",
+                  endTime: obj.endTime || "",
+                  callTime: obj.callTime || "",
+                  manpower: (obj.manpower || []).join(", "),
+                  contactPerson: obj.contactPerson || "",
+                  contactNumber: obj.contactNumber || "",
+                  notes: obj.notes || "",
+                  paymentType: obj.paymentType || "",
+                  emailThread: obj.emailThread || "",
+                  billingStatus: obj.billingStatus || "",
+                  billingStatusDate: obj.billingStatusDate || "",
+                  grNumber: obj.grNumber || "",
+                  invoiceNumber: obj.invoiceNumber || "",
+                  amount: obj.amount || "0",
+                  paymentNotes: obj.paymentNotes || "",
+                  invoiceUrl: obj.invoiceUrl || "",
+                  checkUrl: obj.checkUrl || ""
+              });
+          });
+
+          await batch.commit(); // Execute the bulk upload
+          
+          bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
+          e.target.reset(); 
+          document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
+          document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
+          toggleAvpFields(false, 'new'); togglePaymentUI('new');
+      } catch (err) {
+          alert("Error saving: " + err.message);
+      }
+      ov.style.display = 'none'; btn.disabled = false;
   };
 
   document.getElementById('addDayForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('addDaySubmitBtn'), ov = document.getElementById('submitOverlay');
-    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
-    obj.manpower = fd.getAll('manpower');
-    
-    let rawServices = fd.getAll('services');
-    let finalServices = [];
-    rawServices.forEach(s => {
-        if (s === 'Photo') {
-            const count = document.getElementById('addDaySrvPhotoCount').value;
-            finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
-        } else if (s === 'Photo Souvenir Master') {
-            const isWithPrints = document.getElementById('addDayTypeWithPrints').checked;
-            if (isWithPrints) {
-                const booths = document.getElementById('addDaySrvPrintsBooth').value;
-                const count = document.getElementById('addDaySrvPrintsCount').value;
-                const size = document.getElementById('addDaySrvPrintsSize').value;
-                let details = [];
-                if(booths) details.push(`${booths} booth(s)`);
-                if(count) details.push(`${count} prints`);
-                if(size) details.push(size);
-                finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
-            } else {
-                const booths = document.getElementById('addDaySrvQRBooth').value;
-                finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
-            }
-        } else if (s === 'Frame Token') {
-            const count = document.getElementById('addDaySrvFrameCount').value;
-            finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
-        } else {
-            finalServices.push(s);
-        }
-    });
-    obj.services = finalServices;
-    
-    document.getElementById('overlayText').innerText = "Adding Day...";
-    btn.disabled = true; ov.style.display='flex';
-    const res = await callApi({action:'addEventDay', formObject:obj}, 'POST');
-    
-    ov.style.display='none'; btn.disabled=false;
-    if(res && res.success) { 
-        bootstrap.Modal.getInstance(document.getElementById('addDayModal')).hide(); 
-        e.target.reset(); 
-        fetchAllData(); 
-    } else alert("Error: " + (res?res.error:"Unknown"));
+      e.preventDefault();
+      const btn = document.getElementById('addDaySubmitBtn'), ov = document.getElementById('submitOverlay');
+      const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
+      obj.manpower = fd.getAll('manpower');
+      
+      let rawServices = fd.getAll('services');
+      let finalServices = [];
+      rawServices.forEach(s => {
+          if (s === 'Photo') {
+              const count = document.getElementById('addDaySrvPhotoCount').value;
+              finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
+          } else if (s === 'Photo Souvenir Master') {
+              const isWithPrints = document.getElementById('addDayTypeWithPrints').checked;
+              if (isWithPrints) {
+                  const booths = document.getElementById('addDaySrvPrintsBooth').value;
+                  const count = document.getElementById('addDaySrvPrintsCount').value;
+                  const size = document.getElementById('addDaySrvPrintsSize').value;
+                  let details = [];
+                  if(booths) details.push(`${booths} booth(s)`);
+                  if(count) details.push(`${count} prints`);
+                  if(size) details.push(size);
+                  finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
+              } else {
+                  const booths = document.getElementById('addDaySrvQRBooth').value;
+                  finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
+              }
+          } else if (s === 'Frame Token') {
+              const count = document.getElementById('addDaySrvFrameCount').value;
+              finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
+          } else {
+              finalServices.push(s);
+          }
+      });
+      obj.services = finalServices;
+      
+      document.getElementById('overlayText').innerText = "Adding Day...";
+      btn.disabled = true; ov.style.display='flex';
+      
+      try {
+          const baseDoc = await db.collection("dashboard_events").doc(obj.eventId).get();
+          const baseData = baseDoc.exists ? baseDoc.data() : {};
+          
+          // THE FIX: We create a unique Firestore Document ID, but KEEP the original eventId!
+          const uniqueDocId = obj.eventId + "_" + Date.now();
+          
+          await db.collection("dashboard_events").doc(uniqueDocId).set({
+              eventId: obj.eventId, // <-- Keeps it attached to egm0015
+              eventName: obj.eventName || baseData.eventName || "",
+              eventDate: obj.eventDate || "",
+              eventVenue: obj.eventVenue || baseData.eventVenue || "", // Now captures unique venue
+              venueLink: obj.venueLink || baseData.venueLink || "", // Now captures unique map link
+              eventStatus: obj.eventStatus || "Pencil Booked",
+              avpRequired: baseData.avpRequired || false,
+              services: obj.services.length > 0 ? obj.services.join(", ") : (baseData.services || ""),
+              startTime: obj.startTime || "",
+              endTime: obj.endTime || "",
+              callTime: obj.callTime || "",
+              manpower: (obj.manpower || []).join(", "),
+              contactPerson: baseData.contactPerson || "",
+              contactNumber: baseData.contactNumber || "",
+              notes: baseData.notes || "",
+              paymentType: "", emailThread: "", billingStatus: "", billingStatusDate: "",
+              grNumber: "", invoiceNumber: "", amount: "0", paymentNotes: "", invoiceUrl: "", checkUrl: ""
+          });
+
+          bootstrap.Modal.getInstance(document.getElementById('addDayModal')).hide(); 
+          e.target.reset(); 
+      } catch (err) {
+          alert("Error adding day: " + err.message);
+      }
+      ov.style.display='none'; btn.disabled=false;
   };
 
   document.getElementById('editForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('editSubmitBtn'), ov = document.getElementById('submitOverlay');
-    const fd = new FormData(e.target), obj = Object.fromEntries(fd.entries());
-    obj.manpower = fd.getAll('manpower');
-    
-    let rawServices = fd.getAll('services');
-    let finalServices = [];
-    rawServices.forEach(s => {
-        if (s === 'Photo') {
-            const count = document.getElementById('editSrvPhotoCount').value;
-            finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
-        } else if (s === 'Photo Souvenir Master') {
-            const isWithPrints = document.getElementById('editTypeWithPrints').checked;
-            if (isWithPrints) {
-                const booths = document.getElementById('editSrvPrintsBooth').value;
-                const count = document.getElementById('editSrvPrintsCount').value;
-                const size = document.getElementById('editSrvPrintsSize').value;
-                let details = [];
-                if(booths) details.push(`${booths} booth(s)`);
-                if(count) details.push(`${count} prints`);
-                if(size) details.push(size);
-                finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
-            } else {
-                const booths = document.getElementById('editSrvQRBooth').value;
-                finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
-            }
-        } else if (s === 'Frame Token') {
-            const count = document.getElementById('editSrvFrameCount').value;
-            finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
-        } else {
-            finalServices.push(s);
-        }
-    });
-    obj.services = finalServices; 
-    
-    const isLeave = document.getElementById('editTypeLeave').checked;
-    if (isLeave) {
-        if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
-        obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = false; obj.paymentType = '';
-    } else {
-        if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
-    }
+      e.preventDefault();
+      const btn = document.getElementById('editSubmitBtn');
+      const ov = document.getElementById('submitOverlay');
+      const fd = new FormData(e.target);
+      const obj = Object.fromEntries(fd.entries());
+      
+      obj.manpower = fd.getAll('manpower');
+      let rawServices = fd.getAll('services');
+      let finalServices = [];
+      
+      rawServices.forEach(s => {
+          if (s === 'Photo') {
+              const count = document.getElementById('editSrvPhotoCount').value;
+              finalServices.push(count ? `Photo [${count} photographer(s)]` : 'Photo');
+          } else if (s === 'Photo Souvenir Master') {
+              const isWithPrints = document.getElementById('editTypeWithPrints').checked;
+              if (isWithPrints) {
+                  const booths = document.getElementById('editSrvPrintsBooth').value;
+                  const count = document.getElementById('editSrvPrintsCount').value;
+                  const size = document.getElementById('editSrvPrintsSize').value;
+                  let details = [];
+                  if(booths) details.push(`${booths} booth(s)`);
+                  if(count) details.push(`${count} prints`);
+                  if(size) details.push(size);
+                  finalServices.push(details.length > 0 ? `QR with Prints [${details.join(' - ')}]` : `QR with Prints`);
+              } else {
+                  const booths = document.getElementById('editSrvQRBooth').value;
+                  finalServices.push(booths ? `QR only [${booths} booth(s)]` : `QR only`);
+              }
+          } else if (s === 'Frame Token') {
+              const count = document.getElementById('editSrvFrameCount').value;
+              finalServices.push(count ? `Frame Token [${count} frame(s)]` : s);
+          } else {
+              finalServices.push(s);
+          }
+      });
+      obj.services = finalServices; 
+      
+      const isLeave = document.getElementById('editTypeLeave').checked;
+      if (isLeave) {
+          if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+          obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
+      } else {
+          if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+      }
 
-    document.getElementById('overlayText').innerText = "Saving Entry...";
-    btn.disabled = true; ov.style.display='flex';
-    
-    const chkFile = document.getElementById(prefix + 'CheckFile');
-    const existingChk = document.getElementById('editExistingCheckUrl').value;
-    if (chkFile && chkFile.files[0]) {
-        if (existingChk && !confirm("You have selected a new Check photo. This will overwrite the existing Check link. Continue?")) {
-            btn.disabled = false; ov.style.display = 'none'; return;
-        }
-        let b64 = await readFileAsBase64(chkFile.files[0]);
-        obj.checkBase64 = b64.base64; obj.checkFilename = b64.filename;
-    }
-    
-    document.getElementById('overlayText').innerText = "Updating...";
-    const res = await callApi({action:'editEvent', formObject: obj}, 'POST');
-    
-    ov.style.display='none'; btn.disabled=false;
-    if(res && res.success) { 
-        bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
-        fetchAllData(); 
-    } else alert("Error: " + (res?res.error:"Unknown"));
+      document.getElementById('overlayText').innerText = "Updating Database...";
+      btn.disabled = true; ov.style.display = 'flex';
+
+    try {
+          // THE FIX: We use obj.firestoreDocId so it updates the exact day you are looking at!
+          await db.collection("dashboard_events").doc(obj.firestoreDocId).update({
+              eventName: obj.eventName || "",
+              eventDate: obj.eventDate || "",
+              eventVenue: obj.eventVenue || "",
+              venueLink: obj.venueLink || "",
+              eventStatus: obj.eventStatus || "Pencil Booked",
+              avpRequired: obj.avp === "true",
+              services: (obj.services || []).join(", "),
+              startTime: obj.startTime || "",
+              endTime: obj.endTime || "",
+              callTime: obj.callTime || "",
+              manpower: (obj.manpower || []).join(", "),
+              contactPerson: obj.contactPerson || "",
+              contactNumber: obj.contactNumber || "",
+              notes: obj.notes || "",
+              paymentType: obj.paymentType || "",
+              emailThread: obj.emailThread || "",
+              billingStatus: obj.billingStatus || "",
+              billingStatusDate: obj.billingStatusDate || "",
+              grNumber: obj.grNumber || "",
+              invoiceNumber: obj.invoiceNumber || "",
+              amount: obj.amount || "0",
+              paymentNotes: obj.paymentNotes || "",
+              invoiceUrl: obj.invoiceUrl || "",
+              checkUrl: obj.checkUrl || ""
+          });
+          bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
+      } catch (err) {
+          alert("Error updating: " + err.message);
+      }
+      ov.style.display = 'none'; btn.disabled = false;
+  };
+
+  window.onload = () => {
+      localStorage.removeItem('egm_auth_exp'); 
+      const stickyHeaderEl = document.querySelector('.sticky-header');
+      if (stickyHeaderEl && window.ResizeObserver) {
+          new ResizeObserver(entries => {
+              for (let entry of entries) {
+                  document.documentElement.style.setProperty('--sticky-top', entry.target.offsetHeight + 'px');
+              }
+          }).observe(stickyHeaderEl);
+      }
+      
+      if (window.innerWidth >= 768) {
+          document.getElementById('filterCollapse').classList.add('show');
+      }
+
+      setTimeout(() => { fetchBoothEvents(); fetchExistingLogos(); }, 1500);
+
+      // Just grab the tab and load it! The filter inputs are handled before this now.
+      const urlParams = new URLSearchParams(window.location.search);
+      const activeTab = urlParams.get('tab') || 'events';
+      
+      currentTab = activeTab; 
+      setTimeout(() => handleTabClick(activeTab), 400); 
   };
 
 
@@ -2603,19 +3618,50 @@ async function forceSync() {
       }
   }
 
-  async function fetchBoothEvents() {
+  async function fetchBoothEvents(forceRefresh = false) {
+      // 1. If we already have the list and aren't forcing a refresh, load instantly from memory!
+      if (!forceRefresh && allFetchedBoothEvents.length > 0) {
+          if (currentBoothMode === 'edit' || currentBoothMode === 'view') {
+              renderBoothDropdown(allFetchedBoothEvents);
+          }
+          return;
+      }
+
+      // 2. Otherwise, fetch from the database
       const res = await callApi({ action: "getBoothList" }, 'POST', true);
       if (res && res.success === false) return;
       
       const select = document.getElementById('boothEventSelect');
       if (!Array.isArray(res)) {
-          select.innerHTML = '<option value="">Error loading booths</option>';
+          if (select) select.innerHTML = '<option value="">Error loading booths</option>';
           return;
       }
+      
+      // 3. Save to memory
       allFetchedBoothEvents = res; 
-      if (currentBoothMode === 'edit' || currentBoothMode === 'view') renderBoothDropdown(allFetchedBoothEvents);
+      if (currentBoothMode === 'edit' || currentBoothMode === 'view') {
+          renderBoothDropdown(allFetchedBoothEvents);
+      }
   }
 
+  async function fetchExistingLogos(forceRefresh = false) {
+      // 1. Check memory first
+      if (!forceRefresh && existingLogosCache) { 
+          renderExistingLogos(existingLogosCache); 
+          return; 
+      }
+      
+      document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-muted fst-italic">Loading logos...</span>';
+      const res = await callApi({ action: "getExistingLogos" }, 'POST', true);
+      
+      if (res && res.success) {
+          existingLogosCache = res.logos;
+          renderExistingLogos(res.logos);
+      } else {
+          document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-danger">Failed to load logos.</span>';
+      }
+  }
+ 
   function renderBoothDropdown(eventsArray) {
       const select = document.getElementById('boothEventSelect');
       const currentVal = select.value; 
@@ -2638,12 +3684,26 @@ async function forceSync() {
       const selectedId = document.getElementById('boothEventSelect').value;
       if (!selectedId) { setBoothMode(currentBoothMode); return; }
       
-      const ov = document.getElementById('submitOverlay');
-      document.getElementById('overlayText').innerText = "Loading details...";
-      ov.style.display = 'flex';
-      
-      const details = await callApi({ action: "getBoothDetails", eventId: selectedId }, 'POST');
-      ov.style.display = 'none';
+      let details;
+
+      // 1. Check if we already downloaded this booth's details
+      if (boothDetailsCache[selectedId]) {
+          details = boothDetailsCache[selectedId];
+      } else {
+          // 2. If not, show the loader and fetch it from the backend
+          const ov = document.getElementById('submitOverlay');
+          document.getElementById('overlayText').innerText = "Loading details...";
+          ov.style.display = 'flex';
+          
+          details = await callApi({ action: "getBoothDetails", eventId: selectedId }, 'POST');
+          ov.style.display = 'none';
+          
+          // 3. Save it to memory so we never have to load it again!
+          if (details && details.success !== false) {
+              boothDetailsCache[selectedId] = details;
+          }
+      }
+
       if (details && details.success === false) return;
 
       if (details) {
@@ -2811,18 +3871,6 @@ async function forceSync() {
       document.getElementById('boothLightboxImg').src = "";
   }
 
-  async function fetchExistingLogos() {
-      if (existingLogosCache) { renderExistingLogos(existingLogosCache); return; }
-      document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-muted fst-italic">Loading logos...</span>';
-      const res = await callApi({ action: "getExistingLogos" }, 'POST', true);
-      if (res && res.success) {
-          existingLogosCache = res.logos;
-          renderExistingLogos(res.logos);
-      } else {
-          document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-danger">Failed to load logos.</span>';
-      }
-  }
-
   function renderExistingLogos(logos) {
       const container = document.getElementById('existingLogoGallery');
       if (logos.length === 0) {
@@ -2928,13 +3976,15 @@ async function forceSync() {
       ov.style.display = 'none';
       
       if (res && res.success) {
-          fetchBoothEvents(); 
-          if (actionName === "updateBoothSetup") {
+          boothDetailsCache = {}; // Wipe the details memory
+          fetchBoothEvents(true); // Force the dropdown to grab the new project!
+          
+          if (actionName === "updateBoothSetup" || actionName === "generateBoothSetup") {
               setBoothMode('view');
-              setTimeout(() => { document.getElementById('boothEventSelect').value = eventId; loadBoothEventDetails(); }, 100);
-          } else if (actionName === "generateBoothSetup") {
-              setBoothMode('view');
-              setTimeout(() => { document.getElementById('boothEventSelect').value = eventId; loadBoothEventDetails(); }, 100);
+              setTimeout(() => { 
+                  document.getElementById('boothEventSelect').value = eventId; 
+                  loadBoothEventDetails(); 
+              }, 100);
           }
       } else {
           alert("Error: " + (res ? res.error || res.message : "Failed to process booth."));
@@ -2956,7 +4006,8 @@ async function forceSync() {
       ov.style.display = 'none';
       
       if (res && res.success) {
-          fetchBoothEvents();
+          boothDetailsCache = {}; // Wipe the details memory
+          fetchBoothEvents(true); // Force the dropdown to remove the deleted project!
           setBoothMode('edit');
       } else {
           alert("Error: " + (res ? res.error || res.message : "Failed to delete."));
@@ -2994,7 +4045,7 @@ async function forceSync() {
       setTimeout(() => { fetchBoothEvents(); fetchExistingLogos(); }, 1500);
 
       const urlParams = new URLSearchParams(window.location.search);
-      const activeTab = urlParams.get('tab') || 'calendar';
+      const activeTab = urlParams.get('tab') || 'events';
       
       if (activeTab === 'payments') {
           if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
@@ -3007,47 +4058,248 @@ async function forceSync() {
       }
       
       currentTab = activeTab; 
-      fetchAllData();
-      
       setTimeout(() => handleTabClick(activeTab), 400); 
   };
-  async function pollForUpdates() {
-      // Don't poll if the user is currently editing a form to prevent interruptions
-      const editModal = document.getElementById('editEventModal');
-      if (editModal && editModal.classList.contains('show')) return;
 
-      try {
-          // Use fetch directly to avoid triggering the visual loader
-          const response = await fetch(API_URL, {
-              method: 'POST',
-              body: JSON.stringify({ action: 'checkUpdate' })
-          });
-          
-          const res = await response.json();
+  function forceSync() {
+      const icon = document.getElementById('syncIcon');
+      if (icon) icon.classList.add('spin-anim');
 
-          if (res && res.success) {
-              // If we have a local timestamp, and the server timestamp is newer
-              if (localLastUpdate !== "0" && res.lastUpdate !== localLastUpdate) {
-                  console.log("Remote change detected! Syncing dashboard...");
-                  
-                  // Spin the sync icon to let the user know data is refreshing
-                  const icon = document.getElementById('syncIcon');
-                  if(icon) icon.classList.add('spin-anim');
-                  
-                  await fetchAllData();
-                  
-                  if(icon) icon.classList.remove('spin-anim');
-              }
-              // Update local timestamp
-              localLastUpdate = res.lastUpdate;
-          }
-      } catch (e) {
-          console.error("Polling error: ", e);
+      // Bring up the main loader so the user knows it's actively refreshing
+      const loader = document.getElementById('loader');
+      if (loader) {
+          loader.style.display = 'block';
+          loader.innerHTML = '<div class="spinner-border text-primary" role="status"></div><div class="mt-2 fw-bold small text-muted">Refreshing App...</div>';
       }
+
+      // Add a tiny 300ms delay so the animation actually plays before the browser blanks the screen
+      setTimeout(() => {
+          window.location.reload();
+      }, 300);
   }
 
-  // Start checking every 8 seconds (8000 milliseconds)
-  setInterval(pollForUpdates, 8000);
+  // --- INSTANT URL FILTER HYDRATION ---
+  // This runs immediately so Firebase doesn't accidentally erase the URL!
+  (function loadFiltersFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const activeTab = urlParams.get('tab') || 'calendar';
+      
+      if (activeTab === 'payments') {
+          if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
+          if(urlParams.get('grInv')) document.getElementById('fGrInv').value = urlParams.get('grInv');
+          if(urlParams.get('type')) {
+              document.getElementById('fPayType').value = urlParams.get('type');
+              updateFilterStatuses(); 
+          }
+          if(urlParams.get('status')) document.getElementById('fBillStatus').value = urlParams.get('status');
+      } 
+      else if (activeTab === 'events' || activeTab === 'calendar') {
+          if(urlParams.get('fName')) document.getElementById('fName').value = urlParams.get('fName');
+          if(urlParams.get('fDateFrom')) document.getElementById('fDateFrom').value = urlParams.get('fDateFrom');
+          if(urlParams.get('fDateTo')) document.getElementById('fDateTo').value = urlParams.get('fDateTo');
+          if(urlParams.get('fCrew')) {
+              // Pre-inject the crew name so the dropdown accepts it before the real data loads
+              document.getElementById('fCrew').innerHTML = `<option value="${urlParams.get('fCrew')}">${urlParams.get('fCrew')}</option>`;
+              document.getElementById('fCrew').value = urlParams.get('fCrew');
+          }
+          if(urlParams.get('fStatus')) document.getElementById('fStatus').value = urlParams.get('fStatus');
+      }
+  })();
+  // ------------------------------------
+
+// THE MAGIC REAL-TIME LISTENER
+db.collection("dashboard_events").onSnapshot((snapshot) => {
+    document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+    
+    const mappedEvents = [];
+    
+    snapshot.forEach((doc) => {
+        // Fallback to empty object if data is corrupted
+        const d = doc.data() || {}; 
+        
+        // Bulletproof Armor: Force every field to be a safe String() so .toLowerCase() never crashes
+        mappedEvents.push({
+            'Doc ID': String(doc.id),
+            'Event ID': String(d.eventId || ""),
+            'Event Name': String(d.eventName || ""),
+            'Event Date': String(d.eventDate || ""),
+            'Event Venue': String(d.eventVenue || ""),
+            'Event Venue Link': String(d.venueLink || ""),
+            'Event Status': String(d.eventStatus || ""),
+            'AVP Required': (d.avpRequired === true || String(d.avpRequired).toUpperCase() === "TRUE") ? "TRUE" : "FALSE",
+            'Services': String(d.services || ""),
+            'Event Start Time': String(d.startTime || ""),
+            'Event End Time': String(d.endTime || ""),
+            'Call Time': String(d.callTime || ""),
+            'Manpower': String(d.manpower || ""),
+            'Contact Person': String(d.contactPerson || ""),
+            'Contact Number': String(d.contactNumber || ""),
+            'Event Notes': String(d.notes || ""),
+            'Editor Assigned': String(d.editorAssigned || ""),
+            'RAW Link': String(d.rawLink || ""),
+            'RAW Timestamp': String(d.rawTimestamp || ""),
+            'Edited Link': String(d.editedLink || ""),
+            'Edited Timestamp': String(d.editedTimestamp || ""),
+            'Sent to Client': d.sentToClient === true || String(d.sentToClient) === "true",
+            'Sent Timestamp': String(d.sentTimestamp || ""),
+            'Payment Type': String(d.paymentType || ""),
+            'Email Thread': String(d.emailThread || ""),
+            'Billing Status': String(d.billingStatus || ""),
+            'Billing Status Date': String(d.billingStatusDate || ""),
+            'GR Number': String(d.grNumber || ""),
+            'Invoice Number': String(d.invoiceNumber || ""),
+            'Amount': String(d.amount || "0"),
+            'Payment Notes': String(d.paymentNotes || ""),
+            'Invoice URL': String(d.invoiceUrl || ""),
+            'Check URL': String(d.checkUrl || "")
+        });
+    });
+
+    rawEvents = mappedEvents;
+    
+    // Safely attempt to render the UI
+    try {
+        updateCrewFilterDropdown(rawEvents);
+        applyFilters();
+    } catch(err) {
+        console.error("UI Render Error:", err);
+        alert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
+    }
+    
+    // Hide the initial full-page loader
+    const mainLoader = document.getElementById('loader');
+    if (mainLoader) mainLoader.style.display = 'none';
+    
+    setTimeout(() => { document.getElementById('bgSyncIndicator').style.display = 'none'; }, 500);
+
+}, (error) => {
+    // If Firebase blocks the connection, it will scream at us here!
+    console.error("Firestore Security Error:", error);
+    alert("Firebase Connection Blocked! Check Firestore Rules. Error: " + error.message);
+});
+
+// Helper to get the next Event ID (egm0015)
+async function getNextEventId() {
+    const snapshot = await db.collection("dashboard_events").orderBy("eventId", "desc").limit(1).get();
+    if (snapshot.empty) return "egm0001";
+    const lastId = snapshot.docs[0].data().eventId;
+    const num = parseInt(lastId.replace('egm', ''), 10);
+    return 'egm' + ('0000' + (num + 1)).slice(-4);
+}
+  document.getElementById('expenseForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('expenseSubmitBtn');
+      const ov = document.getElementById('submitOverlay');
+      
+      const fd = new FormData(e.target);
+      const obj = Object.fromEntries(fd.entries());
+      
+      const fileInput = document.getElementById('expenseReceiptFile');
+      let receiptData = null;
+      if (fileInput.files[0]) {
+          receiptData = await readFileAsBase64(fileInput.files[0]);
+      }
+      
+      document.getElementById('overlayText').innerText = "Submitting Expense...";
+      btn.disabled = true; 
+      ov.style.display = 'flex';
+      
+      const payload = {
+          action: 'submitExpense',
+          expenseDate: obj.expenseDate,
+          expenseName: obj.expenseName,
+          expenseCategory: obj.expenseCategory,
+          expenseAmount: obj.expenseAmount,
+          expenseDescription: obj.expenseDescription,
+          receiptData: receiptData
+      };
+      
+      const res = await callApi(payload, 'POST');
+      
+      ov.style.display = 'none';
+      btn.disabled = false;
+      
+      if (res && res.success) {
+          alert("Expense logged successfully!");
+          e.target.reset();
+      } else {
+          alert("Error submitting expense: " + (res ? res.error || res.message : "Unknown error"));
+      }
+  };
+  function renderEditingQueue(data) {
+      let html = '';
+      const filterStatus = document.getElementById('fEqStatus').value;
+      const now = new Date();
+
+      // Filter logic specifically for the Editing Tab
+      let eqData = data.filter(e => e['Event Name'] !== 'Crew Leave');
+
+      if (filterStatus === 'RAW Uploaded') {
+          eqData = eqData.filter(e => e['RAW Link'] && !e['Edited Link'] && !e['Sent to Client']);
+      } else if (filterStatus === 'Completed') {
+          eqData = eqData.filter(e => e['Edited Link'] && !e['Sent to Client']);
+      } else if (filterStatus === 'Sent to Client') {
+          eqData = eqData.filter(e => e['Sent to Client']);
+      }
+
+      if (eqData.length === 0) {
+          document.getElementById('eq-body').innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No events match the queue criteria.</td></tr>';
+          return;
+      }
+
+      eqData.forEach(e => {
+          // --- 48 HOUR MATH ---
+          let deadlineHtml = '<span class="text-muted small">No Date</span>';
+          if (e['Event Date']) {
+              // Parse Event Date. The deadline starts the *next day* at 6:00 AM
+              const dParts = e['Event Date'].split('-');
+              let eventDateObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
+              
+              let deadlineStart = new Date(eventDateObj);
+              deadlineStart.setDate(deadlineStart.getDate() + 1); // Next day
+              deadlineStart.setHours(6, 0, 0, 0); // 6:00 AM
+              
+              let deadlineEnd = new Date(deadlineStart);
+              deadlineEnd.setHours(deadlineEnd.getHours() + 48); // +48 Hours
+              
+              if (now < deadlineStart) {
+                  deadlineHtml = `<span class="badge bg-light text-dark border">Starts ${deadlineStart.toLocaleDateString('en-US', {month:'short', day:'numeric'})} 6AM</span>`;
+              } else if (e['Edited Link']) {
+                  deadlineHtml = `<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Completed</span>`;
+              } else {
+                  const hoursLeft = (deadlineEnd - now) / (1000 * 60 * 60);
+                  if (hoursLeft > 0) {
+                      deadlineHtml = `<span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>${Math.floor(hoursLeft)}h remaining</span>`;
+                  } else {
+                      deadlineHtml = `<span class="badge bg-danger shadow-sm"><i class="bi bi-exclamation-triangle me-1"></i>OVERDUE by ${Math.floor(Math.abs(hoursLeft))}h</span>`;
+                  }
+              }
+          }
+
+          // --- UI PILLS ---
+          const rawUI = e['RAW Link'] ? `<a href="${e['RAW Link']}" target="_blank" class="badge bg-info text-dark text-decoration-none shadow-sm"><i class="bi bi-cloud-check me-1"></i>View RAW</a><br><span class="small text-muted" style="font-size:0.7rem;">${e['RAW Timestamp']}</span>` : `<span class="badge bg-light text-muted border">Awaiting</span>`;
+          const editUI = e['Edited Link'] ? `<a href="${e['Edited Link']}" target="_blank" class="badge bg-success text-white text-decoration-none shadow-sm"><i class="bi bi-check-circle me-1"></i>View Output</a><br><span class="small text-muted" style="font-size:0.7rem;">${e['Edited Timestamp']}</span>` : `<span class="badge bg-light text-muted border">In Progress</span>`;
+          
+          let sentUI = '';
+          if (e['Sent to Client']) {
+              sentUI = `<div class="mt-2"><span class="badge bg-primary rounded-pill shadow-sm"><i class="bi bi-envelope-check me-1"></i>Sent to Client</span></div>`;
+          }
+
+          html += `<tr>
+              <td>
+                  <strong class="text-dark">#${e['Event ID']}</strong> <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-primary" title="Open Editor"><i class="bi bi-pencil-square"></i></span><br>
+                  <span class="fw-bold">${e['Event Name']}</span><br>
+                  <span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${e['Event Date']}</span>
+                  ${sentUI}
+              </td>
+              <td class="fw-bold text-secondary">${e['Editor Assigned'] || '<span class="fst-italic fw-normal opacity-50">Unassigned</span>'}</td>
+              <td>${rawUI}</td>
+              <td>${editUI}</td>
+              <td>${deadlineHtml}</td>
+          </tr>`;
+      });
+      document.getElementById('eq-body').innerHTML = html;
+  }
 </script>
 </body>
 </html>
