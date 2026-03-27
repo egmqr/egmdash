@@ -677,10 +677,11 @@
   <div id="newDateTimeBlock">
       <div class="section-title text-secondary"><i class="bi bi-clock-history me-1"></i> Date & Time</div>
       <div class="row g-2 mb-4">
-          <div class="col-6 col-md-3"><label class="form-label-sm">Date</label><input type="date" name="eventDate" class="form-control form-control-sm" required></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
-          <div class="col-6 col-md-3"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-3" id="newDateCol"><label class="form-label-sm" id="newDateLabel">Date</label><input type="date" name="eventDate" id="newEventDate" class="form-control form-control-sm" required onchange="autoFillEndDate('new')"></div>
+          <div class="col-6 col-md-3" id="newEndDateCol" style="display:none;"><label class="form-label-sm text-danger">End Date</label><input type="date" name="eventEndDate" id="newEventEndDate" class="form-control form-control-sm border-danger text-danger"></div>
+          <div class="col-6 col-md-3" id="newCallTimeCol"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
+          <div class="col-6 col-md-3" id="newStartTimeCol"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-3" id="newEndTimeCol"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
       </div>
   </div>
     
@@ -1788,6 +1789,15 @@ function handleAddCustomService(inputId, containerId) {
       }
   }
 
+  function autoFillEndDate(prefix) {
+      const start = document.getElementById(prefix + 'EventDate');
+      const end = document.getElementById(prefix + 'EventEndDate');
+      // If end date is empty or earlier than start date, auto-sync them!
+      if (start && end && start.value) {
+          if (!end.value || end.value < start.value) { end.value = start.value; }
+      }
+  }
+
   function toggleEntryMode(prefix) {
       const isLeave = document.getElementById(prefix + 'TypeLeave').checked;
       const generalBlock = document.getElementById(prefix + 'GeneralFields');
@@ -1800,6 +1810,14 @@ function handleAddCustomService(inputId, containerId) {
       const eventNameInput = document.querySelector(`#${formId} input[name="eventName"]`);
       const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
 
+      // Dynamic Date/Time UI Elements
+      const dateLabel = document.getElementById(prefix + 'DateLabel');
+      const endDateCol = document.getElementById(prefix + 'EndDateCol');
+      const callTimeCol = document.getElementById(prefix + 'CallTimeCol');
+      const startTimeCol = document.getElementById(prefix + 'StartTimeCol');
+      const endTimeCol = document.getElementById(prefix + 'EndTimeCol');
+      const endDateInput = document.getElementById(prefix + 'EventEndDate');
+
       if (isLeave) {
           generalBlock.style.display = 'none';
           servicesBlock.style.display = 'none';
@@ -1808,12 +1826,29 @@ function handleAddCustomService(inputId, containerId) {
           if(crewBlock) crewBlock.style.display = 'block';
           if(eventNameInput) eventNameInput.removeAttribute('required');
           if(dateInput) dateInput.setAttribute('required', 'required');
+
+          // UX Magic: Morph the Date row for Leaves
+          if (dateLabel) dateLabel.innerText = "Start Date";
+          if (endDateCol) endDateCol.style.display = 'block';
+          if (endDateInput) endDateInput.setAttribute('required', 'required');
+          if (callTimeCol) callTimeCol.style.display = 'none';
+          if (startTimeCol) startTimeCol.style.display = 'none';
+          if (endTimeCol) endTimeCol.style.display = 'none';
+
       } else {
           generalBlock.style.display = 'block';
           paymentBlock.style.display = 'block';
           if(eventNameInput) eventNameInput.setAttribute('required', 'required');
           const isAvp = document.getElementById(prefix + 'AvpCheck').checked;
           toggleAvpFields(isAvp, prefix);
+
+          // Revert the Date row for normal Events
+          if (dateLabel) dateLabel.innerText = "Date";
+          if (endDateCol) endDateCol.style.display = 'none';
+          if (endDateInput) endDateInput.removeAttribute('required');
+          if (callTimeCol) callTimeCol.style.display = 'block';
+          if (startTimeCol) startTimeCol.style.display = 'block';
+          if (endTimeCol) endTimeCol.style.display = 'block';
       }
   }
 
@@ -3061,11 +3096,27 @@ function handleAddCustomService(inputId, containerId) {
       obj.services = finalServices;
 
       const isLeave = document.getElementById('newTypeLeave').checked;
+      let eventDatesArray = [];
+
       if (isLeave) {
           if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
           obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
+          
+          // --- CALCULATE DATE RANGE ---
+          let current = new Date(obj.eventDate);
+          let end = new Date(obj.eventEndDate || obj.eventDate);
+          
+          // Loop through the days and build an array of dates
+          while (current <= end) {
+              const year = current.getFullYear();
+              const month = String(current.getMonth() + 1).padStart(2, '0');
+              const day = String(current.getDate()).padStart(2, '0');
+              eventDatesArray.push(`${year}-${month}-${day}`);
+              current.setDate(current.getDate() + 1); // Move to next day
+          }
       } else {
           if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+          eventDatesArray.push(obj.eventDate); // Standard events just get 1 date here
       }
       
       document.getElementById('overlayText').innerText = "Saving to Database...";
@@ -3073,33 +3124,44 @@ function handleAddCustomService(inputId, containerId) {
       
       try {
           const newId = await getNextEventId();
-          await db.collection("dashboard_events").doc(newId).set({
-              eventId: newId,
-              eventName: obj.eventName || "",
-              eventDate: obj.eventDate || "",
-              eventVenue: obj.eventVenue || "",
-              venueLink: obj.venueLink || "",
-              eventStatus: obj.eventStatus || "Pencil Booked",
-              avpRequired: obj.avp === "true",
-              services: (obj.services || []).join(", "),
-              startTime: obj.startTime || "",
-              endTime: obj.endTime || "",
-              callTime: obj.callTime || "",
-              manpower: (obj.manpower || []).join(", "),
-              contactPerson: obj.contactPerson || "",
-              contactNumber: obj.contactNumber || "",
-              notes: obj.notes || "",
-              paymentType: obj.paymentType || "",
-              emailThread: obj.emailThread || "",
-              billingStatus: obj.billingStatus || "",
-              billingStatusDate: obj.billingStatusDate || "",
-              grNumber: obj.grNumber || "",
-              invoiceNumber: obj.invoiceNumber || "",
-              amount: obj.amount || "0",
-              paymentNotes: obj.paymentNotes || "",
-              invoiceUrl: obj.invoiceUrl || "",
-              checkUrl: obj.checkUrl || ""
+          const batch = db.batch(); // Use a Firebase Batch to push everything instantly
+
+          // Loop through our array of dates. If it's a 1-day event, it loops once. If it's a 5-day leave, it loops 5 times!
+          eventDatesArray.forEach((dateStr, index) => {
+              // The first day gets the exact Event ID. Subsequent days get a unique timestamped ID.
+              let docId = (index === 0) ? newId : `${newId}_${Date.now()}_${index}`;
+              let docRef = db.collection("dashboard_events").doc(docId);
+              
+              batch.set(docRef, {
+                  eventId: newId,
+                  eventName: obj.eventName || "",
+                  eventDate: dateStr, // Assign the unique date from our loop
+                  eventVenue: obj.eventVenue || "",
+                  venueLink: obj.venueLink || "",
+                  eventStatus: obj.eventStatus || "Pencil Booked",
+                  avpRequired: obj.avp === "true",
+                  services: (obj.services || []).join(", "),
+                  startTime: obj.startTime || "",
+                  endTime: obj.endTime || "",
+                  callTime: obj.callTime || "",
+                  manpower: (obj.manpower || []).join(", "),
+                  contactPerson: obj.contactPerson || "",
+                  contactNumber: obj.contactNumber || "",
+                  notes: obj.notes || "",
+                  paymentType: obj.paymentType || "",
+                  emailThread: obj.emailThread || "",
+                  billingStatus: obj.billingStatus || "",
+                  billingStatusDate: obj.billingStatusDate || "",
+                  grNumber: obj.grNumber || "",
+                  invoiceNumber: obj.invoiceNumber || "",
+                  amount: obj.amount || "0",
+                  paymentNotes: obj.paymentNotes || "",
+                  invoiceUrl: obj.invoiceUrl || "",
+                  checkUrl: obj.checkUrl || ""
+              });
           });
+
+          await batch.commit(); // Execute the bulk upload
           
           bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
           e.target.reset(); 
