@@ -1467,8 +1467,14 @@
   </div>
 </div></div></div>
   <div class="modal fade" id="payrollHistoryModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
-  <div class="modal-header bg-secondary text-white border-0">
-      <h6 class="fw-bold mb-0 letter-spacing-1"><i class="bi bi-clock-history me-2"></i> Payroll History Vault</h6>
+  <div class="modal-header bg-secondary text-white border-0 align-items-center">
+      <h6 class="fw-bold mb-0 letter-spacing-1 d-none d-sm-block"><i class="bi bi-clock-history me-2"></i> Payroll History Vault</h6>
+      <div class="d-flex align-items-center gap-2 ms-auto me-3">
+          <i class="bi bi-funnel-fill opacity-75"></i>
+          <select id="historyCrewFilter" class="form-select form-select-sm fw-bold border-0 shadow-sm text-dark" style="cursor: pointer; min-width: 130px;" onchange="renderPayrollHistory()">
+              <option value="">All Crew</option>
+          </select>
+      </div>
       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
   </div>
   <div class="modal-body p-0">
@@ -4852,6 +4858,19 @@ async function getNextEventId() {
       if (res && res.success && res.data) {
           // Reverse it so the newest payouts are at the top
           payrollHistoryCache = res.data.reverse(); 
+          
+          // Dynamically build the Crew Filter dropdown based on who is actually in the history
+          const filterSelect = document.getElementById('historyCrewFilter');
+          if (filterSelect) {
+              const uniqueNames = [...new Set(payrollHistoryCache.map(row => row['Crew Name']))].sort();
+              let optionsHtml = '<option value="">All Crew</option>';
+              uniqueNames.forEach(name => {
+                  if (name) optionsHtml += `<option value="${name}">${name}</option>`;
+              });
+              filterSelect.innerHTML = optionsHtml;
+              filterSelect.value = ''; // Reset to "All Crew" every time the vault opens
+          }
+
           renderPayrollHistory();
       } else {
           tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i>No history found, or the "Payroll Logs" tab is missing.</td></tr>';
@@ -4865,8 +4884,26 @@ async function getNextEventId() {
           return;
       }
 
+      // Grab the current value of the dropdown filter
+      const filterVal = document.getElementById('historyCrewFilter') ? document.getElementById('historyCrewFilter').value : '';
+      let dataToRender = payrollHistoryCache;
+
+      // Filter the data if a specific crew member is selected
+      if (filterVal) {
+          dataToRender = dataToRender.filter(row => row['Crew Name'] === filterVal);
+      }
+
+      if (dataToRender.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No records found for this crew member.</td></tr>';
+          return;
+      }
+
       let html = '';
-      payrollHistoryCache.forEach((row, index) => {
+      dataToRender.forEach((row) => {
+          // CRITICAL FIX: We must find the index of this row in the ORIGINAL Unfiltered cache
+          // so that clicking "VIEW" opens the correct payslip data!
+          const originalIndex = payrollHistoryCache.indexOf(row);
+
           // Format the timestamp nicely
           let d = new Date(row['Timestamp']);
           let dateStr = isNaN(d) ? row['Timestamp'] : d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'});
@@ -4876,7 +4913,7 @@ async function getNextEventId() {
               <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2 opacity-50"></i>${row['Crew Name']}</td>
               <td><span class="badge bg-light border text-dark">${row['Cutoff Start']} to ${row['Cutoff End']}</span></td>
               <td class="text-end fw-bold text-success">₱${Number(row['Final Net Pay']).toLocaleString()}</td>
-              <td class="text-end px-3"><button class="btn btn-sm btn-outline-secondary py-1 fw-bold shadow-sm" style="font-size:0.7rem;" onclick="viewHistoricalPayslip(${index})"><i class="bi bi-eye me-1"></i> VIEW</button></td>
+              <td class="text-end px-3"><button class="btn btn-sm btn-outline-secondary py-1 fw-bold shadow-sm" style="font-size:0.7rem;" onclick="viewHistoricalPayslip(${originalIndex})"><i class="bi bi-eye me-1"></i> VIEW</button></td>
           </tr>`;
       });
       tbody.innerHTML = html;
