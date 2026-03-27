@@ -895,7 +895,45 @@
       <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
       <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea>
   </div>
+  <div id="newNotesBlock" class="mb-4">
+      <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
+      <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea>
+  </div>
 
+  <div id="newEditingSection" class="p-3 mb-4 rounded border border-info border-opacity-25" style="background-color: rgba(13, 202, 240, 0.05);">
+      <div class="section-title text-info mb-3"><i class="bi bi-film me-1"></i> Editing Workflow</div>
+      <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm">Editor Assigned</label>
+              <div class="input-group input-group-sm">
+                  <select name="editorAssigned" id="newEditorSelect" class="form-select border-end-0 fw-bold editor-field">
+                      <option value="">-- Select Editor --</option>
+                      <option>Athan</option><option>Jovert</option><option>May</option>
+                      <option>Tina</option><option>Grace</option><option>Jops</option>
+                  </select>
+                  <input type="text" name="customEditor" id="newCustomEditor" class="form-control editor-field" placeholder="Or custom name...">
+              </div>
+          </div>
+          <div class="col-12 col-md-6 d-flex align-items-end pb-1">
+              <div class="form-check form-switch">
+                  <input class="form-check-input admin-only-field" type="checkbox" name="sentToClient" id="newSentToClient">
+                  <label class="form-check-label small fw-bold text-dark" for="newSentToClient">Mark as Sent to Client</label>
+              </div>
+          </div>
+      </div>
+      <div class="row g-3">
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm text-secondary"><i class="bi bi-cloud-arrow-up"></i> RAW Files Link</label>
+              <input type="url" name="rawLink" id="newRawLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+          </div>
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm text-success"><i class="bi bi-check-circle"></i> Completed Files Link</label>
+              <input type="url" name="editedLink" id="newEditedLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+          </div>
+      </div>
+  </div>
+
+  <div id="newPaymentFields">
   <div id="newPaymentFields">
       <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
       <select name="paymentType" id="newPaymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('new')">
@@ -2132,6 +2170,7 @@ function handleAddCustomService(inputId, containerId) {
       const paymentBlock = document.getElementById(prefix + 'PaymentFields');
       const dateTimeBlock = document.getElementById(prefix + 'DateTimeBlock');
       const crewBlock = document.getElementById(prefix + 'CrewBlock');
+      const editingBlock = document.getElementById(prefix + 'EditingSection');
       
       const formId = prefix === 'new' ? 'eventForm' : 'editForm';
       const eventNameInput = document.querySelector(`#${formId} input[name="eventName"]`);
@@ -2149,6 +2188,7 @@ function handleAddCustomService(inputId, containerId) {
           generalBlock.style.display = 'none';
           servicesBlock.style.display = 'none';
           paymentBlock.style.display = 'none';
+          if(editingBlock) editingBlock.style.display = 'none';
           if(dateTimeBlock) dateTimeBlock.style.display = 'block';
           if(crewBlock) crewBlock.style.display = 'block';
           if(eventNameInput) eventNameInput.removeAttribute('required');
@@ -2172,6 +2212,7 @@ function handleAddCustomService(inputId, containerId) {
       } else {
           generalBlock.style.display = 'block';
           paymentBlock.style.display = 'block';
+          if(editingBlock) editingBlock.style.display = 'block';
           if(eventNameInput) eventNameInput.setAttribute('required', 'required');
           const isAvp = document.getElementById(prefix + 'AvpCheck').checked;
           toggleAvpFields(isAvp, prefix);
@@ -3281,6 +3322,30 @@ function handleAddCustomService(inputId, containerId) {
         form.elements['amount'].value = paymentSourceEvent['Amount'] || '0';
         form.elements['paymentNotes'].value = paymentSourceEvent['Payment Notes'] || '';
         
+        // --- POPULATE EDITING SECTION ---
+        const editorAssignedVal = e['Editor Assigned'] || '';
+        const editorOptions = Array.from(form.elements['editorAssigned'].options).map(opt => opt.value);
+        if (editorAssignedVal && !editorOptions.includes(editorAssignedVal)) {
+            form.elements['editorAssigned'].value = '';
+            form.elements['customEditor'].value = editorAssignedVal;
+        } else {
+            form.elements['editorAssigned'].value = editorAssignedVal;
+            form.elements['customEditor'].value = '';
+        }
+        
+        if (document.getElementById('editSentToClient')) document.getElementById('editSentToClient').checked = e['Sent to Client'];
+        form.elements['rawLink'].value = e['RAW Link'] || '';
+        form.elements['editedLink'].value = e['Edited Link'] || '';
+        
+        if (document.getElementById('editRawTimestamp')) document.getElementById('editRawTimestamp').value = e['RAW Timestamp'] || '';
+        if (document.getElementById('editEditedTimestamp')) document.getElementById('editEditedTimestamp').value = e['Edited Timestamp'] || '';
+        if (document.getElementById('editSentTimestamp')) document.getElementById('editSentTimestamp').value = e['Sent Timestamp'] || '';
+        
+        if (document.getElementById('editSentStamp')) document.getElementById('editSentStamp').innerText = e['Sent Timestamp'] || '';
+        if (document.getElementById('editRawStamp')) document.getElementById('editRawStamp').innerText = e['RAW Timestamp'] || '';
+        if (document.getElementById('editEditedStamp')) document.getElementById('editEditedStamp').innerText = e['Edited Timestamp'] || '';
+        // --------------------------------
+
        // Lock the payment block if: it's an Added Day, the user is an Editor, or the user is View-Only
         const paymentBlockSection = document.getElementById('editPaymentFields');
         paymentBlockSection.style.display = 'block'; // Always show it
@@ -3560,6 +3625,13 @@ function handleAddCustomService(inputId, containerId) {
                   contactPerson: obj.contactPerson || "",
                   contactNumber: obj.contactNumber || "",
                   notes: obj.notes || "",
+                  editorAssigned: obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || ""),
+                  sentToClient: document.getElementById('newSentToClient') ? document.getElementById('newSentToClient').checked : false,
+                  rawLink: obj.rawLink || "",
+                  editedLink: obj.editedLink || "",
+                  rawTimestamp: obj.rawLink ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : "",
+                  editedTimestamp: obj.editedLink ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : "",
+                  sentTimestamp: (document.getElementById('newSentToClient') && document.getElementById('newSentToClient').checked) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : "",
                   paymentType: obj.paymentType || "",
                   emailThread: obj.emailThread || "",
                   billingStatus: obj.billingStatus || "",
@@ -3727,6 +3799,13 @@ function handleAddCustomService(inputId, containerId) {
               contactPerson: obj.contactPerson || "",
               contactNumber: obj.contactNumber || "",
               notes: obj.notes || "",
+              editorAssigned: obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || ""),
+              sentToClient: document.getElementById('editSentToClient') ? document.getElementById('editSentToClient').checked : false,
+              rawLink: obj.rawLink || "",
+              editedLink: obj.editedLink || "",
+              rawTimestamp: (obj.rawLink && !obj.rawTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (obj.rawLink ? obj.rawTimestamp : ""),
+              editedTimestamp: (obj.editedLink && !obj.editedTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (obj.editedLink ? obj.editedTimestamp : ""),
+              sentTimestamp: (document.getElementById('editSentToClient') && document.getElementById('editSentToClient').checked && !obj.sentTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (document.getElementById('editSentToClient') && document.getElementById('editSentToClient').checked ? obj.sentTimestamp : ""),
               paymentType: obj.paymentType || "",
               emailThread: obj.emailThread || "",
               billingStatus: obj.billingStatus || "",
