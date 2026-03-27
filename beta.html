@@ -1777,7 +1777,9 @@
           }
           actionFunction();
       } else {
-          pendingAuthAction = actionFunction;
+          // THE FIX: We wrap the action so the gatekeeper re-evaluates the role AFTER the login succeeds!
+          pendingAuthAction = () => requireAuth(actionFunction, requiresAdmin);
+          
           document.getElementById('authPassword').value = '';
           document.getElementById('authError').style.display = 'none';
           const authModal = bootstrap.Modal.getInstance(document.getElementById('authModal')) || new bootstrap.Modal(document.getElementById('authModal'));
