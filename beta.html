@@ -435,35 +435,13 @@
               <h4 class="fw-bold mb-0 text-danger d-flex align-items-center"><i class="bi bi-cash-coin me-2"></i> Payroll Engine</h4>
               
               <div class="bg-white p-2 rounded-3 border shadow-sm d-flex flex-wrap gap-2 align-items-end">
-                  <div class="px-2 flex-grow-1">
-                      <span class="form-label-sm text-secondary">Select Cutoff Period</span>
-                      <select id="prCutoffDropdown" class="form-select form-select-sm fw-bold text-dark">
-                          <option value="2025-12-26|2026-01-10">December 26, 2025 - January 10, 2026</option>
-                          <option value="2026-01-11|2026-01-25">January 11, 2026 - January 25, 2026</option>
-                          <option value="2026-01-26|2026-02-10">January 26, 2026 - February 10, 2026</option>
-                          <option value="2026-02-11|2026-02-25">February 11, 2026 - February 25, 2026</option>
-                          <option value="2026-02-26|2026-03-10">February 26, 2026 - March 10, 2026</option>
-                          <option value="2026-03-11|2026-03-25">March 11, 2026 - March 25, 2026</option>
-                          <option value="2026-03-26|2026-04-10">March 26, 2026 - April 10, 2026</option>
-                          <option value="2026-04-11|2026-04-25">April 11, 2026 - April 25, 2026</option>
-                          <option value="2026-04-26|2026-05-10">April 26, 2026 - May 10, 2026</option>
-                          <option value="2026-05-11|2026-05-25">May 11, 2026 - May 25, 2026</option>
-                          <option value="2026-05-26|2026-06-10">May 26, 2026 - June 10, 2026</option>
-                          <option value="2026-06-11|2026-06-25">June 11, 2026 - June 25, 2026</option>
-                          <option value="2026-06-26|2026-07-10">June 26, 2026 - July 10, 2026</option>
-                          <option value="2026-07-11|2026-07-25">July 11, 2026 - July 25, 2026</option>
-                          <option value="2026-07-26|2026-08-10">July 26, 2026 - August 10, 2026</option>
-                          <option value="2026-08-11|2026-08-25">August 11, 2026 - August 25, 2026</option>
-                          <option value="2026-08-26|2026-09-10">August 26, 2026 - September 10, 2026</option>
-                          <option value="2026-09-11|2026-09-25">September 11, 2026 - September 25, 2026</option>
-                          <option value="2026-09-26|2026-10-10">September 26, 2026 - October 10, 2026</option>
-                          <option value="2026-10-11|2026-10-25">October 11, 2026 - October 25, 2026</option>
-                          <option value="2026-10-26|2026-11-10">October 26, 2026 - November 10, 2026</option>
-                          <option value="2026-11-11|2026-11-25">November 11, 2026 - November 25, 2026</option>
-                          <option value="2026-11-26|2026-12-10">November 26, 2026 - December 10, 2026</option>
-                          <option value="2026-12-11|2026-12-25">December 11, 2026 - December 25, 2026</option>
-                          <option value="2026-12-26|2027-01-10">December 26, 2026 - January 10, 2027</option>
-                      </select>
+                  <div class="px-2">
+                      <span class="form-label-sm text-secondary">Start of Cutoff</span>
+                      <input type="date" id="prStartDate" class="form-control form-control-sm fw-bold text-dark">
+                  </div>
+                  <div class="border-start ps-2 pe-2 flex-grow-1">
+                      <span class="form-label-sm text-secondary">End of Cutoff</span>
+                      <input type="date" id="prEndDate" class="form-control form-control-sm fw-bold text-dark">
                   </div>
                   <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm ms-1" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
                   <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm ms-1" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
@@ -4692,13 +4670,12 @@ async function getNextEventId() {
   }
 
   // Engine: Aggregate the data using the Dynamic Rates
+  // Engine: Aggregate the data using the Dynamic Rates
   function runPayrollEngine() {
-      const dropdown = document.getElementById('prCutoffDropdown');
-      if (!dropdown || !dropdown.value) return alert("Please select a cutoff period.");
+      const start = document.getElementById('prStartDate').value;
+      const end = document.getElementById('prEndDate').value;
       
-      const dates = dropdown.value.split('|');
-      const start = dates[0];
-      const end = dates[1];
+      if (!start || !end) return alert("Please select a Start and End date for the cutoff.");
 
       currentPayrollData = {};
 
@@ -4770,8 +4747,9 @@ async function getNextEventId() {
       const data = currentPayrollData[name];
       
       document.getElementById('prModalName').innerText = name;
-      const dropdown = document.getElementById('prCutoffDropdown');
-      document.getElementById('prModalCutoffDates').innerText = dropdown.options[dropdown.selectedIndex].text;
+      const start = document.getElementById('prStartDate').value;
+      const end = document.getElementById('prEndDate').value;
+      document.getElementById('prModalCutoffDates').innerText = `${start} to ${end}`;
       
       // Reset global inputs
       document.getElementById('prGlobalExpenses').value = data.expenses || 0;
@@ -4846,8 +4824,9 @@ async function getNextEventId() {
       const data = currentPayrollData[activePayrollPerson];
       
       document.getElementById('slipName').innerText = activePayrollPerson;
-      const dropdown = document.getElementById('prCutoffDropdown');
-      document.getElementById('slipDates').innerText = dropdown.options[dropdown.selectedIndex].text;
+      const start = document.getElementById('prStartDate').value;
+      const end = document.getElementById('prEndDate').value;
+      document.getElementById('slipDates').innerText = `${start} to ${end}`;
       
       let slipHtml = '';
       data.events.forEach(item => {
@@ -4890,14 +4869,11 @@ async function getNextEventId() {
       ov.style.display = 'flex';
 
       // Package everything into a clean JSON object for Apps Script
-      const dropdown = document.getElementById('prCutoffDropdown');
-      const dates = dropdown.value.split('|');
-
       const payload = {
           action: 'logPayroll',
           crewName: activePayrollPerson,
-          cutoffStart: dates[0],
-          cutoffEnd: dates[1],
+          cutoffStart: document.getElementById('prStartDate').value,
+          cutoffEnd: document.getElementById('prEndDate').value,
           totalBasePay: data.totalBase,
           totalExpenses: data.expenses,
           totalMisc: data.misc,
