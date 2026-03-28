@@ -2315,8 +2315,27 @@ function handleAddCustomService(inputId, containerId) {
       window.history.replaceState({}, '', url);
 
     } else if (currentTab === 'editqueue') {
-        // Now 'filtered' is defined and can be passed safely!
         renderEditingQueue(filtered);
+        
+        // Push active Editing Queue filters to the URL
+        url.searchParams.set('tab', 'editqueue');
+        const eqSearch = document.getElementById('fEqSearch') ? document.getElementById('fEqSearch').value : '';
+        const eqStatus = document.getElementById('fEqStatus') ? document.getElementById('fEqStatus').value : 'All';
+        
+        if(eqSearch) url.searchParams.set('fEqSearch', eqSearch); else url.searchParams.delete('fEqSearch');
+        if(eqStatus && eqStatus !== 'All') url.searchParams.set('fEqStatus', eqStatus); else url.searchParams.delete('fEqStatus');
+        
+        // Clean up other tabs' params
+        ['fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'q', 'grInv', 'type', 'status'].forEach(p => url.searchParams.delete(p));
+        window.history.replaceState({}, '', url);
+
+    } else if (currentTab === 'payroll') {
+        // Push Payroll tab to URL
+        url.searchParams.set('tab', 'payroll');
+        
+        // Clean up other tabs' params
+        ['fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'q', 'grInv', 'type', 'status', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
+        window.history.replaceState({}, '', url);
     }
   }
 
@@ -4452,9 +4471,11 @@ function handleAddCustomService(inputId, containerId) {
 
   // --- INSTANT URL FILTER HYDRATION ---
   // This runs immediately so Firebase doesn't accidentally erase the URL!
+  // --- INSTANT URL FILTER HYDRATION ---
+  // This runs immediately so Firebase doesn't accidentally erase the URL!
   (function loadFiltersFromURL() {
       const urlParams = new URLSearchParams(window.location.search);
-      const activeTab = urlParams.get('tab') || 'calendar';
+      const activeTab = urlParams.get('tab') || 'events';
       
       if (activeTab === 'payments') {
           if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
@@ -4470,11 +4491,14 @@ function handleAddCustomService(inputId, containerId) {
           if(urlParams.get('fDateFrom')) document.getElementById('fDateFrom').value = urlParams.get('fDateFrom');
           if(urlParams.get('fDateTo')) document.getElementById('fDateTo').value = urlParams.get('fDateTo');
           if(urlParams.get('fCrew')) {
-              // Pre-inject the crew name so the dropdown accepts it before the real data loads
               document.getElementById('fCrew').innerHTML = `<option value="${urlParams.get('fCrew')}">${urlParams.get('fCrew')}</option>`;
               document.getElementById('fCrew').value = urlParams.get('fCrew');
           }
           if(urlParams.get('fStatus')) document.getElementById('fStatus').value = urlParams.get('fStatus');
+      }
+      else if (activeTab === 'editqueue') {
+          if(urlParams.get('fEqSearch')) document.getElementById('fEqSearch').value = urlParams.get('fEqSearch');
+          if(urlParams.get('fEqStatus')) document.getElementById('fEqStatus').value = urlParams.get('fEqStatus');
       }
   })();
   // ------------------------------------
