@@ -749,6 +749,16 @@
           <div class="col-6 col-md-3" id="newCallTimeCol"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
           <div class="col-6 col-md-3" id="newStartTimeCol"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
           <div class="col-6 col-md-3" id="newEndTimeCol"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+          <div class="col-12 mt-2 pt-2 border-top border-secondary-subtle border-dashed">
+              <div class="form-check form-switch d-inline-block me-3 align-middle">
+                  <input class="form-check-input" type="checkbox" id="newHalfDayCheck" onchange="document.getElementById('newHalfDayRateWrapper').style.display = this.checked ? 'inline-flex' : 'none'">
+                  <label class="form-check-label small fw-bold text-dark" for="newHalfDayCheck">Half-Day Event</label>
+              </div>
+              <div id="newHalfDayRateWrapper" class="input-group input-group-sm align-middle" style="display:none; width: 140px;">
+                  <span class="input-group-text bg-light text-muted fw-bold">₱</span>
+                  <input type="number" id="newHalfDayRate" class="form-control fw-bold text-danger" placeholder="Rate">
+              </div>
+          </div>
       </div>
   </div>
     
@@ -1185,6 +1195,16 @@
           <div class="col-6 col-md-3" id="editCallTimeCol"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
           <div class="col-6 col-md-3" id="editStartTimeCol"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
           <div class="col-6 col-md-3" id="editEndTimeCol"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+          <div class="col-12 mt-2 pt-2 border-top border-secondary-subtle border-dashed">
+              <div class="form-check form-switch d-inline-block me-3 align-middle">
+                  <input class="form-check-input" type="checkbox" id="editHalfDayCheck" onchange="document.getElementById('editHalfDayRateWrapper').style.display = this.checked ? 'inline-flex' : 'none'">
+                  <label class="form-check-label small fw-bold text-dark" for="editHalfDayCheck">Half-Day Event</label>
+              </div>
+              <div id="editHalfDayRateWrapper" class="input-group input-group-sm align-middle" style="display:none; width: 140px;">
+                  <span class="input-group-text bg-light text-muted fw-bold">₱</span>
+                  <input type="number" id="editHalfDayRate" class="form-control fw-bold text-danger" placeholder="Rate">
+              </div>
+          </div>
       </div>
   </div>
     
@@ -3336,6 +3356,12 @@ function handleAddCustomService(inputId, containerId) {
     form.elements['callTime'].value = to24Hour(e['Call Time']);
     form.elements['startTime'].value = to24Hour(e['Event Start Time']);
     form.elements['endTime'].value = to24Hour(e['Event End Time']);
+    if (document.getElementById('editHalfDayCheck')) {
+        const isHalfDay = e['Half Day'] === 'true';
+        document.getElementById('editHalfDayCheck').checked = isHalfDay;
+        document.getElementById('editHalfDayRateWrapper').style.display = isHalfDay ? 'inline-flex' : 'none';
+        document.getElementById('editHalfDayRate').value = e['Half Day Rate'] || '';
+    }
     form.elements['notes'].value = e['Event Notes'] || '';
     
     const crew = (e['Manpower'] || '').split(',').map(s=>s.trim()).filter(s=>s);
@@ -3593,6 +3619,8 @@ function handleAddCustomService(inputId, containerId) {
                   services: (obj.services || []).join(", "),
                   startTime: obj.startTime || "",
                   endTime: obj.endTime || "",
+                  halfDay: document.getElementById('newHalfDayCheck') ? document.getElementById('newHalfDayCheck').checked : false,
+                  halfDayRate: document.getElementById('newHalfDayRate') ? document.getElementById('newHalfDayRate').value : "0",
                   callTime: obj.callTime || "",
                   manpower: (obj.manpower || []).join(", "),
                   contactPerson: obj.contactPerson || "",
@@ -3767,6 +3795,8 @@ function handleAddCustomService(inputId, containerId) {
               services: (obj.services || []).join(", "),
               startTime: obj.startTime || "",
               endTime: obj.endTime || "",
+              halfDay: document.getElementById('editHalfDayCheck') ? document.getElementById('editHalfDayCheck').checked : false,
+              halfDayRate: document.getElementById('editHalfDayRate') ? document.getElementById('editHalfDayRate').value : "0",
               callTime: obj.callTime || "",
               manpower: (obj.manpower || []).join(", "),
               contactPerson: obj.contactPerson || "",
@@ -4469,6 +4499,8 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
             'Services': String(d.services || ""),
             'Event Start Time': String(d.startTime || ""),
             'Event End Time': String(d.endTime || ""),
+            'Half Day': d.halfDay === true || String(d.halfDay) === "true" ? "true" : "false",
+            'Half Day Rate': String(d.halfDayRate || "0"),
             'Call Time': String(d.callTime || ""),
             'Manpower': String(d.manpower || ""),
             'Contact Person': String(d.contactPerson || ""),
@@ -4685,12 +4717,18 @@ async function getNextEventId() {
       });
 
       validEvents.forEach(e => {
+          const isHalfDay = e['Half Day'] === 'true';
+          const halfDayRate = parseFloat(e['Half Day Rate']) || 0;
+
           // 1. Process Crew
           if (e['Manpower']) {
               const crewArray = e['Manpower'].split(',').map(c => c.trim()).filter(Boolean);
               crewArray.forEach(c => {
                   if (!currentPayrollData[c]) initPayrollPerson(c);
-                  let rate = getCrewRate(c, 'Crew'); // Pulls individual rate!
+                  
+                  // THE FIX: If it's a half-day event, use the override rate. Otherwise, grab their saved default rate!
+                  let rate = isHalfDay ? halfDayRate : getCrewRate(c, 'Crew'); 
+                  
                   currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: 0 });
                   currentPayrollData[c].totalBase += rate;
               });
@@ -4699,7 +4737,8 @@ async function getNextEventId() {
           if (e['Editor Assigned']) {
               const editor = e['Editor Assigned'].trim();
               if (!currentPayrollData[editor]) initPayrollPerson(editor);
-              let rate = getCrewRate(editor, 'Editor'); // Pulls individual rate!
+              
+              let rate = getCrewRate(editor, 'Editor'); // Editors usually maintain their project rate
               currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: 0 });
               currentPayrollData[editor].totalBase += rate;
           }
