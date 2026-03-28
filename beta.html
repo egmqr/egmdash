@@ -2248,11 +2248,16 @@ function handleAddCustomService(inputId, containerId) {
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
     let url = new URL(window.location);
-    if(currentTab === 'editqueue') renderEditingQueue(filtered);
+    
+    // THE FIX: Define 'filtered' at the top level so all tabs can see it!
+    let filtered = rawEvents; 
+
     if(currentTab === 'events' || currentTab === 'calendar') {
-      const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
-      
-      let filtered = rawEvents; 
+      const n=document.getElementById('fName').value.toLowerCase(), 
+            dF=document.getElementById('fDateFrom').value, 
+            dT=document.getElementById('fDateTo').value, 
+            c=document.getElementById('fCrew').value, 
+            s=document.getElementById('fStatus').value;
       
       if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n) || (e['Event Venue'] && e['Event Venue'].toLowerCase().includes(n)));
       if(dF) { filtered = filtered.filter(e => e['Event Date'] >= dF); } 
@@ -2263,32 +2268,24 @@ function handleAddCustomService(inputId, containerId) {
       
       filteredEventsCache = filtered; 
       
-      // Check if the user is actively using ANY filter
       const isDefaultView = (!n && !dF && !dT && !c && !s);
       let listFiltered = filtered;
       
-      // Hide ONLY Pencil Booked if no filters are actively applied (Cancelled stays visible)
       if (isDefaultView) { 
           listFiltered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked');
       }
       
-      // --- CALENDAR AUTO-JUMP LOGIC ---
-      // We no longer force a jump to today on background saves, keeping you exactly on the month you are editing!
       if (!isDefaultView && filtered.length > 0) {
-          // If actively searching, find the earliest date among the filtered results
           const earliestDate = filtered.map(e => e['Event Date']).filter(Boolean).sort()[0];
           if (earliestDate) {
               const dParts = earliestDate.split('-');
-              // Jump the calendar to the month and year of that first hit
               currentCalendarDate = new Date(dParts[0], dParts[1] - 1, 1);
           }
       }
-      // --------------------------------
       
       renderEvents(listFiltered, isDefaultView);
       renderCalendar(filtered);
 
-      // Push active Event filters to the URL
       url.searchParams.set('tab', currentTab);
       if(n) url.searchParams.set('fName', n); else url.searchParams.delete('fName');
       if(dF) url.searchParams.set('fDateFrom', dF); else url.searchParams.delete('fDateFrom');
@@ -2296,7 +2293,6 @@ function handleAddCustomService(inputId, containerId) {
       if(c) url.searchParams.set('fCrew', c); else url.searchParams.delete('fCrew');
       if(s) url.searchParams.set('fStatus', s); else url.searchParams.delete('fStatus');
       
-      // Clean up Payment URL params
       ['q', 'grInv', 'type', 'status'].forEach(p => url.searchParams.delete(p));
       window.history.replaceState({}, '', url);
 
@@ -2306,9 +2302,6 @@ function handleAddCustomService(inputId, containerId) {
             t=document.getElementById('fPayType').value, 
             s=document.getElementById('fBillStatus').value;
             
-      // Start with ALL events so they remain searchable
-      let filtered = rawEvents;
-      
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
       if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
       if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
@@ -2316,23 +2309,24 @@ function handleAddCustomService(inputId, containerId) {
       if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed', 'Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Pending', 'Pending Clearance'].includes(e['Billing Status'])); } 
       else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
 
-      // Hide Pencil Booked and Cancelled IF the user is NOT actively typing a text search
       if (!q && !grInv) {
           filtered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
       }
       
       renderPayments(filtered);
       
-      // Push active Payment filters to the URL
       url.searchParams.set('tab', 'payments');
       if(q) url.searchParams.set('q', q); else url.searchParams.delete('q');
       if(grInv) url.searchParams.set('grInv', grInv); else url.searchParams.delete('grInv');
       if(t) url.searchParams.set('type', t); else url.searchParams.delete('type');
       if(s && s !== 'Unpaid') url.searchParams.set('status', s); else url.searchParams.delete('status');
 
-      // Clean up Event URL params
       ['fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus'].forEach(p => url.searchParams.delete(p));
       window.history.replaceState({}, '', url);
+
+    } else if (currentTab === 'editqueue') {
+        // Now 'filtered' is defined and can be passed safely!
+        renderEditingQueue(filtered);
     }
   }
 
