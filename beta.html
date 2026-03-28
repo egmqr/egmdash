@@ -3726,8 +3726,23 @@ function handleAddCustomService(inputId, containerId) {
       e.preventDefault();
       const btn = document.getElementById('editSubmitBtn');
       const ov = document.getElementById('submitOverlay');
+
+      // --- CRITICAL FIX: Temporarily wake up disabled fields to capture data and prevent data wipe! ---
+      const allElements = e.target.querySelectorAll('input, select, textarea');
+      const disabledElements = [];
+      allElements.forEach(el => {
+          if (el.disabled) {
+              disabledElements.push(el);
+              el.disabled = false;
+          }
+      });
+
       const fd = new FormData(e.target);
       const obj = Object.fromEntries(fd.entries());
+
+      // Put them immediately back to sleep so the Editor UI doesn't visually break
+      disabledElements.forEach(el => el.disabled = true);
+      // -----------------------------------------------------------------------------------------------
       
       obj.manpower = fd.getAll('manpower');
       let rawServices = fd.getAll('services');
