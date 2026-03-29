@@ -5354,8 +5354,11 @@ function showToast(message, type = 'success') {
       generateReceiptImage(activePayrollPerson, data, datesStr);
 
       const collapsedItems = getCollapsedEvents(data.events);
+      const itemizedJson = JSON.stringify(collapsedItems.map(e => ({
+          id: e.id, name: e.name, date: e.dateString, role: e.role, base: e.basePay, extra: e.extraPay
+      })));
 
-      // 2. Package and Log to Google Sheets using the Collapsed List
+      // 2. Package and Log to Google Sheets (Silent Background Backup)
       const payload = {
           action: 'logPayroll',
           crewName: activePayrollPerson,
@@ -5365,27 +5368,37 @@ function showToast(message, type = 'success') {
           totalExpenses: data.expenses,
           totalMisc: data.misc,
           finalNetPay: data.finalTotal,
-          itemizedEvents: JSON.stringify(collapsedItems.map(e => ({
-              id: e.id, name: e.name, date: e.dateString, role: e.role, base: e.basePay, extra: e.extraPay
-          })))
+          itemizedEvents: itemizedJson
       };
+      callApi(payload, 'POST', true); // Let this run in the background without making the user wait!
 
-      const res = await callApi(payload, 'POST', true); // Silent background save
+      // 3. Save to FIREBASE for the lightning-fast History Vault
+      try {
+          await db.collection("payroll_history").add({
+              crewName: activePayrollPerson,
+              cutoffStart: start,
+              cutoffEnd: end,
+              totalBasePay: data.totalBase,
+              totalExpenses: data.expenses,
+              totalMisc: data.misc,
+              finalNetPay: data.finalTotal,
+              itemizedEvents: itemizedJson,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+      } catch (err) {
+          console.error("Firebase History Save Error:", err);
+      }
       
       btn.innerHTML = '<i class="bi bi-file-earmark-image me-1"></i> GENERATE & DOWNLOAD PAYSLIP';
       btn.disabled = false;
 
-      if (res && res.success) {
-          bootstrap.Modal.getInstance(document.getElementById('payrollModal')).hide();
-          showToast(`Payslip for ${activePayrollPerson} generated and saved to Google Sheets!`, 'success');
-      } else {
-          alert("Error logging to Google Sheets: " + (res ? res.error || res.message : "Unknown error"));
-      }
+      bootstrap.Modal.getInstance(document.getElementById('payrollModal')).hide();
+      showToast(`Payslip for ${activePayrollPerson} generated and saved to Vault!`, 'success');
   }
 
   
   // ==============================================================================
-  // PAYROLL HISTORY VAULT
+  // PAYROLL HISTORY VAULT (FIREBASE POWERED)
   // ==============================================================================
   let payrollHistoryCache = [];
 
@@ -5395,67 +5408,63 @@ function showToast(message, type = 'success') {
       
       new bootstrap.Modal(document.getElementById('payrollHistoryModal')).show();
 
-      // Call the backend to pull everything from the "Payroll Logs" sheet
-      const res = await callApi({ action: 'getSheetData', sheetName: 'Payroll Logs' }, 'POST', true);
-      
-      if (res && res.success && res.data) {
-          // Reverse it so the newest payouts are at the top
-          payrollHistoryCache = res.data.reverse(); 
+      try {
+          // Pull instantly from Firebase instead of Google Sheets!
+          const snapshot = await db.collection("payroll_history").orderBy("timestamp", "desc").get();
           
-          // Dynamically build the Crew Filter dropdown based on who is actually in the history
-          const filterSelect = document.getElementById('historyCrewFilter');
-          if (filterSelect) {
-              const uniqueNames = [...new Set(payrollHistoryCache.map(row => row['Crew Name']))].sort();
-              let optionsHtml = '<option value="">All Crew</option>';
-              uniqueNames.forEach(name => {
-                  if (name) optionsHtml += `<option value="${name}">${name}</option>`;
-              });
-              filterSelect.innerHTML = optionsHtml;
-              filterSelect.value = ''; // Reset to "All Crew" every time the vault opens
+          payrollHistoryCache = [];
+          snapshot.forEach(doc => {
+              payrollHistoryCache.push(doc.data());
+          });
+          
+          if (payrollHistoryCache.length > 0) {
+              // Dynamically build the Crew Filter dropdown
+              const filterSelect = document.getElementById('historyCrewFilter');
+              if (filterSelect) {
+                  const uniqueNames = [...new Set(payrollHistoryCache.map(row => row.crewName))].sort();
+                  let optionsHtml = '<option value="">All Crew</option>';
+                  uniqueNames.forEach(name => {
+                      if (name) optionsHtml += `<option value="${name}">${name}</option>`;
+                  });
+                  filterSelect.innerHTML = optionsHtml;
+                  filterSelect.value = ''; // Reset to "All Crew"
+              }
+              renderPayrollHistory();
+          } else {
+              tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-3 d-block mb-2 opacity-50"></i>Vault is empty. Generate a payslip to start logging!</td></tr>';
           }
-
-          renderPayrollHistory();
-      } else {
-          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i>No history found, or the "Payroll Logs" tab is missing.</td></tr>';
+      } catch (err) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i>Error loading history: ${err.message}</td></tr>`;
       }
   }
 
   function renderPayrollHistory() {
       const tbody = document.getElementById('prHistoryBody');
-      if (payrollHistoryCache.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-3 d-block mb-2 opacity-50"></i>Vault is empty.</td></tr>';
-          return;
-      }
-
-      // Grab the current value of the dropdown filter
       const filterVal = document.getElementById('historyCrewFilter') ? document.getElementById('historyCrewFilter').value : '';
       let dataToRender = payrollHistoryCache;
 
-      // Filter the data if a specific crew member is selected
       if (filterVal) {
-          dataToRender = dataToRender.filter(row => row['Crew Name'] === filterVal);
+          dataToRender = dataToRender.filter(row => row.crewName === filterVal);
       }
 
       if (dataToRender.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No records found for this crew member.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No records found.</td></tr>';
           return;
       }
 
       let html = '';
       dataToRender.forEach((row) => {
-          // CRITICAL FIX: We must find the index of this row in the ORIGINAL Unfiltered cache
-          // so that clicking "VIEW" opens the correct payslip data!
           const originalIndex = payrollHistoryCache.indexOf(row);
 
-          // Format the timestamp nicely
-          let d = new Date(row['Timestamp']);
-          let dateStr = isNaN(d) ? row['Timestamp'] : d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'});
+          // Format the Firebase timestamp
+          let d = row.timestamp ? row.timestamp.toDate() : new Date();
+          let dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'});
           
           html += `<tr>
               <td class="text-muted px-3">${dateStr}</td>
-              <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2 opacity-50"></i>${row['Crew Name']}</td>
-              <td><span class="badge bg-light border text-dark">${row['Cutoff Start']} to ${row['Cutoff End']}</span></td>
-              <td class="text-end fw-bold text-success">₱${Number(row['Final Net Pay']).toLocaleString()}</td>
+              <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2 opacity-50"></i>${row.crewName}</td>
+              <td><span class="badge bg-light border text-dark">${row.cutoffStart} to ${row.cutoffEnd}</span></td>
+              <td class="text-end fw-bold text-success">₱${Number(row.finalNetPay).toLocaleString()}</td>
               <td class="text-end px-3"><button class="btn btn-sm btn-outline-secondary py-1 fw-bold shadow-sm" style="font-size:0.7rem;" onclick="viewHistoricalPayslip(${originalIndex})"><i class="bi bi-eye me-1"></i> VIEW</button></td>
           </tr>`;
       });
@@ -5467,18 +5476,17 @@ function showToast(message, type = 'success') {
       bootstrap.Modal.getInstance(document.getElementById('payrollHistoryModal')).hide();
       
       let items = [];
-      try { items = JSON.parse(row['Itemized Data (JSON)']); } catch(e) {}
+      try { items = JSON.parse(row.itemizedEvents); } catch(e) {}
       
       const histData = {
           events: items,
-          expenses: Number(row['Reimbursements/Expenses']) || 0,
-          misc: Number(row['Misc/Bonus']) || 0,
-          finalTotal: Number(row['Final Net Pay']) || 0
+          expenses: Number(row.totalExpenses) || 0,
+          misc: Number(row.totalMisc) || 0,
+          finalTotal: Number(row.finalNetPay) || 0
       };
       
-      // Pass the historical flag so the modal locks inputs and hides the save button!
-      document.getElementById('prModalCutoffDates').innerText = `${row['Cutoff Start']} to ${row['Cutoff End']}`;
-      openPayrollModal(row['Crew Name'], true, histData);
+      document.getElementById('prModalCutoffDates').innerText = `${row.cutoffStart} to ${row.cutoffEnd}`;
+      openPayrollModal(row.crewName, true, histData);
   }
 </script>
 </body>
