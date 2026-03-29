@@ -4865,14 +4865,20 @@ async function getNextEventId() {
           document.getElementById('prEndDate').value = data.endDate;
           
           // 2. Parse the saved JSON math and lock it into the engine
-          currentPayrollData = JSON.parse(data.sessionData);
-          
-          // 3. Redraw the table with the loaded data
-          renderPayrollTable();
-          
-          // 4. Close the modal and celebrate
-          bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
-          showToast("Cloud Session loaded successfully!", "success");
+          try {
+              // Extract the nested JSON string we saved
+              currentPayrollData = JSON.parse(data.sessionData);
+              
+              // 3. Redraw the table with the loaded data
+              renderPayrollTable();
+              
+              // 4. Close the modal and celebrate
+              bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
+              showToast("Cloud Session loaded successfully!", "success");
+          } catch (e) {
+              alert("Error parsing saved session data. The save file might be corrupted.");
+              console.error(e);
+          }
       }
   }
   // Engine: Aggregate the data using the Dynamic Rates
