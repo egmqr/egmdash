@@ -443,9 +443,11 @@
                       <span class="form-label-sm text-secondary">End of Cutoff</span>
                       <input type="date" id="prEndDate" class="form-control form-control-sm fw-bold text-dark">
                   </div>
-                  <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm ms-1" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
-                  <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm ms-1" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
-                  <button class="btn btn-secondary btn-sm fw-bold px-3 shadow-sm ms-1" onclick="openPayrollHistory()"><i class="bi bi-clock-history me-1"></i> HISTORY</button>
+                  <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
+                  <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm ms-1 mt-1 text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
+                  <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="loadPayrollSession()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
+                  <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
+                  <button class="btn btn-secondary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openPayrollHistory()"><i class="bi bi-clock-history me-1"></i> HISTORY</button>
               </div>
           </div>
 
@@ -4759,7 +4761,38 @@ async function getNextEventId() {
       document.getElementById('prStartDate').value = sDate.toISOString().split('T')[0];
       document.getElementById('prEndDate').value = eDate.toISOString().split('T')[0];
   }
+// Engine: Save the current session to browser storage
+  function savePayrollSession() {
+      const start = document.getElementById('prStartDate').value;
+      const end = document.getElementById('prEndDate').value;
 
+      if (!start || !end) return showToast("Please select a Start and End date first.", "warning");
+      if (Object.keys(currentPayrollData).length === 0) return showToast("No data to save. Please hit Compute first.", "warning");
+
+      // Package and lock in the current state of the math (including all manual edits)
+      localStorage.setItem(`egm_pr_session_${start}_${end}`, JSON.stringify(currentPayrollData));
+      showToast(`Session for ${start} to ${end} saved successfully!`, "success");
+  }
+
+  // Engine: Restore a saved session from browser storage
+  function loadPayrollSession() {
+      const start = document.getElementById('prStartDate').value;
+      const end = document.getElementById('prEndDate').value;
+
+      if (!start || !end) return alert("Please select a Start and End date to load.");
+
+      // Check if a save exists for these exact dates
+      const savedSession = localStorage.getItem(`egm_pr_session_${start}_${end}`);
+      if (!savedSession) {
+          return showToast("No saved session found for these dates.", "warning");
+      }
+
+      if (confirm(`Load the saved session for ${start} to ${end}?\n\nThis will restore your manual edits, custom pays, and added expenses.`)) {
+          currentPayrollData = JSON.parse(savedSession);
+          renderPayrollTable();
+          showToast("Session loaded successfully!", "success");
+      }
+  }
   // Engine: Aggregate the data using the Dynamic Rates
   function runPayrollEngine() {
       const start = document.getElementById('prStartDate').value;
