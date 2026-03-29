@@ -4959,12 +4959,22 @@ function showToast(message, type = 'success') {
       
       const rowHeight = 30;
       const items = data.events;
-      canvas.width = 600;
-      canvas.height = 320 + (items.length * rowHeight) + (data.expenses > 0 ? 30 : 0) + (data.misc > 0 ? 30 : 0);
+      
+      // Base dimensions
+      const baseWidth = 600;
+      const baseHeight = 320 + (items.length * rowHeight) + (data.expenses > 0 ? 30 : 0) + (data.misc > 0 ? 30 : 0);
+
+      // SCALE FACTOR: Make the image 3x larger for high resolution!
+      const scale = 3;
+      canvas.width = baseWidth * scale;
+      canvas.height = baseHeight * scale;
+
+      // Scale the drawing context so we don't have to rewrite every coordinate manually
+      ctx.scale(scale, scale);
 
       // Draw white background
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, baseWidth, baseHeight);
 
       // Header
       ctx.fillStyle = '#000000';
@@ -5034,7 +5044,7 @@ function showToast(message, type = 'success') {
       ctx.textAlign = 'right';
       ctx.fillText('₱ ' + data.finalTotal.toLocaleString(), 560, y);
 
-      // Download Trigger
+      // Download Trigger (Quality set to 1.0 for max sharpness)
       const link = document.createElement('a');
       link.download = `Payslip_${name}_${datesStr.replace(/[^a-zA-Z0-9]/g, '')}.jpg`;
       link.href = canvas.toDataURL('image/jpeg', 1.0);
