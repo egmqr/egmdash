@@ -4821,9 +4821,9 @@ async function getNextEventId() {
                   rate = 0;
               } else {
                   eventTracker[evId]['Editor'].add(editor);
-                  if (owners.includes(editor)) {
-                      rate = 0;
-                  } else if (isHalfDay) {
+                  
+                  // THE FIX: We removed the "owners.includes(editor)" check here so owners get paid!
+                  if (isHalfDay) {
                       rate = 0;
                   } else if (isCustom && savedRates[editor] === undefined) {
                       rate = 0; // Custom editor default to 0
@@ -4870,14 +4870,15 @@ function showToast(message, type = 'success') {
           const shootCount = data.events.filter(e => e.role === 'Crew').length;
           const editCount = data.events.filter(e => e.role === 'Editor').length;
           
-          const isOwner = owners.includes(name);
-          const estBasePayHtml = isOwner ? '<span class="badge bg-secondary text-white shadow-sm">N/A (Exempt)</span>' : `₱${data.totalBase.toLocaleString()}`;
+          // THE FIX: They are only "Fully Exempt" if they are an owner AND have NO editing tasks
+          const isFullyExempt = owners.includes(name) && data.totalBase === 0 && editCount === 0;
+          const estBasePayHtml = isFullyExempt ? '<span class="badge bg-secondary text-white shadow-sm">N/A (Exempt)</span>' : `₱${data.totalBase.toLocaleString()}`;
           
           html += `<tr>
               <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2"></i>${name}</td>
               <td class="text-center"><span class="badge bg-light text-dark border">${shootCount}</span></td>
               <td class="text-center"><span class="badge bg-light text-dark border">${editCount}</span></td>
-              <td class="text-end fw-bold ${isOwner ? '' : 'text-success'}">${estBasePayHtml}</td>
+              <td class="text-end fw-bold ${isFullyExempt ? '' : 'text-success'}">${estBasePayHtml}</td>
               <td class="text-end px-3">
                   <button class="btn btn-sm btn-danger fw-bold shadow-sm py-1" onclick="openPayrollModal('${name}')" style="font-size:0.75rem;">VIEW DETAILS <i class="bi bi-chevron-right"></i></button>
               </td>
@@ -4889,10 +4890,12 @@ function showToast(message, type = 'success') {
   // Modal: Open and build the interactive calculator
   function openPayrollModal(name, isHistorical = false, histData = null) {
       activePayrollPerson = name;
-      const isOwner = owners.includes(name);
       const data = isHistorical ? histData : currentPayrollData[name];
       
       document.getElementById('prModalName').innerText = name + (isHistorical ? ' (Historical)' : '');
+      
+      // Check if they have ANY payable tasks (Editor tasks trigger true even for owners)
+      const isFullyExempt = owners.includes(name) && !data.events.some(e => e.role === 'Editor');
       
       if (!isHistorical) {
           const start = document.getElementById('prStartDate').value;
@@ -4900,8 +4903,10 @@ function showToast(message, type = 'success') {
           document.getElementById('prModalCutoffDates').innerText = `${start} to ${end}`;
           document.getElementById('prGlobalExpenses').value = data.expenses || 0;
           document.getElementById('prGlobalMisc').value = data.misc || 0;
-          document.getElementById('prGenerateBtn').style.display = isOwner ? 'none' : 'block';
-          document.getElementById('prMathControls').style.display = isOwner ? 'none' : 'block';
+          
+          // Hide controls ONLY if fully exempt
+          document.getElementById('prGenerateBtn').style.display = isFullyExempt ? 'none' : 'block';
+          document.getElementById('prMathControls').style.display = isFullyExempt ? 'none' : 'block';
       } else {
           document.getElementById('prGenerateBtn').style.display = 'none';
           document.getElementById('prMathControls').style.display = 'block';
@@ -4919,8 +4924,11 @@ function showToast(message, type = 'success') {
           let eventName = item.doc ? item.doc['Event Name'] : (item.name || 'Historic Event');
           let eventDate = item.doc ? item.doc['Event Date'] : item.date;
           
+          // THE FIX: Check if this SPECIFIC task is exempt (Owner acting as Crew)
+          let isItemExempt = owners.includes(name) && item.role !== 'Editor';
+          
           let basePayUI = '';
-          if (isOwner) {
+          if (isItemExempt) {
               basePayUI = `<span class="d-block text-muted fw-bold" style="font-size:0.65rem; text-transform:uppercase;">Task</span><span class="badge bg-light text-dark border mt-1">Exempt</span>`;
           } else if (isHistorical) {
               basePayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Base Rate</span><strong class="text-success d-block mt-1">₱${Number(item.basePay || item.base).toLocaleString()}</strong>`;
@@ -4943,7 +4951,7 @@ function showToast(message, type = 'success') {
           }
 
           let extraPayUI = '';
-          if (!isOwner) {
+          if (!isItemExempt) {
               if (isHistorical) {
                  if(item.extra > 0) extraPayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Extra</span><strong class="text-success d-block mt-1">+ ₱${Number(item.extra).toLocaleString()}</strong>`;
               } else {
@@ -4988,9 +4996,11 @@ function showToast(message, type = 'success') {
   function calculateLivePayslipTotals() {
       if(!activePayrollPerson) return;
       const data = currentPayrollData[activePayrollPerson];
-      if(owners.includes(activePayrollPerson)) return; // Owners skip math
       
-      // Save manually assigned Base Rates back to state (for half-days)
+      // THE FIX: We removed the "if(owners.includes) return;" block. 
+      // Owners now calculate normally. Their Exempt tasks simply have a basePay of 0!
+
+      // Save manually assigned Base Rates back to state
       document.querySelectorAll('.pr-event-base').forEach(input => {
           let idx = input.getAttribute('data-index');
           data.events[idx].basePay = parseFloat(input.value) || 0;
@@ -5012,6 +5022,7 @@ function showToast(message, type = 'success') {
           total += ev.extraPay;
       });
       
+      // Update data.totalBase to safely reflect manual adjustments for the Final Generation Card
       data.totalBase = data.events.reduce((sum, ev) => sum + ev.basePay, 0);
 
       total += data.expenses;
