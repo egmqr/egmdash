@@ -4952,17 +4952,19 @@ function showToast(message, type = 'success') {
           let eventName = item.doc ? item.doc['Event Name'] : (item.name || 'Historic Event');
           let eventDate = item.doc ? item.doc['Event Date'] : item.date;
           
+          // THE FIX: Correctly check if this SPECIFIC task is exempt (Owners are exempt as Crew, but paid as Editors)
+          let isItemExempt = owners.includes(name) && item.role !== 'Editor';
+          
           let basePayUI = '';
-          if (isOwner) {
+          if (isItemExempt) {
               basePayUI = `<span class="d-block text-muted fw-bold" style="font-size:0.65rem; text-transform:uppercase;">Task</span><span class="badge bg-light text-dark border mt-1">Exempt</span>`;
           } else if (isHistorical) {
               basePayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Base Rate</span><strong class="text-success d-block mt-1">₱${Number(item.basePay || item.base).toLocaleString()}</strong>`;
           } else {
-              // THE FIX: ALWAYS render an editable input box for active (non-owner, non-historical) tasks!
+              // ALWAYS render an editable input box for active (non-exempt, non-historical) tasks!
               let label = 'Base Rate';
               let labelClass = 'text-primary';
               
-              // Smart labels so the admin knows why the default rate is what it is
               if (item.isSubsequent) { label = 'Add-Day Pay'; labelClass = 'text-warning'; }
               else if (item.isHalfDay) { label = 'Half-Day Pay'; labelClass = 'text-warning'; }
               else if (item.isCustom) { label = 'Custom Pay'; labelClass = 'text-warning'; }
@@ -4978,7 +4980,7 @@ function showToast(message, type = 'success') {
           }
 
           let extraPayUI = '';
-          if (!isOwner) {
+          if (!isItemExempt) {
               if (isHistorical) {
                  if(item.extra > 0) extraPayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Extra</span><strong class="text-success d-block mt-1">+ ₱${Number(item.extra).toLocaleString()}</strong>`;
               } else {
