@@ -4822,7 +4822,10 @@ async function getNextEventId() {
           savedSessionsCache = [];
           let html = '<div class="list-group gap-2">';
           
-          snapshot.forEach((doc, index) => {
+          // THE FIX: We manually declare our own index counter right here!
+          let index = 0;
+          
+          snapshot.forEach((doc) => {
               const data = doc.data();
               savedSessionsCache.push(data); // Save to local memory array so we can reference it when clicked
               
@@ -4843,6 +4846,8 @@ async function getNextEventId() {
                   </div>
                   <small class="text-muted d-block fw-bold" style="font-size: 0.7rem;"><i class="bi bi-cloud-check me-1"></i>Saved: ${savedAtStr}</small>
               </button>`;
+              
+              index++; // Increment the counter for the next card
           });
           
           html += '</div>';
