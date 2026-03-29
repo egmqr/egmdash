@@ -1679,20 +1679,41 @@
   let activePayrollPerson = null;
 
   function getCrewRate(name, role) {
+      // THE FIX: Editors now pull strictly from the global editing rate
+      if (role === 'Editor') {
+          let editRate = localStorage.getItem('egm_editing_rate');
+          return editRate ? parseFloat(editRate) : DEFAULT_EDITOR_RATE;
+      }
+      
+      // Crew members still pull from their saved individual rates
       let savedRates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
       if (savedRates[name] !== undefined) return parseFloat(savedRates[name]);
-      return role === 'Editor' ? DEFAULT_EDITOR_RATE : DEFAULT_CREW_RATE;
+      return DEFAULT_CREW_RATE;
   }
 
   function openRatesModal() {
       const container = document.getElementById('ratesListContainer');
       let html = '';
       
-      // Combine your base crew and editors into one alphabetical list
+      // 1. Build the Global Editing Rate Section
+      let globalEditRate = localStorage.getItem('egm_editing_rate') || DEFAULT_EDITOR_RATE;
+      html += `
+      <div class="col-12 mb-3 pb-3 border-bottom border-2 border-dark">
+          <label class="form-label-sm text-primary mb-2"><i class="bi bi-film me-1"></i> Global Editing Rate</label>
+          <div class="input-group input-group-sm">
+              <span class="input-group-text bg-light text-muted fw-bold">₱</span>
+              <input type="number" id="globalEditingRateInput" class="form-control fw-bold text-dark" value="${globalEditRate}">
+          </div>
+          <div class="small text-muted mt-2" style="font-size: 0.7rem; line-height: 1.2;">This rate applies to ANY crew member assigned to edit an event.</div>
+      </div>
+      <div class="col-12 mb-2"><span class="form-label-sm text-secondary">Individual Crew Rates (Shoots)</span></div>
+      `;
+      
+      // 2. Build the Individual Crew Rates Section
       let allNames = new Set([...baseCrew, "Athan", "Jovert", "May", "Tina", "Grace", "Jops"]);
       
       Array.from(allNames).sort().forEach(name => {
-          let currentRate = getCrewRate(name, 'Crew'); // Pulls custom rate if it exists
+          let currentRate = getCrewRate(name, 'Crew'); // Pulls individual rate!
           html += `
           <div class="col-12 d-flex justify-content-between align-items-center mb-1 border-bottom pb-2">
               <span class="fw-bold text-secondary" style="font-size: 0.85rem;">${name}</span>
@@ -1707,6 +1728,13 @@
   }
 
   function saveRates() {
+      // Save the Global Editing Rate
+      const globalEditInput = document.getElementById('globalEditingRateInput');
+      if (globalEditInput) {
+          localStorage.setItem('egm_editing_rate', parseFloat(globalEditInput.value) || 2000);
+      }
+
+      // Save the Individual Crew Rates
       let rates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
       document.querySelectorAll('.rate-input').forEach(input => {
           let name = input.getAttribute('data-name');
@@ -1714,8 +1742,11 @@
           if (!isNaN(val)) rates[name] = val;
       });
       localStorage.setItem('egm_crew_rates', JSON.stringify(rates));
+      
       bootstrap.Modal.getInstance(document.getElementById('ratesModal')).hide();
-      alert("Rates saved successfully! If you already computed payroll, click COMPUTE again to apply the new rates.");
+      
+      // Trigger the fancy Toast we added earlier instead of an ugly browser alert!
+      showToast("Rates saved successfully! Click COMPUTE again to apply the new rates.", "success");
   }
   // -----------------------------
 
@@ -4822,13 +4853,10 @@ async function getNextEventId() {
               } else {
                   eventTracker[evId]['Editor'].add(editor);
                   
-                  // THE FIX: We removed the "owners.includes(editor)" check here so owners get paid!
                   if (isHalfDay) {
-                      rate = 0;
-                  } else if (isCustom && savedRates[editor] === undefined) {
-                      rate = 0; // Custom editor default to 0
+                      rate = 0; // Still allow admin to negotiate editor half-days manually
                   } else {
-                      rate = getCrewRate(editor, 'Editor'); 
+                      rate = getCrewRate(editor, 'Editor'); // Unconditionally apply the Global Edit Rate!
                   }
               }
 
