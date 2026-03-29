@@ -4746,7 +4746,8 @@ async function getNextEventId() {
           basePay: 7500,
           extraPay: 0,
           isHalfDay: false,
-          isSubsequent: false
+          isSubsequent: false,
+          isCustom: false
       });
       currentPayrollData['Jenielyn'].totalBase += 7500;
 
@@ -4764,6 +4765,10 @@ async function getNextEventId() {
       });
 
       let eventTracker = {}; // Tracks who has already been paid for Day 1 of an event
+      
+      // Combine baseCrew and standard Editors to check who is "Custom"
+      const standardStaff = [...baseCrew, "Athan", "Jovert", "May", "Tina", "Grace", "Jops"];
+      let savedRates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
 
       validEvents.forEach(e => {
           const isHalfDay = e['Half Day'] === 'true';
@@ -4779,6 +4784,7 @@ async function getNextEventId() {
                   
                   let isSubsequent = false;
                   let rate = 0;
+                  let isCustom = !standardStaff.includes(c);
                   
                   // Check if they already worked a previous day on this exact Event ID
                   if (eventTracker[evId]['Crew'].has(c)) {
@@ -4786,10 +4792,18 @@ async function getNextEventId() {
                       rate = 0; // Default to 0 for added days
                   } else {
                       eventTracker[evId]['Crew'].add(c);
-                      rate = owners.includes(c) ? 0 : (isHalfDay ? 0 : getCrewRate(c, 'Crew')); 
+                      if (owners.includes(c)) {
+                          rate = 0;
+                      } else if (isHalfDay) {
+                          rate = 0;
+                      } else if (isCustom && savedRates[c] === undefined) {
+                          rate = 0; // Custom crew default to 0 so admin types it manually
+                      } else {
+                          rate = getCrewRate(c, 'Crew'); 
+                      }
                   }
 
-                  currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: 0, isHalfDay: isHalfDay, isSubsequent: isSubsequent });
+                  currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: 0, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
                   currentPayrollData[c].totalBase += rate;
               });
           }
@@ -4800,16 +4814,25 @@ async function getNextEventId() {
               
               let isSubsequent = false;
               let rate = 0;
+              let isCustom = !standardStaff.includes(editor);
               
               if (eventTracker[evId]['Editor'].has(editor)) {
                   isSubsequent = true;
                   rate = 0;
               } else {
                   eventTracker[evId]['Editor'].add(editor);
-                  rate = owners.includes(editor) ? 0 : getCrewRate(editor, 'Editor'); 
+                  if (owners.includes(editor)) {
+                      rate = 0;
+                  } else if (isHalfDay) {
+                      rate = 0;
+                  } else if (isCustom && savedRates[editor] === undefined) {
+                      rate = 0; // Custom editor default to 0
+                  } else {
+                      rate = getCrewRate(editor, 'Editor'); 
+                  }
               }
 
-              currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: 0, isHalfDay: isHalfDay, isSubsequent: isSubsequent });
+              currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: 0, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
               currentPayrollData[editor].totalBase += rate;
           }
       });
@@ -4901,8 +4924,12 @@ function showToast(message, type = 'success') {
               basePayUI = `<span class="d-block text-muted fw-bold" style="font-size:0.65rem; text-transform:uppercase;">Task</span><span class="badge bg-light text-dark border mt-1">Exempt</span>`;
           } else if (isHistorical) {
               basePayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Base Rate</span><strong class="text-success d-block mt-1">₱${Number(item.basePay || item.base).toLocaleString()}</strong>`;
-          } else if ((item.isHalfDay || item.isSubsequent) && item.role === 'Crew') {
-              let label = item.isSubsequent ? 'Set Add-Day Pay' : 'Set Half-Day Pay';
+          } else if (item.isHalfDay || item.isSubsequent || item.isCustom) {
+              let label = 'Set Pay';
+              if (item.isSubsequent) label = 'Set Add-Day Pay';
+              else if (item.isHalfDay) label = 'Set Half-Day Pay';
+              else if (item.isCustom) label = 'Set Custom Pay';
+
               basePayUI = `
                   <span class="d-block text-warning mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">${label}</span>
                   <div class="input-group input-group-sm" style="width: 105px;">
@@ -4932,6 +4959,7 @@ function showToast(message, type = 'success') {
           let badgesHtml = '';
           if (item.isHalfDay && !isHistorical) badgesHtml += '<span class="badge bg-warning text-dark ms-1 shadow-sm"><i class="bi bi-star-half"></i> Half-Day</span>';
           if (item.isSubsequent && !isHistorical) badgesHtml += '<span class="badge bg-secondary opacity-75 text-white ms-1 shadow-sm">+Add Day</span>';
+          if (item.isCustom && !isHistorical) badgesHtml += '<span class="badge bg-primary text-white ms-1 shadow-sm"><i class="bi bi-person-gear"></i> Custom</span>';
 
           eventsHtml += `
           <div class="bg-white p-3 rounded-3 border shadow-sm mb-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
