@@ -1815,17 +1815,28 @@
 
   function applyRoleUI() {
       const role = getUserRole();
+      const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+      
+      // If the browser remembers a role, but the 12-hour timer is up (or missing), wipe it silently
+      if (role && isExpired) {
+          localStorage.removeItem('egm_auth_role');
+          localStorage.removeItem('egm_auth_exp');
+      }
+
+      // Determine the true active role
+      const activeRole = (!isExpired) ? role : null;
+
       const newEntryBtn = document.getElementById('newEntryBtn');
       const logoutBtn = document.getElementById('logoutBtn');
       
       if (newEntryBtn) {
-          // Hide New Entry button entirely if the user is an editor
-          newEntryBtn.style.display = (role === 'editor') ? 'none' : 'flex';
+          // Hide New Entry button entirely if the user is an active editor
+          newEntryBtn.style.display = (activeRole === 'editor') ? 'none' : 'flex';
       }
       
       if (logoutBtn) {
-          // Show the Sign Out button only if someone is currently logged in
-          logoutBtn.style.display = role ? 'flex' : 'none';
+          // Show the Sign Out button ONLY if they have a valid, unexpired role
+          logoutBtn.style.display = activeRole ? 'flex' : 'none';
       }
   }
 
