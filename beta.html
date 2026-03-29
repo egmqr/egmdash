@@ -445,7 +445,7 @@
                   </div>
                   <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
                   <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm ms-1 mt-1 text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
-                  <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="loadPayrollSession()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
+                  <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
                   <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
                   <button class="btn btn-secondary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openPayrollHistory()"><i class="bi bi-clock-history me-1"></i> HISTORY</button>
               </div>
@@ -1585,6 +1585,15 @@
           <button id="prGenerateBtn" class="btn btn-danger w-100 py-3 fw-bold shadow-sm mt-4" onclick="generateAndLogPayslip()"><i class="bi bi-file-earmark-image me-1"></i> GENERATE & DOWNLOAD PAYSLIP</button>
       </div>
   </div>
+</div></div></div>
+  <div class="modal fade" id="loadSessionModal" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
+    <div class="modal-header bg-primary text-white border-0">
+        <h6 class="fw-bold mb-0 letter-spacing-1"><i class="bi bi-folder2-open me-2"></i> Saved Sessions</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body p-3 bg-light" id="sessionListContainer">
+        <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Fetching cloud saves...</div>
+    </div>
 </div></div></div>
   <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 10600;">
   <div id="appToast" class="toast align-items-center text-bg-success border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
@@ -4791,37 +4800,80 @@ async function getNextEventId() {
       btn.disabled = false;
   }
 
-  // Engine: Restore a saved session from Firebase Cloud
-  async function loadPayrollSession() {
-      const start = document.getElementById('prStartDate').value;
-      const end = document.getElementById('prEndDate').value;
+  // Memory Cache for the visual list
+  let savedSessionsCache = [];
 
-      if (!start || !end) return showToast("Please select a Start and End date to load.", "warning");
-
-      const btn = document.querySelector('button[onclick="loadPayrollSession()"]');
-      const originalHtml = btn.innerHTML;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> LOADING...';
-      btn.disabled = true;
+  // Engine: Fetch all saved sessions from the Cloud and display them in a list
+  async function openLoadSessionModal() {
+      const container = document.getElementById('sessionListContainer');
+      container.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Fetching cloud saves...</div>';
+      
+      new bootstrap.Modal(document.getElementById('loadSessionModal')).show();
 
       try {
-          // Fetch the saved math from the Cloud
-          const doc = await db.collection("payroll_sessions").doc(`${start}_${end}`).get();
+          // Pull every session we've ever saved, sorted newest first!
+          const snapshot = await db.collection("payroll_sessions").orderBy("endDate", "desc").get();
           
-          if (!doc.exists) {
-              showToast("No Cloud session found for these dates.", "warning");
-          } else {
-              if (confirm(`Load the Cloud saved session for ${start} to ${end}?\n\nThis will restore your manual edits, custom pays, and added expenses.`)) {
-                  currentPayrollData = JSON.parse(doc.data().sessionData);
-                  renderPayrollTable();
-                  showToast("Cloud Session loaded successfully!", "success");
-              }
+          if (snapshot.empty) {
+              container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>No saved sessions found.</div>';
+              return;
           }
+
+          savedSessionsCache = [];
+          let html = '<div class="list-group gap-2">';
+          
+          snapshot.forEach((doc, index) => {
+              const data = doc.data();
+              savedSessionsCache.push(data); // Save to local memory array so we can reference it when clicked
+              
+              // Format dates nicely for the UI
+              const sDate = new Date(data.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              const eDate = new Date(data.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              
+              // Format the timestamp if it exists
+              let savedAtStr = 'Recently';
+              if (data.updatedAt) {
+                  savedAtStr = new Date(data.updatedAt.toDate()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+              }
+              
+              html += `
+              <button class="list-group-item list-group-item-action border-0 rounded-3 shadow-sm p-3 text-start" onclick="applyLoadedSession(${index})">
+                  <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                      <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;"><i class="bi bi-calendar-range text-primary me-2"></i>${sDate} - ${eDate}</h6>
+                  </div>
+                  <small class="text-muted d-block fw-bold" style="font-size: 0.7rem;"><i class="bi bi-cloud-check me-1"></i>Saved: ${savedAtStr}</small>
+              </button>`;
+          });
+          
+          html += '</div>';
+          container.innerHTML = html;
+          
       } catch (err) {
-          alert("Error loading from Cloud: " + err.message);
+          container.innerHTML = `<div class="text-center py-4 text-danger small"><i class="bi bi-exclamation-triangle d-block fs-3 mb-2"></i>Error loading sessions: ${err.message}</div>`;
       }
-      
-      btn.innerHTML = originalHtml;
-      btn.disabled = false;
+  }
+
+  // Engine: Triggered when you click a specific session in the visual list
+  function applyLoadedSession(index) {
+      const data = savedSessionsCache[index];
+      if (!data) return;
+
+      if (confirm(`Load the saved session for ${data.startDate} to ${data.endDate}?\n\nThis will instantly restore your manual edits, custom pays, and added expenses!`)) {
+          
+          // 1. Auto-fill the Date inputs on the dashboard so they match the save!
+          document.getElementById('prStartDate').value = data.startDate;
+          document.getElementById('prEndDate').value = data.endDate;
+          
+          // 2. Parse the saved JSON math and lock it into the engine
+          currentPayrollData = JSON.parse(data.sessionData);
+          
+          // 3. Redraw the table with the loaded data
+          renderPayrollTable();
+          
+          // 4. Close the modal and celebrate
+          bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
+          showToast("Cloud Session loaded successfully!", "success");
+      }
   }
   // Engine: Aggregate the data using the Dynamic Rates
   function runPayrollEngine() {
