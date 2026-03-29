@@ -4761,37 +4761,67 @@ async function getNextEventId() {
       document.getElementById('prStartDate').value = sDate.toISOString().split('T')[0];
       document.getElementById('prEndDate').value = eDate.toISOString().split('T')[0];
   }
-// Engine: Save the current session to browser storage
-  function savePayrollSession() {
+// Engine: Save the current session to Firebase Cloud
+  async function savePayrollSession() {
       const start = document.getElementById('prStartDate').value;
       const end = document.getElementById('prEndDate').value;
 
       if (!start || !end) return showToast("Please select a Start and End date first.", "warning");
       if (Object.keys(currentPayrollData).length === 0) return showToast("No data to save. Please hit Compute first.", "warning");
 
-      // Package and lock in the current state of the math (including all manual edits)
-      localStorage.setItem(`egm_pr_session_${start}_${end}`, JSON.stringify(currentPayrollData));
-      showToast(`Session for ${start} to ${end} saved successfully!`, "success");
+      const btn = document.querySelector('button[onclick="savePayrollSession()"]');
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> SAVING...';
+      btn.disabled = true;
+
+      try {
+          // Push the exact state of the math to a new Cloud folder
+          await db.collection("payroll_sessions").doc(`${start}_${end}`).set({
+              startDate: start,
+              endDate: end,
+              sessionData: JSON.stringify(currentPayrollData),
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showToast(`Cloud Session for ${start} to ${end} saved successfully!`, "success");
+      } catch (err) {
+          alert("Error saving to Cloud: " + err.message);
+      }
+      
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
   }
 
-  // Engine: Restore a saved session from browser storage
-  function loadPayrollSession() {
+  // Engine: Restore a saved session from Firebase Cloud
+  async function loadPayrollSession() {
       const start = document.getElementById('prStartDate').value;
       const end = document.getElementById('prEndDate').value;
 
-      if (!start || !end) return alert("Please select a Start and End date to load.");
+      if (!start || !end) return showToast("Please select a Start and End date to load.", "warning");
 
-      // Check if a save exists for these exact dates
-      const savedSession = localStorage.getItem(`egm_pr_session_${start}_${end}`);
-      if (!savedSession) {
-          return showToast("No saved session found for these dates.", "warning");
-      }
+      const btn = document.querySelector('button[onclick="loadPayrollSession()"]');
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> LOADING...';
+      btn.disabled = true;
 
-      if (confirm(`Load the saved session for ${start} to ${end}?\n\nThis will restore your manual edits, custom pays, and added expenses.`)) {
-          currentPayrollData = JSON.parse(savedSession);
-          renderPayrollTable();
-          showToast("Session loaded successfully!", "success");
+      try {
+          // Fetch the saved math from the Cloud
+          const doc = await db.collection("payroll_sessions").doc(`${start}_${end}`).get();
+          
+          if (!doc.exists) {
+              showToast("No Cloud session found for these dates.", "warning");
+          } else {
+              if (confirm(`Load the Cloud saved session for ${start} to ${end}?\n\nThis will restore your manual edits, custom pays, and added expenses.`)) {
+                  currentPayrollData = JSON.parse(doc.data().sessionData);
+                  renderPayrollTable();
+                  showToast("Cloud Session loaded successfully!", "success");
+              }
+          }
+      } catch (err) {
+          alert("Error loading from Cloud: " + err.message);
       }
+      
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
   }
   // Engine: Aggregate the data using the Dynamic Rates
   function runPayrollEngine() {
