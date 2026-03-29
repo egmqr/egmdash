@@ -4745,7 +4745,8 @@ async function getNextEventId() {
           role: 'Allowance',
           basePay: 7500,
           extraPay: 0,
-          isHalfDay: false
+          isHalfDay: false,
+          isSubsequent: false
       });
       currentPayrollData['Jenielyn'].totalBase += 7500;
 
@@ -4754,17 +4755,41 @@ async function getNextEventId() {
                  e['Event Status'] === 'Confirmed' && e['Event Name'] !== 'Crew Leave';
       });
 
+      // SORT CHRONOLOGICALLY first so we know which day is truly "Day 1"
+      validEvents.sort((a, b) => {
+          let dateA = a['Event Date'] || '9999-99-99';
+          let dateB = b['Event Date'] || '9999-99-99';
+          if (dateA !== dateB) return dateA.localeCompare(dateB);
+          return (a['Event Start Time'] || a['Call Time'] || "").localeCompare(b['Event Start Time'] || b['Call Time'] || "");
+      });
+
+      let eventTracker = {}; // Tracks who has already been paid for Day 1 of an event
+
       validEvents.forEach(e => {
           const isHalfDay = e['Half Day'] === 'true';
+          const evId = e['Event ID'];
+          
+          if(!eventTracker[evId]) eventTracker[evId] = { 'Crew': new Set(), 'Editor': new Set() };
 
           // 1. Process Crew
           if (e['Manpower']) {
               const crewArray = e['Manpower'].split(',').map(c => c.trim()).filter(Boolean);
               crewArray.forEach(c => {
                   if (!currentPayrollData[c]) initPayrollPerson(c);
-                  // Exempt owners from having a base rate
-                  let rate = owners.includes(c) ? 0 : (isHalfDay ? 0 : getCrewRate(c, 'Crew')); 
-                  currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: 0, isHalfDay: isHalfDay });
+                  
+                  let isSubsequent = false;
+                  let rate = 0;
+                  
+                  // Check if they already worked a previous day on this exact Event ID
+                  if (eventTracker[evId]['Crew'].has(c)) {
+                      isSubsequent = true; 
+                      rate = 0; // Default to 0 for added days
+                  } else {
+                      eventTracker[evId]['Crew'].add(c);
+                      rate = owners.includes(c) ? 0 : (isHalfDay ? 0 : getCrewRate(c, 'Crew')); 
+                  }
+
+                  currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: 0, isHalfDay: isHalfDay, isSubsequent: isSubsequent });
                   currentPayrollData[c].totalBase += rate;
               });
           }
@@ -4772,8 +4797,19 @@ async function getNextEventId() {
           if (e['Editor Assigned']) {
               const editor = e['Editor Assigned'].trim();
               if (!currentPayrollData[editor]) initPayrollPerson(editor);
-              let rate = owners.includes(editor) ? 0 : getCrewRate(editor, 'Editor'); 
-              currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: 0, isHalfDay: isHalfDay });
+              
+              let isSubsequent = false;
+              let rate = 0;
+              
+              if (eventTracker[evId]['Editor'].has(editor)) {
+                  isSubsequent = true;
+                  rate = 0;
+              } else {
+                  eventTracker[evId]['Editor'].add(editor);
+                  rate = owners.includes(editor) ? 0 : getCrewRate(editor, 'Editor'); 
+              }
+
+              currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: 0, isHalfDay: isHalfDay, isSubsequent: isSubsequent });
               currentPayrollData[editor].totalBase += rate;
           }
       });
@@ -4857,7 +4893,7 @@ function showToast(message, type = 'success') {
       data.events.sort((a,b) => (a.doc ? a.doc['Event Date'] : a.date).localeCompare(b.doc ? b.doc['Event Date'] : b.date)).forEach((item, index) => {
           let roleBadge = item.role === 'Editor' ? 'bg-info text-dark' : (item.role === 'Allowance' ? 'bg-warning text-dark' : 'bg-secondary text-white');
           let eventId = item.doc ? item.doc['Event ID'] : item.id;
-          let eventName = item.doc ? item.doc['Event Name'] : 'Historic Event';
+          let eventName = item.doc ? item.doc['Event Name'] : (item.name || 'Historic Event');
           let eventDate = item.doc ? item.doc['Event Date'] : item.date;
           
           let basePayUI = '';
@@ -4865,9 +4901,10 @@ function showToast(message, type = 'success') {
               basePayUI = `<span class="d-block text-muted fw-bold" style="font-size:0.65rem; text-transform:uppercase;">Task</span><span class="badge bg-light text-dark border mt-1">Exempt</span>`;
           } else if (isHistorical) {
               basePayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Base Rate</span><strong class="text-success d-block mt-1">₱${Number(item.basePay || item.base).toLocaleString()}</strong>`;
-          } else if (item.isHalfDay && item.role === 'Crew') {
+          } else if ((item.isHalfDay || item.isSubsequent) && item.role === 'Crew') {
+              let label = item.isSubsequent ? 'Set Add-Day Pay' : 'Set Half-Day Pay';
               basePayUI = `
-                  <span class="d-block text-warning mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Set Half-Day Pay</span>
+                  <span class="d-block text-warning mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">${label}</span>
                   <div class="input-group input-group-sm" style="width: 105px;">
                       <span class="input-group-text bg-light text-muted">₱</span>
                       <input type="number" class="form-control fw-bold pr-event-base text-success shadow-sm" data-index="${index}" value="${item.basePay}" oninput="calculateLivePayslipTotals()">
@@ -4892,12 +4929,16 @@ function showToast(message, type = 'success') {
               }
           }
 
+          let badgesHtml = '';
+          if (item.isHalfDay && !isHistorical) badgesHtml += '<span class="badge bg-warning text-dark ms-1 shadow-sm"><i class="bi bi-star-half"></i> Half-Day</span>';
+          if (item.isSubsequent && !isHistorical) badgesHtml += '<span class="badge bg-secondary opacity-75 text-white ms-1 shadow-sm">+Add Day</span>';
+
           eventsHtml += `
           <div class="bg-white p-3 rounded-3 border shadow-sm mb-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
               <div>
                   <span class="d-block small text-muted fw-bold mb-1"><i class="bi bi-calendar-event me-1"></i>${eventDate}</span>
                   <strong class="text-dark">${eventId !== 'FIXED' ? '#'+eventId+' - ' : ''}${eventName}</strong>
-                  ${item.isHalfDay && !isHistorical ? '<span class="badge bg-warning text-dark ms-1 shadow-sm"><i class="bi bi-star-half"></i> Half-Day</span>' : ''}
+                  ${badgesHtml}
                   <span class="badge ${roleBadge} ms-1 shadow-sm">${item.role}</span>
               </div>
               <div class="d-flex align-items-center gap-3">
@@ -4952,17 +4993,64 @@ function showToast(message, type = 'success') {
       document.getElementById('prLiveTotal').innerText = total.toLocaleString();
   }
 
+  // Helper to collapse multi-day events into a single line item for printing/logging
+  function getCollapsedEvents(events) {
+      const collapsed = {};
+      const result = [];
+      
+      events.forEach(ev => {
+          const id = ev.doc ? ev.doc['Event ID'] : ev.id;
+          const role = ev.role;
+          const key = `${id}_${role}`; // Group by Event ID and Role
+          
+          if (!collapsed[key]) {
+              collapsed[key] = {
+                  id: id,
+                  name: ev.doc ? ev.doc['Event Name'] : ev.name,
+                  date: ev.doc ? ev.doc['Event Date'] : ev.date, 
+                  role: role,
+                  basePay: ev.basePay || ev.base || 0,
+                  extraPay: ev.extraPay || ev.extra || 0,
+                  dayCount: 1,
+                  lastDate: ev.doc ? ev.doc['Event Date'] : ev.date
+              };
+              result.push(collapsed[key]);
+          } else {
+              collapsed[key].basePay += (ev.basePay || ev.base || 0);
+              collapsed[key].extraPay += (ev.extraPay || ev.extra || 0);
+              collapsed[key].dayCount += 1;
+              
+              // Update the date range
+              let d = ev.doc ? ev.doc['Event Date'] : ev.date;
+              if (d > collapsed[key].lastDate) {
+                   collapsed[key].lastDate = d;
+              }
+          }
+      });
+      
+      // Format dates (e.g. "2025-10-15 to 2025-10-17")
+      result.forEach(item => {
+          if (item.dayCount > 1 && item.date !== item.lastDate) {
+              item.dateString = `${item.date} to ${item.lastDate}`;
+          } else {
+              item.dateString = item.date;
+          }
+      });
+      
+      return result;
+  }
+
   // Graphic Generator: Draws the minimalist receipt and triggers a download
   function generateReceiptImage(name, data, datesStr) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
       const rowHeight = 30;
-      const items = data.events;
+      const collapsedItems = getCollapsedEvents(data.events); // Use the collapsed version
       
       // Base dimensions
       const baseWidth = 600;
-      const baseHeight = 320 + (items.length * rowHeight) + (data.expenses > 0 ? 30 : 0) + (data.misc > 0 ? 30 : 0);
+      const baseHeight = 320 + (collapsedItems.length * rowHeight) + (data.expenses > 0 ? 30 : 0) + (data.misc > 0 ? 30 : 0);
 
       // SCALE FACTOR: Make the image 3x larger for high resolution!
       const scale = 3;
@@ -5012,9 +5100,12 @@ function showToast(message, type = 'success') {
       ctx.font = '14px Inter, sans-serif';
 
       // Draw Items
-      items.forEach(item => {
+      collapsedItems.forEach(item => {
           ctx.textAlign = 'left';
-          let desc = item.doc['Event ID'] === 'FIXED' ? `${item.doc['Event Name']} (${item.role})` : `#${item.doc['Event ID']} - ${item.doc['Event Name']} (${item.role})`;
+          let desc = item.id === 'FIXED' ? `${item.name} (${item.role})` : `#${item.id} - ${item.name} (${item.role})`;
+          
+          if (item.dayCount > 1) { desc += ` [${item.dayCount} Days]`; }
+          
           ctx.fillText(desc.substring(0, 50), 40, y);
           
           ctx.textAlign = 'right';
@@ -5068,7 +5159,9 @@ function showToast(message, type = 'success') {
       // 1. Generate & Download JPG
       generateReceiptImage(activePayrollPerson, data, datesStr);
 
-      // 2. Package and Log to Google Sheets
+      const collapsedItems = getCollapsedEvents(data.events);
+
+      // 2. Package and Log to Google Sheets using the Collapsed List
       const payload = {
           action: 'logPayroll',
           crewName: activePayrollPerson,
@@ -5078,8 +5171,8 @@ function showToast(message, type = 'success') {
           totalExpenses: data.expenses,
           totalMisc: data.misc,
           finalNetPay: data.finalTotal,
-          itemizedEvents: JSON.stringify(data.events.map(e => ({
-              id: e.doc['Event ID'], date: e.doc['Event Date'], role: e.role, base: e.basePay, extra: e.extraPay
+          itemizedEvents: JSON.stringify(collapsedItems.map(e => ({
+              id: e.id, name: e.name, date: e.dateString, role: e.role, base: e.basePay, extra: e.extraPay
           })))
       };
 
