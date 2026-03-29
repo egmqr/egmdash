@@ -5372,9 +5372,14 @@ function showToast(message, type = 'success') {
       };
       callApi(payload, 'POST', true); // Let this run in the background without making the user wait!
 
-      // 3. Save to FIREBASE for the lightning-fast History Vault
+      // 3. Save to FIREBASE for the lightning-fast History Vault (With Overwrite Protection)
       try {
-          await db.collection("payroll_history").add({
+          // Create a unique, predictable ID based on the Person and the Dates
+          const safeName = activePayrollPerson.replace(/[^a-zA-Z0-9]/g, '_');
+          const historyDocId = `${safeName}_${start}_${end}`;
+
+          // Using .doc(ID).set() forces Firebase to overwrite the existing file instead of duplicating!
+          await db.collection("payroll_history").doc(historyDocId).set({
               crewName: activePayrollPerson,
               cutoffStart: start,
               cutoffEnd: end,
