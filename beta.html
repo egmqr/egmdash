@@ -4952,34 +4952,33 @@ function showToast(message, type = 'success') {
           let eventName = item.doc ? item.doc['Event Name'] : (item.name || 'Historic Event');
           let eventDate = item.doc ? item.doc['Event Date'] : item.date;
           
-          // THE FIX: Check if this SPECIFIC task is exempt (Owner acting as Crew)
-          let isItemExempt = owners.includes(name) && item.role !== 'Editor';
-          
           let basePayUI = '';
-          if (isItemExempt) {
+          if (isOwner) {
               basePayUI = `<span class="d-block text-muted fw-bold" style="font-size:0.65rem; text-transform:uppercase;">Task</span><span class="badge bg-light text-dark border mt-1">Exempt</span>`;
           } else if (isHistorical) {
               basePayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Base Rate</span><strong class="text-success d-block mt-1">₱${Number(item.basePay || item.base).toLocaleString()}</strong>`;
-          } else if (item.isHalfDay || item.isSubsequent || item.isCustom) {
-              let label = 'Set Pay';
-              if (item.isSubsequent) label = 'Set Add-Day Pay';
-              else if (item.isHalfDay) label = 'Set Half-Day Pay';
-              else if (item.isCustom) label = 'Set Custom Pay';
+          } else {
+              // THE FIX: ALWAYS render an editable input box for active (non-owner, non-historical) tasks!
+              let label = 'Base Rate';
+              let labelClass = 'text-primary';
+              
+              // Smart labels so the admin knows why the default rate is what it is
+              if (item.isSubsequent) { label = 'Add-Day Pay'; labelClass = 'text-warning'; }
+              else if (item.isHalfDay) { label = 'Half-Day Pay'; labelClass = 'text-warning'; }
+              else if (item.isCustom) { label = 'Custom Pay'; labelClass = 'text-warning'; }
+              else if (item.role === 'Editor') { label = 'Editing Rate'; labelClass = 'text-info'; }
+              else if (item.role === 'Allowance') { label = 'Allowance'; labelClass = 'text-primary'; }
 
               basePayUI = `
-                  <span class="d-block text-warning mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">${label}</span>
+                  <span class="d-block ${labelClass} mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">${label}</span>
                   <div class="input-group input-group-sm" style="width: 105px;">
                       <span class="input-group-text bg-light text-muted">₱</span>
                       <input type="number" class="form-control fw-bold pr-event-base text-success shadow-sm" data-index="${index}" value="${item.basePay}" oninput="calculateLivePayslipTotals()">
                   </div>`;
-          } else {
-              basePayUI = `
-                  <span class="d-block text-muted" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Base Rate</span>
-                  <strong class="text-success d-block mt-1">₱${item.basePay.toLocaleString()}</strong>`;
           }
 
           let extraPayUI = '';
-          if (!isItemExempt) {
+          if (!isOwner) {
               if (isHistorical) {
                  if(item.extra > 0) extraPayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Extra</span><strong class="text-success d-block mt-1">+ ₱${Number(item.extra).toLocaleString()}</strong>`;
               } else {
