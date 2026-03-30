@@ -2539,11 +2539,18 @@ function handleEditClick(docId) {
     const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
     
     if (!role || isExpired) {
-        // Non-admin (View-Only): Immediately ask for admin password
-        requireAuth(() => openEditModal(docId), true); 
+        // Non-admin (View-Only): Ask for password (FALSE = accepts both Editor and Admin passwords)
+        requireAuth(() => {
+            const cardModalEl = document.getElementById('eventCardModal');
+            if (cardModalEl && cardModalEl.classList.contains('show')) {
+                bootstrap.Modal.getInstance(cardModalEl).hide();
+                setTimeout(() => openEditModal(docId), 350);
+            } else {
+                openEditModal(docId);
+            }
+        }, false); 
     } else {
-        // Admin or Editor: Open the modal (Editor lockdown happens inside openEditModal)
-        // If clicking from the lightbox, close the lightbox first so modals don't overlap!
+        // Admin or Editor: Open the modal directly
         const cardModalEl = document.getElementById('eventCardModal');
         if (cardModalEl && cardModalEl.classList.contains('show')) {
             bootstrap.Modal.getInstance(cardModalEl).hide();
@@ -2766,7 +2773,7 @@ function generateSingleEventCard(e) {
                   else if(e['Event Status'] === 'Cancelled') pillClass = 'cal-status-cancelled';
                   
                   const timePrefix = e['Event Start Time'] ? `${formatAMPM(e['Event Start Time'])} ` : '';
-                  eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Doc ID']}')" title="${e['Event Name']}">
+                  eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="handleCalendarPillClick('${e['Doc ID']}')" title="${e['Event Name']}">
                       <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
                   </div>`;
               }
