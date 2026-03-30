@@ -461,7 +461,7 @@
                               <th class="py-3 px-3">Crew Member</th>
                               <th class="py-3 text-center">Shoots</th>
                               <th class="py-3 text-center">Edits</th>
-                              <th class="py-3 text-end">Est. Base Pay</th>
+                              <th class="py-3 text-end">Est. Net Pay</th>
                               <th class="py-3 px-3 text-end">Action</th>
                           </tr>
                       </thead>
@@ -5231,37 +5231,39 @@ function showToast(message, type = 'success') {
     toast.show();
 }
   // UI: Draw the Main Table
-  function renderPayrollTable() {
-      const tbody = document.getElementById('pr-body');
-      let html = '';
-      
-      const names = Object.keys(currentPayrollData).sort();
-      if (names.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>No crew members had confirmed events in this timeframe.</td></tr>';
-          return;
-      }
+function renderPayrollTable() {
+    const tbody = document.getElementById('pr-body');
+    let html = '';
+    
+    const names = Object.keys(currentPayrollData).sort();
+    if (names.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>No crew members had confirmed events in this timeframe.</td></tr>';
+        return;
+    }
 
-      names.forEach(name => {
-          const data = currentPayrollData[name];
-          const shootCount = data.events.filter(e => e.role === 'Crew').length;
-          const editCount = data.events.filter(e => e.role === 'Editor').length;
-          
-          // THE FIX: They are only "Fully Exempt" if they are an owner AND have NO editing tasks
-          const isFullyExempt = owners.includes(name) && data.totalBase === 0 && editCount === 0;
-          const estBasePayHtml = isFullyExempt ? '<span class="badge bg-secondary text-white shadow-sm">N/A (Exempt)</span>' : `₱${data.totalBase.toLocaleString()}`;
-          
-          html += `<tr>
-              <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2"></i>${name}</td>
-              <td class="text-center"><span class="badge bg-light text-dark border">${shootCount}</span></td>
-              <td class="text-center"><span class="badge bg-light text-dark border">${editCount}</span></td>
-              <td class="text-end fw-bold ${isFullyExempt ? '' : 'text-success'}">${estBasePayHtml}</td>
-              <td class="text-end px-3">
-                  <button class="btn btn-sm btn-danger fw-bold shadow-sm py-1" onclick="openPayrollModal('${name}')" style="font-size:0.75rem;">VIEW DETAILS <i class="bi bi-chevron-right"></i></button>
-              </td>
-          </tr>`;
-      });
-      tbody.innerHTML = html;
-  }
+    names.forEach(name => {
+        const data = currentPayrollData[name];
+        const shootCount = data.events.filter(e => e.role === 'Crew').length;
+        const editCount = data.events.filter(e => e.role === 'Editor').length;
+        
+        // Check if fully exempt
+        const isFullyExempt = owners.includes(name) && data.totalBase === 0 && editCount === 0;
+        
+        // THE FIX: Use data.finalTotal instead of data.totalBase so it includes Expenses & Extra Pay!
+        const estBasePayHtml = isFullyExempt ? '<span class="badge bg-secondary text-white shadow-sm">N/A (Exempt)</span>' : `₱${data.finalTotal.toLocaleString()}`;
+        
+        html += `<tr>
+            <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2"></i>${name}</td>
+            <td class="text-center"><span class="badge bg-light text-dark border">${shootCount}</span></td>
+            <td class="text-center"><span class="badge bg-light text-dark border">${editCount}</span></td>
+            <td class="text-end fw-bold ${isFullyExempt ? '' : 'text-success'}">${estBasePayHtml}</td>
+            <td class="text-end px-3">
+                <button class="btn btn-sm btn-danger fw-bold shadow-sm py-1" onclick="openPayrollModal('${name}')" style="font-size:0.75rem;">VIEW DETAILS <i class="bi bi-chevron-right"></i></button>
+            </td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
 
   // Modal: Open and build the interactive calculator
   function openPayrollModal(name, isHistorical = false, histData = null) {
