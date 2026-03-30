@@ -1796,7 +1796,7 @@
     
     if (start && end && Object.keys(currentPayrollData).length > 0) {
         // Automatically recalculate everything with the new rates!
-        runPayrollEngine();
+        runPayrollEngine(true); // <--- ADD "true" HERE!
         showToast("Rates saved and automatically applied to the active session!", "success");
     } else {
         // Just show the standard success message if they are setting rates beforehand
@@ -5103,8 +5103,8 @@ async function getNextEventId() {
   }
 
   
-  // Engine: Aggregate the data using the Dynamic Rates (With Memory!)
-function runPayrollEngine() {
+ // Engine: Aggregate the data using the Dynamic Rates (With Memory!)
+function runPayrollEngine(forceNewRates = false) {
     const start = document.getElementById('prStartDate').value;
     const end = document.getElementById('prEndDate').value;
     
@@ -5134,8 +5134,10 @@ function runPayrollEngine() {
     // Requirement 4: Force Jenielyn to exist with a fixed allowance every cutoff
     initPayrollPerson('Jenielyn');
     let oldJen = getOldEvent('Jenielyn', 'FIXED', 'Allowance');
-    let jenBase = oldJen ? oldJen.basePay : 7500; // Keep override if exists
-    let jenExtra = oldJen ? oldJen.extraPay : 0;  // Keep extra if exists
+    
+    // If forcing new rates, reset allowance to default, otherwise keep override
+    let jenBase = (oldJen && !forceNewRates) ? oldJen.basePay : 7500; 
+    let jenExtra = oldJen ? oldJen.extraPay : 0;  // Always keep extra pay
 
     currentPayrollData['Jenielyn'].events.push({
         doc: { 'Event ID': 'FIXED', 'Event Name': 'Bi-monthly Base Allowance', 'Event Date': start },
@@ -5206,8 +5208,8 @@ function runPayrollEngine() {
                 // MAGIC: Apply manual overrides if they existed before we clicked Compute
                 let oldEv = getOldEvent(c, evId, 'Crew');
                 if (oldEv) {
-                    rate = oldEv.basePay;
-                    extra = oldEv.extraPay;
+                    if (!forceNewRates) rate = oldEv.basePay; // Only keep old base rate if NOT updating rates
+                    extra = oldEv.extraPay; // ALWAYS keep extra pay
                 }
 
                 currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: extra, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
@@ -5244,8 +5246,8 @@ function runPayrollEngine() {
             // MAGIC: Apply manual overrides if they existed before we clicked Compute
             let oldEv = getOldEvent(editor, evId, 'Editor');
             if (oldEv) {
-                rate = oldEv.basePay;
-                extra = oldEv.extraPay;
+                if (!forceNewRates) rate = oldEv.basePay; // Only keep old base rate if NOT updating rates
+                extra = oldEv.extraPay; // ALWAYS keep extra pay
             }
 
             currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: extra, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
