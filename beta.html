@@ -304,6 +304,53 @@
     .modal-backdrop:nth-of-type(even) {
         z-index: 1070 !important;
     }
+    /* --- FLOATING LIGHTBOX CLOSE BUTTON --- */
+    .lightbox-close-btn {
+        position: absolute;
+        top: -15px;
+        right: 0px;
+        z-index: 1060;
+        background-color: #ffffff;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: all 0.2s ease;
+        font-size: 1rem;
+    }
+
+    .lightbox-close-btn:hover {
+        background-color: #f8fafc;
+        transform: scale(1.1);
+        color: #ef4444; /* Subtle red shift on hover for clear UX */
+    }
+
+    /* Push it completely outside the bounds on desktop screens so it truly floats */
+    @media (min-width: 576px) {
+        .lightbox-close-btn {
+            top: -18px;
+            right: -18px;
+        }
+    }
+
+    /* DARK MODE STYLING FOR THE FLOATING BUTTON */
+    .dark-mode .lightbox-close-btn {
+        background-color: #1e1e1e;
+        color: #d1d5db;
+        border-color: #333333;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    }
+
+    .dark-mode .lightbox-close-btn:hover {
+        background-color: #2b2b2b;
+        color: #ef4444;
+    }
   </style>
 </head>
 <body>
@@ -1617,11 +1664,11 @@
     </div>
 </div></div></div>
   <div class="modal fade" id="eventCardModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered" style="position: relative;">
+        <button type="button" class="lightbox-close-btn" data-bs-dismiss="modal" title="Close">
+            <i class="bi bi-x-lg"></i>
+        </button>
         <div class="modal-content border-0 bg-transparent shadow-none">
-            <div class="modal-header border-0 pb-0 justify-content-end position-absolute top-0 end-0 z-3">
-                <button type="button" class="btn-close shadow-sm bg-white rounded-circle p-2 m-2" data-bs-dismiss="modal"></button>
-            </div>
             <div class="modal-body p-0" id="eventCardModalBody">
                 </div>
         </div>
