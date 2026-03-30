@@ -955,11 +955,6 @@
       <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
       <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea>
   </div>
-  <div id="newNotesBlock" class="mb-4">
-      <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
-      <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea>
-  </div>
-
   <div id="newEditingSection" class="p-3 mb-4 rounded border border-info border-opacity-25" style="background-color: rgba(13, 202, 240, 0.05);">
       <div class="section-title text-info mb-3"><i class="bi bi-film me-1"></i> Editing Workflow</div>
       <div class="row g-3 mb-3">
@@ -1669,11 +1664,12 @@
     </div>
 </div></div></div>
   <div class="modal fade" id="eventCardModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered" style="position: relative;">
-        <button type="button" class="lightbox-close-btn" data-bs-dismiss="modal" title="Close">
-            <i class="bi bi-x-lg"></i>
-        </button>
-        <div class="modal-content border-0 bg-transparent shadow-none">
+    <div class="modal-dialog modal-dialog-centered flex-column" style="position: relative;">
+        <div class="text-white small mb-2 opacity-75 fst-italic w-100 text-center" style="letter-spacing: 0.5px;">
+            <i class="bi bi-info-circle me-1"></i> Tap or click outside the card to exit
+        </div>
+        
+        <div class="modal-content border-0 bg-transparent shadow-none w-100">
             <div class="modal-body p-0" id="eventCardModalBody">
                 </div>
         </div>
