@@ -1599,6 +1599,17 @@
         <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Fetching cloud saves...</div>
     </div>
 </div></div></div>
+  <div class="modal fade" id="eventCardModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 bg-transparent shadow-none">
+            <div class="modal-header border-0 pb-0 justify-content-end position-absolute top-0 end-0 z-3">
+                <button type="button" class="btn-close shadow-sm bg-white rounded-circle p-2 m-2" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="eventCardModalBody">
+                </div>
+        </div>
+    </div>
+</div>
   <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 10600;">
   <div id="appToast" class="toast align-items-center text-bg-success border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="d-flex">
@@ -2522,7 +2533,134 @@ function handleEqSearch() {
         applyFilters(); 
     }
   }
+// Smart router for Edit buttons
+function handleEditClick(docId) {
+    const role = getUserRole();
+    const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+    
+    if (!role || isExpired) {
+        // Non-admin (View-Only): Immediately ask for admin password
+        requireAuth(() => openEditModal(docId), true); 
+    } else {
+        // Admin or Editor: Open the modal (Editor lockdown happens inside openEditModal)
+        // If clicking from the lightbox, close the lightbox first so modals don't overlap!
+        const cardModalEl = document.getElementById('eventCardModal');
+        if (cardModalEl && cardModalEl.classList.contains('show')) {
+            bootstrap.Modal.getInstance(cardModalEl).hide();
+            setTimeout(() => openEditModal(docId), 350);
+        } else {
+            openEditModal(docId);
+        }
+    }
+}
 
+// Smart router for Calendar Pills
+function handleCalendarPillClick(docId) {
+    const role = getUserRole();
+    const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+    
+    if (role === 'admin' && !isExpired) {
+        // Admin: Open full edit modal immediately
+        openEditModal(docId);
+    } else {
+        // Editor or Non-Admin: Show the card in a Lightbox
+        const e = rawEvents.find(ev => String(ev['Doc ID']) === String(docId));
+        if (!e) return;
+        
+        document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(e);
+        new bootstrap.Modal(document.getElementById('eventCardModal')).show();
+    }
+}
+
+// Extracted Card Builder (Shared by Events Tab & Calendar Lightbox)
+function generateSingleEventCard(e) {
+    if (e['Event Name'] === 'Crew Leave') {
+        let leaveDateString = e['Event Date'];
+        if (leaveDateString && leaveDateString.includes('-')) {
+            const dParts = leaveDateString.split('-');
+            leaveDateString = new Date(dParts[0], dParts[1]-1, dParts[2]).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+        }
+        return `<div class="card leave-card p-2 p-md-3 w-100" style="height: auto !important;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div style="z-index: 30;">
+                    <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
+                    <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
+                    <span onclick="handleEditClick('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
+                    <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
+                </div>
+            </div>
+            <div class="text-danger fw-bold mb-2 small"><i class="bi bi-calendar2-event opacity-75 me-1"></i> ${leaveDateString}</div>
+            <div class="mb-1"><div style="line-height: 1.6;">${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-2 fw-bold px-2 py-1 text-wrap" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}</div></div>
+            ${e['Event Notes'] ? `<div class="small text-secondary mt-2 border-top pt-2 border-danger border-opacity-25"><p class="mb-0 fst-italic" style="font-size: 0.7rem;"><i class="bi bi-journal-text opacity-50 text-danger me-1"></i> ${e['Event Notes']}</p></div>` : ''}
+        </div>`;
+    }
+
+    let projectRows = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
+    let fileSet = new Set(); let filesHtml = '';
+    projectRows.forEach(row => {
+        Object.keys(row).forEach(key => {
+            if(key.toLowerCase().startsWith('file0') && row[key]) {
+                if(!fileSet.has(row[key])) {
+                    fileSet.add(row[key]); const parts = row[key].split('|');
+                    if(parts.length === 3) filesHtml += `<span class="file-badge mb-2 me-2"><i class="bi bi-file-earmark-text text-secondary"></i> ${parts[0]} <a href="${parts[1]}" target="_blank" class="ms-1">View</a> <span class="file-delete-btn ms-1" title="Delete File" onclick="requireAuth(() => deleteFile('${e['Event ID']}', '${parts[2]}'))"><i class="bi bi-x"></i></span></span>`;
+                }
+            }
+        });
+    });
+
+    let cardCustomClass = ''; let stampHtml = ''; let statusPillHtml = '';
+    if (e['Event Status'] === 'Confirmed') { cardCustomClass = 'card-confirmed'; statusPillHtml = `<span class="badge badge-soft-success px-2 py-1 shadow-sm rounded-pill">Confirmed</span>`; } 
+    else if (e['Event Status'] === 'Cancelled') { cardCustomClass = 'card-cancelled'; stampHtml = `<div class="stamp-container"><div class="status-stamp stamp-cancelled">CANCELLED</div></div>`; } 
+    else if (e['Event Status'] === 'Pencil Booked') { cardCustomClass = 'card-pencil'; stampHtml = `<div class="stamp-container"><div class="status-stamp stamp-pencil">PENCIL BOOKED</div></div>`; } 
+    else { statusPillHtml = `<span class="badge badge-soft-dark px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>`; }
+
+    let venueDisplay = `<span class="fw-medium text-dark">${e['Event Venue'] || 'No Venue Set'}</span>`;
+    if (e['Event Venue Link']) venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
+    
+    let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
+        let sTrim = s.trim();
+        if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only') || sTrim.startsWith('Photo souvenir')) {
+            let match = sTrim.match(/\[(\d+)\s+booth/); let booths = match ? match[1] : 1; let cleanName = e['Event Name'].replace(/'/g, "\\'");
+            return `<span class="badge badge-teal opacity-100 border me-1 mb-2 fw-bold px-2 py-1 text-wrap text-start shadow-sm" style="font-size: 0.8rem; line-height: 1.4; cursor: pointer;" onclick="goToBoothQR('${e['Event ID']}', '${booths}', '${cleanName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
+        } else { return `<span class="badge bg-secondary opacity-75 border me-1 mb-2 fw-medium px-2 py-1 text-wrap text-start" style="font-size: 0.8rem; line-height: 1.4;">${sTrim}</span>`; }
+    }).join('') : '-';
+
+    let displayDateString = e['Event Date'];
+    if (displayDateString && displayDateString.includes('-')) {
+        const dParts = displayDateString.split('-');
+        displayDateString = new Date(dParts[0], dParts[1]-1, dParts[2]).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    return `<div class="card p-3 p-md-4 w-100 ${cardCustomClass}" style="position: relative; overflow: hidden; height: 100%;">
+        ${stampHtml}
+        <div class="d-flex justify-content-between mb-3 align-items-center">
+            <div style="z-index: 30;"> <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
+                <span onclick="handleEditClick('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
+                <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
+            </div>
+            ${statusPillHtml}
+        </div>
+        <h5 class="fw-bold mb-1 lh-sm text-dark">${e['Event Name']}</h5>
+        <p class="small text-muted mb-3"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> ${venueDisplay}</p>
+        <div class="bg-light p-3 rounded-3 border mb-3">
+            <div class="d-flex align-items-center mb-2 pb-2 border-bottom border-secondary-subtle">
+                <i class="bi bi-calendar2-event-fill text-primary fs-5 me-2"></i>
+                <span class="fw-bold text-dark" style="font-size: 0.95rem; letter-spacing: 0.3px;">${displayDateString}</span>
+            </div>
+            <div class="row g-2 small">
+                <div class="col-6"><span class="text-muted d-block mb-1" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Call Time</span><span class="text-danger fw-bold"><i class="bi bi-alarm text-danger opacity-75 me-1"></i>${formatAMPM(e['Call Time'])}</span></div>
+                <div class="col-6 border-start border-secondary-subtle"><span class="text-muted d-block mb-1 ms-2" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Shoot Time</span><span class="text-dark fw-bold ms-2"><i class="bi bi-camera-video-fill text-primary opacity-75 me-1"></i>${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</span></div>
+            </div>
+        </div>
+        <div class="small text-secondary">
+            <div class="d-flex mb-2 align-items-start"><i class="card-icon bi bi-list-check text-secondary opacity-75 mt-1"></i><div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Services:</strong><br>${servicesBadges}</div></div>
+            <div class="d-flex mb-3 align-items-start"><i class="card-icon bi bi-people-fill text-info opacity-75 mt-1"></i> <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-dark border border-secondary-subtle me-1 mb-2 fw-bold px-2 py-1 text-wrap shadow-sm" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '-'}</div></div>
+            <div class="bg-white p-2 rounded-3 border mb-3 shadow-sm"><p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2 text-dark fw-medium">${e['Contact Number']}</span></p></div>
+            <p class="mb-0 text-muted fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
+        </div>
+        <div class="mt-auto pt-4"><div class="d-flex flex-wrap">${filesHtml}</div><label class="card-upload-btn w-100" onclick="openUploadModal('${e['Event ID']}')"><i class="bi bi-cloud-arrow-up me-1"></i> Add Document</label></div>
+    </div>`;
+}
   function renderEvents(data, isDefault) {
     let html = '';
     const todayDate = new Date();
@@ -2571,153 +2709,9 @@ function handleEqSearch() {
             });
 
             evs.forEach(e => {
-              
-              if (e['Event Name'] === 'Crew Leave') {
-                  // Format the date for the Leave Card
-                  let leaveDateString = e['Event Date'];
-                  if (leaveDateString && leaveDateString.includes('-')) {
-                      const dParts = leaveDateString.split('-');
-                      const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
-                      leaveDateString = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-                  }
-
-                  html += `<div class="col-12 col-md-6 col-lg-4">
-                    <div class="card leave-card p-2 p-md-3" style="height: auto !important;">
-                      <div class="d-flex justify-content-between align-items-center mb-2">
-                          <div style="z-index: 30;">
-                              <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
-                              <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
-                              <span onclick="openEditModal('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
-                              <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
-                          </div>
-                      </div>
-                      <div class="text-danger fw-bold mb-2 small"><i class="bi bi-calendar2-event opacity-75 me-1"></i> ${leaveDateString}</div>
-                      <div class="mb-1">
-                          <div style="line-height: 1.6;">
-                              ${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-2 fw-bold px-2 py-1 text-wrap" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}
-                          </div>
-                      </div>
-                      ${e['Event Notes'] ? `<div class="small text-secondary mt-2 border-top pt-2 border-danger border-opacity-25"><p class="mb-0 fst-italic" style="font-size: 0.7rem;"><i class="bi bi-journal-text opacity-50 text-danger me-1"></i> ${e['Event Notes']}</p></div>` : ''}
-                  </div></div>`;
-                  return; 
-              }
-
-              let projectRows = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
-              let fileSet = new Set();
-              let filesHtml = '';
-              
-              projectRows.forEach(row => {
-                  Object.keys(row).forEach(key => {
-                      if(key.toLowerCase().startsWith('file0') && row[key]) {
-                          if(!fileSet.has(row[key])) {
-                              fileSet.add(row[key]);
-                              const parts = row[key].split('|');
-                              if(parts.length === 3) {
-                                 filesHtml += `<span class="file-badge mb-2 me-2"><i class="bi bi-file-earmark-text text-secondary"></i> ${parts[0]} <a href="${parts[1]}" target="_blank" class="ms-1">View</a> <span class="file-delete-btn ms-1" title="Delete File" onclick="requireAuth(() => deleteFile('${e['Event ID']}', '${parts[2]}'))"><i class="bi bi-x"></i></span></span>`;
-                              }
-                          }
-                      }
-                  });
-              });
-
-              // --- NEW CARD STYLING LOGIC ---
-              let cardCustomClass = '';
-              let stampHtml = '';
-              let statusPillHtml = '';
-
-              if (e['Event Status'] === 'Confirmed') {
-                  cardCustomClass = 'card-confirmed';
-                  statusPillHtml = `<span class="badge badge-soft-success px-2 py-1 shadow-sm rounded-pill">Confirmed</span>`;
-              } else if (e['Event Status'] === 'Cancelled') {
-                  cardCustomClass = 'card-cancelled';
-                  stampHtml = `<div class="stamp-container"><div class="status-stamp stamp-cancelled">CANCELLED</div></div>`;
-              } else if (e['Event Status'] === 'Pencil Booked') {
-                  cardCustomClass = 'card-pencil';
-                  stampHtml = `<div class="stamp-container"><div class="status-stamp stamp-pencil">PENCIL BOOKED</div></div>`;
-              } else {
-                  // Fallback just in case
-                  statusPillHtml = `<span class="badge badge-soft-dark px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>`;
-              }
-              // ------------------------------
-              let venueDisplay = `<span class="fw-medium text-dark">${e['Event Venue'] || 'No Venue Set'}</span>`;
-              if (e['Event Venue Link']) {
-                  venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
-              }
-              
-              let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
-                  let sTrim = s.trim();
-                  if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only') || sTrim.startsWith('Photo souvenir')) {
-                      let match = sTrim.match(/\[(\d+)\s+booth/);
-                      let booths = match ? match[1] : 1;
-                      let cleanName = e['Event Name'].replace(/'/g, "\\'");
-                      return `<span class="badge badge-teal opacity-100 border me-1 mb-2 fw-bold px-2 py-1 text-wrap text-start shadow-sm" style="font-size: 0.8rem; line-height: 1.4; cursor: pointer;" onclick="goToBoothQR('${e['Event ID']}', '${booths}', '${cleanName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
-                  } else {
-                      return `<span class="badge bg-secondary opacity-75 border me-1 mb-2 fw-medium px-2 py-1 text-wrap text-start" style="font-size: 0.8rem; line-height: 1.4;">${sTrim}</span>`;
-                  }
-              }).join('') : '-';
-
-              // --- ADDED: Format the Date beautifully for the Card ---
-              let displayDateString = e['Event Date'];
-              if (displayDateString && displayDateString.includes('-')) {
-                  const dParts = displayDateString.split('-');
-                  const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
-                  displayDateString = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-              }
-
-              html += `<div class="col-12 col-md-6 col-lg-4">
-                  <div class="card p-3 p-md-4 ${cardCustomClass}" style="position: relative; overflow: hidden;">
-                    ${stampHtml}
-                    <div class="d-flex justify-content-between mb-3 align-items-center">
-                        <div style="z-index: 30;"> <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
-                            <span onclick="openEditModal('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
-                            <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
-                        </div>
-                        ${statusPillHtml}
-                    </div>
-                    
-                    <h5 class="fw-bold mb-1 lh-sm text-dark">${e['Event Name']}</h5>
-                    <p class="small text-muted mb-3"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> ${venueDisplay}</p>
-                    
-                    <div class="bg-light p-3 rounded-3 border mb-3">
-                        <div class="d-flex align-items-center mb-2 pb-2 border-bottom border-secondary-subtle">
-                            <i class="bi bi-calendar2-event-fill text-primary fs-5 me-2"></i>
-                            <span class="fw-bold text-dark" style="font-size: 0.95rem; letter-spacing: 0.3px;">${displayDateString}</span>
-                        </div>
-                        <div class="row g-2 small">
-                            <div class="col-6">
-                                <span class="text-muted d-block mb-1" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Call Time</span>
-                                <span class="text-danger fw-bold"><i class="bi bi-alarm text-danger opacity-75 me-1"></i>${formatAMPM(e['Call Time'])}</span>
-                            </div>
-                            <div class="col-6 border-start border-secondary-subtle">
-                                <span class="text-muted d-block mb-1 ms-2" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Shoot Time</span>
-                                <span class="text-dark fw-bold ms-2"><i class="bi bi-camera-video-fill text-primary opacity-75 me-1"></i>${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="small text-secondary">
-                        <div class="d-flex mb-2 align-items-start">
-                            <i class="card-icon bi bi-list-check text-secondary opacity-75 mt-1"></i>
-                            <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Services:</strong><br>${servicesBadges}</div>
-                        </div>
-                        
-                        <div class="d-flex mb-3 align-items-start">
-                            <i class="card-icon bi bi-people-fill text-info opacity-75 mt-1"></i> 
-                            <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-dark border border-secondary-subtle me-1 mb-2 fw-bold px-2 py-1 text-wrap shadow-sm" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '-'}</div>
-                        </div>
-                        
-                        <div class="bg-white p-2 rounded-3 border mb-3 shadow-sm">
-                            <p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2 text-dark fw-medium">${e['Contact Number']}</span></p>
-                        </div>
-                        
-                        <p class="mb-0 text-muted fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
-                    </div>
-                    
-                    <div class="mt-auto pt-4">
-                        <div class="d-flex flex-wrap">${filesHtml}</div>
-                        <label class="card-upload-btn w-100" onclick="openUploadModal('${e['Event ID']}')"><i class="bi bi-cloud-arrow-up me-1"></i> Add Document</label>
-                    </div>
-                </div></div>`;
+                html += `<div class="col-12 col-md-6 col-lg-4">
+                            ${generateSingleEventCard(e)}
+                         </div>`;
             });
         }
       }
@@ -2763,7 +2757,7 @@ function handleEqSearch() {
 
           dayEvents.forEach(e => {
               if (e['Event Name'] === 'Crew Leave') {
-                  eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="openEditModal('${e['Doc ID']}')" title="Leave: ${e['Manpower']}">
+                  eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="handleCalendarPillClick('${e['Doc ID']}')" title="Leave: ${e['Manpower']}">
                       <span class="opacity-75">✈️</span> <strong>${e['Manpower'] || 'Leave'}</strong>
                   </div>`;
               } else {
@@ -3549,6 +3543,32 @@ function handleEqSearch() {
     // Safely get or create modal
     const modalEl = document.getElementById('editEventModal');
     const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    // --- NEW EDITOR LOCKDOWN LOGIC ---
+    const isEditor = (role === 'editor' && !isExpired);
+    const sectionsToHideForEditor = [
+        'editTypeToggleBlock', 
+        'editGeneralFields', 
+        'editDateTimeBlock', 
+        'editServicesContactFields', 
+        'editCrewBlock', 
+        'editNotesBlock', 
+        'editPaymentFields'
+    ];
+    
+    // Aggressively hide non-editing sections using Bootstrap's d-none class
+    sectionsToHideForEditor.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (isEditor) el.classList.add('d-none');
+            else el.classList.remove('d-none');
+        }
+    });
+
+    // Guarantee the Editing Section remains visible for Editors
+    const editSection = document.getElementById('editEditingSection');
+    if (editSection && isEditor) {
+        editSection.classList.remove('d-none');
+    }
     modal.show();
   }
 
