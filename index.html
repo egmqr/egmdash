@@ -2395,7 +2395,7 @@ function handleEqSearch() {
       if(c) url.searchParams.set('fCrew', c); else url.searchParams.delete('fCrew');
       if(s) url.searchParams.set('fStatus', s); else url.searchParams.delete('fStatus');
       
-      ['q', 'grInv', 'type', 'status'].forEach(p => url.searchParams.delete(p));
+      ['q', 'grInv', 'type', 'status', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
       window.history.replaceState({}, '', url);
 
     } else if (currentTab === 'payments') {
@@ -2423,7 +2423,7 @@ function handleEqSearch() {
       if(t) url.searchParams.set('type', t); else url.searchParams.delete('type');
       if(s && s !== 'Unpaid') url.searchParams.set('status', s); else url.searchParams.delete('status');
 
-      ['fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus'].forEach(p => url.searchParams.delete(p));
+      ['fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
       window.history.replaceState({}, '', url);
 
     } else if (currentTab === 'editqueue') {
@@ -2501,12 +2501,12 @@ function handleEqSearch() {
         
         let url = new URL(window.location);
         url.searchParams.set('tab', 'booth');
-        ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus'].forEach(p => url.searchParams.delete(p));
+        ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
         window.history.replaceState({}, '', url);
     } else if (t === 'expenses') {
         let url = new URL(window.location);
         url.searchParams.set('tab', 'expenses');
-        ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus'].forEach(p => url.searchParams.delete(p));
+        ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
         window.history.replaceState({}, '', url);
     } else {
         applyFilters(); 
