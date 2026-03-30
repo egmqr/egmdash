@@ -287,6 +287,23 @@
     .dark-mode .logo-gallery-item { background: #333; }
     .dark-mode .logo-gallery-item.selected { border-color: #0d9488; }
     .dark-mode .cal-status-pencil { background-color: #374151; color: #9ca3af; border-color: #4b5563; border-style: dashed; }
+    /* --- CALENDAR LIGHTBOX FIXES --- */
+    
+    /* 1. Force the lightbox event card to be solid #E9F3F4 */
+    #eventCardModal .card {
+        background-color: #E9F3F4 !important;
+        opacity: 1 !important;
+    }
+
+    /* 2. Force the Auth Password Modal to always be in front of everything */
+    #authModal {
+        z-index: 1080 !important; 
+    }
+    
+    /* Ensure the dark overlay backdrop for the Auth Modal also sits above the Lightbox */
+    .modal-backdrop:nth-of-type(even) {
+        z-index: 1070 !important;
+    }
   </style>
 </head>
 <body>
