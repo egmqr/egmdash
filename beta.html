@@ -294,6 +294,11 @@
         background-color: #E9F3F4 !important;
         opacity: 1 !important;
     }
+    /* --- DARK MODE: CALENDAR LIGHTBOX CARD --- */
+    .dark-mode #eventCardModal .card {
+        background-color: #000000 !important;
+        border-color: #333333 !important; /* Keeps the edges looking sharp against the backdrop */
+    }
 
     /* 2. Force the Auth Password Modal to always be in front of everything */
     #authModal {
@@ -307,8 +312,8 @@
     /* --- FLOATING LIGHTBOX CLOSE BUTTON --- */
     .lightbox-close-btn {
         position: absolute;
-        top: -15px;
-        right: 0px;
+        top: -10px;  /* Brought down much closer to the top edge */
+        right: 5px;  /* Tucked in slightly on mobile so it doesn't hit the screen edge */
         z-index: 1060;
         background-color: #ffffff;
         color: #334155;
@@ -328,14 +333,14 @@
     .lightbox-close-btn:hover {
         background-color: #f8fafc;
         transform: scale(1.1);
-        color: #ef4444; /* Subtle red shift on hover for clear UX */
+        color: #ef4444; 
     }
 
-    /* Push it completely outside the bounds on desktop screens so it truly floats */
+    /* Desktop positioning: Hugging the corner perfectly */
     @media (min-width: 576px) {
         .lightbox-close-btn {
-            top: -18px;
-            right: -18px;
+            top: -12px;   /* Just barely peeking over the top border */
+            right: -12px; /* Just barely peeking over the right border */
         }
     }
 
