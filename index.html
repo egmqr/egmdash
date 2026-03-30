@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -366,7 +367,7 @@
       </div>
 <div class="filter-panel" id="editQueueFilters" style="display:none;">
         <div class="row g-2 align-items-end">
-          <div class="col-12 col-md-5"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fEqSearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="renderEditingQueue(rawEvents)"></div>
+          <div class="col-12 col-md-5"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fEqSearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="handleEqSearch()"></div>
           <div class="col-12 col-md-5"><span class="form-label-sm">Status</span>
              <select id="fEqStatus" class="form-select form-select-sm" onchange="renderEditingQueue(rawEvents)">
                  <option value="All">All Statuses</option>
@@ -2202,47 +2203,68 @@ function handleAddCustomService(inputId, containerId) {
       }
   }
   // Automatically populates the Expenses tab dropdown with events from the last 15 days
-  function populateExpenseEventsDropdown() {
-      const select = document.getElementById('expenseEventSelect');
-      if (!select) return;
+function populateExpenseEventsDropdown() {
+    const select = document.getElementById('expenseEventSelect');
+    if (!select) return;
 
-      // 1. Calculate the date window (Today down to 15 days ago)
-      const today = new Date();
-      const pastDate = new Date();
-      pastDate.setDate(today.getDate() - 15);
+    // 1. Calculate the date window (Today down to 15 days ago)
+    const today = new Date();
+    const pastDate = new Date();
+    pastDate.setDate(today.getDate() - 15);
 
-      const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-      const pastStr = pastDate.getFullYear() + '-' + String(pastDate.getMonth() + 1).padStart(2, '0') + '-' + String(pastDate.getDate()).padStart(2, '0');
+    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    const pastStr = pastDate.getFullYear() + '-' + String(pastDate.getMonth() + 1).padStart(2, '0') + '-' + String(pastDate.getDate()).padStart(2, '0');
 
-      // 2. Filter the master events list
-      let recentEvents = rawEvents.filter(e => {
-          const eDate = e['Event Date'];
-          return eDate >= pastStr && eDate <= todayStr && e['Event Name'] !== 'Crew Leave';
-      });
+    // 2. Filter the master events list
+    let recentEvents = rawEvents.filter(e => {
+        const eDate = e['Event Date'];
+        return eDate >= pastStr && eDate <= todayStr && e['Event Name'] !== 'Crew Leave';
+    });
 
-      // 3. Sort them so the newest events (Today) are at the very top
-      recentEvents.sort((a, b) => {
-          let dateA = a['Event Date'] || ''; 
-          let dateB = b['Event Date'] || ''; 
-          return dateB.localeCompare(dateA); 
-      });
+    // 3. Sort them so the newest events (Today) are at the very top
+    recentEvents.sort((a, b) => {
+        let dateA = a['Event Date'] || ''; 
+        let dateB = b['Event Date'] || ''; 
+        return dateB.localeCompare(dateA); 
+    });
 
-      // 4. Build the HTML for the dropdown
-      let html = '<option value="">-- Select Event --</option>';
-      
-      // NEW: Custom Expense option placed at the very top!
-      html += `<option value="${todayStr} - Custom Expense" class="text-primary fw-bold">⭐ Custom Expense</option>`;
-      
-      // General / Office fallback
-      html += `<option value="${todayStr} - General/Office Expense">General / Office Expense (Today)</option>`;
-      
-      recentEvents.forEach(e => {
-          // We set the "value" to send both the Date and Name to Google Sheets for better accounting!
-          html += `<option value="${e['Event Date']} - ${e['Event Name']}">${e['Event Name']} (${e['Event Date']})</option>`;
-      });
+    // 4. Build the HTML for the dropdown
+    let html = '<option value="">-- Select Event --</option>';
+    
+    // Custom Expense option placed at the very top!
+    html += `<option value="${todayStr} - Custom Expense" class="text-primary fw-bold">⭐ Custom Expense</option>`;
+    
+    // UPDATED: Removed "(Today)" from General / Office Expense
+    html += `<option value="${todayStr} - General/Office Expense">General / Office Expense</option>`;
+    
+    recentEvents.forEach(e => {
+        // UPDATED: Check if the event date is exactly today's date
+        const isTodayLabel = (e['Event Date'] === todayStr) ? " 🔥 (Today)" : "";
+        
+        // We set the "value" to send both the Date and Name to Google Sheets for better accounting!
+        html += `<option value="${e['Event Date']} - ${e['Event Name']}">${e['Event Name']} (${e['Event Date']})${isTodayLabel}</option>`;
+    });
 
-      select.innerHTML = html;
-  }
+    select.innerHTML = html;
+}
+
+function handleEqSearch() {
+    const searchBox = document.getElementById('fEqSearch');
+    const statusFilter = document.getElementById('fEqStatus');
+    
+    // If the user typed something, set dropdown to "All Statuses"
+    if (searchBox.value.trim().length > 0) {
+        statusFilter.value = 'All';
+    } 
+    // If the search box is empty (they backspaced it all), set back to default
+    else {
+        statusFilter.value = 'RAW Uploaded';
+    }
+    
+    // Run the filter/render function with the updated dropdown state
+    renderEditingQueue(rawEvents);
+}
+  
   function toggleEntryMode(prefix) {
       const isLeave = document.getElementById(prefix + 'TypeLeave').checked;
       const generalBlock = document.getElementById(prefix + 'GeneralFields');
