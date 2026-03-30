@@ -646,8 +646,10 @@
               <form id="expenseForm">
                   <div class="row g-3 mb-3">
                       <div class="col-12 col-md-6">
-                          <label class="form-label-sm">Date of Event <span class="fw-normal text-muted" style="text-transform: none;">(NOT DATE SUBMITTED)</span></label>
-                          <input type="date" name="expenseDate" class="form-control form-control-sm fw-bold" required>
+                          <label class="form-label-sm">Select Event <span class="fw-normal text-muted" style="text-transform: none;">(Past 15 Days)</span></label>
+                          <select name="expenseDate" id="expenseEventSelect" class="form-select form-select-sm fw-bold text-dark" required>
+                              <option value="">-- Loading Recent Events... --</option>
+                          </select>
                       </div>
                       <div class="col-12 col-md-6">
                           <label class="form-label-sm">Submitted By</label>
@@ -2199,7 +2201,45 @@ function handleAddCustomService(inputId, containerId) {
           if (!end.value || end.value < start.value) { end.value = start.value; }
       }
   }
+  // Automatically populates the Expenses tab dropdown with events from the last 15 days
+  function populateExpenseEventsDropdown() {
+      const select = document.getElementById('expenseEventSelect');
+      if (!select) return;
 
+      // 1. Calculate the date window (Today down to 15 days ago)
+      const today = new Date();
+      const pastDate = new Date();
+      pastDate.setDate(today.getDate() - 15);
+
+      const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      const pastStr = pastDate.getFullYear() + '-' + String(pastDate.getMonth() + 1).padStart(2, '0') + '-' + String(pastDate.getDate()).padStart(2, '0');
+
+      // 2. Filter the master events list
+      let recentEvents = rawEvents.filter(e => {
+          const eDate = e['Event Date'];
+          return eDate >= pastStr && eDate <= todayStr && e['Event Name'] !== 'Crew Leave';
+      });
+
+      // 3. Sort them so the newest events (Today) are at the very top
+      recentEvents.sort((a, b) => {
+          let dateA = a['Event Date'] || ''; 
+          let dateB = b['Event Date'] || ''; 
+          return dateB.localeCompare(dateA); 
+      });
+
+      // 4. Build the HTML for the dropdown
+      let html = '<option value="">-- Select Event --</option>';
+      
+      // Added a fallback option just in case you have an office expense not tied to a shoot!
+      html += `<option value="${todayStr} - General/Office Expense">General / Office Expense (Today)</option>`;
+      
+      recentEvents.forEach(e => {
+          // We set the "value" to send both the Date and Name to Google Sheets for better accounting!
+          html += `<option value="${e['Event Date']} - ${e['Event Name']}">${e['Event Name']} (${e['Event Date']})</option>`;
+      });
+
+      select.innerHTML = html;
+  }
   function toggleEntryMode(prefix) {
       const isLeave = document.getElementById(prefix + 'TypeLeave').checked;
       const generalBlock = document.getElementById(prefix + 'GeneralFields');
@@ -4619,6 +4659,7 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
     // Safely attempt to render the UI
     try {
         updateCrewFilterDropdown(rawEvents);
+        populateExpenseEventsDropdown(); // <--- Fills the Expenses dropdown instantly!
         applyFilters();
     } catch(err) {
         console.error("UI Render Error:", err);
