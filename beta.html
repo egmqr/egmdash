@@ -308,53 +308,7 @@
     .modal-backdrop:nth-of-type(even) {
         z-index: 1070 !important;
     }
-    /* --- FLOATING LIGHTBOX CLOSE BUTTON --- */
-    .lightbox-close-btn {
-        position: absolute;
-        top: 130px;
-        right: 0;
-        z-index: 1060;
-        background-color: #ffffff;
-        color: #334155;
-        border: 1px solid #cbd5e1;
-        border-radius: 50%;
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        transition: all 0.2s ease;
-        font-size: 1rem;
-    }
-
-    .lightbox-close-btn:hover {
-        background-color: #f8fafc;
-        transform: scale(1.1);
-        color: #ef4444; 
-    }
-
-    /* Desktop positioning: Hugging the corner perfectly */
-    @media (min-width: 576px) {
-        .lightbox-close-btn {
-        top: 100px;
-        right: 0;
-        }
-    }
-
-    /* DARK MODE STYLING FOR THE FLOATING BUTTON */
-    .dark-mode .lightbox-close-btn {
-        background-color: #1e1e1e;
-        color: #d1d5db;
-        border-color: #333333;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-    }
-
-    .dark-mode .lightbox-close-btn:hover {
-        background-color: #2b2b2b;
-        color: #ef4444;
-    }
+  
   </style>
 </head>
 <body>
