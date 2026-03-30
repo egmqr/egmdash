@@ -1744,26 +1744,36 @@
   }
 
   function saveRates() {
-      // Save the Global Editing Rate
-      const globalEditInput = document.getElementById('globalEditingRateInput');
-      if (globalEditInput) {
-          localStorage.setItem('egm_editing_rate', parseFloat(globalEditInput.value) || 2000);
-      }
+    // Save the Global Editing Rate
+    const globalEditInput = document.getElementById('globalEditingRateInput');
+    if (globalEditInput) {
+        localStorage.setItem('egm_editing_rate', parseFloat(globalEditInput.value) || 2000);
+    }
 
-      // Save the Individual Crew Rates
-      let rates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
-      document.querySelectorAll('.rate-input').forEach(input => {
-          let name = input.getAttribute('data-name');
-          let val = parseFloat(input.value);
-          if (!isNaN(val)) rates[name] = val;
-      });
-      localStorage.setItem('egm_crew_rates', JSON.stringify(rates));
-      
-      bootstrap.Modal.getInstance(document.getElementById('ratesModal')).hide();
-      
-      // Trigger the fancy Toast we added earlier instead of an ugly browser alert!
-      showToast("Rates saved successfully! Click COMPUTE again to apply the new rates.", "success");
-  }
+    // Save the Individual Crew Rates
+    let rates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
+    document.querySelectorAll('.rate-input').forEach(input => {
+        let name = input.getAttribute('data-name');
+        let val = parseFloat(input.value);
+        if (!isNaN(val)) rates[name] = val;
+    });
+    localStorage.setItem('egm_crew_rates', JSON.stringify(rates));
+    
+    bootstrap.Modal.getInstance(document.getElementById('ratesModal')).hide();
+    
+    // NEW LOGIC: Check if a payroll session is currently active
+    const start = document.getElementById('prStartDate').value;
+    const end = document.getElementById('prEndDate').value;
+    
+    if (start && end && Object.keys(currentPayrollData).length > 0) {
+        // Automatically recalculate everything with the new rates!
+        runPayrollEngine();
+        showToast("Rates saved and automatically applied to the active session!", "success");
+    } else {
+        // Just show the standard success message if they are setting rates beforehand
+        showToast("Rates saved successfully!", "success");
+    }
+}
   // -----------------------------
 
 
