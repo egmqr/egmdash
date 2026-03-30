@@ -4473,6 +4473,11 @@ function handleAddCustomService(inputId, containerId) {
               if (!isHistoricalView && activePayrollPerson) {
                   renderPayrollTable();
                   showToast("Changes applied to active session.", "success");
+              } else if (isHistoricalView) {
+                  // Re-open the history vault when closing a historical payslip
+                  const histModalEl = document.getElementById('payrollHistoryModal');
+                  const histModal = bootstrap.Modal.getInstance(histModalEl) || new bootstrap.Modal(histModalEl);
+                  histModal.show();
               }
           });
       }
@@ -4821,8 +4826,9 @@ async function getNextEventId() {
       const container = document.getElementById('sessionListContainer');
       container.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Fetching cloud saves...</div>';
       
-      new bootstrap.Modal(document.getElementById('loadSessionModal')).show();
-
+      const modalEl = document.getElementById('loadSessionModal');
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.show();
       try {
           // SORT: Pull every session, sorted strictly by the time it was saved (Newest on top)
           const snapshot = await db.collection("payroll_sessions").orderBy("updatedAt", "desc").get();
@@ -5224,9 +5230,10 @@ function showToast(message, type = 'success') {
       if (!isHistorical) calculateLivePayslipTotals(); 
       else document.getElementById('prLiveTotal').innerText = Number(histData.finalTotal).toLocaleString();
       
-      new bootstrap.Modal(document.getElementById('payrollModal')).show();
+      const modalEl = document.getElementById('payrollModal');
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.show();
   }
-
   // Math: Live calculation based on inputs
   function calculateLivePayslipTotals() {
       if(!activePayrollPerson) return;
@@ -5491,7 +5498,9 @@ function showToast(message, type = 'success') {
       const tbody = document.getElementById('prHistoryBody');
       tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-secondary me-2"></div> Fetching vault data...</td></tr>';
       
-      new bootstrap.Modal(document.getElementById('payrollHistoryModal')).show();
+      const modalEl = document.getElementById('payrollHistoryModal');
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.show();
 
       try {
           // Pull instantly from Firebase instead of Google Sheets!
