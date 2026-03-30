@@ -2230,7 +2230,10 @@ function handleAddCustomService(inputId, containerId) {
       // 4. Build the HTML for the dropdown
       let html = '<option value="">-- Select Event --</option>';
       
-      // Added a fallback option just in case you have an office expense not tied to a shoot!
+      // NEW: Custom Expense option placed at the very top!
+      html += `<option value="${todayStr} - Custom Expense" class="text-primary fw-bold">⭐ Custom Expense</option>`;
+      
+      // General / Office fallback
       html += `<option value="${todayStr} - General/Office Expense">General / Office Expense (Today)</option>`;
       
       recentEvents.forEach(e => {
