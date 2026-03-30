@@ -5058,23 +5058,178 @@ async function getNextEventId() {
   }
 
   
-  // Engine: Aggregate the data using the Dynamic Rates
-  function runPayrollEngine() {
+  // Engine: Aggregate the data using the Dynamic Rates (With Memory!)
+function runPayrollEngine() {
+    const start = document.getElementById('prStartDate').value;
+    const end = document.getElementById('prEndDate').value;
+    
+    if (!start || !end) return alert("Please select a Start and End date for the cutoff.");
 
-  function initPayrollPerson(name) {
-      if(!currentPayrollData[name]) {
-          currentPayrollData[name] = { events: [], totalBase: 0, expenses: 0, misc: 0, finalTotal: 0 };
-      }
-  }
+    // 1. SAVE EXISTING DATA to preserve manual tweaks before we rebuild!
+    const existingData = JSON.parse(JSON.stringify(currentPayrollData || {}));
+    currentPayrollData = {};
+
+    // Helper: Find old manual overrides for a specific event/role
+    function getOldEvent(personName, eventId, role) {
+        if (!existingData[personName]) return null;
+        return existingData[personName].events.find(e => 
+            (e.doc && e.doc['Event ID'] === eventId && e.role === role) || 
+            (e.doc && e.doc['Event ID'] === 'FIXED' && eventId === 'FIXED' && e.role === role)
+        );
+    }
+
+    // Helper: Restore global expenses and misc bonus for a person
+    function restorePersonGlobals(personName) {
+        if (existingData[personName]) {
+            currentPayrollData[personName].expenses = existingData[personName].expenses || 0;
+            currentPayrollData[personName].misc = existingData[personName].misc || 0;
+        }
+    }
+
+    // Requirement 4: Force Jenielyn to exist with a fixed allowance every cutoff
+    initPayrollPerson('Jenielyn');
+    let oldJen = getOldEvent('Jenielyn', 'FIXED', 'Allowance');
+    let jenBase = oldJen ? oldJen.basePay : 7500; // Keep override if exists
+    let jenExtra = oldJen ? oldJen.extraPay : 0;  // Keep extra if exists
+
+    currentPayrollData['Jenielyn'].events.push({
+        doc: { 'Event ID': 'FIXED', 'Event Name': 'Bi-monthly Base Allowance', 'Event Date': start },
+        role: 'Allowance',
+        basePay: jenBase,
+        extraPay: jenExtra,
+        isHalfDay: false,
+        isSubsequent: false,
+        isCustom: false
+    });
+    currentPayrollData['Jenielyn'].totalBase += jenBase;
+    restorePersonGlobals('Jenielyn');
+
+    const validEvents = rawEvents.filter(e => {
+        return e['Event Date'] >= start && e['Event Date'] <= end && 
+               e['Event Status'] === 'Confirmed' && e['Event Name'] !== 'Crew Leave';
+    });
+
+    // SORT CHRONOLOGICALLY first so we know which day is truly "Day 1"
+    validEvents.sort((a, b) => {
+        let dateA = a['Event Date'] || '9999-99-99';
+        let dateB = b['Event Date'] || '9999-99-99';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return (a['Event Start Time'] || a['Call Time'] || "").localeCompare(b['Event Start Time'] || b['Call Time'] || "");
+    });
+
+    let eventTracker = {}; 
+    
+    const standardStaff = [...baseCrew, "Athan", "Jovert", "May", "Tina", "Grace", "Jops"];
+    let savedRates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
+
+    validEvents.forEach(e => {
+        const isHalfDay = e['Half Day'] === 'true';
+        const evId = e['Event ID'];
+        
+        if(!eventTracker[evId]) eventTracker[evId] = { 'Crew': new Set(), 'Editor': new Set() };
+
+        // 1. Process Crew
+        if (e['Manpower']) {
+            const crewArray = e['Manpower'].split(',').map(c => c.trim()).filter(Boolean);
+            crewArray.forEach(c => {
+                if (!currentPayrollData[c]) {
+                    initPayrollPerson(c);
+                    restorePersonGlobals(c);
+                }
+                
+                let isSubsequent = false;
+                let rate = 0;
+                let extra = 0;
+                let isCustom = !standardStaff.includes(c);
+                
+                if (eventTracker[evId]['Crew'].has(c)) {
+                    isSubsequent = true; 
+                    rate = 0; 
+                } else {
+                    eventTracker[evId]['Crew'].add(c);
+                    if (owners.includes(c)) {
+                        rate = 0;
+                    } else if (isHalfDay) {
+                        rate = 0;
+                    } else if (isCustom && savedRates[c] === undefined) {
+                        rate = 0; 
+                    } else {
+                        rate = getCrewRate(c, 'Crew'); 
+                    }
+                }
+
+                // MAGIC: Apply manual overrides if they existed before we clicked Compute
+                let oldEv = getOldEvent(c, evId, 'Crew');
+                if (oldEv) {
+                    rate = oldEv.basePay;
+                    extra = oldEv.extraPay;
+                }
+
+                currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: extra, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
+                currentPayrollData[c].totalBase += rate;
+            });
+        }
+        
+        // 2. Process Editor
+        if (e['Editor Assigned']) {
+            const editor = e['Editor Assigned'].trim();
+            if (!currentPayrollData[editor]) {
+                initPayrollPerson(editor);
+                restorePersonGlobals(editor);
+            }
+            
+            let isSubsequent = false;
+            let rate = 0;
+            let extra = 0;
+            let isCustom = !standardStaff.includes(editor);
+            
+            if (eventTracker[evId]['Editor'].has(editor)) {
+                isSubsequent = true;
+                rate = 0;
+            } else {
+                eventTracker[evId]['Editor'].add(editor);
+                
+                if (isHalfDay) {
+                    rate = 0; 
+                } else {
+                    rate = getCrewRate(editor, 'Editor'); 
+                }
+            }
+
+            // MAGIC: Apply manual overrides if they existed before we clicked Compute
+            let oldEv = getOldEvent(editor, evId, 'Editor');
+            if (oldEv) {
+                rate = oldEv.basePay;
+                extra = oldEv.extraPay;
+            }
+
+            currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: extra, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
+            currentPayrollData[editor].totalBase += rate;
+        }
+    });
+
+    Object.keys(currentPayrollData).forEach(name => {
+        const data = currentPayrollData[name];
+        data.finalTotal = data.totalBase + data.expenses + data.misc + data.events.reduce((sum, ev) => sum + ev.extraPay, 0);
+    });
+
+    renderPayrollTable();
+}
+
+function initPayrollPerson(name) {
+    if(!currentPayrollData[name]) {
+        currentPayrollData[name] = { events: [], totalBase: 0, expenses: 0, misc: 0, finalTotal: 0 };
+    }
+}
+
 function showToast(message, type = 'success') {
-      const toastEl = document.getElementById('appToast');
-      const toastBody = document.getElementById('appToastBody');
-      toastEl.className = `toast align-items-center text-bg-${type} border-0 shadow-lg`;
-      toastBody.innerText = message;
-      const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
-      toast.show();
-  }
-  // UI: Draw the Main Table
+    const toastEl = document.getElementById('appToast');
+    const toastBody = document.getElementById('appToastBody');
+    toastEl.className = `toast align-items-center text-bg-${type} border-0 shadow-lg`;
+    toastBody.innerText = message;
+    const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+    toast.show();
+}
   // UI: Draw the Main Table
   function renderPayrollTable() {
       const tbody = document.getElementById('pr-body');
