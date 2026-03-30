@@ -3081,112 +3081,120 @@ function generateSingleEventCard(e) {
   }
 
   function openAddDayModal(id) {
-     // FIX 1: Removed the broken 'date' reference
-     const e = rawEvents.find(ev => String(ev['Event ID']) === String(id));
-     if(!e) return;
-     
-     const form = document.getElementById('addDayForm');
-     form.reset();
-     document.querySelectorAll('#addDayCrewContainer .custom-crew-cb').forEach(el => el.remove());
-     
-     if(document.getElementById('addDaySrvPhotoCount')) document.getElementById('addDaySrvPhotoCount').value = '';
-     if(document.getElementById('addDaySrvPrintsBooth')) document.getElementById('addDaySrvPrintsBooth').value = '';
-     if(document.getElementById('addDaySrvPrintsCount')) document.getElementById('addDaySrvPrintsCount').value = '';
-     if(document.getElementById('addDaySrvPrintsSize')) document.getElementById('addDaySrvPrintsSize').value = '4R';
-     if(document.getElementById('addDaySrvQRBooth')) document.getElementById('addDaySrvQRBooth').value = '';
-     if(document.getElementById('addDaySrvFrameCount')) document.getElementById('addDaySrvFrameCount').value = '';
-     
-     ['Photo', 'PhotoQR', 'Frame'].forEach(srv => {
-        const el = document.getElementById('addDaySrv' + srv);
-        if(el) { el.checked = false; el.onchange(); }
-     });
-     document.getElementById('addDayTypeWithPrints').checked = true;
-     togglePhotoQRDetails('addDay');
-     
-     if (e['Event Name'] === 'Crew Leave') {
-         document.getElementById('addDayHeader').innerHTML = "<i class='bi bi-airplane-fill text-danger me-1'></i> Add Leave Day";
-         document.getElementById('addDayStatusBlock').style.display = 'none';
-         document.getElementById('addDayServicesBlock').style.display = 'none';
-         document.getElementById('addDayNameBlock').style.display = 'none';
-         document.getElementById('addDayEventNameInput').removeAttribute('required');
-         document.getElementById('addDayEventNameInput').value = 'Crew Leave';
-       
-     } else {
-         document.getElementById('addDayHeader').innerHTML = `<i class="bi bi-calendar-plus me-2"></i> Add Day to Project <span class="badge bg-light border text-secondary ms-1">#${id}</span>`;
-         document.getElementById('addDayStatusBlock').style.display = 'block';
-         document.getElementById('addDayServicesBlock').style.display = 'block';
-         document.getElementById('addDayNameBlock').style.display = 'block';
-         document.getElementById('addDayEventNameInput').setAttribute('required', 'required');
-         document.getElementById('addDayEventNameInput').value = e['Event Name'];
-         document.getElementById('addDayEventVenueInput').value = e['Event Venue'] || '';
-         document.getElementById('addDayVenueLinkInput').value = e['Event Venue Link'] || '';
-         
-         const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
-         const sInputs = form.elements['services'];
-         if (sInputs) {
-             if (sInputs.length) sInputs.forEach(i => i.checked = false);
-             else sInputs.checked = false;
-         }
+    // --- PREVENT MODAL OVERLAP FREEZE ---
+    const cardModalEl = document.getElementById('eventCardModal');
+    if (cardModalEl && cardModalEl.classList.contains('show')) {
+        bootstrap.Modal.getInstance(cardModalEl).hide();
+        // Wait 350ms for the backdrop to fade away, then try again!
+        setTimeout(() => openAddDayModal(id), 350);
+        return; // Stop the function here so it doesn't try to open both at once
+    }
+    // ------------------------------------
 
-         servicesList.forEach(s => {
-             if (s.startsWith('Photo [') || s === 'Photo') {
-                 document.getElementById('addDaySrvPhoto').checked = true;
-                 document.getElementById('addDaySrvPhotoDetails').style.display = 'block';
-                 let match = s.match(/\[(\d+)\s+photographer/);
-                 if(match) document.getElementById('addDaySrvPhotoCount').value = match[1];
-                 
-             } else if (s.startsWith('QR with Prints') || s === 'QR with Prints' || s.startsWith('Photo souvenir prints') || s === 'Photo souvenir prints') {
-                 document.getElementById('addDaySrvPhotoQR').checked = true;
-                 document.getElementById('addDaySrvPhotoQRDetails').style.display = 'block';
-                 document.getElementById('addDayTypeWithPrints').checked = true;
-                 togglePhotoQRDetails('addDay');
+    const e = rawEvents.find(ev => String(ev['Event ID']) === String(id));
+    if(!e) return;
+    
+    const form = document.getElementById('addDayForm');
+    form.reset();
+    document.querySelectorAll('#addDayCrewContainer .custom-crew-cb').forEach(el => el.remove());
+    
+    if(document.getElementById('addDaySrvPhotoCount')) document.getElementById('addDaySrvPhotoCount').value = '';
+    if(document.getElementById('addDaySrvPrintsBooth')) document.getElementById('addDaySrvPrintsBooth').value = '';
+    if(document.getElementById('addDaySrvPrintsCount')) document.getElementById('addDaySrvPrintsCount').value = '';
+    if(document.getElementById('addDaySrvPrintsSize')) document.getElementById('addDaySrvPrintsSize').value = '4R';
+    if(document.getElementById('addDaySrvQRBooth')) document.getElementById('addDaySrvQRBooth').value = '';
+    if(document.getElementById('addDaySrvFrameCount')) document.getElementById('addDaySrvFrameCount').value = '';
+    
+    ['Photo', 'PhotoQR', 'Frame'].forEach(srv => {
+       const el = document.getElementById('addDaySrv' + srv);
+       if(el) { el.checked = false; el.onchange(); }
+    });
+    document.getElementById('addDayTypeWithPrints').checked = true;
+    togglePhotoQRDetails('addDay');
+    
+    if (e['Event Name'] === 'Crew Leave') {
+        document.getElementById('addDayHeader').innerHTML = "<i class='bi bi-airplane-fill text-danger me-1'></i> Add Leave Day";
+        document.getElementById('addDayStatusBlock').style.display = 'none';
+        document.getElementById('addDayServicesBlock').style.display = 'none';
+        document.getElementById('addDayNameBlock').style.display = 'none';
+        document.getElementById('addDayEventNameInput').removeAttribute('required');
+        document.getElementById('addDayEventNameInput').value = 'Crew Leave';
+      
+    } else {
+        document.getElementById('addDayHeader').innerHTML = `<i class="bi bi-calendar-plus me-2"></i> Add Day to Project <span class="badge bg-light border text-secondary ms-1">#${id}</span>`;
+        document.getElementById('addDayStatusBlock').style.display = 'block';
+        document.getElementById('addDayServicesBlock').style.display = 'block';
+        document.getElementById('addDayNameBlock').style.display = 'block';
+        document.getElementById('addDayEventNameInput').setAttribute('required', 'required');
+        document.getElementById('addDayEventNameInput').value = e['Event Name'];
+        document.getElementById('addDayEventVenueInput').value = e['Event Venue'] || '';
+        document.getElementById('addDayVenueLinkInput').value = e['Event Venue Link'] || '';
+        
+        const servicesList = (e['Services'] || '').split(/\s*,\s*(?![^\[]*\])/).map(s=>s.trim()).filter(s=>s);
+        const sInputs = form.elements['services'];
+        if (sInputs) {
+            if (sInputs.length) sInputs.forEach(i => i.checked = false);
+            else sInputs.checked = false;
+        }
 
-                 let bMatch = s.match(/(\d+)\s+booth/);
-                 if(bMatch) document.getElementById('addDaySrvPrintsBooth').value = bMatch[1];
-                 let pMatch = s.match(/(\d+)\s+prints/);
-                 if(pMatch) document.getElementById('addDaySrvPrintsCount').value = pMatch[1];
-                 if(s.includes('Wallet size')) document.getElementById('addDaySrvPrintsSize').value = 'Wallet size';
-                 else if(s.includes('5R')) document.getElementById('addDaySrvPrintsSize').value = '5R';
-                 else if(s.includes('4R')) document.getElementById('addDaySrvPrintsSize').value = '4R';
-                 
-             } else if (s.startsWith('QR only') || s === 'QR only' || s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
-                 document.getElementById('addDaySrvPhotoQR').checked = true;
-                 document.getElementById('addDaySrvPhotoQRDetails').style.display = 'block';
-                 document.getElementById('addDayTypeWithoutPrints').checked = true;
-                 togglePhotoQRDetails('addDay');
+        servicesList.forEach(s => {
+            if (s.startsWith('Photo [') || s === 'Photo') {
+                document.getElementById('addDaySrvPhoto').checked = true;
+                document.getElementById('addDaySrvPhotoDetails').style.display = 'block';
+                let match = s.match(/\[(\d+)\s+photographer/);
+                if(match) document.getElementById('addDaySrvPhotoCount').value = match[1];
+                
+            } else if (s.startsWith('QR with Prints') || s === 'QR with Prints' || s.startsWith('Photo souvenir prints') || s === 'Photo souvenir prints') {
+                document.getElementById('addDaySrvPhotoQR').checked = true;
+                document.getElementById('addDaySrvPhotoQRDetails').style.display = 'block';
+                document.getElementById('addDayTypeWithPrints').checked = true;
+                togglePhotoQRDetails('addDay');
 
-                 let match = s.match(/\[(\d+)\s+booth/);
-                 if(match) document.getElementById('addDaySrvQRBooth').value = match[1];
-                 
-             } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
-                 document.getElementById('addDaySrvFrame').checked = true;
-                 document.getElementById('addDaySrvFrameDetails').style.display = 'block';
-                 let match = s.match(/\[(\d+)\s+frame/);
-                 if(match) document.getElementById('addDaySrvFrameCount').value = match[1];
-                 
-             } else {
-                 let found = false;
-                 if (sInputs) {
-                     if (sInputs.length) {
-                         sInputs.forEach(i => { if(i.value.toLowerCase() === s.toLowerCase()) { i.checked = true; found = true; }});
-                     } else {
-                         if (sInputs.value.toLowerCase() === s.toLowerCase()) { sInputs.checked = true; found = true; }
-                     }
-                 }
-                 if(!found) {
-                     addCustomServiceCheckbox(s, 'addDayServicesContainer', true);
-                 }
-             }
-         });
-     }
-     
-     document.getElementById('addDayEventId').value = id;
-     
-     // FIX 2: Safely get the existing modal instance or create a new one!
-     const modalEl = document.getElementById('addDayModal');
-     const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-     modal.show();
-  }
+                let bMatch = s.match(/(\d+)\s+booth/);
+                if(bMatch) document.getElementById('addDaySrvPrintsBooth').value = bMatch[1];
+                let pMatch = s.match(/(\d+)\s+prints/);
+                if(pMatch) document.getElementById('addDaySrvPrintsCount').value = pMatch[1];
+                if(s.includes('Wallet size')) document.getElementById('addDaySrvPrintsSize').value = 'Wallet size';
+                else if(s.includes('5R')) document.getElementById('addDaySrvPrintsSize').value = '5R';
+                else if(s.includes('4R')) document.getElementById('addDaySrvPrintsSize').value = '4R';
+                
+            } else if (s.startsWith('QR only') || s === 'QR only' || s.startsWith('Photo souvenir QR') || s === 'Photo souvenir QR') {
+                document.getElementById('addDaySrvPhotoQR').checked = true;
+                document.getElementById('addDaySrvPhotoQRDetails').style.display = 'block';
+                document.getElementById('addDayTypeWithoutPrints').checked = true;
+                togglePhotoQRDetails('addDay');
+
+                let match = s.match(/\[(\d+)\s+booth/);
+                if(match) document.getElementById('addDaySrvQRBooth').value = match[1];
+                
+            } else if (s.startsWith('Frame Token') || s === 'Frame Token') {
+                document.getElementById('addDaySrvFrame').checked = true;
+                document.getElementById('addDaySrvFrameDetails').style.display = 'block';
+                let match = s.match(/\[(\d+)\s+frame/);
+                if(match) document.getElementById('addDaySrvFrameCount').value = match[1];
+                
+            } else {
+                let found = false;
+                if (sInputs) {
+                    if (sInputs.length) {
+                        sInputs.forEach(i => { if(i.value.toLowerCase() === s.toLowerCase()) { i.checked = true; found = true; }});
+                    } else {
+                        if (sInputs.value.toLowerCase() === s.toLowerCase()) { sInputs.checked = true; found = true; }
+                    }
+                }
+                if(!found) {
+                    addCustomServiceCheckbox(s, 'addDayServicesContainer', true);
+                }
+            }
+        });
+    }
+    
+    document.getElementById('addDayEventId').value = id;
+    
+    const modalEl = document.getElementById('addDayModal');
+    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    modal.show();
+}
 
   function openEditModal(docId) {
     // 1. Search strictly by the unique Firestore Document ID
