@@ -321,11 +321,14 @@
       </h4>
       
       <div class="d-flex align-items-center gap-2">
-          <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-1" onclick="requireAuth(() => openNewEventModal())">
+          <button id="newEntryBtn" class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm align-items-center gap-1" style="display: flex;" onclick="requireAuth(() => openNewEventModal(), true)">
             <i class="bi bi-plus-lg"></i> <span class="d-none d-sm-inline">New Entry</span>
           </button>
           <button id="themeToggleBtn" class="btn btn-light border-secondary-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center" onclick="toggleTheme()" title="Toggle Dark Mode" style="width: 38px; height: 34px;">
             <i id="themeIcon" class="bi bi-moon-fill text-secondary"></i>
+          </button>
+          <button id="logoutBtn" class="btn btn-outline-danger btn-sm shadow-sm align-items-center justify-content-center" onclick="signOut()" title="Sign Out / Switch Account" style="width: 38px; height: 34px; display: none;">
+            <i class="bi bi-box-arrow-right fs-6"></i>
           </button>
       </div>
     </div>
@@ -334,8 +337,10 @@
      <ul class="nav nav-pills" id="appTabs">
         <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-card-list me-1"></i> Events</a></li>
         <li class="nav-item"><a class="nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
+        <li class="nav-item"><a class="nav-link" id="eq-tab" onclick="handleTabClick('editqueue')"><i class="bi bi-film me-1"></i> Editing Queue</a></li>
+        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), true)"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
+        <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), true)"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
         <li class="nav-item"><a class="nav-link" id="ex-tab" onclick="handleTabClick('expenses')"><i class="bi bi-receipt me-1"></i> Expenses</a></li>
-        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="handleTabClick('payments')"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
         <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
       </ul>
       <div class="d-flex gap-2">
@@ -359,7 +364,20 @@
           <div class="col-12 col-md-1 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
         </div>
       </div>
-
+<div class="filter-panel" id="editQueueFilters" style="display:none;">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-5"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fEqSearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="renderEditingQueue(rawEvents)"></div>
+          <div class="col-12 col-md-5"><span class="form-label-sm">Status</span>
+             <select id="fEqStatus" class="form-select form-select-sm" onchange="renderEditingQueue(rawEvents)">
+                 <option value="All">All Statuses</option>
+                 <option value="RAW Uploaded" selected>RAW Uploaded</option>
+                 <option value="Completed">Completed</option>
+                 <option value="Sent to Client">Sent to Client</option>
+             </select>
+          </div>
+          <div class="col-12 col-md-2 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
+        </div>
+      </div>
       <div class="filter-panel" id="paymentFilters" style="display:none;">
         <div class="row g-2 align-items-end">
           <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
@@ -402,7 +420,57 @@
   </div>
   
   <div class="px-2 px-md-0">
-      
+      <div id="editqueue-view" style="display:none;">
+          <h4 class="fw-bold mb-4 mt-2 d-flex justify-content-between align-items-center">Editing Queue</h4>
+          <div class="table-custom bg-white shadow-sm"><div class="table-responsive">
+              <table class="table table-hover mb-0 align-middle">
+                  <thead><tr><th class="py-3 px-3">Event Info</th><th class="py-3">Editor</th><th class="py-3">RAW Status</th><th class="py-3">Completed Status</th><th class="py-3">48h Deadline</th></tr></thead>
+                  <tbody id="eq-body" class="small"></tbody>
+              </table>
+          </div></div>
+      </div>
+
+      <div id="payroll-view" style="display:none;">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 mt-2 gap-3">
+              <h4 class="fw-bold mb-0 text-danger d-flex align-items-center"><i class="bi bi-cash-coin me-2"></i> Payroll Engine</h4>
+              
+              <div class="bg-white p-2 rounded-3 border shadow-sm d-flex flex-wrap gap-2 align-items-end">
+                  <div class="px-2">
+                      <span class="form-label-sm text-secondary">Start of Cutoff</span>
+                      <input type="date" id="prStartDate" class="form-control form-control-sm fw-bold text-dark">
+                  </div>
+                  <div class="border-start ps-2 pe-2 flex-grow-1">
+                      <span class="form-label-sm text-secondary">End of Cutoff</span>
+                      <input type="date" id="prEndDate" class="form-control form-control-sm fw-bold text-dark">
+                  </div>
+                  <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
+                  <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm ms-1 mt-1 text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
+                  <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
+                  <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="exportSessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> EXPORT</button>
+                  <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
+                  <button class="btn btn-secondary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openPayrollHistory()"><i class="bi bi-clock-history me-1"></i> HISTORY</button>
+              </div>
+          </div>
+
+          <div class="table-custom bg-white shadow-sm">
+              <div class="table-responsive">
+                  <table class="table table-hover mb-0 align-middle">
+                      <thead>
+                          <tr>
+                              <th class="py-3 px-3">Crew Member</th>
+                              <th class="py-3 text-center">Shoots</th>
+                              <th class="py-3 text-center">Edits</th>
+                              <th class="py-3 text-end">Est. Base Pay</th>
+                              <th class="py-3 px-3 text-end">Action</th>
+                          </tr>
+                      </thead>
+                      <tbody id="pr-body">
+                          <tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-calendar2-range fs-2 d-block mb-2 opacity-50"></i>Select a cutoff period and click Compute.</td></tr>
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+      </div>
       <div id="events-view" style="display:none;">
           <h4 class="fw-bold mb-4 mt-2" id="upcomingEventsHeader">Upcoming Events</h4>
           <div id="events-list" class="row g-3"></div>
@@ -578,8 +646,10 @@
               <form id="expenseForm">
                   <div class="row g-3 mb-3">
                       <div class="col-12 col-md-6">
-                          <label class="form-label-sm">Date of Event <span class="fw-normal text-muted" style="text-transform: none;">(NOT DATE SUBMITTED)</span></label>
-                          <input type="date" name="expenseDate" class="form-control form-control-sm fw-bold" required>
+                          <label class="form-label-sm">Select Event <span class="fw-normal text-muted" style="text-transform: none;">(Past 15 Days)</span></label>
+                          <select name="expenseDate" id="expenseEventSelect" class="form-select form-select-sm fw-bold text-dark" required>
+                              <option value="">-- Loading Recent Events... --</option>
+                          </select>
                       </div>
                       <div class="col-12 col-md-6">
                           <label class="form-label-sm">Submitted By</label>
@@ -684,6 +754,12 @@
           <div class="col-6 col-md-3" id="newCallTimeCol"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
           <div class="col-6 col-md-3" id="newStartTimeCol"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
           <div class="col-6 col-md-3" id="newEndTimeCol"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+          <div class="col-12 mt-2 pt-2 border-top border-secondary-subtle border-dashed">
+              <div class="form-check form-switch d-inline-block me-3 align-middle">
+                  <input class="form-check-input" type="checkbox" id="newHalfDayCheck">
+                  <label class="form-check-label small fw-bold text-dark" for="newHalfDayCheck">Half-Day Event</label>
+              </div>
+          </div>
       </div>
   </div>
     
@@ -795,6 +871,7 @@
               <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div>
               <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div>
               <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jenielyn"> Jenielyn</div>
           </div>
           <div class="input-group input-group-sm mt-3">
               <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
@@ -807,6 +884,43 @@
   <div id="newNotesBlock" class="mb-4">
       <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
       <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea>
+  </div>
+  <div id="newNotesBlock" class="mb-4">
+      <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
+      <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special instructions or details..."></textarea>
+  </div>
+
+  <div id="newEditingSection" class="p-3 mb-4 rounded border border-info border-opacity-25" style="background-color: rgba(13, 202, 240, 0.05);">
+      <div class="section-title text-info mb-3"><i class="bi bi-film me-1"></i> Editing Workflow</div>
+      <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm">Editor Assigned</label>
+              <div class="input-group input-group-sm">
+                  <select name="editorAssigned" id="newEditorSelect" class="form-select border-end-0 fw-bold editor-field">
+                      <option value="">-- Select Editor --</option>
+                      <option>Athan</option><option>Jovert</option><option>May</option>
+                      <option>Tina</option><option>Grace</option><option>Jops</option>
+                  </select>
+                  <input type="text" name="customEditor" id="newCustomEditor" class="form-control editor-field" placeholder="Or custom name...">
+              </div>
+          </div>
+          <div class="col-12 col-md-6 d-flex align-items-end pb-1">
+              <div class="form-check form-switch">
+                  <input class="form-check-input admin-only-field" type="checkbox" name="sentToClient" id="newSentToClient">
+                  <label class="form-check-label small fw-bold text-dark" for="newSentToClient">Mark as Sent to Client</label>
+              </div>
+          </div>
+      </div>
+      <div class="row g-3">
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm text-secondary"><i class="bi bi-cloud-arrow-up"></i> RAW Files Link</label>
+              <input type="url" name="rawLink" id="newRawLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+          </div>
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm text-success"><i class="bi bi-check-circle"></i> Completed Files Link</label>
+              <input type="url" name="editedLink" id="newEditedLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+          </div>
+      </div>
   </div>
 
   <div id="newPaymentFields">
@@ -1012,7 +1126,22 @@
   <div class="section-title text-secondary"><i class="bi bi-people me-1"></i> Crew Assignment</div>
   <div class="mb-4 p-3 bg-light rounded border shadow-sm">
       <div class="row px-2 g-2" id="addDayCrewContainer">
-          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div><div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Edgar"> Edgar</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Francis"> Francis</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Mael"> Mael</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Lexie"> Lexie</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Athan"> Athan</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jovert"> Jovert</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="May"> May</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tina"> Tina</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jops"> Jops</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Grace"> Grace</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jun"> Jun</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Tatalino"> Tatalino</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+          <div class="col-4 col-md-4 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jenielyn"> Jenielyn</div>
       </div>
       <div class="input-group input-group-sm mt-3">
           <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
@@ -1083,6 +1212,12 @@
           <div class="col-6 col-md-3" id="editCallTimeCol"><label class="form-label-sm">Call Time</label><input type="time" name="callTime" class="form-control form-control-sm text-danger fw-bold"></div>
           <div class="col-6 col-md-3" id="editStartTimeCol"><label class="form-label-sm">Start Time</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
           <div class="col-6 col-md-3" id="editEndTimeCol"><label class="form-label-sm">End Time</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+          <div class="col-12 mt-2 pt-2 border-top border-secondary-subtle border-dashed">
+              <div class="form-check form-switch d-inline-block me-3 align-middle">
+                  <input class="form-check-input" type="checkbox" id="editHalfDayCheck">
+                  <label class="form-check-label small fw-bold text-dark" for="editHalfDayCheck">Half-Day Event</label>
+              </div>
+          </div>
       </div>
   </div>
     
@@ -1194,6 +1329,7 @@
               <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Joram"> Joram</div>
               <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Roy"> Roy</div>
               <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Smile"> Smile</div>
+              <div class="col-4 col-md-3 form-check small"><input class="form-check-input" type="checkbox" name="manpower" value="Jenielyn"> Jenielyn</div>
           </div>
           <div class="input-group input-group-sm mt-3">
               <span class="input-group-text bg-white"><i class="bi bi-person-plus text-muted"></i></span>
@@ -1207,7 +1343,47 @@
       <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
       <textarea name="notes" class="form-control form-control-sm" rows="2"></textarea>
   </div>
+<div id="editEditingSection" class="p-3 mb-4 rounded border border-info border-opacity-25" style="background-color: rgba(13, 202, 240, 0.05);">
+      <div class="section-title text-info mb-3"><i class="bi bi-film me-1"></i> Editing Workflow</div>
+      
+      <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm">Editor Assigned</label>
+              <div class="input-group input-group-sm">
+                  <select name="editorAssigned" id="editEditorSelect" class="form-select border-end-0 fw-bold editor-field">
+                      <option value="">-- Select Editor --</option>
+                      <option>Athan</option><option>Jovert</option><option>May</option>
+                      <option>Tina</option><option>Grace</option><option>Jops</option>
+                  </select>
+                  <input type="text" name="customEditor" id="editCustomEditor" class="form-control editor-field" placeholder="Or custom name...">
+              </div>
+          </div>
+          <div class="col-12 col-md-6 d-flex align-items-end pb-1">
+              <div class="form-check form-switch">
+                  <input class="form-check-input admin-only-field" type="checkbox" name="sentToClient" id="editSentToClient">
+                  <label class="form-check-label small fw-bold text-dark" for="editSentToClient">Mark as Sent to Client</label>
+                  <div class="small text-muted" id="editSentStamp" style="font-size:0.65rem;"></div>
+              </div>
+          </div>
+      </div>
 
+      <div class="row g-3">
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm text-secondary"><i class="bi bi-cloud-arrow-up"></i> RAW Files Link</label>
+              <input type="url" name="rawLink" id="editRawLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+              <div class="small text-muted mt-1" id="editRawStamp" style="font-size:0.65rem;"></div>
+          </div>
+          <div class="col-12 col-md-6">
+              <label class="form-label-sm text-success"><i class="bi bi-check-circle"></i> Completed Files Link</label>
+              <input type="url" name="editedLink" id="editEditedLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+              <div class="small text-muted mt-1" id="editEditedStamp" style="font-size:0.65rem;"></div>
+          </div>
+      </div>
+      
+      <input type="hidden" name="rawTimestamp" id="editRawTimestamp">
+      <input type="hidden" name="editedTimestamp" id="editEditedTimestamp">
+      <input type="hidden" name="sentTimestamp" id="editSentTimestamp">
+  </div>
   <div id="editPaymentFields">
       <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
       <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('edit')">
@@ -1329,7 +1505,109 @@
   </div>
   <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="submitPaymentDocUpload()">UPLOAD</button>
 </div></div></div></div>
-
+  <div class="modal fade" id="ratesModal" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
+  <div class="modal-header bg-warning border-bottom">
+      <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-sliders me-1"></i> Manage Base Rates</h6>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <div class="modal-body p-3">
+      <div id="ratesListContainer" class="row g-2 mb-3"></div>
+      <button class="btn btn-dark w-100 py-2 fw-bold shadow-sm" onclick="saveRates()"><i class="bi bi-save me-1"></i> SAVE RATES</button>
+  </div>
+</div></div></div>
+  <div class="modal fade" id="payrollHistoryModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
+  <div class="modal-header bg-secondary text-white border-0 align-items-center">
+      <h6 class="fw-bold mb-0 letter-spacing-1 d-none d-sm-block"><i class="bi bi-clock-history me-2"></i> Payroll History Vault</h6>
+      <div class="d-flex align-items-center gap-2 ms-auto me-3">
+          <i class="bi bi-funnel-fill opacity-75"></i>
+          <select id="historyCrewFilter" class="form-select form-select-sm fw-bold border-0 shadow-sm text-dark" style="cursor: pointer; min-width: 130px;" onchange="renderPayrollHistory()">
+              <option value="">All Crew</option>
+          </select>
+      </div>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+  </div>
+  <div class="modal-body p-0">
+      <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle small">
+              <thead class="bg-light">
+                  <tr>
+                      <th class="py-3 px-3">Date Logged</th>
+                      <th class="py-3">Crew Name</th>
+                      <th class="py-3">Cutoff Period</th>
+                      <th class="py-3 text-end">Net Pay</th>
+                      <th class="py-3 px-3"></th>
+                  </tr>
+              </thead>
+              <tbody id="prHistoryBody">
+                  <tr><td colspan="5" class="text-center py-5 text-muted">Loading history...</td></tr>
+              </tbody>
+          </table>
+      </div>
+  </div>
+</div></div></div>
+<div class="modal fade" id="payrollModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
+  <div class="modal-header bg-danger text-white border-0">
+      <h6 class="fw-bold mb-0 text-uppercase letter-spacing-1 d-flex align-items-center"><i class="bi bi-receipt-cutoff me-2"></i> <span id="prModalName">Crew Member</span>'s Payslip</h6>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+  </div>
+  <div class="modal-body p-0" style="background-color: #f8fafc;">
+      
+      <div id="prBuilderView" class="p-3 p-md-4">
+          <div class="alert alert-info small py-2 mb-4 shadow-sm border-0 d-flex align-items-center">
+              <i class="bi bi-info-circle-fill me-2 fs-5"></i> 
+              Cutoff Period: <strong class="ms-1" id="prModalCutoffDates"></strong>
+          </div>
+          
+          <h6 class="fw-bold text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Itemized Events</h6>
+          <div id="prModalEventsList" class="mb-4"></div>
+          
+          <div id="prMathControls">
+              <div class="row g-3 mb-4 border-top pt-3">
+                  <div class="col-12 col-md-6">
+                      <label class="form-label-sm text-primary">Add Reimbursements / Expenses</label>
+                      <div class="input-group input-group-sm shadow-sm">
+                          <span class="input-group-text bg-white fw-bold">₱</span>
+                          <input type="number" id="prGlobalExpenses" class="form-control fw-bold" value="0" oninput="calculateLivePayslipTotals()">
+                      </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                      <label class="form-label-sm text-success">Add Misc. Bonus Pay</label>
+                      <div class="input-group input-group-sm shadow-sm">
+                          <span class="input-group-text bg-white fw-bold">₱</span>
+                          <input type="number" id="prGlobalMisc" class="form-control fw-bold" value="0" oninput="calculateLivePayslipTotals()">
+                      </div>
+                  </div>
+              </div>
+              
+              <div class="bg-dark text-white p-3 rounded-3 shadow-sm d-flex justify-content-between align-items-center">
+                  <span class="fw-bold text-uppercase opacity-75" style="letter-spacing: 1px;">Net Payout</span>
+                  <h3 class="fw-bold mb-0 text-success">₱ <span id="prLiveTotal">0</span></h3>
+              </div>
+          </div>
+          
+          <button id="prGenerateBtn" class="btn btn-danger w-100 py-3 fw-bold shadow-sm mt-4" onclick="generateAndLogPayslip()"><i class="bi bi-file-earmark-image me-1"></i> GENERATE & DOWNLOAD PAYSLIP</button>
+      </div>
+  </div>
+</div></div></div>
+  <div class="modal fade" id="loadSessionModal" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
+    <div class="modal-header bg-primary text-white border-0">
+        <h6 class="fw-bold mb-0 letter-spacing-1"><i class="bi bi-folder2-open me-2"></i> Saved Sessions</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body p-3 bg-light" id="sessionListContainer">
+        <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Fetching cloud saves...</div>
+    </div>
+</div></div></div>
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 10600;">
+  <div id="appToast" class="toast align-items-center text-bg-success border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body fw-bold" id="appToastBody">
+        Action successful.
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
@@ -1405,8 +1683,90 @@
   let filteredEventsCache = []; 
   let currentCalendarDate = new Date(); 
   
-  const baseCrew = ["Edgar","Francis","Mael","Lexie","Athan","Jovert","May","Tina","Jops","Grace","Jun","Tatalino","Joram","Roy","Smile"];
+  const baseCrew = ["Edgar","Francis","Mael","Lexie","Athan","Jovert","May","Tina","Jops","Grace","Jun","Tatalino","Joram","Roy","Smile", "Jenielyn"];
+  const owners = ["Edgar", "Francis", "Grace", "Tina"];
+  // --- DYNAMIC PAYROLL RATES ENGINE ---
+  const DEFAULT_CREW_RATE = 1500;
+  const DEFAULT_EDITOR_RATE = 2000;
+  
+  let currentPayrollData = {}; 
+  let activePayrollPerson = null;
+  let isHistoricalView = false;
 
+  function getCrewRate(name, role) {
+      // THE FIX: Editors now pull strictly from the global editing rate
+      if (role === 'Editor') {
+          let editRate = localStorage.getItem('egm_editing_rate');
+          return editRate ? parseFloat(editRate) : DEFAULT_EDITOR_RATE;
+      }
+      
+      // Crew members still pull from their saved individual rates
+      let savedRates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
+      if (savedRates[name] !== undefined) return parseFloat(savedRates[name]);
+      return DEFAULT_CREW_RATE;
+  }
+
+  function openRatesModal() {
+      const container = document.getElementById('ratesListContainer');
+      let html = '';
+      
+      // 1. Build the Global Editing Rate Section
+      let globalEditRate = localStorage.getItem('egm_editing_rate') || DEFAULT_EDITOR_RATE;
+      html += `
+      <div class="col-12 mb-3 pb-3 border-bottom border-2 border-dark">
+          <label class="form-label-sm text-primary mb-2"><i class="bi bi-film me-1"></i> Global Editing Rate</label>
+          <div class="input-group input-group-sm">
+              <span class="input-group-text bg-light text-muted fw-bold">₱</span>
+              <input type="number" id="globalEditingRateInput" class="form-control fw-bold text-dark" value="${globalEditRate}">
+          </div>
+          <div class="small text-muted mt-2" style="font-size: 0.7rem; line-height: 1.2;">This rate applies to ANY crew member assigned to edit an event.</div>
+      </div>
+      <div class="col-12 mb-2"><span class="form-label-sm text-secondary">Individual Crew Rates (Shoots)</span></div>
+      `;
+      
+      // 2. Build the Individual Crew Rates Section
+      let allNames = new Set([...baseCrew, "Athan", "Jovert", "May", "Tina", "Grace", "Jops"]);
+      
+      Array.from(allNames).sort().forEach(name => {
+          let currentRate = getCrewRate(name, 'Crew'); // Pulls individual rate!
+          html += `
+          <div class="col-12 d-flex justify-content-between align-items-center mb-1 border-bottom pb-2">
+              <span class="fw-bold text-secondary" style="font-size: 0.85rem;">${name}</span>
+              <div class="input-group input-group-sm" style="width: 110px;">
+                  <span class="input-group-text bg-light text-muted">₱</span>
+                  <input type="number" class="form-control fw-bold text-dark rate-input" data-name="${name}" value="${currentRate}">
+              </div>
+          </div>`;
+      });
+      container.innerHTML = html;
+      new bootstrap.Modal(document.getElementById('ratesModal')).show();
+  }
+
+  function saveRates() {
+      // Save the Global Editing Rate
+      const globalEditInput = document.getElementById('globalEditingRateInput');
+      if (globalEditInput) {
+          localStorage.setItem('egm_editing_rate', parseFloat(globalEditInput.value) || 2000);
+      }
+
+      // Save the Individual Crew Rates
+      let rates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
+      document.querySelectorAll('.rate-input').forEach(input => {
+          let name = input.getAttribute('data-name');
+          let val = parseFloat(input.value);
+          if (!isNaN(val)) rates[name] = val;
+      });
+      localStorage.setItem('egm_crew_rates', JSON.stringify(rates));
+      
+      bootstrap.Modal.getInstance(document.getElementById('ratesModal')).hide();
+      
+      // Trigger the fancy Toast we added earlier instead of an ugly browser alert!
+      showToast("Rates saved successfully! Click COMPUTE again to apply the new rates.", "success");
+  }
+  // -----------------------------
+
+
+  
   // --- BOOTH QR CONSTANTS ---
   const MASTER_QR_URL = "https://webqr.createdbyegm.com/";
   const NETLIFY_BASE_URL = "https://gallery.createdbyegm.com/main.html";
@@ -1424,65 +1784,103 @@
   let selectedExistingQrLogoId = "";
   let existingLogosCache = null;
 
-  // THE NEW FIREBASE GATEKEEPER
-  function isAuthenticated() {
-      const user = firebase.auth().currentUser;
-      return user !== null;
+  // THE NEW FIREBASE GATEKEEPER (Dual-Role)
+  function getUserRole() {
+      return localStorage.getItem('egm_auth_role') || null;
   }
 
-  function requireAuth(actionFunction) {
-      if (isAuthenticated()) {
+  function requireAuth(actionFunction, requiresAdmin = false) {
+      const role = getUserRole();
+      const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+      
+      if (role && !isExpired) {
+          if (requiresAdmin && role !== 'admin') {
+              // Smart Upgrade Prompt
+              if (confirm("Admin access is required for this action. Would you like to sign out of your Editor account to switch to Admin?")) {
+                  signOut();
+              }
+              return;
+          }
           actionFunction();
       } else {
-          // Force the modal to show
-          pendingAuthAction = actionFunction;
+          // THE FIX: We wrap the action so the gatekeeper re-evaluates the role AFTER the login succeeds!
+          pendingAuthAction = () => requireAuth(actionFunction, requiresAdmin);
+          
           document.getElementById('authPassword').value = '';
           document.getElementById('authError').style.display = 'none';
-          
-          const authModalEl = document.getElementById('authModal');
-          const authModal = bootstrap.Modal.getInstance(authModalEl) || new bootstrap.Modal(authModalEl);
+          const authModal = bootstrap.Modal.getInstance(document.getElementById('authModal')) || new bootstrap.Modal(document.getElementById('authModal'));
           authModal.show();
-          
           setTimeout(() => document.getElementById('authPassword').focus(), 500);
       }
   }
 
-  // Optional but recommended: Listen for Firebase restoring the session on page refresh
-  firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-          console.log("Firebase Auth Restored securely.");
-      }
-  });
   async function submitAuth() {
       const pass = document.getElementById('authPassword').value;
       if (!pass) return;
 
       const btn = document.getElementById('authSubmitBtn');
       const originalText = btn.innerHTML;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>VERIFYING...';
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>VERIFYING...';
       btn.disabled = true;
 
-      try {
-          // THE MAGIC: Firebase verifies the password instantly
-          await firebase.auth().signInWithEmailAndPassword("admin@egm.com", pass);
-          
-          localStorage.setItem('egm_auth_exp', Date.now() + 3600000); // 1 hr expiration
-          bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
-          
-          if (pendingAuthAction) {
-              setTimeout(() => {
-                  pendingAuthAction();
-                  pendingAuthAction = null;
-              }, 300);
-          }
-      } catch (error) {
-          console.error("Auth Error:", error.message);
+      // Custom Role Checking
+      if (pass === "egmadmin") {
+          localStorage.setItem('egm_auth_role', 'admin');
+          localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000)); // 12 hours
+          finalizeAuth(btn, originalText);
+      } else if (pass === "editors1") {
+          localStorage.setItem('egm_auth_role', 'editor');
+          localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000));
+          finalizeAuth(btn, originalText);
+      } else {
           document.getElementById('authError').innerText = "Incorrect Password!";
           document.getElementById('authError').style.display = 'block';
+          btn.innerHTML = originalText;
+          btn.disabled = false;
       }
+  }
 
+  function finalizeAuth(btn, originalText) {
+      bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
+      if (pendingAuthAction) {
+          setTimeout(() => { pendingAuthAction(); pendingAuthAction = null; }, 300);
+      }
       btn.innerHTML = originalText;
       btn.disabled = false;
+      applyRoleUI();
+  }
+
+  function applyRoleUI() {
+      const role = getUserRole();
+      const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+      
+      // If the browser remembers a role, but the 12-hour timer is up (or missing), wipe it silently
+      if (role && isExpired) {
+          localStorage.removeItem('egm_auth_role');
+          localStorage.removeItem('egm_auth_exp');
+      }
+
+      // Determine the true active role
+      const activeRole = (!isExpired) ? role : null;
+
+      const newEntryBtn = document.getElementById('newEntryBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      
+      if (newEntryBtn) {
+          // Hide New Entry button entirely if the user is an active editor
+          newEntryBtn.style.display = (activeRole === 'editor') ? 'none' : 'flex';
+      }
+      
+      if (logoutBtn) {
+          // Show the Sign Out button ONLY if they have a valid, unexpired role
+          logoutBtn.style.display = activeRole ? 'flex' : 'none';
+      }
+  }
+
+  function signOut() {
+      localStorage.removeItem('egm_auth_role');
+      localStorage.removeItem('egm_auth_exp');
+      window.location.reload(); // Refresh immediately to lock down the UI
   }
 
   function toggleTheme() {
@@ -1803,7 +2201,48 @@ function handleAddCustomService(inputId, containerId) {
           if (!end.value || end.value < start.value) { end.value = start.value; }
       }
   }
+  // Automatically populates the Expenses tab dropdown with events from the last 15 days
+  function populateExpenseEventsDropdown() {
+      const select = document.getElementById('expenseEventSelect');
+      if (!select) return;
 
+      // 1. Calculate the date window (Today down to 15 days ago)
+      const today = new Date();
+      const pastDate = new Date();
+      pastDate.setDate(today.getDate() - 15);
+
+      const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      const pastStr = pastDate.getFullYear() + '-' + String(pastDate.getMonth() + 1).padStart(2, '0') + '-' + String(pastDate.getDate()).padStart(2, '0');
+
+      // 2. Filter the master events list
+      let recentEvents = rawEvents.filter(e => {
+          const eDate = e['Event Date'];
+          return eDate >= pastStr && eDate <= todayStr && e['Event Name'] !== 'Crew Leave';
+      });
+
+      // 3. Sort them so the newest events (Today) are at the very top
+      recentEvents.sort((a, b) => {
+          let dateA = a['Event Date'] || ''; 
+          let dateB = b['Event Date'] || ''; 
+          return dateB.localeCompare(dateA); 
+      });
+
+      // 4. Build the HTML for the dropdown
+      let html = '<option value="">-- Select Event --</option>';
+      
+      // NEW: Custom Expense option placed at the very top!
+      html += `<option value="${todayStr} - Custom Expense" class="text-primary fw-bold">⭐ Custom Expense</option>`;
+      
+      // General / Office fallback
+      html += `<option value="${todayStr} - General/Office Expense">General / Office Expense (Today)</option>`;
+      
+      recentEvents.forEach(e => {
+          // We set the "value" to send both the Date and Name to Google Sheets for better accounting!
+          html += `<option value="${e['Event Date']} - ${e['Event Name']}">${e['Event Name']} (${e['Event Date']})</option>`;
+      });
+
+      select.innerHTML = html;
+  }
   function toggleEntryMode(prefix) {
       const isLeave = document.getElementById(prefix + 'TypeLeave').checked;
       const generalBlock = document.getElementById(prefix + 'GeneralFields');
@@ -1811,6 +2250,7 @@ function handleAddCustomService(inputId, containerId) {
       const paymentBlock = document.getElementById(prefix + 'PaymentFields');
       const dateTimeBlock = document.getElementById(prefix + 'DateTimeBlock');
       const crewBlock = document.getElementById(prefix + 'CrewBlock');
+      const editingBlock = document.getElementById(prefix + 'EditingSection');
       
       const formId = prefix === 'new' ? 'eventForm' : 'editForm';
       const eventNameInput = document.querySelector(`#${formId} input[name="eventName"]`);
@@ -1828,6 +2268,7 @@ function handleAddCustomService(inputId, containerId) {
           generalBlock.style.display = 'none';
           servicesBlock.style.display = 'none';
           paymentBlock.style.display = 'none';
+          if(editingBlock) editingBlock.style.display = 'none';
           if(dateTimeBlock) dateTimeBlock.style.display = 'block';
           if(crewBlock) crewBlock.style.display = 'block';
           if(eventNameInput) eventNameInput.removeAttribute('required');
@@ -1851,6 +2292,7 @@ function handleAddCustomService(inputId, containerId) {
       } else {
           generalBlock.style.display = 'block';
           paymentBlock.style.display = 'block';
+          if(editingBlock) editingBlock.style.display = 'block';
           if(eventNameInput) eventNameInput.setAttribute('required', 'required');
           const isAvp = document.getElementById(prefix + 'AvpCheck').checked;
           toggleAvpFields(isAvp, prefix);
@@ -1870,25 +2312,31 @@ function handleAddCustomService(inputId, containerId) {
 
 
   function clearFilters() {
-    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
+    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType','fEqSearch'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
     if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
+    if(document.getElementById('fEqStatus')) document.getElementById('fEqStatus').value = 'RAW Uploaded';
     updateFilterStatuses();
     
-    // Explicitly reset the calendar to the current month when the Clear button is clicked!
     currentCalendarDate = new Date(); 
     
     applyFilters();
+    renderEditingQueue(rawEvents);
   }
 
   function applyFilters() {
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
     let url = new URL(window.location);
+    
+    // THE FIX: Define 'filtered' at the top level so all tabs can see it!
+    let filtered = rawEvents; 
 
     if(currentTab === 'events' || currentTab === 'calendar') {
-      const n=document.getElementById('fName').value.toLowerCase(), dF=document.getElementById('fDateFrom').value, dT=document.getElementById('fDateTo').value, c=document.getElementById('fCrew').value, s=document.getElementById('fStatus').value;
-      
-      let filtered = rawEvents; 
+      const n=document.getElementById('fName').value.toLowerCase(), 
+            dF=document.getElementById('fDateFrom').value, 
+            dT=document.getElementById('fDateTo').value, 
+            c=document.getElementById('fCrew').value, 
+            s=document.getElementById('fStatus').value;
       
       if(n) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(n) || e['Event Name'].toLowerCase().includes(n) || (e['Event Venue'] && e['Event Venue'].toLowerCase().includes(n)));
       if(dF) { filtered = filtered.filter(e => e['Event Date'] >= dF); } 
@@ -1899,32 +2347,24 @@ function handleAddCustomService(inputId, containerId) {
       
       filteredEventsCache = filtered; 
       
-      // Check if the user is actively using ANY filter
       const isDefaultView = (!n && !dF && !dT && !c && !s);
       let listFiltered = filtered;
       
-      // Hide ONLY Pencil Booked if no filters are actively applied (Cancelled stays visible)
       if (isDefaultView) { 
           listFiltered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked');
       }
       
-      // --- CALENDAR AUTO-JUMP LOGIC ---
-      // We no longer force a jump to today on background saves, keeping you exactly on the month you are editing!
       if (!isDefaultView && filtered.length > 0) {
-          // If actively searching, find the earliest date among the filtered results
           const earliestDate = filtered.map(e => e['Event Date']).filter(Boolean).sort()[0];
           if (earliestDate) {
               const dParts = earliestDate.split('-');
-              // Jump the calendar to the month and year of that first hit
               currentCalendarDate = new Date(dParts[0], dParts[1] - 1, 1);
           }
       }
-      // --------------------------------
       
       renderEvents(listFiltered, isDefaultView);
       renderCalendar(filtered);
 
-      // Push active Event filters to the URL
       url.searchParams.set('tab', currentTab);
       if(n) url.searchParams.set('fName', n); else url.searchParams.delete('fName');
       if(dF) url.searchParams.set('fDateFrom', dF); else url.searchParams.delete('fDateFrom');
@@ -1932,7 +2372,6 @@ function handleAddCustomService(inputId, containerId) {
       if(c) url.searchParams.set('fCrew', c); else url.searchParams.delete('fCrew');
       if(s) url.searchParams.set('fStatus', s); else url.searchParams.delete('fStatus');
       
-      // Clean up Payment URL params
       ['q', 'grInv', 'type', 'status'].forEach(p => url.searchParams.delete(p));
       window.history.replaceState({}, '', url);
 
@@ -1942,9 +2381,6 @@ function handleAddCustomService(inputId, containerId) {
             t=document.getElementById('fPayType').value, 
             s=document.getElementById('fBillStatus').value;
             
-      // Start with ALL events so they remain searchable
-      let filtered = rawEvents;
-      
       if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
       if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
       if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
@@ -1952,23 +2388,43 @@ function handleAddCustomService(inputId, containerId) {
       if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed', 'Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Pending', 'Pending Clearance'].includes(e['Billing Status'])); } 
       else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
 
-      // Hide Pencil Booked and Cancelled IF the user is NOT actively typing a text search
       if (!q && !grInv) {
           filtered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
       }
       
       renderPayments(filtered);
       
-      // Push active Payment filters to the URL
       url.searchParams.set('tab', 'payments');
       if(q) url.searchParams.set('q', q); else url.searchParams.delete('q');
       if(grInv) url.searchParams.set('grInv', grInv); else url.searchParams.delete('grInv');
       if(t) url.searchParams.set('type', t); else url.searchParams.delete('type');
       if(s && s !== 'Unpaid') url.searchParams.set('status', s); else url.searchParams.delete('status');
 
-      // Clean up Event URL params
       ['fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus'].forEach(p => url.searchParams.delete(p));
       window.history.replaceState({}, '', url);
+
+    } else if (currentTab === 'editqueue') {
+        renderEditingQueue(filtered);
+        
+        // Push active Editing Queue filters to the URL
+        url.searchParams.set('tab', 'editqueue');
+        const eqSearch = document.getElementById('fEqSearch') ? document.getElementById('fEqSearch').value : '';
+        const eqStatus = document.getElementById('fEqStatus') ? document.getElementById('fEqStatus').value : 'All';
+        
+        if(eqSearch) url.searchParams.set('fEqSearch', eqSearch); else url.searchParams.delete('fEqSearch');
+        if(eqStatus && eqStatus !== 'All') url.searchParams.set('fEqStatus', eqStatus); else url.searchParams.delete('fEqStatus');
+        
+        // Clean up other tabs' params
+        ['fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'q', 'grInv', 'type', 'status'].forEach(p => url.searchParams.delete(p));
+        window.history.replaceState({}, '', url);
+
+    } else if (currentTab === 'payroll') {
+        // Push Payroll tab to URL
+        url.searchParams.set('tab', 'payroll');
+        
+        // Clean up other tabs' params
+        ['fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'q', 'grInv', 'type', 'status', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
+        window.history.replaceState({}, '', url);
     }
   }
 
@@ -1976,12 +2432,15 @@ function handleAddCustomService(inputId, containerId) {
     currentTab = t;
     document.getElementById('events-view').style.display = t==='events'?'block':'none';
     document.getElementById('calendar-view').style.display = t==='calendar'?'block':'none';
+    document.getElementById('editqueue-view').style.display = t==='editqueue'?'block':'none';
     document.getElementById('payments-view').style.display = t==='payments'?'block':'none';
+    document.getElementById('payroll-view').style.display = t==='payroll'?'block':'none';
     document.getElementById('booth-view').style.display = t==='booth'?'block':'none';
     document.getElementById('expenses-view').style.display = t==='expenses'?'block':'none';
     
     document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar') ? 'block' : 'none';
-    document.getElementById('paymentFilters').style.display = t==='payments'?'block':'none';
+    document.getElementById('editQueueFilters').style.display = t==='editqueue' ? 'block' : 'none';
+    document.getElementById('paymentFilters').style.display = t==='payments' ? 'block' : 'none';
     
     const filterBtn = document.getElementById('filterToggleBtn');
     const filterCollapseEl = document.getElementById('filterCollapse');
@@ -2007,8 +2466,10 @@ function handleAddCustomService(inputId, containerId) {
     
     document.getElementById('e-tab').classList.toggle('active', t==='events');
     document.getElementById('c-tab').classList.toggle('active', t==='calendar');
-    document.getElementById('b-tab').classList.toggle('active', t==='booth');
+    document.getElementById('eq-tab').classList.toggle('active', t==='editqueue');
     document.getElementById('p-tab').classList.toggle('active', t==='payments');
+    document.getElementById('pr-tab').classList.toggle('active', t==='payroll');
+    document.getElementById('b-tab').classList.toggle('active', t==='booth');
     document.getElementById('ex-tab').classList.toggle('active', t==='expenses');
     
     if (t === 'booth') {
@@ -2093,8 +2554,8 @@ function handleAddCustomService(inputId, containerId) {
                           <div style="z-index: 30;">
                               <span class="badge bg-danger px-2 py-1 border-0 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-airplane-fill me-1"></i> Crew Leave</span>
                               <span class="badge badge-soft-dark px-2 py-1 border-0 text-muted ms-1" style="font-size: 0.6rem;">#${e['Event ID']}</span>
-                              <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
-                              <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
+                              <span onclick="openEditModal('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-muted" style="font-size: 0.8rem;" title="Edit Leave"><i class="bi bi-pencil-square"></i></span>
+                              <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-danger" style="font-size: 0.8rem;" title="Add Another Leave Day"><i class="bi bi-calendar-plus"></i></span>
                           </div>
                       </div>
                       <div class="text-danger fw-bold mb-2 small"><i class="bi bi-calendar2-event opacity-75 me-1"></i> ${leaveDateString}</div>
@@ -2175,8 +2636,8 @@ function handleAddCustomService(inputId, containerId) {
                     ${stampHtml}
                     <div class="d-flex justify-content-between mb-3 align-items-center">
                         <div style="z-index: 30;"> <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
-                            <span onclick="requireAuth(() => openEditModal('${e['Doc ID']}'))" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
-                            <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'))" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
+                            <span onclick="openEditModal('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
+                            <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
                         </div>
                         ${statusPillHtml}
                     </div>
@@ -2269,7 +2730,7 @@ function handleAddCustomService(inputId, containerId) {
 
           dayEvents.forEach(e => {
               if (e['Event Name'] === 'Crew Leave') {
-                  eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="openEditModal('${e['Doc ID']}', true)" title="Leave: ${e['Manpower']}">
+                  eventsHtml += `<div class="cal-event-pill cal-status-leave shadow-sm" onclick="openEditModal('${e['Doc ID']}')" title="Leave: ${e['Manpower']}">
                       <span class="opacity-75">✈️</span> <strong>${e['Manpower'] || 'Leave'}</strong>
                   </div>`;
               } else {
@@ -2278,7 +2739,7 @@ function handleAddCustomService(inputId, containerId) {
                   else if(e['Event Status'] === 'Cancelled') pillClass = 'cal-status-cancelled';
                   
                   const timePrefix = e['Event Start Time'] ? `${formatAMPM(e['Event Start Time'])} ` : '';
-                  eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Doc ID']}', true)" title="${e['Event Name']}">
+                  eventsHtml += `<div class="cal-event-pill ${pillClass} shadow-sm" onclick="openEditModal('${e['Doc ID']}')" title="${e['Event Name']}">
                       <span class="opacity-75">${timePrefix}</span><strong>${e['Event Name']}</strong>
                   </div>`;
               }
@@ -2286,7 +2747,7 @@ function handleAddCustomService(inputId, containerId) {
           
           html += `<div class="${dayClass}">
                       <div class="d-flex justify-content-between align-items-start mb-1 w-100">
-                          <i class="bi bi-plus-square-fill text-secondary opacity-25 cal-add-btn" onclick="requireAuth(() => openNewEventWithDate('${currentDateStr}'))" title="New Entry on ${currentDateStr}"></i>
+                          <i class="bi bi-plus-square-fill text-secondary opacity-25 cal-add-btn" onclick="requireAuth(() => openNewEventWithDate('${currentDateStr}'), true)" title="New Entry on ${currentDateStr}"></i>
                           <div class="date-number mb-0">${d}</div>
                       </div>
                       ${eventsHtml}
@@ -2414,7 +2875,7 @@ function handleAddCustomService(inputId, containerId) {
       html += `<tr>
         <td class="fw-bold text-nowrap text-secondary">
             #${evId}
-            <span onclick="requireAuth(() => openEditModal('${p['Doc ID']}'))" class="edit-trigger ms-1 px-1" title="Edit Entry"><i class="bi bi-pencil-square"></i></span>
+            <span onclick="openEditModal('${p['Doc ID']}')" class="edit-trigger ms-1 px-1" title="Edit Entry"><i class="bi bi-pencil-square"></i></span>
         </td>
         <td style="min-width: 180px;">${nameDisplay}<br><span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${eventDateStr}</span></td>
         <td class="text-nowrap"><span class="badge bg-light text-dark border">${payData['Payment Type']||'-'}</span>${amountStr}</td>
@@ -2442,25 +2903,49 @@ function handleAddCustomService(inputId, containerId) {
   
 
   function setEditFormState(isReadOnly) {
+      const role = getUserRole();
       const form = document.getElementById('editForm');
-      const elements = form.querySelectorAll('input, select, textarea, button');
+      const allElements = form.querySelectorAll('input, select, textarea, button');
       
-      elements.forEach(el => {
-          if(el.id !== 'editSubmitBtn' && el.id !== 'editDeleteBtn' && el.id !== 'editCrewAddBtn' && el.id !== 'themeToggleBtn') { el.disabled = isReadOnly; }
+      allElements.forEach(el => {
+          // Never disable the close button, theme toggle, or the save button (we handle Save visibility separately)
+          if(el.id === 'themeToggleBtn' || el.id === 'editSubmitBtn' || el.classList.contains('btn-close')) return;
+          
+          if (isReadOnly) {
+              el.disabled = true; // Non-admin/Unauthenticated: All disabled
+          } else if (role === 'editor') {
+              // Editors: Only elements with the 'editor-field' class are enabled
+              if (el.classList.contains('editor-field')) {
+                  el.disabled = false;
+              } else {
+                  el.disabled = true;
+              }
+          } else {
+              el.disabled = false; // Admin: All enabled
+          }
       });
-      document.getElementById('editCrewAddBtn').disabled = isReadOnly;
-      if (document.getElementById('editServiceAddBtn')) {
-          document.getElementById('editServiceAddBtn').disabled = isReadOnly;
-      }
+
+      // Special button logic
+      if (document.getElementById('editCrewAddBtn')) document.getElementById('editCrewAddBtn').disabled = (isReadOnly || role === 'editor');
+      if (document.getElementById('editServiceAddBtn')) document.getElementById('editServiceAddBtn').disabled = (isReadOnly || role === 'editor');
+      
+      // Force hide the REMOVE spans for Editors and Unauthenticated users
+      document.querySelectorAll('.admin-remove-btn').forEach(btn => {
+          btn.style.display = (role === 'admin' && !isReadOnly) ? 'inline-block' : 'none';
+      });
       
       if (isReadOnly) {
           document.getElementById('editSubmitBtn').style.display = 'none';
           document.getElementById('editDeleteBtn').style.display = 'none';
+          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = 'none';
           document.getElementById('editAuthWarning').style.setProperty('display', 'flex', 'important');
       } else {
           document.getElementById('editSubmitBtn').style.display = 'block';
-          document.getElementById('editDeleteBtn').style.display = 'block';
           document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
+          
+          // Editors cannot delete projects or add days
+          document.getElementById('editDeleteBtn').style.display = role === 'admin' ? 'block' : 'none';
+          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = role === 'admin' ? 'inline-block' : 'none';
       }
   }
 
@@ -2641,7 +3126,7 @@ function handleAddCustomService(inputId, containerId) {
      modal.show();
   }
 
-  function openEditModal(docId, fromCalendar = false) {
+  function openEditModal(docId) {
     // 1. Search strictly by the unique Firestore Document ID
     const e = rawEvents.find(ev => String(ev['Doc ID']) === String(docId));
     if(!e) return;
@@ -2649,23 +3134,39 @@ function handleAddCustomService(inputId, containerId) {
     // 2. Extract the variables needed for the rest of the form
     const id = e['Event ID'];
     const date = e['Event Date'];
-    const isReadOnly = fromCalendar && !isAuthenticated();
+    
+    // 3. Determine access level (View-Only, Editor, or Admin)
+    const role = getUserRole();
+    const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+    const isReadOnly = !role || isExpired;
 
-    const todayDate = new Date();
+   const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
     const isPast = date && date < todayStr;
     
     const paymentBlock = document.getElementById('editPaymentFields');
     const toggleBlock = document.getElementById('editTypeToggleBlock');
     const notesBlock = document.getElementById('editNotesBlock');
+    const editingSection = document.getElementById('editEditingSection');
 
+    // 1. Payment Block Logic
     if (isPast) {
         toggleBlock.parentNode.insertBefore(paymentBlock, toggleBlock.nextSibling);
         paymentBlock.classList.add('border-bottom', 'pb-3', 'mb-4');
     } else {
-        // FIXED: insert after notes block so it stays at the bottom!
         notesBlock.parentNode.insertBefore(paymentBlock, notesBlock.nextSibling);
         paymentBlock.classList.remove('border-bottom', 'pb-3', 'mb-4');
+    }
+
+    // 2. Editing Section Logic (Context-Aware)
+    if (editingSection) {
+        if (currentTab === 'editqueue') {
+            // If in the Editing Queue, snap the Editing Section to the absolute top!
+            toggleBlock.parentNode.insertBefore(editingSection, toggleBlock.nextSibling);
+        } else {
+            // Otherwise, keep it in its normal place beneath the Notes
+            notesBlock.parentNode.insertBefore(editingSection, notesBlock.nextSibling);
+        }
     }
 
     document.querySelectorAll('#editCrewContainer .custom-crew-cb').forEach(el => el.remove());
@@ -2760,7 +3261,7 @@ function handleAddCustomService(inputId, containerId) {
 
             tabsHtml += `
             <li class="nav-item">
-                <a class="nav-link ${isActive} px-3 py-2 text-center" style="cursor:pointer; line-height: 1.1; min-width: 90px;" onclick="openEditModal('${day['Doc ID']}', ${fromCalendar})">
+                <a class="nav-link ${isActive} px-3 py-2 text-center" style="cursor:pointer; line-height: 1.1; min-width: 90px;" onclick="openEditModal('${day['Doc ID']}')">
                     <span style="font-size: 0.8rem; font-weight: 700;">${label}</span>
                     ${tabDate}
                 </a>
@@ -2886,7 +3387,7 @@ function handleAddCustomService(inputId, containerId) {
                     invDisplay.innerHTML = `
                         <div class="d-flex align-items-center mt-1">
                             <a href="${currentInv}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> Current Invoice Link</a>
-                            <span class="badge bg-danger ms-3 shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editInvoiceUrl').value=''; document.getElementById('editInvoiceLinkDisplay').innerHTML='';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
+                            <span class="badge bg-danger ms-3 shadow-sm admin-remove-btn" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editInvoiceUrl').value=''; document.getElementById('editInvoiceLinkDisplay').innerHTML='';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
                         </div>`;
                 } else {
                     invDisplay.innerHTML = '';
@@ -2900,7 +3401,7 @@ function handleAddCustomService(inputId, containerId) {
                     chkDisplay.innerHTML = `
                         <div class="d-flex align-items-center mt-1">
                             <a href="${currentChk}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> Current Check Link</a>
-                            <span class="badge bg-danger ms-3 shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editCheckUrl').value=''; document.getElementById('editCheckLinkDisplay').innerHTML='';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
+                            <span class="badge bg-danger ms-3 shadow-sm admin-remove-btn" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editCheckUrl').value=''; document.getElementById('editCheckLinkDisplay').innerHTML='';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
                         </div>`;
                 } else {
                     chkDisplay.innerHTML = '';
@@ -2914,12 +3415,36 @@ function handleAddCustomService(inputId, containerId) {
         form.elements['amount'].value = paymentSourceEvent['Amount'] || '0';
         form.elements['paymentNotes'].value = paymentSourceEvent['Payment Notes'] || '';
         
-        // Gray out and disable editing of the payment block if it is an Added Day
+        // --- POPULATE EDITING SECTION ---
+        const editorAssignedVal = e['Editor Assigned'] || '';
+        const editorOptions = Array.from(form.elements['editorAssigned'].options).map(opt => opt.value);
+        if (editorAssignedVal && !editorOptions.includes(editorAssignedVal)) {
+            form.elements['editorAssigned'].value = '';
+            form.elements['customEditor'].value = editorAssignedVal;
+        } else {
+            form.elements['editorAssigned'].value = editorAssignedVal;
+            form.elements['customEditor'].value = '';
+        }
+        
+        if (document.getElementById('editSentToClient')) document.getElementById('editSentToClient').checked = e['Sent to Client'];
+        form.elements['rawLink'].value = e['RAW Link'] || '';
+        form.elements['editedLink'].value = e['Edited Link'] || '';
+        
+        if (document.getElementById('editRawTimestamp')) document.getElementById('editRawTimestamp').value = e['RAW Timestamp'] || '';
+        if (document.getElementById('editEditedTimestamp')) document.getElementById('editEditedTimestamp').value = e['Edited Timestamp'] || '';
+        if (document.getElementById('editSentTimestamp')) document.getElementById('editSentTimestamp').value = e['Sent Timestamp'] || '';
+        
+        if (document.getElementById('editSentStamp')) document.getElementById('editSentStamp').innerText = e['Sent Timestamp'] || '';
+        if (document.getElementById('editRawStamp')) document.getElementById('editRawStamp').innerText = e['RAW Timestamp'] || '';
+        if (document.getElementById('editEditedStamp')) document.getElementById('editEditedStamp').innerText = e['Edited Timestamp'] || '';
+        // --------------------------------
+
+       // Lock the payment block if: it's an Added Day, the user is an Editor, or the user is View-Only
         const paymentBlockSection = document.getElementById('editPaymentFields');
         paymentBlockSection.style.display = 'block'; // Always show it
-        if (!isMainDay) {
+        if (!isMainDay || role === 'editor' || isReadOnly) {
             paymentBlockSection.style.opacity = '0.5';
-            paymentBlockSection.style.pointerEvents = 'none';
+            paymentBlockSection.style.pointerEvents = 'none'; // Kills all clicks, including links!
         } else {
             paymentBlockSection.style.opacity = '1';
             paymentBlockSection.style.pointerEvents = 'auto';
@@ -2931,6 +3456,10 @@ function handleAddCustomService(inputId, containerId) {
     form.elements['callTime'].value = to24Hour(e['Call Time']);
     form.elements['startTime'].value = to24Hour(e['Event Start Time']);
     form.elements['endTime'].value = to24Hour(e['Event End Time']);
+    if (document.getElementById('editHalfDayCheck')) {
+        document.getElementById('editHalfDayCheck').checked = e['Half Day'] === 'true';
+        // Delete the wrapper display and value assignment lines!
+    }
     form.elements['notes'].value = e['Event Notes'] || '';
     
     const crew = (e['Manpower'] || '').split(',').map(s=>s.trim()).filter(s=>s);
@@ -3188,11 +3717,19 @@ function handleAddCustomService(inputId, containerId) {
                   services: (obj.services || []).join(", "),
                   startTime: obj.startTime || "",
                   endTime: obj.endTime || "",
+                  halfDay: document.getElementById('newHalfDayCheck') ? document.getElementById('newHalfDayCheck').checked : false,
                   callTime: obj.callTime || "",
                   manpower: (obj.manpower || []).join(", "),
                   contactPerson: obj.contactPerson || "",
                   contactNumber: obj.contactNumber || "",
                   notes: obj.notes || "",
+                  editorAssigned: obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || ""),
+                  sentToClient: document.getElementById('newSentToClient') ? document.getElementById('newSentToClient').checked : false,
+                  rawLink: obj.rawLink || "",
+                  editedLink: obj.editedLink || "",
+                  rawTimestamp: obj.rawLink ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : "",
+                  editedTimestamp: obj.editedLink ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : "",
+                  sentTimestamp: (document.getElementById('newSentToClient') && document.getElementById('newSentToClient').checked) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : "",
                   paymentType: obj.paymentType || "",
                   emailThread: obj.emailThread || "",
                   billingStatus: obj.billingStatus || "",
@@ -3297,8 +3834,23 @@ function handleAddCustomService(inputId, containerId) {
       e.preventDefault();
       const btn = document.getElementById('editSubmitBtn');
       const ov = document.getElementById('submitOverlay');
+
+      // --- CRITICAL FIX: Temporarily wake up disabled fields to capture data and prevent data wipe! ---
+      const allElements = e.target.querySelectorAll('input, select, textarea');
+      const disabledElements = [];
+      allElements.forEach(el => {
+          if (el.disabled) {
+              disabledElements.push(el);
+              el.disabled = false;
+          }
+      });
+
       const fd = new FormData(e.target);
       const obj = Object.fromEntries(fd.entries());
+
+      // Put them immediately back to sleep so the Editor UI doesn't visually break
+      disabledElements.forEach(el => el.disabled = true);
+      // -----------------------------------------------------------------------------------------------
       
       obj.manpower = fd.getAll('manpower');
       let rawServices = fd.getAll('services');
@@ -3355,11 +3907,19 @@ function handleAddCustomService(inputId, containerId) {
               services: (obj.services || []).join(", "),
               startTime: obj.startTime || "",
               endTime: obj.endTime || "",
+              halfDay: document.getElementById('editHalfDayCheck') ? document.getElementById('editHalfDayCheck').checked : false,
               callTime: obj.callTime || "",
               manpower: (obj.manpower || []).join(", "),
               contactPerson: obj.contactPerson || "",
               contactNumber: obj.contactNumber || "",
               notes: obj.notes || "",
+              editorAssigned: obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || ""),
+              sentToClient: document.getElementById('editSentToClient') ? document.getElementById('editSentToClient').checked : false,
+              rawLink: obj.rawLink || "",
+              editedLink: obj.editedLink || "",
+              rawTimestamp: (obj.rawLink && !obj.rawTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (obj.rawLink ? obj.rawTimestamp : ""),
+              editedTimestamp: (obj.editedLink && !obj.editedTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (obj.editedLink ? obj.editedTimestamp : ""),
+              sentTimestamp: (document.getElementById('editSentToClient') && document.getElementById('editSentToClient').checked && !obj.sentTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (document.getElementById('editSentToClient') && document.getElementById('editSentToClient').checked ? obj.sentTimestamp : ""),
               paymentType: obj.paymentType || "",
               emailThread: obj.emailThread || "",
               billingStatus: obj.billingStatus || "",
@@ -3947,6 +4507,24 @@ function handleAddCustomService(inputId, containerId) {
   window.addEventListener('scroll', checkStickyHeaders, {passive: true});
 
   window.onload = () => {
+      applyRoleUI(); // <-- This line tells the Sign Out button to appear if you are already logged in!
+      
+      // Listen for the Payroll Modal to close, and auto-update the main table!
+      const prModalEl = document.getElementById('payrollModal');
+      if (prModalEl) {
+          prModalEl.addEventListener('hidden.bs.modal', function () {
+              if (!isHistoricalView && activePayrollPerson) {
+                  renderPayrollTable();
+                  showToast("Changes applied to active session.", "success");
+              } else if (isHistoricalView) {
+                  // Re-open the history vault when closing a historical payslip
+                  const histModalEl = document.getElementById('payrollHistoryModal');
+                  const histModal = bootstrap.Modal.getInstance(histModalEl) || new bootstrap.Modal(histModalEl);
+                  histModal.show();
+              }
+          });
+      }
+
       const stickyHeaderEl = document.querySelector('.sticky-header');
       if (stickyHeaderEl && window.ResizeObserver) {
           new ResizeObserver(entries => {
@@ -3998,9 +4576,11 @@ function handleAddCustomService(inputId, containerId) {
 
   // --- INSTANT URL FILTER HYDRATION ---
   // This runs immediately so Firebase doesn't accidentally erase the URL!
+  // --- INSTANT URL FILTER HYDRATION ---
+  // This runs immediately so Firebase doesn't accidentally erase the URL!
   (function loadFiltersFromURL() {
       const urlParams = new URLSearchParams(window.location.search);
-      const activeTab = urlParams.get('tab') || 'calendar';
+      const activeTab = urlParams.get('tab') || 'events';
       
       if (activeTab === 'payments') {
           if(urlParams.get('q')) document.getElementById('fPaySearch').value = urlParams.get('q');
@@ -4016,11 +4596,14 @@ function handleAddCustomService(inputId, containerId) {
           if(urlParams.get('fDateFrom')) document.getElementById('fDateFrom').value = urlParams.get('fDateFrom');
           if(urlParams.get('fDateTo')) document.getElementById('fDateTo').value = urlParams.get('fDateTo');
           if(urlParams.get('fCrew')) {
-              // Pre-inject the crew name so the dropdown accepts it before the real data loads
               document.getElementById('fCrew').innerHTML = `<option value="${urlParams.get('fCrew')}">${urlParams.get('fCrew')}</option>`;
               document.getElementById('fCrew').value = urlParams.get('fCrew');
           }
           if(urlParams.get('fStatus')) document.getElementById('fStatus').value = urlParams.get('fStatus');
+      }
+      else if (activeTab === 'editqueue') {
+          if(urlParams.get('fEqSearch')) document.getElementById('fEqSearch').value = urlParams.get('fEqSearch');
+          if(urlParams.get('fEqStatus')) document.getElementById('fEqStatus').value = urlParams.get('fEqStatus');
       }
   })();
   // ------------------------------------
@@ -4048,11 +4631,19 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
             'Services': String(d.services || ""),
             'Event Start Time': String(d.startTime || ""),
             'Event End Time': String(d.endTime || ""),
+            'Half Day': d.halfDay === true || String(d.halfDay) === "true" ? "true" : "false",
             'Call Time': String(d.callTime || ""),
             'Manpower': String(d.manpower || ""),
             'Contact Person': String(d.contactPerson || ""),
             'Contact Number': String(d.contactNumber || ""),
             'Event Notes': String(d.notes || ""),
+            'Editor Assigned': String(d.editorAssigned || ""),
+            'RAW Link': String(d.rawLink || ""),
+            'RAW Timestamp': String(d.rawTimestamp || ""),
+            'Edited Link': String(d.editedLink || ""),
+            'Edited Timestamp': String(d.editedTimestamp || ""),
+            'Sent to Client': d.sentToClient === true || String(d.sentToClient) === "true",
+            'Sent Timestamp': String(d.sentTimestamp || ""),
             'Payment Type': String(d.paymentType || ""),
             'Email Thread': String(d.emailThread || ""),
             'Billing Status': String(d.billingStatus || ""),
@@ -4071,6 +4662,7 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
     // Safely attempt to render the UI
     try {
         updateCrewFilterDropdown(rawEvents);
+        populateExpenseEventsDropdown(); // <--- Fills the Expenses dropdown instantly!
         applyFilters();
     } catch(err) {
         console.error("UI Render Error:", err);
@@ -4137,6 +4729,920 @@ async function getNextEventId() {
           alert("Error submitting expense: " + (res ? res.error || res.message : "Unknown error"));
       }
   };
+  function renderEditingQueue(data) {
+      let html = '';
+      const filterStatus = document.getElementById('fEqStatus') ? document.getElementById('fEqStatus').value : 'All';
+      const searchQ = document.getElementById('fEqSearch') ? document.getElementById('fEqSearch').value.toLowerCase().trim() : '';
+      const now = new Date();
+
+      // Filter logic specifically for the Editing Tab
+      let eqData = data.filter(e => e['Event Name'] !== 'Crew Leave');
+
+      if (searchQ) {
+          eqData = eqData.filter(e => e['Event ID'].toLowerCase().includes(searchQ) || e['Event Name'].toLowerCase().includes(searchQ));
+      }
+
+      if (filterStatus === 'RAW Uploaded') {
+          eqData = eqData.filter(e => e['RAW Link'] && !e['Edited Link'] && !e['Sent to Client']);
+      } else if (filterStatus === 'Completed') {
+          eqData = eqData.filter(e => e['Edited Link'] && !e['Sent to Client']);
+      } else if (filterStatus === 'Sent to Client') {
+          eqData = eqData.filter(e => e['Sent to Client']);
+      }
+
+      if (eqData.length === 0) {
+          document.getElementById('eq-body').innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No events match the queue criteria.</td></tr>';
+          return;
+      }
+
+      eqData.forEach(e => {
+          // --- 48 HOUR MATH ---
+          let deadlineHtml = '<span class="text-muted small">No Date</span>';
+          if (e['Event Date']) {
+              // Parse Event Date. The deadline starts the *next day* at 6:00 AM
+              const dParts = e['Event Date'].split('-');
+              let eventDateObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
+              
+              let deadlineStart = new Date(eventDateObj);
+              deadlineStart.setDate(deadlineStart.getDate() + 1); // Next day
+              deadlineStart.setHours(6, 0, 0, 0); // 6:00 AM
+              
+              let deadlineEnd = new Date(deadlineStart);
+              deadlineEnd.setHours(deadlineEnd.getHours() + 48); // +48 Hours
+              
+              if (now < deadlineStart) {
+                  deadlineHtml = `<span class="badge bg-light text-dark border">Starts ${deadlineStart.toLocaleDateString('en-US', {month:'short', day:'numeric'})} 6AM</span>`;
+              } else if (e['Edited Link']) {
+                  deadlineHtml = `<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Completed</span>`;
+              } else {
+                  const hoursLeft = (deadlineEnd - now) / (1000 * 60 * 60);
+                  if (hoursLeft > 0) {
+                      deadlineHtml = `<span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>${Math.floor(hoursLeft)}h remaining</span>`;
+                  } else {
+                      deadlineHtml = `<span class="badge bg-danger shadow-sm"><i class="bi bi-exclamation-triangle me-1"></i>OVERDUE by ${Math.floor(Math.abs(hoursLeft))}h</span>`;
+                  }
+              }
+          }
+
+          // --- UI PILLS ---
+          const rawUI = e['RAW Link'] ? `<a href="${e['RAW Link']}" target="_blank" class="badge bg-info text-dark text-decoration-none shadow-sm"><i class="bi bi-cloud-check me-1"></i>View RAW</a><br><span class="small text-muted" style="font-size:0.7rem;">${e['RAW Timestamp']}</span>` : `<span class="badge bg-light text-muted border">Awaiting</span>`;
+          const editUI = e['Edited Link'] ? `<a href="${e['Edited Link']}" target="_blank" class="badge bg-success text-white text-decoration-none shadow-sm"><i class="bi bi-check-circle me-1"></i>View Output</a><br><span class="small text-muted" style="font-size:0.7rem;">${e['Edited Timestamp']}</span>` : `<span class="badge bg-light text-muted border">In Progress</span>`;
+          
+          let sentUI = '';
+          if (e['Sent to Client']) {
+              sentUI = `<div class="mt-2"><span class="badge bg-primary rounded-pill shadow-sm"><i class="bi bi-envelope-check me-1"></i>Sent to Client</span></div>`;
+          }
+
+         html += `<tr>
+              <td class="text-wrap" style="min-width: 180px; max-width: 280px; word-break: break-word;">
+                  <strong class="text-dark">#${e['Event ID']}</strong> <span onclick="openEditModal('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-primary" title="Open Editor"><i class="bi bi-pencil-square"></i></span><br>
+                  <span class="fw-bold lh-sm d-inline-block mt-1 mb-1">${e['Event Name']}</span><br>
+                  <span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${e['Event Date']}</span>
+                  ${sentUI}
+              </td>
+              <td class="fw-bold text-secondary">${e['Editor Assigned'] || '<span class="fst-italic fw-normal opacity-50">Unassigned</span>'}</td>
+              <td>${rawUI}</td>
+              <td>${editUI}</td>
+              <td>${deadlineHtml}</td>
+          </tr>`;
+      });
+      document.getElementById('eq-body').innerHTML = html;
+  }
+  // ==============================================================================
+  // ADMIN PAYROLL ENGINE
+  // ==============================================================================
+
+  // Helper: Auto-set dates based on the 11-25 or 26-10 rules
+  function setCutoffDates(startDay, endDay) {
+      const now = new Date();
+      let startMonth = now.getMonth();
+      let endMonth = now.getMonth();
+      let startYear = now.getFullYear();
+      let endYear = now.getFullYear();
+
+      if (startDay === 26) {
+          // 26th of last month to 10th of current month
+          startMonth -= 1;
+          if (startMonth < 0) { startMonth = 11; startYear -= 1; }
+      }
+
+      const sDate = new Date(startYear, startMonth, startDay);
+      const eDate = new Date(endYear, endMonth, endDay);
+
+      document.getElementById('prStartDate').value = sDate.toISOString().split('T')[0];
+      document.getElementById('prEndDate').value = eDate.toISOString().split('T')[0];
+  }
+// Engine: Save the current session to Firebase Cloud
+  async function savePayrollSession() {
+      const start = document.getElementById('prStartDate').value;
+      const end = document.getElementById('prEndDate').value;
+
+      if (!start || !end) return showToast("Please select a Start and End date first.", "warning");
+      if (Object.keys(currentPayrollData).length === 0) return showToast("No data to save. Please hit Compute first.", "warning");
+
+      const btn = document.querySelector('button[onclick="savePayrollSession()"]');
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> SAVING...';
+      btn.disabled = true;
+
+      try {
+          // Push the exact state of the math to a new Cloud folder
+          await db.collection("payroll_sessions").doc(`${start}_${end}`).set({
+              startDate: start,
+              endDate: end,
+              sessionData: JSON.stringify(currentPayrollData),
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showToast(`Cloud Session for ${start} to ${end} saved successfully!`, "success");
+      } catch (err) {
+          alert("Error saving to Cloud: " + err.message);
+      }
+      
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
+  }
+
+  // Memory Cache for the visual list
+  let savedSessionsCache = [];
+
+  // Engine: Fetch all saved sessions from the Cloud and display them in a list
+  async function openLoadSessionModal() {
+      const container = document.getElementById('sessionListContainer');
+      container.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Fetching cloud saves...</div>';
+      
+      const modalEl = document.getElementById('loadSessionModal');
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.show();
+      try {
+          // SORT: Pull every session, sorted strictly by the time it was saved (Newest on top)
+          const snapshot = await db.collection("payroll_sessions").orderBy("updatedAt", "desc").get();
+          
+          if (snapshot.empty) {
+              container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>No saved sessions found.</div>';
+              return;
+          }
+
+          savedSessionsCache = [];
+          let html = '<div class="list-group gap-2">';
+          let index = 0;
+          
+          snapshot.forEach((doc) => {
+              const data = doc.data();
+              data.docId = doc.id; // Store the unique ID so we can delete it later!
+              savedSessionsCache.push(data); 
+              
+              const sDate = new Date(data.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              const eDate = new Date(data.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              let savedAtStr = data.updatedAt ? new Date(data.updatedAt.toDate()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Recently';
+              
+              html += `
+              <div class="list-group-item list-group-item-action border-0 rounded-3 shadow-sm p-2 d-flex justify-content-between align-items-center">
+                  <div style="cursor:pointer; flex-grow: 1;" onclick="applyLoadedSession(${index})">
+                      <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;"><i class="bi bi-calendar-range text-primary me-2"></i>${sDate} - ${eDate}</h6>
+                      <small class="text-muted d-block fw-bold mt-1" style="font-size: 0.7rem;"><i class="bi bi-cloud-check me-1"></i>Saved: ${savedAtStr}</small>
+                  </div>
+                  <button class="btn btn-sm btn-outline-danger border-0 ms-2" onclick="deleteSavedSession('${doc.id}')" title="Delete Session"><i class="bi bi-trash3"></i></button>
+              </div>`;
+              
+              index++;
+          });
+          
+          html += '</div>';
+          container.innerHTML = html;
+          
+      } catch (err) {
+          container.innerHTML = `<div class="text-center py-4 text-danger small"><i class="bi bi-exclamation-triangle d-block fs-3 mb-2"></i>Error loading sessions: ${err.message}</div>`;
+      }
+  }
+
+  // Engine: Delete a saved session
+  async function deleteSavedSession(docId) {
+      if(!confirm("Permanently delete this saved payroll session?")) return;
+      try {
+          await db.collection("payroll_sessions").doc(docId).delete();
+          showToast("Session deleted successfully.", "success");
+          openLoadSessionModal(); // Refresh the list instantly
+      } catch(e) { 
+          alert("Error deleting session: " + e.message); 
+      }
+  }
+
+  // Engine: Triggered when you click a specific session in the visual list
+  function applyLoadedSession(index) {
+      const data = savedSessionsCache[index];
+      if (!data) return;
+
+      if (confirm(`Load the saved session for ${data.startDate} to ${data.endDate}?\n\nThis will instantly restore your manual edits, custom pays, and added expenses!`)) {
+          document.getElementById('prStartDate').value = data.startDate;
+          document.getElementById('prEndDate').value = data.endDate;
+          
+          try {
+              currentPayrollData = JSON.parse(data.sessionData);
+              renderPayrollTable();
+              bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
+              showToast("Cloud Session loaded successfully!", "success");
+          } catch (e) {
+              alert("Error parsing saved session data.");
+          }
+      }
+  }
+
+// Engine: Export current session summary to PDF
+  function exportSessionPDF() {
+      const start = document.getElementById('prStartDate').value;
+      const end = document.getElementById('prEndDate').value;
+      if (!start || !end) return showToast("Set a cutoff period first.", "warning");
+      
+      const names = Object.keys(currentPayrollData).sort();
+      if (names.length === 0) return showToast("No payroll data to export.", "warning");
+
+      if (!confirm(`Generate a printable PDF summary report for ${start} to ${end}?`)) return;
+
+      let totalPayout = 0;
+      let html = `
+      <html><head><title>Payroll Summary: ${start} to ${end}</title>
+      <style>
+          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 30px; color: #333; }
+          h2 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 5px;}
+          .subtitle { color: #666; font-size: 14px; margin-bottom: 30px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+          th { background-color: #f8f9fa; text-transform: uppercase; font-size: 12px; color: #555;}
+          .text-right { text-align: right; }
+          .total-row { font-weight: bold; font-size: 1.1em; background-color: #f1f3f5; }
+      </style>
+      </head><body>
+      <h2>EGM PRODUCTIONS - PAYROLL SUMMARY</h2>
+      <div class="subtitle"><strong>Cutoff Period:</strong> ${start} to ${end}</div>
+      <table>
+          <thead>
+              <tr><th>Crew Member</th><th class="text-right">Base Pay</th><th class="text-right">Expenses</th><th class="text-right">Misc/Bonus</th><th class="text-right">Net Pay</th></tr>
+          </thead>
+          <tbody>`;
+
+      names.forEach(name => {
+          const data = currentPayrollData[name];
+          let base = data.totalBase || 0;
+          let exp = data.expenses || 0;
+          let misc = data.misc || 0;
+          let net = base + exp + misc;
+          let finalNet = data.finalTotal || net;
+          totalPayout += finalNet;
+
+          html += `<tr>
+              <td><strong>${name}</strong></td>
+              <td class="text-right">₱${base.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+              <td class="text-right">₱${exp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+              <td class="text-right">₱${misc.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+              <td class="text-right"><strong>₱${finalNet.toLocaleString(undefined, {minimumFractionDigits: 2})}</strong></td>
+          </tr>`;
+      });
+
+      html += `
+          <tr class="total-row">
+              <td colspan="4" class="text-right">GRAND TOTAL PAYOUT</td>
+              <td class="text-right">₱${totalPayout.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+          </tr>
+          </tbody></table>
+          <p style="margin-top:40px; font-size:0.8em; color:#999; text-align: center;">Generated automatically from EGM Ops Dashboard on ${new Date().toLocaleString()}</p>
+      </body></html>`;
+
+      const printWin = window.open('', '_blank');
+      printWin.document.write(html);
+      printWin.document.close();
+      printWin.focus();
+      setTimeout(() => { printWin.print(); }, 500);
+  }
+
+  
+  // Engine: Aggregate the data using the Dynamic Rates
+  function runPayrollEngine() {
+      const start = document.getElementById('prStartDate').value;
+      const end = document.getElementById('prEndDate').value;
+      
+      if (!start || !end) return alert("Please select a Start and End date for the cutoff.");
+
+      currentPayrollData = {};
+
+      // Requirement 4: Force Jenielyn to exist with a 7500 fixed allowance every cutoff
+      initPayrollPerson('Jenielyn');
+      currentPayrollData['Jenielyn'].events.push({
+          doc: { 'Event ID': 'FIXED', 'Event Name': 'Bi-monthly Base Allowance', 'Event Date': start },
+          role: 'Allowance',
+          basePay: 7500,
+          extraPay: 0,
+          isHalfDay: false,
+          isSubsequent: false,
+          isCustom: false
+      });
+      currentPayrollData['Jenielyn'].totalBase += 7500;
+
+      const validEvents = rawEvents.filter(e => {
+          return e['Event Date'] >= start && e['Event Date'] <= end && 
+                 e['Event Status'] === 'Confirmed' && e['Event Name'] !== 'Crew Leave';
+      });
+
+      // SORT CHRONOLOGICALLY first so we know which day is truly "Day 1"
+      validEvents.sort((a, b) => {
+          let dateA = a['Event Date'] || '9999-99-99';
+          let dateB = b['Event Date'] || '9999-99-99';
+          if (dateA !== dateB) return dateA.localeCompare(dateB);
+          return (a['Event Start Time'] || a['Call Time'] || "").localeCompare(b['Event Start Time'] || b['Call Time'] || "");
+      });
+
+      let eventTracker = {}; // Tracks who has already been paid for Day 1 of an event
+      
+      // Combine baseCrew and standard Editors to check who is "Custom"
+      const standardStaff = [...baseCrew, "Athan", "Jovert", "May", "Tina", "Grace", "Jops"];
+      let savedRates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
+
+      validEvents.forEach(e => {
+          const isHalfDay = e['Half Day'] === 'true';
+          const evId = e['Event ID'];
+          
+          if(!eventTracker[evId]) eventTracker[evId] = { 'Crew': new Set(), 'Editor': new Set() };
+
+          // 1. Process Crew
+          if (e['Manpower']) {
+              const crewArray = e['Manpower'].split(',').map(c => c.trim()).filter(Boolean);
+              crewArray.forEach(c => {
+                  if (!currentPayrollData[c]) initPayrollPerson(c);
+                  
+                  let isSubsequent = false;
+                  let rate = 0;
+                  let isCustom = !standardStaff.includes(c);
+                  
+                  // Check if they already worked a previous day on this exact Event ID
+                  if (eventTracker[evId]['Crew'].has(c)) {
+                      isSubsequent = true; 
+                      rate = 0; // Default to 0 for added days
+                  } else {
+                      eventTracker[evId]['Crew'].add(c);
+                      if (owners.includes(c)) {
+                          rate = 0;
+                      } else if (isHalfDay) {
+                          rate = 0;
+                      } else if (isCustom && savedRates[c] === undefined) {
+                          rate = 0; // Custom crew default to 0 so admin types it manually
+                      } else {
+                          rate = getCrewRate(c, 'Crew'); 
+                      }
+                  }
+
+                  currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: 0, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
+                  currentPayrollData[c].totalBase += rate;
+              });
+          }
+          // 2. Process Editor
+          if (e['Editor Assigned']) {
+              const editor = e['Editor Assigned'].trim();
+              if (!currentPayrollData[editor]) initPayrollPerson(editor);
+              
+              let isSubsequent = false;
+              let rate = 0;
+              let isCustom = !standardStaff.includes(editor);
+              
+              if (eventTracker[evId]['Editor'].has(editor)) {
+                  isSubsequent = true;
+                  rate = 0;
+              } else {
+                  eventTracker[evId]['Editor'].add(editor);
+                  
+                  if (isHalfDay) {
+                      rate = 0; // Still allow admin to negotiate editor half-days manually
+                  } else {
+                      rate = getCrewRate(editor, 'Editor'); // Unconditionally apply the Global Edit Rate!
+                  }
+              }
+
+              currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: 0, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
+              currentPayrollData[editor].totalBase += rate;
+          }
+      });
+
+      renderPayrollTable();
+  }
+
+  function initPayrollPerson(name) {
+      if(!currentPayrollData[name]) {
+          currentPayrollData[name] = { events: [], totalBase: 0, expenses: 0, misc: 0, finalTotal: 0 };
+      }
+  }
+function showToast(message, type = 'success') {
+      const toastEl = document.getElementById('appToast');
+      const toastBody = document.getElementById('appToastBody');
+      toastEl.className = `toast align-items-center text-bg-${type} border-0 shadow-lg`;
+      toastBody.innerText = message;
+      const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+      toast.show();
+  }
+  // UI: Draw the Main Table
+  // UI: Draw the Main Table
+  function renderPayrollTable() {
+      const tbody = document.getElementById('pr-body');
+      let html = '';
+      
+      const names = Object.keys(currentPayrollData).sort();
+      if (names.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>No crew members had confirmed events in this timeframe.</td></tr>';
+          return;
+      }
+
+      names.forEach(name => {
+          const data = currentPayrollData[name];
+          const shootCount = data.events.filter(e => e.role === 'Crew').length;
+          const editCount = data.events.filter(e => e.role === 'Editor').length;
+          
+          // THE FIX: They are only "Fully Exempt" if they are an owner AND have NO editing tasks
+          const isFullyExempt = owners.includes(name) && data.totalBase === 0 && editCount === 0;
+          const estBasePayHtml = isFullyExempt ? '<span class="badge bg-secondary text-white shadow-sm">N/A (Exempt)</span>' : `₱${data.totalBase.toLocaleString()}`;
+          
+          html += `<tr>
+              <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2"></i>${name}</td>
+              <td class="text-center"><span class="badge bg-light text-dark border">${shootCount}</span></td>
+              <td class="text-center"><span class="badge bg-light text-dark border">${editCount}</span></td>
+              <td class="text-end fw-bold ${isFullyExempt ? '' : 'text-success'}">${estBasePayHtml}</td>
+              <td class="text-end px-3">
+                  <button class="btn btn-sm btn-danger fw-bold shadow-sm py-1" onclick="openPayrollModal('${name}')" style="font-size:0.75rem;">VIEW DETAILS <i class="bi bi-chevron-right"></i></button>
+              </td>
+          </tr>`;
+      });
+      tbody.innerHTML = html;
+  }
+
+  // Modal: Open and build the interactive calculator
+  function openPayrollModal(name, isHistorical = false, histData = null) {
+      activePayrollPerson = name;
+      isHistoricalView = isHistorical;
+      const data = isHistorical ? histData : currentPayrollData[name];
+      
+      document.getElementById('prModalName').innerText = name + (isHistorical ? ' (Historical)' : '');
+      
+      // Check if they have ANY payable tasks (Editor tasks trigger true even for owners)
+      const isFullyExempt = owners.includes(name) && !data.events.some(e => e.role === 'Editor');
+      
+      if (!isHistorical) {
+          const start = document.getElementById('prStartDate').value;
+          const end = document.getElementById('prEndDate').value;
+          document.getElementById('prModalCutoffDates').innerText = `${start} to ${end}`;
+          document.getElementById('prGlobalExpenses').value = data.expenses || 0;
+          document.getElementById('prGlobalMisc').value = data.misc || 0;
+          
+          // Hide controls ONLY if fully exempt
+          document.getElementById('prGenerateBtn').style.display = isFullyExempt ? 'none' : 'block';
+          document.getElementById('prMathControls').style.display = isFullyExempt ? 'none' : 'block';
+      } else {
+          document.getElementById('prGenerateBtn').style.display = 'none';
+          document.getElementById('prMathControls').style.display = 'block';
+          document.getElementById('prGlobalExpenses').value = histData.expenses || 0;
+          document.getElementById('prGlobalMisc').value = histData.misc || 0;
+          document.getElementById('prGlobalExpenses').disabled = true;
+          document.getElementById('prGlobalMisc').disabled = true;
+      }
+      
+      // Build Itemized List
+      let eventsHtml = '';
+      data.events.sort((a,b) => (a.doc ? a.doc['Event Date'] : a.date).localeCompare(b.doc ? b.doc['Event Date'] : b.date)).forEach((item, index) => {
+          let roleBadge = item.role === 'Editor' ? 'bg-info text-dark' : (item.role === 'Allowance' ? 'bg-warning text-dark' : 'bg-secondary text-white');
+          let eventId = item.doc ? item.doc['Event ID'] : item.id;
+          let eventName = item.doc ? item.doc['Event Name'] : (item.name || 'Historic Event');
+          let eventDate = item.doc ? item.doc['Event Date'] : item.date;
+          
+          // THE FIX: Correctly check if this SPECIFIC task is exempt (Owners are exempt as Crew, but paid as Editors)
+          let isItemExempt = owners.includes(name) && item.role !== 'Editor';
+          
+          let basePayUI = '';
+          if (isItemExempt) {
+              basePayUI = `<span class="d-block text-muted fw-bold" style="font-size:0.65rem; text-transform:uppercase;">Task</span><span class="badge bg-light text-dark border mt-1">Exempt</span>`;
+          } else if (isHistorical) {
+              basePayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Base Rate</span><strong class="text-success d-block mt-1">₱${Number(item.basePay || item.base).toLocaleString()}</strong>`;
+          } else {
+              // ALWAYS render an editable input box for active (non-exempt, non-historical) tasks!
+              let label = 'Base Rate';
+              let labelClass = 'text-primary';
+              
+              if (item.isSubsequent) { label = 'Add-Day Pay'; labelClass = 'text-warning'; }
+              else if (item.isHalfDay) { label = 'Half-Day Pay'; labelClass = 'text-warning'; }
+              else if (item.isCustom) { label = 'Custom Pay'; labelClass = 'text-warning'; }
+              else if (item.role === 'Editor') { label = 'Editing Rate'; labelClass = 'text-info'; }
+              else if (item.role === 'Allowance') { label = 'Allowance'; labelClass = 'text-primary'; }
+
+              basePayUI = `
+                  <span class="d-block ${labelClass} mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">${label}</span>
+                  <div class="input-group input-group-sm" style="width: 105px;">
+                      <span class="input-group-text bg-light text-muted">₱</span>
+                      <input type="number" class="form-control fw-bold pr-event-base text-success shadow-sm" data-index="${index}" value="${item.basePay}" oninput="calculateLivePayslipTotals()">
+                  </div>`;
+          }
+
+          let extraPayUI = '';
+          if (!isItemExempt) {
+              if (isHistorical) {
+                 if(item.extra > 0) extraPayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Extra</span><strong class="text-success d-block mt-1">+ ₱${Number(item.extra).toLocaleString()}</strong>`;
+              } else {
+                  extraPayUI = `
+                  <span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">+ Extra Pay</span>
+                  <div class="input-group input-group-sm" style="width: 100px;">
+                      <span class="input-group-text bg-light text-muted">₱</span>
+                      <input type="number" class="form-control fw-bold pr-event-extra shadow-sm" data-index="${index}" value="${item.extraPay}" oninput="calculateLivePayslipTotals()">
+                  </div>`;
+              }
+          }
+
+          let badgesHtml = '';
+          if (item.isHalfDay && !isHistorical) badgesHtml += '<span class="badge bg-warning text-dark ms-1 shadow-sm"><i class="bi bi-star-half"></i> Half-Day</span>';
+          if (item.isSubsequent && !isHistorical) badgesHtml += '<span class="badge bg-secondary opacity-75 text-white ms-1 shadow-sm">+Add Day</span>';
+          if (item.isCustom && !isHistorical) badgesHtml += '<span class="badge bg-primary text-white ms-1 shadow-sm"><i class="bi bi-person-gear"></i> Custom</span>';
+
+          eventsHtml += `
+          <div class="bg-white p-3 rounded-3 border shadow-sm mb-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+              <div>
+                  <span class="d-block small text-muted fw-bold mb-1"><i class="bi bi-calendar-event me-1"></i>${eventDate}</span>
+                  <strong class="text-dark">${eventId !== 'FIXED' ? '#'+eventId+' - ' : ''}${eventName}</strong>
+                  ${badgesHtml}
+                  <span class="badge ${roleBadge} ms-1 shadow-sm">${item.role}</span>
+              </div>
+              <div class="d-flex align-items-center gap-3">
+                  <div class="text-end">${basePayUI}</div>
+                  <div>${extraPayUI}</div>
+              </div>
+          </div>`;
+      });
+      
+      document.getElementById('prModalEventsList').innerHTML = eventsHtml;
+      
+      if (!isHistorical) calculateLivePayslipTotals(); 
+      else document.getElementById('prLiveTotal').innerText = Number(histData.finalTotal).toLocaleString();
+      
+      const modalEl = document.getElementById('payrollModal');
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.show();
+  }
+  // Math: Live calculation based on inputs
+  function calculateLivePayslipTotals() {
+      if(!activePayrollPerson) return;
+      const data = currentPayrollData[activePayrollPerson];
+      
+      // THE FIX: We removed the "if(owners.includes) return;" block. 
+      // Owners now calculate normally. Their Exempt tasks simply have a basePay of 0!
+
+      // Save manually assigned Base Rates back to state
+      document.querySelectorAll('.pr-event-base').forEach(input => {
+          let idx = input.getAttribute('data-index');
+          data.events[idx].basePay = parseFloat(input.value) || 0;
+      });
+
+      // Save Extras back to state
+      document.querySelectorAll('.pr-event-extra').forEach(input => {
+          let idx = input.getAttribute('data-index');
+          data.events[idx].extraPay = parseFloat(input.value) || 0;
+      });
+      
+      data.expenses = parseFloat(document.getElementById('prGlobalExpenses').value) || 0;
+      data.misc = parseFloat(document.getElementById('prGlobalMisc').value) || 0;
+      
+      // Recalculate Grand Total dynamically
+      let total = 0;
+      data.events.forEach(ev => {
+          total += ev.basePay;
+          total += ev.extraPay;
+      });
+      
+      // Update data.totalBase to safely reflect manual adjustments for the Final Generation Card
+      data.totalBase = data.events.reduce((sum, ev) => sum + ev.basePay, 0);
+
+      total += data.expenses;
+      total += data.misc;
+      
+      data.finalTotal = total;
+      document.getElementById('prLiveTotal').innerText = total.toLocaleString();
+  }
+
+  // Helper to collapse multi-day events into a single line item for printing/logging
+  function getCollapsedEvents(events) {
+      const collapsed = {};
+      const result = [];
+      
+      events.forEach(ev => {
+          const id = ev.doc ? ev.doc['Event ID'] : ev.id;
+          const role = ev.role;
+          const key = `${id}_${role}`; // Group by Event ID and Role
+          
+          if (!collapsed[key]) {
+              collapsed[key] = {
+                  id: id,
+                  name: ev.doc ? ev.doc['Event Name'] : ev.name,
+                  date: ev.doc ? ev.doc['Event Date'] : ev.date, 
+                  role: role,
+                  basePay: ev.basePay || ev.base || 0,
+                  extraPay: ev.extraPay || ev.extra || 0,
+                  dayCount: 1,
+                  lastDate: ev.doc ? ev.doc['Event Date'] : ev.date
+              };
+              result.push(collapsed[key]);
+          } else {
+              collapsed[key].basePay += (ev.basePay || ev.base || 0);
+              collapsed[key].extraPay += (ev.extraPay || ev.extra || 0);
+              collapsed[key].dayCount += 1;
+              
+              // Update the date range
+              let d = ev.doc ? ev.doc['Event Date'] : ev.date;
+              if (d > collapsed[key].lastDate) {
+                   collapsed[key].lastDate = d;
+              }
+          }
+      });
+      
+      // Format dates (e.g. "2025-10-15 to 2025-10-17")
+      result.forEach(item => {
+          if (item.dayCount > 1 && item.date !== item.lastDate) {
+              item.dateString = `${item.date} to ${item.lastDate}`;
+          } else {
+              item.dateString = item.date;
+          }
+      });
+      
+      return result;
+  }
+
+  // Graphic Generator: Draws the minimalist receipt and triggers a download
+  function generateReceiptImage(name, data, datesStr) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      const rowHeight = 30;
+      const collapsedItems = getCollapsedEvents(data.events); // Use the collapsed version
+      
+      // Base dimensions
+      const baseWidth = 600;
+      const baseHeight = 320 + (collapsedItems.length * rowHeight) + (data.expenses > 0 ? 30 : 0) + (data.misc > 0 ? 30 : 0);
+
+      // SCALE FACTOR: Make the image 3x larger for high resolution!
+      const scale = 3;
+      canvas.width = baseWidth * scale;
+      canvas.height = baseHeight * scale;
+
+      // Scale the drawing context so we don't have to rewrite every coordinate manually
+      ctx.scale(scale, scale);
+
+      // Draw white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, baseWidth, baseHeight);
+
+      // Header
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 24px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('EGM PRODUCTIONS', 300, 50);
+      ctx.font = '14px Inter, sans-serif';
+      ctx.fillStyle = '#666666';
+      ctx.fillText('PAYMENT VOUCHER', 300, 75);
+
+      // Separator
+      ctx.beginPath(); ctx.moveTo(40, 100); ctx.lineTo(560, 100); ctx.strokeStyle = '#cccccc'; ctx.stroke();
+
+      // Info
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 16px Inter, sans-serif';
+      ctx.fillText('Issued To: ' + name, 40, 130);
+      ctx.textAlign = 'right';
+      ctx.font = '14px Inter, sans-serif';
+      ctx.fillText('Cutoff: ' + datesStr, 560, 130);
+
+      // Items Header
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 14px Inter, sans-serif';
+      ctx.fillStyle = '#666666';
+      ctx.fillText('DESCRIPTION', 40, 170);
+      ctx.textAlign = 'right';
+      ctx.fillText('AMOUNT', 560, 170);
+
+      ctx.beginPath(); ctx.moveTo(40, 185); ctx.lineTo(560, 185); ctx.stroke();
+
+      let y = 215;
+      ctx.fillStyle = '#000000';
+      ctx.font = '14px Inter, sans-serif';
+
+      // Draw Items
+      collapsedItems.forEach(item => {
+          ctx.textAlign = 'left';
+          let desc = item.id === 'FIXED' ? `${item.name} (${item.role})` : `#${item.id} - ${item.name} (${item.role})`;
+          
+          if (item.dayCount > 1) { desc += ` [${item.dayCount} Days]`; }
+          
+          ctx.fillText(desc.substring(0, 50), 40, y);
+          
+          ctx.textAlign = 'right';
+          let totalLine = item.basePay + item.extraPay;
+          ctx.fillText('₱ ' + totalLine.toLocaleString(), 560, y);
+          y += rowHeight;
+      });
+
+      // Draw Globals
+      if (data.expenses > 0) {
+          ctx.textAlign = 'left'; ctx.fillText('Reimbursements / Expenses', 40, y);
+          ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.expenses.toLocaleString(), 560, y);
+          y += rowHeight;
+      }
+      if (data.misc > 0) {
+          ctx.textAlign = 'left'; ctx.fillText('Misc Bonus', 40, y);
+          ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.misc.toLocaleString(), 560, y);
+          y += rowHeight;
+      }
+
+      // Final Total
+      ctx.beginPath(); ctx.moveTo(40, y - 10); ctx.lineTo(560, y - 10); ctx.stroke();
+      y += 25;
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 18px Inter, sans-serif';
+      ctx.fillText('TOTAL NET PAY', 40, y);
+      ctx.textAlign = 'right';
+      ctx.fillText('₱ ' + data.finalTotal.toLocaleString(), 560, y);
+
+      // Download Trigger (Quality set to 1.0 for max sharpness)
+      const link = document.createElement('a');
+      link.download = `Payslip_${name}_${datesStr.replace(/[^a-zA-Z0-9]/g, '')}.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 1.0);
+      link.click();
+  }
+
+  // Combined Generator and Logger Function
+  async function generateAndLogPayslip() {
+      if(!activePayrollPerson) return;
+      
+      const btn = document.getElementById('prGenerateBtn');
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> PROCESSING...';
+      btn.disabled = true;
+
+      calculateLivePayslipTotals(); 
+      const data = currentPayrollData[activePayrollPerson];
+      const start = document.getElementById('prStartDate').value;
+      const end = document.getElementById('prEndDate').value;
+      const datesStr = `${start} to ${end}`;
+
+      // 1. Generate & Download JPG
+      generateReceiptImage(activePayrollPerson, data, datesStr);
+
+      const collapsedItems = getCollapsedEvents(data.events);
+      const itemizedJson = JSON.stringify(collapsedItems.map(e => ({
+          id: e.id, name: e.name, date: e.dateString, role: e.role, base: e.basePay, extra: e.extraPay
+      })));
+
+      // 2. Package and Log to Google Sheets (Silent Background Backup)
+      const payload = {
+          action: 'logPayroll',
+          crewName: activePayrollPerson,
+          cutoffStart: start,
+          cutoffEnd: end,
+          totalBasePay: data.totalBase,
+          totalExpenses: data.expenses,
+          totalMisc: data.misc,
+          finalNetPay: data.finalTotal,
+          itemizedEvents: itemizedJson
+      };
+      callApi(payload, 'POST', true); // Let this run in the background without making the user wait!
+
+      // 3. Save to FIREBASE for the lightning-fast History Vault (With Overwrite Protection)
+      try {
+          // Create a unique, predictable ID based on the Person and the Dates
+          const safeName = activePayrollPerson.replace(/[^a-zA-Z0-9]/g, '_');
+          const historyDocId = `${safeName}_${start}_${end}`;
+
+          // Using .doc(ID).set() forces Firebase to overwrite the existing file instead of duplicating!
+          await db.collection("payroll_history").doc(historyDocId).set({
+              crewName: activePayrollPerson,
+              cutoffStart: start,
+              cutoffEnd: end,
+              totalBasePay: data.totalBase,
+              totalExpenses: data.expenses,
+              totalMisc: data.misc,
+              finalNetPay: data.finalTotal,
+              itemizedEvents: itemizedJson,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+      } catch (err) {
+          console.error("Firebase History Save Error:", err);
+      }
+      
+      btn.innerHTML = '<i class="bi bi-file-earmark-image me-1"></i> GENERATE & DOWNLOAD PAYSLIP';
+      btn.disabled = false;
+
+      bootstrap.Modal.getInstance(document.getElementById('payrollModal')).hide();
+      showToast(`Payslip for ${activePayrollPerson} generated and saved to Vault!`, 'success');
+  }
+
+  
+  // ==============================================================================
+  // PAYROLL HISTORY VAULT (FIREBASE POWERED)
+  // ==============================================================================
+  let payrollHistoryCache = [];
+
+  async function openPayrollHistory() {
+      const tbody = document.getElementById('prHistoryBody');
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-secondary me-2"></div> Fetching vault data...</td></tr>';
+      
+      const modalEl = document.getElementById('payrollHistoryModal');
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.show();
+
+      try {
+          // Pull instantly from Firebase instead of Google Sheets!
+          const snapshot = await db.collection("payroll_history").orderBy("timestamp", "desc").get();
+          
+          payrollHistoryCache = [];
+          snapshot.forEach(doc => {
+              let d = doc.data();
+              d.docId = doc.id; // Capture ID for deletion
+              payrollHistoryCache.push(d);
+          });
+          
+          if (payrollHistoryCache.length > 0) {
+              // Dynamically build the Crew Filter dropdown
+              const filterSelect = document.getElementById('historyCrewFilter');
+              if (filterSelect) {
+                  const uniqueNames = [...new Set(payrollHistoryCache.map(row => row.crewName))].sort();
+                  let optionsHtml = '<option value="">All Crew</option>';
+                  uniqueNames.forEach(name => {
+                      if (name) optionsHtml += `<option value="${name}">${name}</option>`;
+                  });
+                  filterSelect.innerHTML = optionsHtml;
+                  filterSelect.value = ''; // Reset to "All Crew"
+              }
+              renderPayrollHistory();
+          } else {
+              tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-3 d-block mb-2 opacity-50"></i>Vault is empty. Generate a payslip to start logging!</td></tr>';
+          }
+      } catch (err) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i>Error loading history: ${err.message}</td></tr>`;
+      }
+  }
+
+  function renderPayrollHistory() {
+      const tbody = document.getElementById('prHistoryBody');
+      const filterVal = document.getElementById('historyCrewFilter') ? document.getElementById('historyCrewFilter').value : '';
+      
+      let dataToRender = payrollHistoryCache;
+
+      if (filterVal) {
+          dataToRender = dataToRender.filter(row => row.crewName === filterVal);
+      }
+
+      if (dataToRender.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No records found.</td></tr>';
+          return;
+      }
+
+      let html = '';
+      dataToRender.forEach((row) => {
+          const originalIndex = payrollHistoryCache.indexOf(row);
+
+          let d = row.timestamp ? row.timestamp.toDate() : new Date();
+          let dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'});
+          
+          html += `<tr>
+              <td class="text-muted px-3">${dateStr}</td>
+              <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2 opacity-50"></i>${row.crewName}</td>
+              <td><span class="badge bg-light border text-dark">${row.cutoffStart} to ${row.cutoffEnd}</span></td>
+              <td class="text-end fw-bold text-success">₱${Number(row.finalNetPay).toLocaleString()}</td>
+              <td class="text-end px-3 text-nowrap">
+                  <button class="btn btn-sm btn-outline-secondary py-1 fw-bold shadow-sm me-1" style="font-size:0.7rem;" onclick="viewHistoricalPayslip(${originalIndex})" title="View Payslip"><i class="bi bi-eye"></i></button>
+                  <button class="btn btn-sm btn-outline-danger py-1 fw-bold shadow-sm" style="font-size:0.7rem;" onclick="deleteHistoricalPayslip('${row.docId}')" title="Delete Record"><i class="bi bi-trash3"></i></button>
+              </td>
+          </tr>`;
+      });
+      tbody.innerHTML = html;
+  }
+
+  // Engine: Delete a payslip record from the Vault
+  async function deleteHistoricalPayslip(docId) {
+      if(!confirm("WARNING: Permanently delete this finalized payslip record from the History Vault?")) return;
+      try {
+          await db.collection("payroll_history").doc(docId).delete();
+          showToast("Payslip record deleted from Vault.", "success");
+          openPayrollHistory(); // Refresh the list instantly
+      } catch(e) { 
+          alert("Error deleting record: " + e.message); 
+      }
+  }
+
+  function viewHistoricalPayslip(index) {
+      const row = payrollHistoryCache[index];
+      bootstrap.Modal.getInstance(document.getElementById('payrollHistoryModal')).hide();
+      
+      let items = [];
+      try { items = JSON.parse(row.itemizedEvents); } catch(e) {}
+      
+      const histData = {
+          events: items,
+          expenses: Number(row.totalExpenses) || 0,
+          misc: Number(row.totalMisc) || 0,
+          finalTotal: Number(row.finalNetPay) || 0
+      };
+      
+      document.getElementById('prModalCutoffDates').innerText = `${row.cutoffStart} to ${row.cutoffEnd}`;
+      openPayrollModal(row.crewName, true, histData);
+  }
 </script>
 </body>
 </html>
