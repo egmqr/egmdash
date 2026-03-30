@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2348,7 +2349,8 @@ function handleEqSearch() {
     const todayDate = new Date();
     const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
     let url = new URL(window.location);
-    
+    // Scrub Facebook tracking garbage from the URL
+    url.searchParams.delete('fbclid');
     // THE FIX: Define 'filtered' at the top level so all tabs can see it!
     let filtered = rawEvents; 
 
