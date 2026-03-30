@@ -446,6 +446,7 @@
                   <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
                   <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm ms-1 mt-1 text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
                   <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
+                  <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="exportSessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> EXPORT</button>
                   <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
                   <button class="btn btn-secondary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openPayrollHistory()"><i class="bi bi-clock-history me-1"></i> HISTORY</button>
               </div>
@@ -1688,6 +1689,7 @@
   
   let currentPayrollData = {}; 
   let activePayrollPerson = null;
+  let isHistoricalView = false;
 
   function getCrewRate(name, role) {
       // THE FIX: Editors now pull strictly from the global editing rate
@@ -4464,6 +4466,17 @@ function handleAddCustomService(inputId, containerId) {
   window.onload = () => {
       applyRoleUI(); // <-- This line tells the Sign Out button to appear if you are already logged in!
       
+      // Listen for the Payroll Modal to close, and auto-update the main table!
+      const prModalEl = document.getElementById('payrollModal');
+      if (prModalEl) {
+          prModalEl.addEventListener('hidden.bs.modal', function () {
+              if (!isHistoricalView && activePayrollPerson) {
+                  renderPayrollTable();
+                  showToast("Changes applied to active session.", "success");
+              }
+          });
+      }
+
       const stickyHeaderEl = document.querySelector('.sticky-header');
       if (stickyHeaderEl && window.ResizeObserver) {
           new ResizeObserver(entries => {
@@ -4811,8 +4824,8 @@ async function getNextEventId() {
       new bootstrap.Modal(document.getElementById('loadSessionModal')).show();
 
       try {
-          // Pull every session we've ever saved, sorted newest first!
-          const snapshot = await db.collection("payroll_sessions").orderBy("endDate", "desc").get();
+          // SORT: Pull every session, sorted strictly by the time it was saved (Newest on top)
+          const snapshot = await db.collection("payroll_sessions").orderBy("updatedAt", "desc").get();
           
           if (snapshot.empty) {
               container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>No saved sessions found.</div>';
@@ -4821,33 +4834,27 @@ async function getNextEventId() {
 
           savedSessionsCache = [];
           let html = '<div class="list-group gap-2">';
-          
-          // THE FIX: We manually declare our own index counter right here!
           let index = 0;
           
           snapshot.forEach((doc) => {
               const data = doc.data();
-              savedSessionsCache.push(data); // Save to local memory array so we can reference it when clicked
+              data.docId = doc.id; // Store the unique ID so we can delete it later!
+              savedSessionsCache.push(data); 
               
-              // Format dates nicely for the UI
               const sDate = new Date(data.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
               const eDate = new Date(data.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-              
-              // Format the timestamp if it exists
-              let savedAtStr = 'Recently';
-              if (data.updatedAt) {
-                  savedAtStr = new Date(data.updatedAt.toDate()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-              }
+              let savedAtStr = data.updatedAt ? new Date(data.updatedAt.toDate()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Recently';
               
               html += `
-              <button class="list-group-item list-group-item-action border-0 rounded-3 shadow-sm p-3 text-start" onclick="applyLoadedSession(${index})">
-                  <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+              <div class="list-group-item list-group-item-action border-0 rounded-3 shadow-sm p-2 d-flex justify-content-between align-items-center">
+                  <div style="cursor:pointer; flex-grow: 1;" onclick="applyLoadedSession(${index})">
                       <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;"><i class="bi bi-calendar-range text-primary me-2"></i>${sDate} - ${eDate}</h6>
+                      <small class="text-muted d-block fw-bold mt-1" style="font-size: 0.7rem;"><i class="bi bi-cloud-check me-1"></i>Saved: ${savedAtStr}</small>
                   </div>
-                  <small class="text-muted d-block fw-bold" style="font-size: 0.7rem;"><i class="bi bi-cloud-check me-1"></i>Saved: ${savedAtStr}</small>
-              </button>`;
+                  <button class="btn btn-sm btn-outline-danger border-0 ms-2" onclick="deleteSavedSession('${doc.id}')" title="Delete Session"><i class="bi bi-trash3"></i></button>
+              </div>`;
               
-              index++; // Increment the counter for the next card
+              index++;
           });
           
           html += '</div>';
@@ -4858,34 +4865,106 @@ async function getNextEventId() {
       }
   }
 
+  // Engine: Delete a saved session
+  async function deleteSavedSession(docId) {
+      if(!confirm("Permanently delete this saved payroll session?")) return;
+      try {
+          await db.collection("payroll_sessions").doc(docId).delete();
+          showToast("Session deleted successfully.", "success");
+          openLoadSessionModal(); // Refresh the list instantly
+      } catch(e) { 
+          alert("Error deleting session: " + e.message); 
+      }
+  }
+
   // Engine: Triggered when you click a specific session in the visual list
   function applyLoadedSession(index) {
       const data = savedSessionsCache[index];
       if (!data) return;
 
       if (confirm(`Load the saved session for ${data.startDate} to ${data.endDate}?\n\nThis will instantly restore your manual edits, custom pays, and added expenses!`)) {
-          
-          // 1. Auto-fill the Date inputs on the dashboard so they match the save!
           document.getElementById('prStartDate').value = data.startDate;
           document.getElementById('prEndDate').value = data.endDate;
           
-          // 2. Parse the saved JSON math and lock it into the engine
           try {
-              // Extract the nested JSON string we saved
               currentPayrollData = JSON.parse(data.sessionData);
-              
-              // 3. Redraw the table with the loaded data
               renderPayrollTable();
-              
-              // 4. Close the modal and celebrate
               bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
               showToast("Cloud Session loaded successfully!", "success");
           } catch (e) {
-              alert("Error parsing saved session data. The save file might be corrupted.");
-              console.error(e);
+              alert("Error parsing saved session data.");
           }
       }
   }
+
+// Engine: Export current session summary to PDF
+  function exportSessionPDF() {
+      const start = document.getElementById('prStartDate').value;
+      const end = document.getElementById('prEndDate').value;
+      if (!start || !end) return showToast("Set a cutoff period first.", "warning");
+      
+      const names = Object.keys(currentPayrollData).sort();
+      if (names.length === 0) return showToast("No payroll data to export.", "warning");
+
+      if (!confirm(`Generate a printable PDF summary report for ${start} to ${end}?`)) return;
+
+      let totalPayout = 0;
+      let html = `
+      <html><head><title>Payroll Summary: ${start} to ${end}</title>
+      <style>
+          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 30px; color: #333; }
+          h2 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 5px;}
+          .subtitle { color: #666; font-size: 14px; margin-bottom: 30px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+          th { background-color: #f8f9fa; text-transform: uppercase; font-size: 12px; color: #555;}
+          .text-right { text-align: right; }
+          .total-row { font-weight: bold; font-size: 1.1em; background-color: #f1f3f5; }
+      </style>
+      </head><body>
+      <h2>EGM PRODUCTIONS - PAYROLL SUMMARY</h2>
+      <div class="subtitle"><strong>Cutoff Period:</strong> ${start} to ${end}</div>
+      <table>
+          <thead>
+              <tr><th>Crew Member</th><th class="text-right">Base Pay</th><th class="text-right">Expenses</th><th class="text-right">Misc/Bonus</th><th class="text-right">Net Pay</th></tr>
+          </thead>
+          <tbody>`;
+
+      names.forEach(name => {
+          const data = currentPayrollData[name];
+          let base = data.totalBase || 0;
+          let exp = data.expenses || 0;
+          let misc = data.misc || 0;
+          let net = base + exp + misc;
+          let finalNet = data.finalTotal || net;
+          totalPayout += finalNet;
+
+          html += `<tr>
+              <td><strong>${name}</strong></td>
+              <td class="text-right">₱${base.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+              <td class="text-right">₱${exp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+              <td class="text-right">₱${misc.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+              <td class="text-right"><strong>₱${finalNet.toLocaleString(undefined, {minimumFractionDigits: 2})}</strong></td>
+          </tr>`;
+      });
+
+      html += `
+          <tr class="total-row">
+              <td colspan="4" class="text-right">GRAND TOTAL PAYOUT</td>
+              <td class="text-right">₱${totalPayout.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+          </tr>
+          </tbody></table>
+          <p style="margin-top:40px; font-size:0.8em; color:#999; text-align: center;">Generated automatically from EGM Ops Dashboard on ${new Date().toLocaleString()}</p>
+      </body></html>`;
+
+      const printWin = window.open('', '_blank');
+      printWin.document.write(html);
+      printWin.document.close();
+      printWin.focus();
+      setTimeout(() => { printWin.print(); }, 500);
+  }
+
+  
   // Engine: Aggregate the data using the Dynamic Rates
   function runPayrollEngine() {
       const start = document.getElementById('prStartDate').value;
@@ -5044,6 +5123,7 @@ function showToast(message, type = 'success') {
   // Modal: Open and build the interactive calculator
   function openPayrollModal(name, isHistorical = false, histData = null) {
       activePayrollPerson = name;
+      isHistoricalView = isHistorical;
       const data = isHistorical ? histData : currentPayrollData[name];
       
       document.getElementById('prModalName').innerText = name + (isHistorical ? ' (Historical)' : '');
@@ -5419,7 +5499,9 @@ function showToast(message, type = 'success') {
           
           payrollHistoryCache = [];
           snapshot.forEach(doc => {
-              payrollHistoryCache.push(doc.data());
+              let d = doc.data();
+              d.docId = doc.id; // Capture ID for deletion
+              payrollHistoryCache.push(d);
           });
           
           if (payrollHistoryCache.length > 0) {
@@ -5446,6 +5528,7 @@ function showToast(message, type = 'success') {
   function renderPayrollHistory() {
       const tbody = document.getElementById('prHistoryBody');
       const filterVal = document.getElementById('historyCrewFilter') ? document.getElementById('historyCrewFilter').value : '';
+      
       let dataToRender = payrollHistoryCache;
 
       if (filterVal) {
@@ -5461,7 +5544,6 @@ function showToast(message, type = 'success') {
       dataToRender.forEach((row) => {
           const originalIndex = payrollHistoryCache.indexOf(row);
 
-          // Format the Firebase timestamp
           let d = row.timestamp ? row.timestamp.toDate() : new Date();
           let dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'});
           
@@ -5470,10 +5552,25 @@ function showToast(message, type = 'success') {
               <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2 opacity-50"></i>${row.crewName}</td>
               <td><span class="badge bg-light border text-dark">${row.cutoffStart} to ${row.cutoffEnd}</span></td>
               <td class="text-end fw-bold text-success">₱${Number(row.finalNetPay).toLocaleString()}</td>
-              <td class="text-end px-3"><button class="btn btn-sm btn-outline-secondary py-1 fw-bold shadow-sm" style="font-size:0.7rem;" onclick="viewHistoricalPayslip(${originalIndex})"><i class="bi bi-eye me-1"></i> VIEW</button></td>
+              <td class="text-end px-3 text-nowrap">
+                  <button class="btn btn-sm btn-outline-secondary py-1 fw-bold shadow-sm me-1" style="font-size:0.7rem;" onclick="viewHistoricalPayslip(${originalIndex})" title="View Payslip"><i class="bi bi-eye"></i></button>
+                  <button class="btn btn-sm btn-outline-danger py-1 fw-bold shadow-sm" style="font-size:0.7rem;" onclick="deleteHistoricalPayslip('${row.docId}')" title="Delete Record"><i class="bi bi-trash3"></i></button>
+              </td>
           </tr>`;
       });
       tbody.innerHTML = html;
+  }
+
+  // Engine: Delete a payslip record from the Vault
+  async function deleteHistoricalPayslip(docId) {
+      if(!confirm("WARNING: Permanently delete this finalized payslip record from the History Vault?")) return;
+      try {
+          await db.collection("payroll_history").doc(docId).delete();
+          showToast("Payslip record deleted from Vault.", "success");
+          openPayrollHistory(); // Refresh the list instantly
+      } catch(e) { 
+          alert("Error deleting record: " + e.message); 
+      }
   }
 
   function viewHistoricalPayslip(index) {
