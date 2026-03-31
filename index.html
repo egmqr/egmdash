@@ -2656,6 +2656,26 @@ function generateSingleEventCard(e) {
         displayDateString = new Date(dParts[0], dParts[1]-1, dParts[2]).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     }
 
+    // --- NEW LOGIC: FIND PAYMENT AMOUNT ---
+    // Search the entire project to find the document holding the payment info
+    let paymentDoc = projectRows.find(r => r['Payment Type']) || e;
+    let pType = paymentDoc['Payment Type'];
+    let pAmount = paymentDoc['Amount'] || 0;
+    let amountHtml = '';
+
+    // If it matches any of the specified cash/check types, build a bright green alert block
+    if (['Cash AR', 'Cash ORCR', 'Check AR', 'Check ORCR'].includes(pType)) {
+        amountHtml = `
+        <div class="bg-success bg-opacity-10 p-2 rounded-3 border border-success border-opacity-25 mb-3 shadow-sm d-flex align-items-center justify-content-between">
+            <div>
+                <i class="bi bi-cash-stack text-success fs-5 me-1 align-middle"></i> 
+                <span class="text-dark small fw-bold text-uppercase" style="letter-spacing: 0.5px;">To Collect (${pType})</span>
+            </div>
+            <strong class="text-success fs-5">₱${Number(pAmount).toLocaleString()}</strong>
+        </div>`;
+    }
+    // ---------------------------------------
+
     return `<div class="card p-3 p-md-4 w-100 ${cardCustomClass}" style="position: relative; overflow: hidden; height: 100%;">
         ${stampHtml}
         <div class="d-flex justify-content-between mb-3 align-items-center">
@@ -2681,6 +2701,9 @@ function generateSingleEventCard(e) {
             <div class="d-flex mb-2 align-items-start"><i class="card-icon bi bi-list-check text-secondary opacity-75 mt-1"></i><div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Services:</strong><br>${servicesBadges}</div></div>
             <div class="d-flex mb-3 align-items-start"><i class="card-icon bi bi-people-fill text-info opacity-75 mt-1"></i> <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-dark border border-secondary-subtle me-1 mb-2 fw-bold px-2 py-1 text-wrap shadow-sm" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '-'}</div></div>
             <div class="bg-white p-2 rounded-3 border mb-3 shadow-sm"><p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2 text-dark fw-medium">${e['Contact Number']}</span></p></div>
+            
+            ${amountHtml}
+            
             <p class="mb-0 text-muted fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
         </div>
         <div class="mt-auto pt-4"><div class="d-flex flex-wrap">${filesHtml}</div><label class="card-upload-btn w-100" onclick="openUploadModal('${e['Event ID']}')"><i class="bi bi-cloud-arrow-up me-1"></i> Add Document</label></div>
