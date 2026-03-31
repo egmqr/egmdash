@@ -4891,7 +4891,7 @@ async function getNextEventId() {
 
          html += `<tr>
               <td class="text-wrap" style="min-width: 180px; max-width: 280px; word-break: break-word;">
-                  <strong class="text-dark">#${e['Event ID']}</strong> <span onclick="openEditModal('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-primary" title="Open Editor"><i class="bi bi-pencil-square"></i></span><br>
+                  <strong class="text-dark">#${e['Event ID']}</strong> <span onclick="handleEditClick('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-primary" title="Open Editor"><i class="bi bi-pencil-square"></i></span><br>
                   <span class="fw-bold lh-sm d-inline-block mt-1 mb-1">${e['Event Name']}</span><br>
                   <span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${e['Event Date']}</span>
                   ${sentUI}
