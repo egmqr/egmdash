@@ -5360,7 +5360,12 @@ function renderPayrollTable() {
           document.getElementById('prModalCutoffDates').innerText = `${start} to ${end}`;
           document.getElementById('prGlobalExpenses').value = data.expenses || 0;
           document.getElementById('prGlobalMisc').value = data.misc || 0;
-          
+
+          // --- THE FIX: Explicitly wake up the input boxes! ---
+          document.getElementById('prGlobalExpenses').disabled = false;
+          document.getElementById('prGlobalMisc').disabled = false;
+          // ----------------------------------------------------
+        
           // Hide controls ONLY if fully exempt
           document.getElementById('prGenerateBtn').style.display = isFullyExempt ? 'none' : 'block';
           document.getElementById('prMathControls').style.display = isFullyExempt ? 'none' : 'block';
