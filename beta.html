@@ -1920,7 +1920,9 @@
   function signOut() {
       localStorage.removeItem('egm_auth_role');
       localStorage.removeItem('egm_auth_exp');
-      window.location.reload(); // Refresh immediately to lock down the UI
+      
+      // Redirect to the default Events tab instead of just reloading the current URL
+      window.location.href = "https://dashboard.createdbyegm.com/?tab=events";
   }
 
   function toggleTheme() {
