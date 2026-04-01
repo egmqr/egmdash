@@ -2970,10 +2970,19 @@ function generateSingleEventCard(e) {
   }
 
   function handleTabClick(tabName) {
-      if(tabName === 'payments') { requireAuth(() => switchTab('payments')); } 
-      else if(tabName === 'booth') { switchTab('booth'); } 
-      else { switchTab(tabName); }
-  }
+    if (tabName === 'payments') { 
+        requireAuth(() => switchTab('payments'), true); 
+    } 
+    else if (tabName === 'payroll') { 
+        requireAuth(() => switchTab('payroll'), true); 
+    } 
+    else if (tabName === 'booth') { 
+        switchTab('booth'); 
+    } 
+    else { 
+        switchTab(tabName); 
+    }
+}
 
   
 
