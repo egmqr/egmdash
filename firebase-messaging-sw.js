@@ -11,36 +11,44 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
+const bc = new BroadcastChannel('egm_deep_links'); // The dedicated Walkie-Talkie
 
 self.addEventListener('install', (e) => self.skipWaiting());
 self.addEventListener('activate', (e) => self.clients.claim());
-self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
 
-// Version 3.0 - Perfected Warm/Cold Start Handler
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  event.stopImmediatePropagation(); // Crucial: Stop Firebase SDK from stealing the click
+  event.stopImmediatePropagation();
 
-  const rawData = event.notification.data || {};
-  let eventId = rawData.eventId || (rawData.FCM_MSG && rawData.FCM_MSG.data && rawData.FCM_MSG.data.eventId) || (rawData.data && rawData.data.eventId);
-  
+  // --- DEEP SEARCH FOR ID ---
+  const data = event.notification.data || {};
+  const eventId = data.eventId || 
+                  (data.FCM_MSG && data.FCM_MSG.data && data.FCM_MSG.data.eventId) || 
+                  (data.data && data.data.eventId);
+
   if (!eventId) return;
 
   const targetUrl = self.location.origin + '/?openEvent=' + eventId;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      let matchingClient = null;
       for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        if (client.url.includes('dashboard.createdbyegm.com')) {
-          // WARM START: App is already open. Bring to front and send radio message!
-          client.focus();
-          client.postMessage({ action: 'openEventCard', eventId: eventId });
-          return;
+        if (windowClients[i].url.includes('dashboard.createdbyegm.com')) {
+          matchingClient = windowClients[i];
+          break;
         }
       }
-      // COLD START: App is fully closed. Open new window with URL parameter.
-      if (clients.openWindow) return clients.openWindow(targetUrl);
+
+      if (matchingClient) {
+        // App is open! Bring to front and shout the ID over the Walkie-Talkie
+        return matchingClient.focus().then(() => {
+          bc.postMessage({ action: 'openCard', eventId: eventId });
+        });
+      } else {
+        // App is closed! Open fresh with URL parameter
+        return clients.openWindow(targetUrl);
+      }
     })
   );
 });
