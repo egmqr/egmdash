@@ -12,36 +12,37 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// PWA LIFECYCLE
 self.addEventListener('install', (e) => self.skipWaiting());
 self.addEventListener('activate', (e) => self.clients.claim());
-self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
 
-// Version 2.0 - The Force Reload Handler
 self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.stopImmediatePropagation(); // Stop Firebase from interfering
+    event.stopImmediatePropagation(); // Crucial: Stops Firebase from interfering
+    event.notification.close();
 
-  // Hunt down the ID
-  const rawData = event.notification.data || {};
-  let eventId = rawData.eventId || (rawData.FCM_MSG && rawData.FCM_MSG.data && rawData.FCM_MSG.data.eventId) || (rawData.data && rawData.data.eventId);
-  
-  if (!eventId) return;
+    // Deep search to safely extract the ID from Firebase's payload
+    const notifData = event.notification.data || {};
+    const fcmData = notifData.FCM_MSG ? notifData.FCM_MSG.data : notifData;
+    const eventId = fcmData.eventId || notifData.eventId;
 
-  // Build the exact URL
-  const targetUrl = self.location.origin + '/?openEvent=' + eventId;
+    if (!eventId) return;
 
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        if (client.url.includes('dashboard.createdbyegm.com')) {
-          // 🟢 THE FIX: Force the open PWA to physically reload with the new URL!
-          return client.navigate(targetUrl).then(c => c.focus());
-        }
-      }
-      // If the app is closed, open a new window
-      if (clients.openWindow) return clients.openWindow(targetUrl);
-    })
-  );
+    const targetUrl = self.location.origin + '/?openEvent=' + eventId;
+
+    event.waitUntil(
+        // 1. Write the ID to the Mailbox (Cache)
+        caches.open('egm-pwa-data').then(cache => {
+            return cache.put('/pending-event', new Response(eventId));
+        }).then(() => {
+            // 2. Find the app and wake it up
+            return clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+                for (let i = 0; i < windowClients.length; i++) {
+                    const client = windowClients[i];
+                    if (client.url.includes(self.location.origin)) {
+                        return client.focus(); // WARM START
+                    }
+                }
+                if (clients.openWindow) return clients.openWindow(targetUrl); // COLD START
+            });
+        })
+    );
 });
