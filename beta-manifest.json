@@ -1,0 +1,24 @@
+{
+  "name": "EGM Ops BETA",
+  "short_name": "EGM Beta",
+  "description": "Beta Testing Operations Dashboard",
+  "start_url": "/beta.html?tab=events",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f1f1f1",
+  "theme_color": "#515151",
+  "icons": [
+    {
+      "src": "/icon192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
