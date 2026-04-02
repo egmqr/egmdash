@@ -492,7 +492,10 @@
 
       <div id="payroll-view" style="display:none;">
           <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 mt-2 gap-3">
-              <h4 class="fw-bold mb-0 text-danger d-flex align-items-center"><i class="bi bi-cash-coin me-2"></i> Payroll Engine</h4>
+              <div>
+                  <h4 class="fw-bold mb-0 text-danger d-flex align-items-center"><i class="bi bi-cash-coin me-2"></i> Payroll Engine</h4>
+                  <span class="text-muted small fw-bold d-block mt-1" style="font-size: 0.75rem;"><i class="bi bi-info-circle-fill opacity-50 me-1"></i>Always set rates first, you won't be able to edit the rates once manual payroll edits are applied.</span>
+              </div>
               
               <div class="bg-white p-2 rounded-3 border shadow-sm d-flex flex-wrap gap-2 align-items-end">
                   <div class="px-2">
@@ -5594,7 +5597,7 @@ async function runPayrollEngine(forceNewRates = false) {
     
     if (!start || !end) return alert("Please select a Start and End date for the cutoff.");
 
-    // 🟢 NEW: OVERLAP PROTECTION LOGIC
+    // 🟢 OVERLAP PROTECTION LOGIC (With Call to Action)
     if (!forceNewRates) {
         const ov = document.getElementById('submitOverlay');
         document.getElementById('overlayText').innerText = "Validating Cutoff Period...";
@@ -5616,7 +5619,11 @@ async function runPayrollEngine(forceNewRates = false) {
 
             if (overlapFound) {
                 ov.style.display = 'none';
-                alert(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session.\n\nPlease click "LOAD" to open the existing session, or delete the existing session from the load menu if you want to completely recalculate this period.`);
+                const loadIt = confirm(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session to prevent duplicate accounting.\n\nClick OK to open the Load Menu and view the existing session.`);
+                
+                if (loadIt) {
+                    openLoadSessionModal();
+                }
                 return;
             }
         } catch (e) {
