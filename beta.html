@@ -1673,13 +1673,19 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-compat.js"></script>
-<script>
-  // 1. Register the Service Worker
+  <script>
+// 1. Register the exact Firebase Service Worker
+let swRegistration = null;
+
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('Service Worker registered!', reg.scope))
-            .catch(err => console.error('Service Worker registration failed:', err));
+    window.addEventListener('load', async () => {
+        try {
+            // Register the specific FCM file
+            swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            console.log('✅ Service Worker registered!', swRegistration.scope);
+        } catch(err) {
+            console.error('❌ Service Worker registration failed:', err);
+        }
     });
 }
 
@@ -1726,6 +1732,9 @@ if (!isStandalone) {
         };
     }
 }
+</script>
+<script>
+
   // PASTE YOUR FIREBASE CONFIG HERE
   const firebaseConfig = {
     apiKey: "AIzaSyADWnFhu2xZwGQERFsxP-Xl_OlEaJ6N3NM",
@@ -1806,12 +1815,17 @@ async function subscribeToNotifications() {
             document.getElementById('overlayText').innerText = "Linking device...";
             ov.style.display = 'flex';
 
-            // PASTE YOUR VAPID KEY HERE
+            // IMPORTANT: Wait for the Service Worker to be fully ready
+            if (!swRegistration) {
+                swRegistration = await navigator.serviceWorker.ready;
+            }
+
+            // Pass both the VAPID key AND the explicit Service Worker registration
             const currentToken = await messaging.getToken({ 
-                vapidKey: 'BP7cle1tzzGEbE9xBWOyHFHToup7UOOzfDmoyZshw51__4Vhebz1jZaTlca8HZxu7KUBnw4nGJTc6C56SjqzsI0' 
+                vapidKey: 'BP7cle1tzzGEbE9xBWOyHFHToup7UOOzfDmoyZshw51__4Vhebz1jZaTlca8HZxu7KUBnw4nGJTc6C56SjqzsI0',
+                serviceWorkerRegistration: swRegistration
             });
 
-          
             if (currentToken) {
                 // Save the token to a new Firestore collection called "crew_tokens"
                 await db.collection("crew_tokens").doc(crewName).set({
@@ -1822,6 +1836,9 @@ async function subscribeToNotifications() {
                 
                 ov.style.display = 'none';
                 showToast(`Success! Notifications enabled for ${crewName} on this device.`, 'success');
+            } else {
+                ov.style.display = 'none';
+                alert("Could not generate a token. Check console.");
             }
         } else {
             alert("You denied notification permissions. You will need to allow them in your browser/phone settings.");
@@ -1829,7 +1846,7 @@ async function subscribeToNotifications() {
     } catch (error) {
         document.getElementById('submitOverlay').style.display = 'none';
         console.error("Error getting token:", error);
-        alert("Failed to enable notifications. Are you on a secure connection?");
+        alert("Failed to enable notifications. Error: " + error.message);
     }
 }
   //
