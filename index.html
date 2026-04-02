@@ -5460,6 +5460,9 @@ async function getNextEventId() {
               renderPayrollTable();
               bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
               showToast("Cloud Session loaded successfully!", "success");
+              
+              // 🟢 NEW: Lock the rates button since we loaded custom historical data!
+              markPayrollEdited(); 
           } catch (e) {
               alert("Error parsing saved session data.");
           }
@@ -5573,13 +5576,56 @@ async function getNextEventId() {
       setTimeout(() => { printWin.print(); }, 500);
   }
 
-  
- // Engine: Aggregate the data using the Dynamic Rates (With Memory!)
-function runPayrollEngine(forceNewRates = false) {
+  // 🟢 NEW: Tracks manual edits to lock the Rates button
+let hasManualPayrollEdits = false;
+
+function markPayrollEdited() {
+    hasManualPayrollEdits = true;
+    const ratesBtn = document.querySelector('button[onclick="openRatesModal()"]');
+    if (ratesBtn) {
+        ratesBtn.disabled = true;
+        ratesBtn.title = "Disabled because manual edits have been made. Refresh the page to reset.";
+    }
+}
+// Engine: Aggregate the data using the Dynamic Rates (With Overlap Protection!)
+async function runPayrollEngine(forceNewRates = false) {
     const start = document.getElementById('prStartDate').value;
     const end = document.getElementById('prEndDate').value;
     
     if (!start || !end) return alert("Please select a Start and End date for the cutoff.");
+
+    // 🟢 NEW: OVERLAP PROTECTION LOGIC
+    if (!forceNewRates) {
+        const ov = document.getElementById('submitOverlay');
+        document.getElementById('overlayText').innerText = "Validating Cutoff Period...";
+        ov.style.display = 'flex';
+
+        try {
+            const snapshot = await db.collection("payroll_sessions").get();
+            let overlapFound = false;
+            let overlapRange = "";
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                // Overlap math: If Start A is before or on End B, AND End A is after or on Start B
+                if (start <= data.endDate && end >= data.startDate) {
+                    overlapFound = true;
+                    overlapRange = `${data.startDate} to ${data.endDate}`;
+                }
+            });
+
+            if (overlapFound) {
+                ov.style.display = 'none';
+                alert(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session.\n\nPlease click "LOAD" to open the existing session, or delete the existing session from the load menu if you want to completely recalculate this period.`);
+                return;
+            }
+        } catch (e) {
+            ov.style.display = 'none';
+            alert("Error checking for overlapping sessions: " + e.message);
+            return;
+        }
+        ov.style.display = 'none';
+    }
 
     // 1. SAVE EXISTING DATA to preserve manual tweaks before we rebuild!
     const existingData = JSON.parse(JSON.stringify(currentPayrollData || {}));
@@ -5674,7 +5720,6 @@ function runPayrollEngine(forceNewRates = false) {
                     }
                 }
 
-                // MAGIC: Apply manual overrides if they existed before we clicked Compute
                 let oldEv = getOldEvent(c, evId, 'Crew');
                 let payer = 'Edgar(EGM)'; // Default
                 if (oldEv) {
@@ -5714,7 +5759,6 @@ function runPayrollEngine(forceNewRates = false) {
                 }
             }
 
-            // MAGIC: Apply manual overrides if they existed before we clicked Compute
             let oldEv = getOldEvent(editor, evId, 'Editor');
             let payer = 'Edgar(EGM)'; // Default
             if (oldEv) {
@@ -5811,9 +5855,9 @@ function renderPayrollTable() {
                       <label class="form-label-sm text-primary">Reimbursements / Expenses</label>
                       <div class="input-group input-group-sm shadow-sm mb-1">
                           <span class="input-group-text bg-white fw-bold">₱</span>
-                          <input type="number" id="prGlobalExpenses" class="form-control fw-bold text-success" value="${data.expenses || 0}" oninput="calculateLivePayslipTotals()">
+                          <input type="number" id="prGlobalExpenses" class="form-control fw-bold text-success" value="${data.expenses || 0}" oninput="markPayrollEdited(); calculateLivePayslipTotals()">
                       </div>
-                      <select id="prExpensePayer" class="form-select form-select-sm text-secondary fw-bold shadow-sm" onchange="calculateLivePayslipTotals()">
+                      <select id="prExpensePayer" class="form-select form-select-sm text-secondary fw-bold shadow-sm" onchange="markPayrollEdited(); calculateLivePayslipTotals()">
                           <option value="Edgar(EGM)" ${data.expensePayer === 'Edgar(EGM)' ? 'selected' : ''}>Source: Edgar</option>
                           <option value="Francis" ${data.expensePayer === 'Francis' ? 'selected' : ''}>Source: Francis</option>
                           <option value="Tina" ${data.expensePayer === 'Tina' ? 'selected' : ''}>Source: Tina</option>
@@ -5825,9 +5869,9 @@ function renderPayrollTable() {
                       <label class="form-label-sm text-success">Misc. Bonus Pay</label>
                       <div class="input-group input-group-sm shadow-sm mb-1">
                           <span class="input-group-text bg-white fw-bold">₱</span>
-                          <input type="number" id="prGlobalMisc" class="form-control fw-bold text-success" value="${data.misc || 0}" oninput="calculateLivePayslipTotals()">
+                          <input type="number" id="prGlobalMisc" class="form-control fw-bold text-success" value="${data.misc || 0}" oninput="markPayrollEdited(); calculateLivePayslipTotals()">
                       </div>
-                      <select id="prMiscPayer" class="form-select form-select-sm text-secondary fw-bold shadow-sm" onchange="calculateLivePayslipTotals()">
+                      <select id="prMiscPayer" class="form-select form-select-sm text-secondary fw-bold shadow-sm" onchange="markPayrollEdited(); calculateLivePayslipTotals()">
                           <option value="Edgar(EGM)" ${data.miscPayer === 'Edgar(EGM)' ? 'selected' : ''}>Source: Edgar</option>
                           <option value="Francis" ${data.miscPayer === 'Francis' ? 'selected' : ''}>Source: Francis</option>
                           <option value="Tina" ${data.miscPayer === 'Tina' ? 'selected' : ''}>Source: Tina</option>
@@ -5839,11 +5883,11 @@ function renderPayrollTable() {
               
               <div class="mb-3">
                   <label class="form-label-sm text-secondary"><i class="bi bi-journal-text me-1"></i> Payslip Notes</label>
-                  <textarea id="prModalNotes" class="form-control form-control-sm shadow-sm" rows="2" placeholder="Ex: Deducted 500 for uniform..." oninput="savePayslipNote()">${data.payslipNote || ""}</textarea>
+                  <textarea id="prModalNotes" class="form-control form-control-sm shadow-sm" rows="2" placeholder="Ex: Deducted 500 for uniform..." oninput="markPayrollEdited(); savePayslipNote()">${data.payslipNote || ""}</textarea>
               </div>
 
               <div class="form-check mt-2 mb-4 p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-3">
-                  <input class="form-check-input ms-1 border-danger" type="checkbox" id="prModalTentative" ${data.isTentative ? 'checked' : ''} onchange="toggleTentativeStatus()">
+                  <input class="form-check-input ms-1 border-danger" type="checkbox" id="prModalTentative" ${data.isTentative ? 'checked' : ''} onchange="markPayrollEdited(); toggleTentativeStatus()">
                   <label class="form-check-label small fw-bold text-danger ms-2" for="prModalTentative">
                       Mark as tentative - to be discussed by admin
                   </label>
@@ -5859,7 +5903,6 @@ function renderPayrollTable() {
           `;
           
           document.getElementById('prGenerateBtn').style.display = isFullyExempt ? 'none' : 'block';
-          // 🟢 NEW: Lock the Generate button if it's currently marked as Tentative!
           document.getElementById('prGenerateBtn').disabled = data.isTentative;
           document.getElementById('prMathControls').style.display = isFullyExempt ? 'none' : 'block';
       } else {
@@ -5887,14 +5930,14 @@ function renderPayrollTable() {
               let label = item.isSubsequent ? 'Add-Day Pay' : (item.isHalfDay ? 'Half-Day Pay' : (item.isCustom ? 'Custom Pay' : (item.role === 'Editor' ? 'Editing Rate' : 'Base Rate')));
               basePayUI = `<span class="d-block text-primary mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">${label}</span>
                   <div class="input-group input-group-sm" style="width: 95px;"><span class="input-group-text bg-light text-muted">₱</span>
-                  <input type="number" class="form-control fw-bold pr-event-base text-success shadow-sm px-1" data-index="${index}" value="${item.basePay}" oninput="calculateLivePayslipTotals()"></div>`;
+                  <input type="number" class="form-control fw-bold pr-event-base text-success shadow-sm px-1" data-index="${index}" value="${item.basePay}" oninput="markPayrollEdited(); calculateLivePayslipTotals()"></div>`;
                   
               extraPayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">+ Extra</span>
                   <div class="input-group input-group-sm" style="width: 85px;"><span class="input-group-text bg-light text-muted px-1">₱</span>
-                  <input type="number" class="form-control fw-bold pr-event-extra shadow-sm px-1" data-index="${index}" value="${item.extraPay}" oninput="calculateLivePayslipTotals()"></div>`;
+                  <input type="number" class="form-control fw-bold pr-event-extra shadow-sm px-1" data-index="${index}" value="${item.extraPay}" oninput="markPayrollEdited(); calculateLivePayslipTotals()"></div>`;
 
               payerUI = `<span class="d-block text-info mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Source</span>
-                  <select class="form-select form-select-sm fw-bold pr-event-payer shadow-sm text-secondary px-1" style="width: 95px; font-size: 0.75rem;" data-index="${index}" onchange="calculateLivePayslipTotals()">
+                  <select class="form-select form-select-sm fw-bold pr-event-payer shadow-sm text-secondary px-1" style="width: 95px; font-size: 0.75rem;" data-index="${index}" onchange="markPayrollEdited(); calculateLivePayslipTotals()">
                       <option value="Edgar(EGM)" ${item.payer === 'Edgar(EGM)' || !item.payer ? 'selected' : ''}>Edgar</option>
                       <option value="Francis" ${item.payer === 'Francis' ? 'selected' : ''}>Francis</option>
                       <option value="Tina" ${item.payer === 'Tina' ? 'selected' : ''}>Tina</option>
