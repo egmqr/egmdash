@@ -65,4 +65,4 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(e.request));
 });
 
-// Update
+// Version 1.1 - Deep Link Update
