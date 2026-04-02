@@ -355,6 +355,9 @@
           <button id="themeToggleBtn" class="btn btn-light border-secondary-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center" onclick="toggleTheme()" title="Toggle Dark Mode" style="width: 38px; height: 34px;">
             <i id="themeIcon" class="bi bi-moon-fill text-secondary"></i>
           </button>
+          <button id="installAppBtn" class="btn btn-warning border-warning-subtle btn-sm shadow-sm d-flex align-items-center gap-1 fw-bold" style="display: none !important;">
+    <i class="bi bi-download"></i> <span class="d-none d-sm-inline">Install App</span>
+</button>
           <button id="logoutBtn" class="btn btn-outline-danger btn-sm shadow-sm align-items-center justify-content-center" onclick="signOut()" title="Sign Out / Switch Account" style="width: 38px; height: 34px; display: none;">
             <i class="bi bi-box-arrow-right fs-6"></i>
           </button>
@@ -1649,6 +1652,58 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-compat.js"></script>
 <script>
+  // 1. Register the Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service Worker registered!', reg.scope))
+            .catch(err => console.error('Service Worker registration failed:', err));
+    });
+}
+
+// 2. Handle the "Install App" button logic
+let deferredPrompt;
+const installBtn = document.getElementById('installAppBtn');
+
+// Detect if user is on iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+// Detect if the app is ALREADY installed/running in standalone mode
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+if (!isStandalone) {
+    if (isIOS) {
+        // APPLE: Show button, but it triggers a manual instruction modal
+        installBtn.style.setProperty('display', 'flex', 'important');
+        installBtn.onclick = () => {
+            alert('To install on iPhone:\n1. Tap the "Share" icon at the bottom of Safari.\n2. Scroll down and tap "Add to Home Screen".');
+        };
+    } else {
+        // ANDROID/CHROME: Wait for the browser to fire the install event
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome's default mini-infobar from appearing automatically
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            deferredPrompt = e;
+            // Show our custom install button
+            installBtn.style.setProperty('display', 'flex', 'important');
+        });
+
+        installBtn.onclick = async () => {
+            if (deferredPrompt) {
+                // Show the official browser install prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to install prompt: ${outcome}`);
+                // We've used the prompt, and can't use it again, discard it
+                deferredPrompt = null;
+                // Hide the button
+                installBtn.style.setProperty('display', 'none', 'important');
+            }
+        };
+    }
+}
   // PASTE YOUR FIREBASE CONFIG HERE
   const firebaseConfig = {
     apiKey: "AIzaSyADWnFhu2xZwGQERFsxP-Xl_OlEaJ6N3NM",
