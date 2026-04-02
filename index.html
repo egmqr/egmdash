@@ -5080,27 +5080,43 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
 
     rawEvents = mappedEvents;
     
+    // Safely attempt to render the UI
     try {
         updateCrewFilterDropdown(rawEvents);
-        populateExpenseEventsDropdown();
+        populateExpenseEventsDropdown(); // <--- Fills the Expenses dropdown instantly!
         applyFilters();
 
-        // Check if app was opened from a "Cold Start" via URL
+        // 🟢 DEEP LINKING: AUTO OPEN EVENT CARD 🟢
         const urlParams = new URLSearchParams(window.location.search);
         const openEventId = urlParams.get('openEvent');
         
         if (openEventId) {
-            // Trigger the card drawing using our new safe helper
-            triggerCardWhenReady(openEventId);
-            
-            // Clean the URL silently so it doesn't loop
-            urlParams.delete('openEvent');
-            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-            window.history.replaceState({}, '', newUrl);
+            // Wait a tiny moment (300ms) for the DOM to settle before drawing
+            setTimeout(() => {
+                const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(openEventId));
+                
+                if (targetEvent) {
+                    // Make sure we are on the events tab
+                    if (currentTab !== 'events') switchTab('events');
+                    
+                    // Draw and show the card!
+                    document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                    const cardModalEl = document.getElementById('eventCardModal');
+                    const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
+                    modal.show();
+                    
+                    // Clean the URL so it doesn't get stuck in a loop if they refresh
+                    urlParams.delete('openEvent');
+                    const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                    window.history.replaceState({}, '', newUrl);
+                }
+            }, 300);
         }
+        // 🔴 END DEEP LINKING 🔴
 
     } catch(err) {
         console.error("UI Render Error:", err);
+        alert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
     }
     
     // Hide the initial full-page loader
