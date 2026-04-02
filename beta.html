@@ -5034,6 +5034,33 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
         updateCrewFilterDropdown(rawEvents);
         populateExpenseEventsDropdown(); // <--- Fills the Expenses dropdown instantly!
         applyFilters();
+
+        // 🟢 NEW: DEEP LINKING - AUTO OPEN EVENT CARD 🟢
+        const urlParams = new URLSearchParams(window.location.search);
+        const openEventId = urlParams.get('openEvent');
+        
+        if (openEventId) {
+            // Force the app to switch to the Events tab visually
+            switchTab('events');
+            
+            // Find the specific event data in our freshly downloaded array
+            const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(openEventId));
+            
+            if (targetEvent) {
+                // Populate and open the Event Card View Modal
+                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                const cardModalEl = document.getElementById('eventCardModal');
+                const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
+                modal.show();
+                
+                // Erase the 'openEvent' part of the URL so it doesn't re-open if they just hit refresh later
+                urlParams.delete('openEvent');
+                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                window.history.replaceState({}, '', newUrl);
+            }
+        }
+        // 🔴 END DEEP LINKING 🔴
+
     } catch(err) {
         console.error("UI Render Error:", err);
         alert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
