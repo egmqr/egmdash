@@ -12,45 +12,36 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// PWA LIFECYCLE
 self.addEventListener('install', (e) => self.skipWaiting());
 self.addEventListener('activate', (e) => self.clients.claim());
 self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
 
-// 🟢 CUSTOM NOTIFICATION CLICK HANDLER 🟢
-self.addEventListener('notificationclick', function(event) {
-    event.notification.close(); // Dismiss the notification
+// Version 2.0 - The Force Reload Handler
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.stopImmediatePropagation(); // Stop Firebase from interfering
 
-    // Extract eventId. Firebase sometimes nests this inside FCM_MSG
-    const dataPayload = event.notification.data || {};
-    const fcmData = dataPayload.FCM_MSG ? dataPayload.FCM_MSG.data : dataPayload;
-    const eventId = fcmData.eventId;
-    
-    const targetUrl = eventId 
-        ? 'https://dashboard.createdbyegm.com/?openEvent=' + eventId 
-        : 'https://dashboard.createdbyegm.com/';
+  // Hunt down the ID
+  const rawData = event.notification.data || {};
+  let eventId = rawData.eventId || (rawData.FCM_MSG && rawData.FCM_MSG.data && rawData.FCM_MSG.data.eventId) || (rawData.data && rawData.data.eventId);
+  
+  if (!eventId) return;
 
-    event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-            // Check if the dashboard is already open in a tab/PWA window
-            for (let i = 0; i < clientList.length; i++) {
-                let client = clientList[i];
-                if (client.url.includes('dashboard.createdbyegm.com') && 'focus' in client) {
-                    return client.focus().then(() => {
-                        if (eventId) {
-                            // The app is already open. Send a message to trigger the modal instantly.
-                            client.postMessage({
-                                type: 'OPEN_EVENT',
-                                eventId: eventId
-                            });
-                        }
-                    });
-                }
-            }
-            
-            // If the app is completely closed, open a new window with the URL parameter
-            if (clients.openWindow) {
-                return clients.openWindow(targetUrl);
-            }
-        })
-    );
+  // Build the exact URL
+  const targetUrl = self.location.origin + '/?openEvent=' + eventId;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i];
+        if (client.url.includes('dashboard.createdbyegm.com')) {
+          // 🟢 THE FIX: Force the open PWA to physically reload with the new URL!
+          return client.navigate(targetUrl).then(c => c.focus());
+        }
+      }
+      // If the app is closed, open a new window
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+    })
+  );
 });
