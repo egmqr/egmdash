@@ -1837,15 +1837,15 @@ async function subscribeToNotifications() {
             });
 
             if (currentToken) {
-                // Save the token to a new Firestore collection called "crew_tokens"
+                // 🟢 THE FIX: Save as an Array of tokens instead of a single string
                 await db.collection("crew_tokens").doc(crewName).set({
-                    token: currentToken,
-                    device: navigator.userAgent,
+                    tokens: firebase.firestore.FieldValue.arrayUnion(currentToken),
+                    lastUpdatedDevice: navigator.userAgent,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                }, { merge: true }); // <-- CRITICAL: Prevents overwriting the whole document!
                 
                 ov.style.display = 'none';
-                showToast(`Success! Notifications enabled for ${crewName}.`, 'success');
+                showToast(`Success! Notifications enabled for ${crewName} on this device.`, 'success');
             } else {
                 ov.style.display = 'none';
                 alert("Could not generate a token. Check console.");
