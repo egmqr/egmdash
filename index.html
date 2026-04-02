@@ -1755,11 +1755,8 @@ if (!isStandalone) {
   const db = firebase.firestore();
 
   const messaging = firebase.messaging();
-// 🟢 DEEP LINKING: BOOT RECOVERY CONTROLLER 🟢
-function processDeepLink() {
-    const urlParams = new URLSearchParams(window.location.search);
-    let eventId = urlParams.get('openEvent');
-
+// 🟢 REUSABLE POPUP TRIGGER 🟢
+function openEventCard(eventId) {
     if (!eventId) return; 
 
     const formattedId = eventId.toLowerCase().startsWith('egm') ? eventId : 'egm' + eventId;
@@ -1776,11 +1773,6 @@ function processDeepLink() {
                 const cardModalEl = document.getElementById('eventCardModal');
                 const modal = bootstrap.Modal.getOrCreateInstance(cardModalEl);
                 modal.show();
-
-                // Clean URL
-                urlParams.delete('openEvent');
-                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                window.history.replaceState({}, '', newUrl);
             }
         }
     }, 300);
@@ -1788,8 +1780,36 @@ function processDeepLink() {
     setTimeout(() => clearInterval(waitForData), 10000);
 }
 
+// 🟢 BOOT RECOVERY CONTROLLER (Runs on fresh load) 🟢
+function processDeepLink() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let eventId = urlParams.get('openEvent');
+
+    if (eventId) {
+        openEventCard(eventId);
+
+        // Clean URL
+        urlParams.delete('openEvent');
+        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    }
+}
+
 // Run immediately on boot
 processDeepLink();
+
+// 🟢 SERVICE WORKER LISTENER (Runs when app is already open) 🟢
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'OPEN_EVENT') {
+            console.log("Deep link received from Service Worker:", event.data.eventId);
+            openEventCard(event.data.eventId);
+        }
+    });
+}
+
+
+  //---------------------------
   // 🟢 NEW: LISTEN FOR DIRECT SERVICE WORKER MESSAGES 🟢
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
