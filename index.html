@@ -1767,26 +1767,45 @@ if ('serviceWorker' in navigator) {
 }
 
 // Helper function to safely wait for data before drawing the card
-function triggerCardWhenReady(eventId) {
-    switchTab('events');
-    
-    // Check every 300ms if Firebase has finished downloading the rawEvents
+function triggerCardWhenReady(eventId, rawPayload = "") {
+    // 🟢 MOBILE DIAGNOSTICS: If the ID is missing, show us exactly what the phone received!
+    if (!eventId || eventId === "undefined" || eventId === "null") {
+        showToast("Missing ID. Payload received: " + rawPayload, "warning");
+        return; 
+    }
+
     const checkData = setInterval(() => {
         if (rawEvents && rawEvents.length > 0) {
             clearInterval(checkData); // Stop checking
             
             const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(eventId));
+            
             if (targetEvent) {
+                // ONLY jump to the events tab if we actually found the card!
+                if (currentTab !== 'events') switchTab('events');
+                
                 document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
                 const cardModalEl = document.getElementById('eventCardModal');
                 const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
                 modal.show();
+            } else {
+                showToast(`Could not find Event #${eventId} in the database.`, "danger");
             }
         }
     }, 300);
     
     // Safety net: Stop checking after 5 seconds so it doesn't loop forever
     setTimeout(() => clearInterval(checkData), 5000);
+}
+
+// And update the listener right above it to pass the raw payload for debugging:
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.action === 'openEventCard') {
+            // Pass the ID, and a stringified version of the raw data so we can see it on mobile
+            triggerCardWhenReady(event.data.eventId, event.data.debugPayload);
+        }
+    });
 }
 
   // 🔥 THE MAGIC FIX: Enable Local Caching so data loads in milliseconds
