@@ -1755,88 +1755,49 @@ if (!isStandalone) {
   const db = firebase.firestore();
 
   const messaging = firebase.messaging();
-// 🟢 DEEP LINKING: MEMORY-SAFE MASTER CONTROLLER 🟢
-let isOpeningCard = false;
-window.pendingEventToOpen = null; // Global memory to survive Firebase load times!
-
-async function checkUrlForEventCard(overrideId = null) {
-    if (isOpeningCard) return;
-    
-    // 1. Gather the ID from anywhere we can (Message, URL, or Cache)
-    if (overrideId) window.pendingEventToOpen = overrideId;
-    
+// 🟢 DEEP LINKING: BULLETPROOF INTERVAL CONTROLLER 🟢
+function processDeepLink() {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('openEvent')) {
-        window.pendingEventToOpen = urlParams.get('openEvent');
+    let eventId = urlParams.get('openEvent');
+
+    if (!eventId) return; // If no deep link, do nothing.
+
+    // Format the ID safely
+    if (!eventId.toLowerCase().startsWith('egm')) {
+        eventId = 'egm' + eventId;
     }
-    
-    if (!window.pendingEventToOpen) {
-        try {
-            const cache = await caches.open('egm-pwa-data');
-            const response = await cache.match('/pending-event');
-            if (response) {
-                window.pendingEventToOpen = await response.text();
+
+    // Loop every 300ms until Firebase finishes downloading the data
+    const waitForData = setInterval(() => {
+        if (typeof rawEvents !== 'undefined' && rawEvents.length > 0) {
+            clearInterval(waitForData); // Data arrived! Stop checking.
+
+            const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === eventId.toLowerCase());
+
+            if (targetEvent) {
+                // Switch to events tab
+                if (currentTab !== 'events') switchTab('events');
+
+                // Draw and show card
+                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                const cardModalEl = document.getElementById('eventCardModal');
+                const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
+                modal.show();
+
+                // Clean URL
+                urlParams.delete('openEvent');
+                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                window.history.replaceState({}, '', newUrl);
             }
-        } catch (e) { console.log("Cache check failed", e); }
-    }
-
-    // 2. If we have an ID to open...
-    if (window.pendingEventToOpen) {
-        
-        // 3. CRITICAL FIX: Is the Firebase data actually loaded yet?
-        if (!rawEvents || rawEvents.length === 0) {
-            console.log("Got ID, waiting for Firebase data to load...");
-            return; // Exit and wait! Firebase onSnapshot will automatically trigger this function again when ready.
         }
+    }, 300);
 
-        isOpeningCard = true;
-        
-        const formattedId = window.pendingEventToOpen.startsWith('egm') ? window.pendingEventToOpen : 'egm' + window.pendingEventToOpen;
-        const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(formattedId));
-        
-        if (targetEvent) {
-            if (currentTab !== 'events') switchTab('events');
-            
-            document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-            const cardModalEl = document.getElementById('eventCardModal');
-            const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
-            modal.show();
-            
-            // 4. CLEANUP: Only destroy the evidence AFTER a successful open
-            window.pendingEventToOpen = null;
-            urlParams.delete('openEvent');
-            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-            window.history.replaceState({}, '', newUrl);
-            
-            try {
-                const cache = await caches.open('egm-pwa-data');
-                await cache.delete('/pending-event');
-            } catch(e){}
-        } else {
-            showToast(`Could not find Event #${formattedId} in database.`, "warning");
-            window.pendingEventToOpen = null; // Clear it so it doesn't loop
-        }
-        
-        setTimeout(() => { isOpeningCard = false; }, 1000);
-    }
+    // Safety timeout: Give up after 10 seconds
+    setTimeout(() => clearInterval(waitForData), 10000);
 }
 
-// TRIGGERS
-setTimeout(checkUrlForEventCard, 500);
-
-window.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        setTimeout(checkUrlForEventCard, 300);
-    }
-});
-
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.action === 'openEventCard') {
-            checkUrlForEventCard(event.data.eventId);
-        }
-    });
-}
+// Run immediately on boot!
+processDeepLink();
 // 🔴 END DEEP LINKING CONTROLLER 🔴
   // 🟢 NEW: LISTEN FOR DIRECT SERVICE WORKER MESSAGES 🟢
 if ('serviceWorker' in navigator) {
@@ -5165,11 +5126,8 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
     // Safely attempt to render the UI
     try {
         updateCrewFilterDropdown(rawEvents);
-        populateExpenseEventsDropdown(); 
+        populateExpenseEventsDropdown();
         applyFilters();
-        
-        // Check for deep links every time new data arrives from Firebase
-        setTimeout(checkUrlForEventCard, 300);
     } catch(err) {
         console.error("UI Render Error:", err);
         alert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
