@@ -1719,29 +1719,28 @@
   const DEFAULT_CREW_RATE = 1500;
   const DEFAULT_EDITOR_RATE = 2000;
   
+  // --- NEW: CLOUD RATE MEMORY ---
+  let dbCrewRates = {};
+  let dbEditingRate = 2000;
+  
   let currentPayrollData = {}; 
   let activePayrollPerson = null;
   let isHistoricalView = false;
 
   function getCrewRate(name, role) {
-      // THE FIX: Editors now pull strictly from the global editing rate
       if (role === 'Editor') {
-          let editRate = localStorage.getItem('egm_editing_rate');
-          return editRate ? parseFloat(editRate) : DEFAULT_EDITOR_RATE;
+          return dbEditingRate;
       }
-      
-      // Crew members still pull from their saved individual rates
-      let savedRates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
-      if (savedRates[name] !== undefined) return parseFloat(savedRates[name]);
+      if (dbCrewRates[name] !== undefined) return parseFloat(dbCrewRates[name]);
       return DEFAULT_CREW_RATE;
   }
 
-  function openRatesModal() {
+ function openRatesModal() {
       const container = document.getElementById('ratesListContainer');
       let html = '';
       
-      // 1. Build the Global Editing Rate Section
-      let globalEditRate = localStorage.getItem('egm_editing_rate') || DEFAULT_EDITOR_RATE;
+      // 1. Build the Global Editing Rate Section (Pulls from Cloud Memory)
+      let globalEditRate = dbEditingRate;
       html += `
       <div class="col-12 mb-3 pb-3 border-bottom border-2 border-dark">
           <label class="form-label-sm text-primary mb-2"><i class="bi bi-film me-1"></i> Global Editing Rate</label>
@@ -1758,7 +1757,7 @@
       let allNames = new Set([...baseCrew, "Athan", "Jovert", "May", "Tina", "Grace", "Jops"]);
       
       Array.from(allNames).sort().forEach(name => {
-          let currentRate = getCrewRate(name, 'Crew'); // Pulls individual rate!
+          let currentRate = getCrewRate(name, 'Crew'); 
           html += `
           <div class="col-12 d-flex justify-content-between align-items-center mb-1 border-bottom pb-2">
               <span class="fw-bold text-secondary" style="font-size: 0.85rem;">${name}</span>
@@ -1772,36 +1771,55 @@
       new bootstrap.Modal(document.getElementById('ratesModal')).show();
   }
 
-  function saveRates() {
-    // Save the Global Editing Rate
+ async function saveRates() {
+    const ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = "Saving Rates to Cloud...";
+    ov.style.display = 'flex';
+
+    // Get the Editing Rate
+    let newEditingRate = 2000;
     const globalEditInput = document.getElementById('globalEditingRateInput');
     if (globalEditInput) {
-        localStorage.setItem('egm_editing_rate', parseFloat(globalEditInput.value) || 2000);
+        let editVal = parseFloat(globalEditInput.value);
+        newEditingRate = isNaN(editVal) ? 2000 : editVal;
     }
 
-    // Save the Individual Crew Rates
-    let rates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
+    // Get the Crew Rates
+    let newCrewRates = {};
     document.querySelectorAll('.rate-input').forEach(input => {
         let name = input.getAttribute('data-name');
         let val = parseFloat(input.value);
-        if (!isNaN(val)) rates[name] = val;
+        if (!isNaN(val)) newCrewRates[name] = val;
     });
-    localStorage.setItem('egm_crew_rates', JSON.stringify(rates));
     
-    bootstrap.Modal.getInstance(document.getElementById('ratesModal')).hide();
-    
-    // NEW LOGIC: Check if a payroll session is currently active
-    const start = document.getElementById('prStartDate').value;
-    const end = document.getElementById('prEndDate').value;
-    
-    if (start && end && Object.keys(currentPayrollData).length > 0) {
-        // Automatically recalculate everything with the new rates!
-        runPayrollEngine(true); // <--- ADD "true" HERE!
-        showToast("Rates saved and automatically applied to the active session!", "success");
-    } else {
-        // Just show the standard success message if they are setting rates beforehand
-        showToast("Rates saved successfully!", "success");
+    try {
+        // Push securely to Firebase
+        await db.collection("settings").doc("rates").set({
+            globalEditingRate: newEditingRate,
+            crewRates: newCrewRates,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Update local memory instantly to prevent UI lag
+        dbEditingRate = newEditingRate;
+        dbCrewRates = newCrewRates;
+        
+        bootstrap.Modal.getInstance(document.getElementById('ratesModal')).hide();
+        
+        const start = document.getElementById('prStartDate').value;
+        const end = document.getElementById('prEndDate').value;
+        
+        if (start && end && Object.keys(currentPayrollData).length > 0) {
+            runPayrollEngine(true);
+            showToast("Rates saved to Cloud and applied to session!", "success");
+        } else {
+            showToast("Rates saved to Cloud successfully!", "success");
+        }
+    } catch (err) {
+        alert("Error saving rates: " + err.message);
     }
+    
+    ov.style.display = 'none';
 }
   // -----------------------------
 
@@ -4737,7 +4755,17 @@ function generateSingleEventCard(e) {
       }
   })();
   // ------------------------------------
-
+// THE MAGIC LISTENER FOR GLOBAL RATES
+db.collection("settings").doc("rates").onSnapshot((doc) => {
+    if (doc.exists) {
+        const data = doc.data();
+        dbEditingRate = data.globalEditingRate !== undefined ? data.globalEditingRate : 2000;
+        dbCrewRates = data.crewRates || {};
+    } else {
+        dbEditingRate = 2000;
+        dbCrewRates = {};
+    }
+});
 // THE MAGIC REAL-TIME LISTENER
 db.collection("dashboard_events").onSnapshot((snapshot) => {
     document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
