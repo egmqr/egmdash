@@ -1755,7 +1755,54 @@ if (!isStandalone) {
   const db = firebase.firestore();
 
   const messaging = firebase.messaging();
+ // 🟢 DEEP LINKING: MASTER CONTROLLER 🟢
+function checkUrlForEventCard(overrideId = null) {
+    // 1. Get the ID from either the direct Service Worker message, or the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const openEventId = overrideId || urlParams.get('openEvent');
+    
+    // 2. If we have an ID AND the data has finished downloading from Firebase...
+    if (openEventId && rawEvents && rawEvents.length > 0) {
+        
+        // Ensure we format it correctly (in case it dropped the "egm" part)
+        const formattedId = openEventId.startsWith('egm') ? openEventId : 'egm' + openEventId;
+        
+        const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(formattedId));
+        
+        if (targetEvent) {
+            // Jump to the Events tab if we aren't there already
+            if (currentTab !== 'events') switchTab('events');
+            
+            // Draw and show the card!
+            document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+            const cardModalEl = document.getElementById('eventCardModal');
+            const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
+            modal.show();
+            
+            // Silently wipe the URL clean so it doesn't trigger again if they lock their phone
+            urlParams.delete('openEvent');
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
+        }
+    }
+}
 
+// LISTENER A: Check every time the phone brings the app out of the background (Warm Start)
+window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        setTimeout(checkUrlForEventCard, 300);
+    }
+});
+
+// LISTENER B: Check if the Service Worker explicitly sends a background radio message
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.action === 'openEventCard') {
+            checkUrlForEventCard(event.data.eventId);
+        }
+    });
+}
+// 🔴 END DEEP LINKING CONTROLLER 🔴
   // 🟢 NEW: LISTEN FOR DIRECT SERVICE WORKER MESSAGES 🟢
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
@@ -5086,33 +5133,8 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
         populateExpenseEventsDropdown(); // <--- Fills the Expenses dropdown instantly!
         applyFilters();
 
-        // 🟢 DEEP LINKING: AUTO OPEN EVENT CARD 🟢
-        const urlParams = new URLSearchParams(window.location.search);
-        const openEventId = urlParams.get('openEvent');
-        
-        if (openEventId) {
-            // Wait a tiny moment (300ms) for the DOM to settle before drawing
-            setTimeout(() => {
-                const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(openEventId));
-                
-                if (targetEvent) {
-                    // Make sure we are on the events tab
-                    if (currentTab !== 'events') switchTab('events');
-                    
-                    // Draw and show the card!
-                    document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                    const cardModalEl = document.getElementById('eventCardModal');
-                    const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
-                    modal.show();
-                    
-                    // Clean the URL so it doesn't get stuck in a loop if they refresh
-                    urlParams.delete('openEvent');
-                    const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                    window.history.replaceState({}, '', newUrl);
-                }
-            }, 300);
-        }
-        // 🔴 END DEEP LINKING 🔴
+        // LISTENER C: Check the URL on initial app load (Cold Start)
+        setTimeout(checkUrlForEventCard, 300);
 
     } catch(err) {
         console.error("UI Render Error:", err);
