@@ -1,0 +1,20 @@
+{
+  "name": "EGM Ops Dashboard",
+  "short_name": "EGM Ops",
+  "start_url": "/?tab=events",
+  "display": "standalone",
+  "background_color": "#f1f1f1",
+  "theme_color": "#515151",
+  "icons": [
+    {
+      "src": "https://drive.usercontent.google.com/download?id=15i4upaGOMVwG76WNeyEU8C-p2V4-s-c6&export=view&authuser=0",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://drive.usercontent.google.com/download?id=11gzbKedn14FlbLHbKdTXwN_gyCoDMHjR&export=view&authuser=0",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
