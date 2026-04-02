@@ -5895,7 +5895,38 @@ function renderPayrollTable() {
                   <select class="form-select form-select-sm fw-bold pr-event-payer shadow-sm text-secondary px-1" style="width: 95px; font-size: 0.75rem;" data-index="${index}" onchange="calculateLivePayslipTotals()">
                       <option value="Edgar(EGM)" ${item.payer === 'Edgar(EGM)' || !item.payer ? 'selected' : ''}>Edgar</option>
                       <option value="Francis" ${item.payer === 'Francis' ? 'selected' : ''}>Francis</option>
-                      <option value="
+                      <option value="Tina" ${item.payer === 'Tina' ? 'selected' : ''}>Tina</option>
+                      <option value="Grace" ${item.payer === 'Grace' ? 'selected' : ''}>Grace</option>
+                      <option value="SDE" ${item.payer === 'SDE' ? 'selected' : ''}>SDE</option>
+                  </select>`;
+          }
+
+          let badgesHtml = '';
+          if (item.isHalfDay && !isHistorical) badgesHtml += '<span class="badge bg-warning text-dark ms-1 shadow-sm"><i class="bi bi-star-half"></i> Half-Day</span>';
+          if (item.isSubsequent && !isHistorical) badgesHtml += '<span class="badge bg-secondary opacity-75 text-white ms-1 shadow-sm">+Add Day</span>';
+
+          eventsHtml += `
+          <div class="bg-white p-2 p-md-3 rounded-3 border shadow-sm mb-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+              <div>
+                  <span class="d-block small text-muted fw-bold mb-1"><i class="bi bi-calendar-event me-1"></i>${eventDate}</span>
+                  <strong class="text-dark" style="font-size: 0.9rem;">${eventId !== 'FIXED' ? '#'+eventId+' - ' : ''}${eventName}</strong>
+                  ${badgesHtml} <span class="badge ${roleBadge} ms-1 shadow-sm">${item.role}</span>
+              </div>
+              <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 overflow-auto pb-1">
+                  <div>${basePayUI}</div>
+                  <div>${extraPayUI}</div>
+                  <div>${payerUI}</div>
+              </div>
+          </div>`;
+      });
+      
+      document.getElementById('prModalEventsList').innerHTML = eventsHtml;
+      
+      if (!isHistorical) calculateLivePayslipTotals(); 
+      else document.getElementById('prLiveTotal').innerText = Number(histData.finalTotal).toLocaleString();
+      
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('payrollModal')).show();
+  }
 
   // Two tiny UI helper functions for the new inputs
   window.savePayslipNote = function() {
