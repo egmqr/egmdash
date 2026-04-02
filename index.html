@@ -5467,6 +5467,7 @@ async function getNextEventId() {
   }
 
 // Engine: Export current session summary to PDF
+  // Engine: Export current session summary to PDF
   function exportSessionPDF() {
       const start = document.getElementById('prStartDate').value;
       const end = document.getElementById('prEndDate').value;
@@ -5478,6 +5479,10 @@ async function getNextEventId() {
       if (!confirm(`Generate a printable PDF summary report for ${start} to ${end}?`)) return;
 
       let totalPayout = 0;
+      
+      // 🟢 NEW: Master tracker for the 4 Funding Sources
+      let grandBreakdown = { 'Edgar(EGM)': 0, 'Francis': 0, 'Tina': 0, 'Grace': 0 };
+
       let html = `
       <html><head><title>Payroll Summary: ${start} to ${end}</title>
       <style>
@@ -5489,6 +5494,10 @@ async function getNextEventId() {
           th { background-color: #f8f9fa; text-transform: uppercase; font-size: 12px; color: #555;}
           .text-right { text-align: right; }
           .total-row { font-weight: bold; font-size: 1.1em; background-color: #f1f3f5; }
+          .breakdown-box { margin-top: 30px; padding: 15px; background-color: #f8f9fa; border: 1px solid #ddd; width: 50%; min-width: 300px; }
+          .breakdown-box h4 { margin-top: 0; margin-bottom: 10px; font-size: 13px; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+          .breakdown-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; border-bottom: 1px dashed #eee; }
+          .breakdown-row:last-child { border-bottom: none; font-weight: bold; padding-top: 8px; margin-top: 4px; border-top: 1px solid #ccc; }
       </style>
       </head><body>
       <h2>EGM PRODUCTIONS - PAYROLL SUMMARY</h2>
@@ -5508,8 +5517,25 @@ async function getNextEventId() {
           let finalNet = data.finalTotal || net;
           totalPayout += finalNet;
 
+          // 🟢 NEW: Safely calculate this person's breakdown on the fly for the master total
+          data.events.forEach(ev => {
+              let lineTotal = (ev.basePay || 0) + (ev.extraPay || 0);
+              let payer = ev.payer || 'Edgar(EGM)';
+              if (grandBreakdown[payer] !== undefined) grandBreakdown[payer] += lineTotal;
+          });
+          
+          let expPayer = data.expensePayer || 'Edgar(EGM)';
+          if (grandBreakdown[expPayer] !== undefined) grandBreakdown[expPayer] += exp;
+          
+          let miscPayer = data.miscPayer || 'Edgar(EGM)';
+          if (grandBreakdown[miscPayer] !== undefined) grandBreakdown[miscPayer] += misc;
+          // --------------------------------------------------------------------------
+
+          // Add a visual tag if the row is marked as tentative
+          let nameDisplay = data.isTentative ? `<strong>${name}</strong> <span style="color:red; font-size:10px; vertical-align:super;">(TENTATIVE)</span>` : `<strong>${name}</strong>`;
+
           html += `<tr>
-              <td><strong>${name}</strong></td>
+              <td>${nameDisplay}</td>
               <td class="text-right">₱${base.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
               <td class="text-right">₱${exp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
               <td class="text-right">₱${misc.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
@@ -5523,6 +5549,16 @@ async function getNextEventId() {
               <td class="text-right">₱${totalPayout.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
           </tr>
           </tbody></table>
+          
+          <div class="breakdown-box">
+              <h4>Funding Source Breakdown</h4>
+              <div class="breakdown-row"><span>Edgar (EGM)</span><span>₱${grandBreakdown['Edgar(EGM)'].toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+              <div class="breakdown-row"><span>Francis</span><span>₱${grandBreakdown['Francis'].toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+              <div class="breakdown-row"><span>Tina</span><span>₱${grandBreakdown['Tina'].toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+              <div class="breakdown-row"><span>Grace</span><span>₱${grandBreakdown['Grace'].toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+              <div class="breakdown-row" style="color: #0d9488;"><span><strong>TOTAL</strong></span><span><strong>₱${totalPayout.toLocaleString(undefined, {minimumFractionDigits: 2})}</strong></span></div>
+          </div>
+
           <p style="margin-top:40px; font-size:0.8em; color:#999; text-align: center;">Generated automatically from EGM Ops Dashboard on ${new Date().toLocaleString()}</p>
       </body></html>`;
 
@@ -5530,6 +5566,8 @@ async function getNextEventId() {
       printWin.document.write(html);
       printWin.document.close();
       printWin.focus();
+      
+      // Wait a moment for the window to render the HTML before triggering the print prompt
       setTimeout(() => { printWin.print(); }, 500);
   }
 
