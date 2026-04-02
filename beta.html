@@ -4047,7 +4047,44 @@ function generateSingleEventCard(e) {
           });
 
           await batch.commit(); // Execute the bulk upload
+          await batch.commit(); // Execute the bulk upload
           
+          // 🟢 NEW: SEND PUSH NOTIFICATIONS 🟢
+          try {
+              const tokens = [];
+              for (const crewName of obj.manpower) {
+                  // Look up each assigned crew member in the database
+                  const tokenDoc = await db.collection("crew_tokens").doc(crewName).get();
+                  
+                  if (tokenDoc.exists) {
+                      const data = tokenDoc.data();
+                      // Support the new Array format (multiple devices)
+                      if (data.tokens && Array.isArray(data.tokens)) {
+                          tokens.push(...data.tokens); 
+                      } 
+                      // Support the old single string format just in case
+                      else if (data.token) {
+                          tokens.push(data.token);
+                      }
+                  }
+              }
+
+              if (tokens.length > 0) {
+                  // Tell Apps Script to fire the push notifications!
+                  callApi({
+                      action: 'sendPush',
+                      tokens: tokens,
+                      title: `New Shoot: ${obj.eventName}`,
+                      body: `You are booked for ${obj.eventDate}. Call time is ${formatAMPM(obj.callTime)}.`,
+                      eventId: newId
+                  }, 'POST', true);
+              }
+          } catch (pushErr) {
+              console.error("Failed to trigger push:", pushErr);
+          }
+          // 🔴 END NEW PUSH LOGIC 🔴
+
+          bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide();
           bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
           e.target.reset(); 
           document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
