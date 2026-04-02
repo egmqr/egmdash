@@ -1755,37 +1755,63 @@ if (!isStandalone) {
   const db = firebase.firestore();
 
   const messaging = firebase.messaging();
- // 🟢 DEEP LINKING: MASTER CONTROLLER 🟢
-function checkUrlForEventCard(overrideId = null) {
-    // 1. Get the ID from either the direct Service Worker message, or the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const openEventId = overrideId || urlParams.get('openEvent');
+ // 🟢 DEEP LINKING: THE "STICKY NOTE" CACHE READER 🟢
+async function checkUrlForEventCard(overrideId = null) {
+    let openEventId = overrideId;
     
-    // 2. If we have an ID AND the data has finished downloading from Firebase...
+    // 1. Check the URL just in case it's a fresh desktop click
+    if (!openEventId) {
+        const urlParams = new URLSearchParams(window.location.search);
+        openEventId = urlParams.get('openEvent');
+    }
+    
+    // 2. CHECK THE CACHE: Look for a sticky note left by the Service Worker!
+    if (!openEventId) {
+        try {
+            const cache = await caches.open('egm-pwa-data');
+            const response = await cache.match('/pending-event');
+            if (response) {
+                openEventId = await response.text();
+                await cache.delete('/pending-event'); // Trash the note so it doesn't open twice
+                console.log("Found pending event in cache:", openEventId);
+            }
+        } catch (e) {
+            console.log("Cache check failed", e);
+        }
+    }
+
+    // 3. If we found an ID anywhere, and Firebase data is ready, DRAW THE CARD!
     if (openEventId && rawEvents && rawEvents.length > 0) {
-        
-        // Ensure we format it correctly (in case it dropped the "egm" part)
         const formattedId = openEventId.startsWith('egm') ? openEventId : 'egm' + openEventId;
-        
         const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(formattedId));
         
         if (targetEvent) {
-            // Jump to the Events tab if we aren't there already
             if (currentTab !== 'events') switchTab('events');
             
-            // Draw and show the card!
             document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
             const cardModalEl = document.getElementById('eventCardModal');
             const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
             modal.show();
             
-            // Silently wipe the URL clean so it doesn't trigger again if they lock their phone
+            // Wipe the URL clean
+            const urlParams = new URLSearchParams(window.location.search);
             urlParams.delete('openEvent');
             const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
             window.history.replaceState({}, '', newUrl);
         }
     }
 }
+
+// Check for notes immediately when the app fully loads (Cold Start)
+setTimeout(checkUrlForEventCard, 500);
+
+// Check for notes every single time the app comes out of the background (Warm Start)
+window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        setTimeout(checkUrlForEventCard, 300);
+    }
+});
+// 🔴 END DEEP LINKING CONTROLLER 🔴
 
 // LISTENER A: Check every time the phone brings the app out of the background (Warm Start)
 window.addEventListener('visibilitychange', () => {
