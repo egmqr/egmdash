@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>EGM Operations Dashboard</title>
+  <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1639,11 +1640,10 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-compat.js"></script>
 <script>
   // PASTE YOUR FIREBASE CONFIG HERE
   const firebaseConfig = {
@@ -1657,6 +1657,31 @@
   
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+
+  const messaging = firebase.messaging();
+
+async function requestNotificationPermission(crewName) {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            // Get the unique token for this phone
+            const currentToken = await messaging.getToken({ vapidKey: 'YOUR_PUBLIC_VAPID_KEY_FROM_FIREBASE' });
+            
+            if (currentToken) {
+                console.log("Got token!", currentToken);
+                // Save this token to your Firestore database under this crew member's profile
+                await db.collection("crew_tokens").doc(crewName).set({
+                    token: currentToken,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        } else {
+            console.log('User denied notifications.');
+        }
+    } catch (error) {
+        console.error('Error getting permission:', error);
+    }
+}
 
   // 🔥 THE MAGIC FIX: Enable Local Caching so data loads in milliseconds
   db.enablePersistence({ synchronizeTabs: true })
