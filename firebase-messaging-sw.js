@@ -16,33 +16,30 @@ self.addEventListener('install', (e) => self.skipWaiting());
 self.addEventListener('activate', (e) => self.clients.claim());
 
 self.addEventListener('notificationclick', (event) => {
-    event.stopImmediatePropagation(); // Crucial: Stops Firebase from interfering
-    event.notification.close();
+  event.stopImmediatePropagation(); 
+  event.notification.close();
 
-    // Deep search to safely extract the ID from Firebase's payload
-    const notifData = event.notification.data || {};
-    const fcmData = notifData.FCM_MSG ? notifData.FCM_MSG.data : notifData;
-    const eventId = fcmData.eventId || notifData.eventId;
+  const notifData = event.notification.data || {};
+  const fcmData = notifData.FCM_MSG ? notifData.FCM_MSG.data : notifData;
+  const eventId = fcmData.eventId || notifData.eventId;
+  
+  const targetUrl = self.location.origin + '/?openEvent=' + eventId;
 
-    if (!eventId) return;
-
-    const targetUrl = self.location.origin + '/?openEvent=' + eventId;
-
-    event.waitUntil(
-        // 1. Write the ID to the Mailbox (Cache)
-        caches.open('egm-pwa-data').then(cache => {
-            return cache.put('/pending-event', new Response(eventId));
-        }).then(() => {
-            // 2. Find the app and wake it up
-            return clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-                for (let i = 0; i < windowClients.length; i++) {
-                    const client = windowClients[i];
-                    if (client.url.includes(self.location.origin)) {
-                        return client.focus(); // WARM START
-                    }
-                }
-                if (clients.openWindow) return clients.openWindow(targetUrl); // COLD START
-            });
-        })
-    );
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          // WARM START: Focus the app, wait half a second for iOS to unfreeze, then send the ID!
+          client.focus();
+          setTimeout(() => {
+              client.postMessage({ action: 'openCard', eventId: eventId });
+          }, 500);
+          return;
+        }
+      }
+      // COLD START: App is closed. Open it with the URL.
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+    })
+  );
 });
