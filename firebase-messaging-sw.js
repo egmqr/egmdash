@@ -23,16 +23,14 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(e.request));
 });
 
-// Version 1.2 - Absolute URL Fix
+// Version 1.3 - PostMessage Bridge
 
-// --- SMART CLICK HANDLER (Deep Linking for Live Site) ---
 self.addEventListener('notificationclick', (event) => {
   event.notification.close(); 
   
   const notificationData = event.notification.data;
   const eventId = notificationData?.eventId || notificationData?.FCM_MSG?.data?.eventId;
   
-  // 🟢 THE FIX: Build a full, absolute URL so Android doesn't strip the parameter
   const baseUrl = self.location.origin;
   const targetUrl = new URL(eventId ? `/?openEvent=${eventId}` : '/?tab=events', baseUrl).href;
 
@@ -40,10 +38,19 @@ self.addEventListener('notificationclick', (event) => {
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
+        // If the app is already open in the background...
         if (client.url.includes('dashboard.createdbyegm.com') && 'focus' in client) {
-          return client.navigate(targetUrl).then(c => c.focus()); 
+          client.focus();
+          
+          // 🟢 THE FIX: Send a direct radio message to the open app instead of changing the URL!
+          if (eventId) {
+            client.postMessage({ action: 'openEventCard', eventId: eventId });
+          }
+          return; 
         }
       }
+      
+      // If the app was completely closed, open a fresh window (this still relies on the URL)
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }
