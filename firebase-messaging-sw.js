@@ -12,23 +12,20 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// PWA LIFECYCLE
 self.addEventListener('install', (e) => self.skipWaiting());
 self.addEventListener('activate', (e) => self.clients.claim());
 self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
 
-// Version 2.0 - The Force Reload Handler
+// Version 3.0 - Perfected Warm/Cold Start Handler
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  event.stopImmediatePropagation(); // Stop Firebase from interfering
+  event.stopImmediatePropagation(); // Crucial: Stop Firebase SDK from stealing the click
 
-  // Hunt down the ID
   const rawData = event.notification.data || {};
   let eventId = rawData.eventId || (rawData.FCM_MSG && rawData.FCM_MSG.data && rawData.FCM_MSG.data.eventId) || (rawData.data && rawData.data.eventId);
   
   if (!eventId) return;
 
-  // Build the exact URL
   const targetUrl = self.location.origin + '/?openEvent=' + eventId;
 
   event.waitUntil(
@@ -36,11 +33,13 @@ self.addEventListener('notificationclick', (event) => {
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
         if (client.url.includes('dashboard.createdbyegm.com')) {
-          // 🟢 THE FIX: Force the open PWA to physically reload with the new URL!
-          return client.navigate(targetUrl).then(c => c.focus());
+          // WARM START: App is already open. Bring to front and send radio message!
+          client.focus();
+          client.postMessage({ action: 'openEventCard', eventId: eventId });
+          return;
         }
       }
-      // If the app is closed, open a new window
+      // COLD START: App is fully closed. Open new window with URL parameter.
       if (clients.openWindow) return clients.openWindow(targetUrl);
     })
   );
