@@ -362,6 +362,17 @@
             <i class="bi bi-box-arrow-right fs-6"></i>
           </button>
       </div>
+      <div class="input-group input-group-sm ms-2 mt-2 mt-md-0" style="max-width: 250px;">
+    <select id="pushCrewName" class="form-select fw-bold">
+        <option value="">Identify yourself...</option>
+        <option value="Edgar">Edgar</option>
+        <option value="Francis">Francis</option>
+        <option value="Mael">Mael</option>
+        <option value="Lexie">Lexie</option>
+        <option value="Jenielyn">Jenielyn</option>
+        </select>
+    <button class="btn btn-primary" onclick="subscribeToNotifications()"><i class="bi bi-bell-fill"></i></button>
+</div>
     </div>
 
     <div class="d-flex justify-content-between align-items-center pb-2">
@@ -1789,6 +1800,51 @@ async function requestNotificationPermission(crewName) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
+// Initialize messaging in your frontend
+const messaging = firebase.messaging();
+
+async function subscribeToNotifications() {
+    const crewName = document.getElementById('pushCrewName').value;
+    if (!crewName) {
+        alert("Please select your name first!");
+        return;
+    }
+
+    try {
+        // Ask the phone for permission to show banners
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+            const ov = document.getElementById('submitOverlay');
+            document.getElementById('overlayText').innerText = "Linking device...";
+            ov.style.display = 'flex';
+
+            // PASTE YOUR VAPID KEY HERE
+            const currentToken = await messaging.getToken({ 
+                vapidKey: 'PASTE_YOUR_PUBLIC_VAPID_KEY_HERE' 
+            });
+
+            if (currentToken) {
+                // Save the token to a new Firestore collection called "crew_tokens"
+                await db.collection("crew_tokens").doc(crewName).set({
+                    token: currentToken,
+                    device: navigator.userAgent,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                ov.style.display = 'none';
+                showToast(`Success! Notifications enabled for ${crewName} on this device.`, 'success');
+            }
+        } else {
+            alert("You denied notification permissions. You will need to allow them in your browser/phone settings.");
+        }
+    } catch (error) {
+        document.getElementById('submitOverlay').style.display = 'none';
+        console.error("Error getting token:", error);
+        alert("Failed to enable notifications. Are you on a secure connection?");
+    }
+}
+  //
   let pendingAuthAction = null;
   // This is your permanently designated Apps Script URL
   const API_URL = 'https://script.google.com/macros/s/AKfycbwYMEUmPOR9spn-_jC3WousZ9L5s8aksFrZwYDTGwW-N54S9q7P1BY-_KIVVEzi1TU/exec';
