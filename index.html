@@ -1766,7 +1766,6 @@ const messaging = firebase.messaging();
       if (!eventId) return;
       const formattedId = eventId.toLowerCase().startsWith('egm') ? eventId : 'egm' + eventId;
       
-      // Wait for Firebase data to be ready
       const waitForData = setInterval(() => {
           if (typeof rawEvents !== 'undefined' && rawEvents.length > 0) {
               clearInterval(waitForData);
@@ -1776,7 +1775,6 @@ const messaging = firebase.messaging();
                   document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
                   bootstrap.Modal.getOrCreateInstance(document.getElementById('eventCardModal')).show();
                   
-                  // Clean URL if we came from a Cold Start
                   const urlParams = new URLSearchParams(window.location.search);
                   if (urlParams.has('openEvent')) {
                       urlParams.delete('openEvent');
@@ -1819,14 +1817,15 @@ const messaging = firebase.messaging();
       new bootstrap.Toast(document.getElementById(toastId), { delay: 8000 }).show();
   });
 
-  // 🟢 COLD & WARM START CONTROLLER 🟢
-  // Trigger 1: Cold Start (App boots up and reads URL from the OS)
+  // 🟢 COLD & WARM START "PULL" CONTROLLER 🟢
+  
+  // Trigger 1: Cold Start 
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('openEvent')) {
       forceOpenCard(urlParams.get('openEvent'));
   }
 
-  // Trigger 2: Warm Start (App was in background, receives radio message from Service Worker)
+  // Trigger 2: Listen for the Service Worker's reply
   if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (event) => {
           if (event.data && event.data.action === 'openCard') {
@@ -1834,6 +1833,23 @@ const messaging = firebase.messaging();
           }
       });
   }
+
+  // Trigger 3: Every time the app comes to the screen, ASK the Service Worker!
+  document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+          if (navigator.serviceWorker.controller) {
+              // The app is fully awake. Safe to ask for the data!
+              navigator.serviceWorker.controller.postMessage({ action: 'checkPendingClick' });
+              
+              // Failsafe: Ask again 1 second later just in case iOS was being slow
+              setTimeout(() => {
+                  if (navigator.serviceWorker.controller) {
+                      navigator.serviceWorker.controller.postMessage({ action: 'checkPendingClick' });
+                  }
+              }, 1000);
+          }
+      }
+  });
   // 🔴 END DEEP LINKING CONTROLLER 🔴
 
 
