@@ -23,13 +23,15 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(e.request));
 });
 
-// --- SMART CLICK HANDLER (Deep Linking) ---
+// --- SMART CLICK HANDLER (Deep Linking for Live Site) ---
 self.addEventListener('notificationclick', (event) => {
   event.notification.close(); 
   
-  // Find the event ID in the payload
+  // Find the event ID in the payload (Handles both Apps Script and FCM Console formats)
   const notificationData = event.notification.data;
   const eventId = notificationData?.eventId || notificationData?.FCM_MSG?.data?.eventId;
+  
+  // 🟢 ROUTE TO LIVE SITE (index.html) 🟢
   const urlToOpen = eventId ? `/?openEvent=${eventId}` : '/?tab=events';
 
   event.waitUntil(
@@ -37,10 +39,11 @@ self.addEventListener('notificationclick', (event) => {
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
         if (client.url.includes('dashboard.createdbyegm.com') && 'focus' in client) {
-          client.navigate(urlToOpen); 
-          return client.focus(); 
+          // If they already have the app open, force it to navigate to the exact event
+          return client.navigate(urlToOpen).then(c => c.focus()); 
         }
       }
+      // If the app is completely closed, open it fresh
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }
