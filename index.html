@@ -492,27 +492,32 @@
 
       <div id="payroll-view" style="display:none;">
           <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 mt-2 gap-3">
+              
               <div>
                   <h4 class="fw-bold mb-0 text-danger d-flex align-items-center"><i class="bi bi-cash-coin me-2"></i> Payroll Engine</h4>
-                  <span class="text-muted small fw-bold d-block mt-1" style="font-size: 0.75rem;"><i class="bi bi-info-circle-fill opacity-50 me-1"></i>Always set rates first, you won't be able to edit the rates once manual payroll edits are applied.</span>
+                  <span class="text-muted small fw-bold d-block mt-1 mb-3" style="font-size: 0.75rem;"><i class="bi bi-info-circle-fill opacity-50 me-1"></i>Always set rates first, you won't be able to edit the rates once manual payroll edits are applied.</span>
+                  
+                  <div class="bg-white p-2 rounded-3 border shadow-sm d-inline-flex gap-2">
+                      <div class="px-2">
+                          <span class="form-label-sm text-secondary">Start of Cutoff</span>
+                          <input type="date" id="prStartDate" class="form-control form-control-sm fw-bold text-dark">
+                      </div>
+                      <div class="border-start ps-3 pe-2">
+                          <span class="form-label-sm text-secondary">End of Cutoff</span>
+                          <input type="date" id="prEndDate" class="form-control form-control-sm fw-bold text-dark">
+                      </div>
+                  </div>
               </div>
               
-              <div class="bg-white p-2 rounded-3 border shadow-sm d-flex flex-wrap gap-2 align-items-end">
-                  <div class="px-2">
-                      <span class="form-label-sm text-secondary">Start of Cutoff</span>
-                      <input type="date" id="prStartDate" class="form-control form-control-sm fw-bold text-dark">
-                  </div>
-                  <div class="border-start ps-2 pe-2 flex-grow-1">
-                      <span class="form-label-sm text-secondary">End of Cutoff</span>
-                      <input type="date" id="prEndDate" class="form-control form-control-sm fw-bold text-dark">
-                  </div>
-                  <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
-                  <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm ms-1 mt-1 text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
-                  <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
-                  <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="exportSessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> EXPORT</button>
-                  <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
-                  <button class="btn btn-secondary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openPayrollHistory()"><i class="bi bi-clock-history me-1"></i> HISTORY</button>
+              <div class="d-flex flex-wrap gap-2 justify-content-md-end align-items-end" style="max-width: 450px;">
+                  <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
+                  <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
+                  <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
+                  <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm" onclick="exportSessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> EXPORT</button>
+                  <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm" id="prRatesBtn" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
+                  <button class="btn btn-secondary btn-sm fw-bold px-3 shadow-sm" onclick="openPayrollHistory()"><i class="bi bi-clock-history me-1"></i> HISTORY</button>
               </div>
+
           </div>
 
           <div class="table-custom bg-white shadow-sm">
@@ -5579,12 +5584,12 @@ async function getNextEventId() {
       setTimeout(() => { printWin.print(); }, 500);
   }
 
-  // 🟢 NEW: Tracks manual edits to lock the Rates button
+// Tracks manual edits to lock the Rates button
 let hasManualPayrollEdits = false;
 
 function markPayrollEdited() {
     hasManualPayrollEdits = true;
-    const ratesBtn = document.querySelector('button[onclick="openRatesModal()"]');
+    const ratesBtn = document.getElementById('prRatesBtn');
     if (ratesBtn) {
         ratesBtn.disabled = true;
         ratesBtn.title = "Disabled because manual edits have been made. Refresh the page to reset.";
