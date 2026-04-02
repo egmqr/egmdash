@@ -1756,11 +1756,17 @@ if (!isStandalone) {
 
   const messaging = firebase.messaging();
 // 🟢 DEEP LINKING: BULLETPROOF INTERVAL CONTROLLER 🟢
+let isProcessingLink = false;
+
 function processDeepLink() {
+    if (isProcessingLink) return;
+
     const urlParams = new URLSearchParams(window.location.search);
     let eventId = urlParams.get('openEvent');
 
     if (!eventId) return; // If no deep link, do nothing.
+    
+    isProcessingLink = true;
 
     // Format the ID safely
     if (!eventId.toLowerCase().startsWith('egm')) {
@@ -1789,15 +1795,28 @@ function processDeepLink() {
                 const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
                 window.history.replaceState({}, '', newUrl);
             }
+            
+            // Unlock the processor after a short delay
+            setTimeout(() => { isProcessingLink = false; }, 1000);
         }
     }, 300);
 
     // Safety timeout: Give up after 10 seconds
-    setTimeout(() => clearInterval(waitForData), 10000);
+    setTimeout(() => {
+        clearInterval(waitForData);
+        isProcessingLink = false;
+    }, 10000);
 }
 
-// Run immediately on boot!
+// Trigger 1: Run immediately on boot (Cold Start)
 processDeepLink();
+
+// Trigger 2: Run every time the app comes back to the screen (Warm Start)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        setTimeout(processDeepLink, 300);
+    }
+});
 // 🔴 END DEEP LINKING CONTROLLER 🔴
   // 🟢 NEW: LISTEN FOR DIRECT SERVICE WORKER MESSAGES 🟢
 if ('serviceWorker' in navigator) {
