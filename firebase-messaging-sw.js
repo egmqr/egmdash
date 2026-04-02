@@ -23,13 +23,23 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(e.request));
 });
 
-// Version 1.3 - PostMessage Bridge
+// Version 1.4 - The Payload Hunter
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close(); 
   
-  const notificationData = event.notification.data;
-  const eventId = notificationData?.eventId || notificationData?.FCM_MSG?.data?.eventId;
+  // Grab the raw data object
+  const rawData = event.notification.data || {};
+  
+  // Hunt for the eventId in all the places Firebase usually hides it
+  let eventId = null;
+  if (rawData.eventId) {
+      eventId = rawData.eventId;
+  } else if (rawData.FCM_MSG && rawData.FCM_MSG.data && rawData.FCM_MSG.data.eventId) {
+      eventId = rawData.FCM_MSG.data.eventId;
+  } else if (rawData.data && rawData.data.eventId) {
+      eventId = rawData.data.eventId;
+  }
   
   const baseUrl = self.location.origin;
   const targetUrl = new URL(eventId ? `/?openEvent=${eventId}` : '/?tab=events', baseUrl).href;
@@ -38,22 +48,19 @@ self.addEventListener('notificationclick', (event) => {
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
-        // If the app is already open in the background...
         if (client.url.includes('dashboard.createdbyegm.com') && 'focus' in client) {
           client.focus();
           
-          // 🟢 THE FIX: Send a direct radio message to the open app instead of changing the URL!
-          if (eventId) {
-            client.postMessage({ action: 'openEventCard', eventId: eventId });
-          }
+          // Send the ID, plus the raw JSON data so our dashboard can alert us if it fails
+          client.postMessage({ 
+              action: 'openEventCard', 
+              eventId: eventId,
+              debugPayload: JSON.stringify(rawData)
+          });
           return; 
         }
       }
-      
-      // If the app was completely closed, open a fresh window (this still relies on the URL)
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
-      }
+      if (clients.openWindow) return clients.openWindow(targetUrl);
     })
   );
 });
