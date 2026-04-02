@@ -1755,33 +1755,38 @@ if (!isStandalone) {
   const db = firebase.firestore();
 
   const messaging = firebase.messaging();
- // 🟢 DEEP LINKING: THE "STICKY NOTE" CACHE READER 🟢
-async function checkUrlForEventCard(overrideId = null) {
-    let openEventId = overrideId;
+ // 🟢 DEEP LINKING: UNIFIED MASTER CONTROLLER 🟢
+let isOpeningCard = false; // Prevents the card from trying to open twice
+
+async function checkUrlForEventCard() {
+    if (isOpeningCard) return;
     
-    // 1. Check the URL just in case it's a fresh desktop click
-    if (!openEventId) {
-        const urlParams = new URLSearchParams(window.location.search);
+    let openEventId = null;
+    
+    // 1. Check the URL (Handles Desktop and Cold Starts)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('openEvent')) {
         openEventId = urlParams.get('openEvent');
     }
     
-    // 2. CHECK THE CACHE: Look for a sticky note left by the Service Worker!
+    // 2. Check the Cache (Handles iOS/Android Warm Starts)
     if (!openEventId) {
         try {
             const cache = await caches.open('egm-pwa-data');
             const response = await cache.match('/pending-event');
             if (response) {
                 openEventId = await response.text();
-                await cache.delete('/pending-event'); // Trash the note so it doesn't open twice
-                console.log("Found pending event in cache:", openEventId);
+                await cache.delete('/pending-event'); // Trash the note immediately
             }
         } catch (e) {
             console.log("Cache check failed", e);
         }
     }
 
-    // 3. If we found an ID anywhere, and Firebase data is ready, DRAW THE CARD!
+    // 3. If we found an ID, and the Firebase data is ready, DRAW THE CARD!
     if (openEventId && rawEvents && rawEvents.length > 0) {
+        isOpeningCard = true; // Lock it so it doesn't glitch
+        
         const formattedId = openEventId.startsWith('egm') ? openEventId : 'egm' + openEventId;
         const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(formattedId));
         
@@ -1793,38 +1798,35 @@ async function checkUrlForEventCard(overrideId = null) {
             const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
             modal.show();
             
-            // Wipe the URL clean
-            const urlParams = new URLSearchParams(window.location.search);
+            // Silently wipe the URL clean
             urlParams.delete('openEvent');
             const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
             window.history.replaceState({}, '', newUrl);
+        } else {
+            showToast(`Could not find Event #${formattedId} in database.`, "warning");
         }
+        
+        // Unlock after 1 second
+        setTimeout(() => { isOpeningCard = false; }, 1000);
     }
 }
 
-// Check for notes immediately when the app fully loads (Cold Start)
-setTimeout(checkUrlForEventCard, 500);
+// TRIGGERS
+setTimeout(checkUrlForEventCard, 500); // Check on initial load
 
-// Check for notes every single time the app comes out of the background (Warm Start)
 window.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-        setTimeout(checkUrlForEventCard, 300);
-    }
-});
-// 🔴 END DEEP LINKING CONTROLLER 🔴
-
-// LISTENER A: Check every time the phone brings the app out of the background (Warm Start)
-window.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        setTimeout(checkUrlForEventCard, 300);
+        setTimeout(checkUrlForEventCard, 300); // Check when app is brought to foreground
     }
 });
 
-// LISTENER B: Check if the Service Worker explicitly sends a background radio message
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.action === 'openEventCard') {
-            checkUrlForEventCard(event.data.eventId);
+            // If the Service Worker radios us directly, inject it into the URL and run!
+            const newUrl = window.location.pathname + '?openEvent=' + event.data.eventId;
+            window.history.replaceState({}, '', newUrl);
+            checkUrlForEventCard();
         }
     });
 }
@@ -5151,17 +5153,16 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
         });
     });
 
-    rawEvents = mappedEvents;
+   rawEvents = mappedEvents;
     
     // Safely attempt to render the UI
     try {
         updateCrewFilterDropdown(rawEvents);
-        populateExpenseEventsDropdown(); // <--- Fills the Expenses dropdown instantly!
+        populateExpenseEventsDropdown(); 
         applyFilters();
-
-        // LISTENER C: Check the URL on initial app load (Cold Start)
+        
+        // Check for deep links every time new data arrives from Firebase
         setTimeout(checkUrlForEventCard, 300);
-
     } catch(err) {
         console.error("UI Render Error:", err);
         alert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
