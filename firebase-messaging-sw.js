@@ -23,44 +23,36 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(e.request));
 });
 
-// Version 1.4 - The Payload Hunter
+// Version 1.5 - The "Sticky Note" Cache Method
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close(); 
   
-  // Grab the raw data object
+  // 1. Hunt down the Event ID
   const rawData = event.notification.data || {};
+  let eventId = rawData.eventId || (rawData.FCM_MSG && rawData.FCM_MSG.data && rawData.FCM_MSG.data.eventId) || (rawData.data && rawData.data.eventId);
   
-  // Hunt for the eventId in all the places Firebase usually hides it
-  let eventId = null;
-  if (rawData.eventId) {
-      eventId = rawData.eventId;
-  } else if (rawData.FCM_MSG && rawData.FCM_MSG.data && rawData.FCM_MSG.data.eventId) {
-      eventId = rawData.FCM_MSG.data.eventId;
-  } else if (rawData.data && rawData.data.eventId) {
-      eventId = rawData.data.eventId;
-  }
-  
-  const baseUrl = self.location.origin;
-  const targetUrl = new URL(eventId ? `/?openEvent=${eventId}` : '/?tab=events', baseUrl).href;
+  if (!eventId) return; // If there's no ID, do nothing
 
+  // 2. Write the Event ID to a temporary Cache file (The Sticky Note)
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        if (client.url.includes('dashboard.createdbyegm.com') && 'focus' in client) {
-          client.focus();
-          
-          // Send the ID, plus the raw JSON data so our dashboard can alert us if it fails
-          client.postMessage({ 
-              action: 'openEventCard', 
-              eventId: eventId,
-              debugPayload: JSON.stringify(rawData)
-          });
-          return; 
+    caches.open('egm-pwa-data').then(cache => {
+      return cache.put('/pending-event', new Response(eventId));
+    }).then(() => {
+      
+      // 3. Now that the note is safely stored, wake up the app!
+      const baseUrl = self.location.origin;
+      return clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+        for (let i = 0; i < windowClients.length; i++) {
+          const client = windowClients[i];
+          if (client.url.includes('dashboard.createdbyegm.com') && 'focus' in client) {
+            return client.focus(); // Wake up the backgrounded app
+          }
         }
-      }
-      if (clients.openWindow) return clients.openWindow(targetUrl);
+        // If app is fully closed, open it fresh
+        if (clients.openWindow) return clients.openWindow(baseUrl + '/?tab=events');
+      });
+      
     })
   );
 });
