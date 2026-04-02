@@ -1755,58 +1755,56 @@ if (!isStandalone) {
   const db = firebase.firestore();
 
   const messaging = firebase.messaging();
-// 🟢 DEEP LINKING: COLD START & WARM START CONTROLLER 🟢
-function openCardSafely(eventId) {
+// 🟢 MASTER DEEP LINK CONTROLLER (Broadcast Edition) 🟢
+const bc = new BroadcastChannel('egm_deep_links');
+
+function openCardUniversal(eventId) {
     if (!eventId) return;
-    if (!eventId.toLowerCase().startsWith('egm')) eventId = 'egm' + eventId;
+    const formattedId = eventId.toLowerCase().startsWith('egm') ? eventId : 'egm' + eventId;
 
-    // Loop every 300ms until Firebase finishes downloading the data (Handles Cold Starts)
-    // For Warm Starts, rawEvents is already populated, so this fires instantly!
-    const waitForData = setInterval(() => {
+    console.log("Attempting to open card for:", formattedId);
+
+    // Keep checking every 300ms until the data exists in rawEvents
+    const attemptInterval = setInterval(() => {
         if (typeof rawEvents !== 'undefined' && rawEvents.length > 0) {
-            clearInterval(waitForData); 
-
-            const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === eventId.toLowerCase());
-
-            if (targetEvent) {
-                // Swap tabs if needed
+            const target = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId.toLowerCase());
+            
+            if (target) {
+                clearInterval(attemptInterval);
                 if (currentTab !== 'events') switchTab('events');
-                
-                // Draw the card
-                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+
+                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(target);
                 const cardModalEl = document.getElementById('eventCardModal');
-                const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
+                const modal = bootstrap.Modal.getOrCreateInstance(cardModalEl);
                 modal.show();
 
-                // Clean URL if we came from a Cold Start
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has('openEvent')) {
-                    urlParams.delete('openEvent');
-                    const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                    window.history.replaceState({}, '', newUrl);
+                // Clean URL if present
+                const url = new URL(window.location);
+                if (url.searchParams.has('openEvent')) {
+                    url.searchParams.delete('openEvent');
+                    window.history.replaceState({}, '', url.toString());
                 }
             }
         }
     }, 300);
 
-    setTimeout(() => clearInterval(waitForData), 10000); // Failsafe
+    // Stop trying after 8 seconds if not found
+    setTimeout(() => clearInterval(attemptInterval), 8000);
 }
 
-// TRIGGER 1: COLD START (App just booted up from a closed state via URL)
-const initialUrlParams = new URLSearchParams(window.location.search);
-if (initialUrlParams.get('openEvent')) {
-    openCardSafely(initialUrlParams.get('openEvent'));
-}
+// LISTENER 1: Walkie-Talkie (Broadcast Channel) for Warm Starts
+bc.onmessage = (event) => {
+    if (event.data && event.data.action === 'openCard') {
+        openCardUniversal(event.data.eventId);
+    }
+};
 
-// TRIGGER 2: WARM START (App was already open, Service Worker sent a radio message)
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.action === 'openEventCard') {
-            openCardSafely(event.data.eventId);
-        }
-    });
+// LISTENER 2: URL check for Cold Starts
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('openEvent')) {
+    openCardUniversal(urlParams.get('openEvent'));
 }
-// 🔴 END DEEP LINKING CONTROLLER 🔴
+// 🔴 END DEEP LINK CONTROLLER 🔴
   // 🟢 NEW: LISTEN FOR DIRECT SERVICE WORKER MESSAGES 🟢
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
