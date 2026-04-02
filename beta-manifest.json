@@ -3,7 +3,7 @@
   "short_name": "EGM Beta",
   "description": "Beta Testing Operations Dashboard",
   "start_url": "/beta.html?tab=events",
-  "scope": "/",
+  "scope": "/beta.html",
   "display": "standalone",
   "background_color": "#f1f1f1",
   "theme_color": "#515151",
