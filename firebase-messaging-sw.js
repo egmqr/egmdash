@@ -12,6 +12,8 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+let pendingEventId = null; // 🟢 The SW Memory Bank
+
 self.addEventListener('install', (e) => self.skipWaiting());
 self.addEventListener('activate', (e) => self.clients.claim());
 
@@ -23,6 +25,11 @@ self.addEventListener('notificationclick', (event) => {
   const fcmData = notifData.FCM_MSG ? notifData.FCM_MSG.data : notifData;
   const eventId = fcmData.eventId || notifData.eventId;
   
+  if (!eventId) return;
+
+  // Store it in memory safely!
+  pendingEventId = eventId; 
+
   const targetUrl = self.location.origin + '/?openEvent=' + eventId;
 
   event.waitUntil(
@@ -30,16 +37,21 @@ self.addEventListener('notificationclick', (event) => {
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-          // WARM START: Focus the app, wait half a second for iOS to unfreeze, then send the ID!
-          client.focus();
-          setTimeout(() => {
-              client.postMessage({ action: 'openCard', eventId: eventId });
-          }, 500);
-          return;
+          return client.focus(); // Wake up the app!
         }
       }
-      // COLD START: App is closed. Open it with the URL.
-      if (clients.openWindow) return clients.openWindow(targetUrl);
+      if (clients.openWindow) return clients.openWindow(targetUrl); // Cold start
     })
   );
+});
+
+// 🟢 NEW: When the app wakes up, it will ask us if we have an ID waiting!
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'checkPendingClick') {
+    if (pendingEventId) {
+      // Send it back to the app!
+      event.source.postMessage({ action: 'openCard', eventId: pendingEventId });
+      pendingEventId = null; // Clear it so it only opens once
+    }
+  }
 });
