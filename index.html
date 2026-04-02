@@ -1754,95 +1754,113 @@ if (!isStandalone) {
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  const messaging = firebase.messaging();
-// 🟢 REUSABLE POPUP TRIGGER 🟢
-function openEventCard(eventId) {
-    if (!eventId) return; 
+const messaging = firebase.messaging();
 
-    const formattedId = eventId.toLowerCase().startsWith('egm') ? eventId : 'egm' + eventId;
+  // 🟢 GOAL 1: IN-APP FOREGROUND NOTIFICATIONS 🟢
+  // This listens for push notifications while the app is actively open on your screen!
+  messaging.onMessage((payload) => {
+      console.log('Foreground Message received: ', payload);
+      const eventId = payload.data.eventId;
+      const title = payload.notification.title || "New Notification";
+      const body = payload.notification.body || "Tap to view details.";
 
-    const waitForData = setInterval(() => {
-        if (typeof rawEvents !== 'undefined' && rawEvents.length > 0) {
-            const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId.toLowerCase());
+      // Create a container for our custom push alerts if it doesn't exist
+      let container = document.getElementById('fgToastContainer');
+      if (!container) {
+          container = document.createElement('div');
+          container.id = 'fgToastContainer';
+          container.className = 'toast-container position-fixed top-0 end-0 p-3 mt-5';
+          container.style.zIndex = '10600';
+          document.body.appendChild(container);
+      }
 
-            if (targetEvent) {
+      // Build a beautiful, clickable Toast notification
+      const toastId = 'toast-' + Date.now();
+      const toastHtml = `
+          <div id="${toastId}" class="toast align-items-center text-bg-primary border-0 shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true" style="cursor:pointer;" onclick="forceOpenCard('${eventId}', '${toastId}')">
+              <div class="d-flex">
+                  <div class="toast-body fw-bold">
+                      <div><i class="bi bi-bell-fill me-2"></i>${title}</div>
+                      <div class="small fw-normal mt-1">${body}</div>
+                      <div class="small text-warning mt-1"><i class="bi bi-hand-index-thumb"></i> Tap to view card</div>
+                  </div>
+                  <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" onclick="event.stopPropagation();"></button>
+              </div>
+          </div>
+      `;
+      
+      container.insertAdjacentHTML('beforeend', toastHtml);
+      const toastEl = document.getElementById(toastId);
+      const toast = new bootstrap.Toast(toastEl, { delay: 8000 }); // Stays on screen for 8 seconds
+      toast.show();
+  });
+
+  // Helper to instantly open the card when the In-App Toast is clicked
+  window.forceOpenCard = function(eventId, toastId) {
+      if (toastId) {
+          const toastEl = document.getElementById(toastId);
+          if (toastEl) bootstrap.Toast.getOrCreateInstance(toastEl).hide();
+      }
+      
+      if (!eventId) return;
+      const formattedId = eventId.toLowerCase().startsWith('egm') ? eventId : 'egm' + eventId;
+      
+      const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId.toLowerCase());
+      if (targetEvent) {
+          if (currentTab !== 'events') switchTab('events');
+          document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+          const cardModalEl = document.getElementById('eventCardModal');
+          const modal = bootstrap.Modal.getOrCreateInstance(cardModalEl);
+          modal.show();
+      } else {
+          showToast("Event not found in database.", "warning");
+      }
+  };
+
+  // 🟢 GOAL 2: BACKGROUND/WARM START RECOVERY CONTROLLER 🟢
+  function processDeepLink() {
+      const urlParams = new URLSearchParams(window.location.search);
+        let eventId = urlParams.get('openEvent');
+
+        if (!eventId) return; 
+
+        const formattedId = eventId.toLowerCase().startsWith('egm') ? eventId : 'egm' + eventId;
+
+        const waitForData = setInterval(() => {
+            if (typeof rawEvents !== 'undefined' && rawEvents.length > 0) {
                 clearInterval(waitForData);
-                if (currentTab !== 'events') switchTab('events');
+                const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId.toLowerCase());
 
-                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                const cardModalEl = document.getElementById('eventCardModal');
-                const modal = bootstrap.Modal.getOrCreateInstance(cardModalEl);
-                modal.show();
+                if (targetEvent) {
+                    if (currentTab !== 'events') switchTab('events');
+
+                    document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                    const cardModalEl = document.getElementById('eventCardModal');
+                    const modal = bootstrap.Modal.getOrCreateInstance(cardModalEl);
+                    modal.show();
+
+                    // CRITICAL: Erase the URL immediately so it doesn't trigger again if you minimize/maximize the app
+                    urlParams.delete('openEvent');
+                    const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                    window.history.replaceState({}, '', newUrl);
+                }
             }
-        }
-    }, 300);
+        }, 300);
 
-    setTimeout(() => clearInterval(waitForData), 10000);
-}
+        setTimeout(() => clearInterval(waitForData), 10000);
+  }
 
-// 🟢 DEEP LINKING: BULLETPROOF INTERVAL CONTROLLER 🟢
-let isProcessingLink = false;
+  // Trigger A: Run immediately on boot (Cold Start)
+  processDeepLink();
 
-function processDeepLink() {
-    if (isProcessingLink) return;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    let eventId = urlParams.get('openEvent');
-
-    if (!eventId) return; // If no deep link, do nothing.
-    
-    isProcessingLink = true;
-
-    // Format the ID safely
-    if (!eventId.toLowerCase().startsWith('egm')) {
-        eventId = 'egm' + eventId;
-    }
-
-    // Loop every 300ms until Firebase finishes downloading the data
-    const waitForData = setInterval(() => {
-        if (typeof rawEvents !== 'undefined' && rawEvents.length > 0) {
-            clearInterval(waitForData); // Data arrived! Stop checking.
-
-            const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === eventId.toLowerCase());
-
-            if (targetEvent) {
-                // Switch to events tab
-                if (currentTab !== 'events') switchTab('events');
-
-                // Draw and show card
-                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                const cardModalEl = document.getElementById('eventCardModal');
-                const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
-                modal.show();
-
-                // Clean URL
-                urlParams.delete('openEvent');
-                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                window.history.replaceState({}, '', newUrl);
-            }
-            
-            // Unlock the processor after a short delay
-            setTimeout(() => { isProcessingLink = false; }, 1000);
-        }
-    }, 300);
-
-    // Safety timeout: Give up after 10 seconds
-    setTimeout(() => {
-        clearInterval(waitForData);
-        isProcessingLink = false;
-    }, 10000);
-}
-
-// Trigger 1: Run immediately on boot (Cold Start)
-processDeepLink();
-
-// Trigger 2: Run every time the app comes back to the screen (Warm Start)
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        setTimeout(processDeepLink, 300);
-    }
-});
-// 🔴 END DEEP LINKING CONTROLLER 🔴
+  // Trigger B: Run every time the app comes out of the background (Warm Start)
+  document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+          // Give the OS a split second to inject the new URL, then process it!
+          setTimeout(processDeepLink, 300);
+      }
+  });
+  // 🔴 END DEEP LINKING CONTROLLER 🔴
 
 
   //---------------------------
