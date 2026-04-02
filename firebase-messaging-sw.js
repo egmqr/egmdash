@@ -23,29 +23,29 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(e.request));
 });
 
+// Version 1.2 - Absolute URL Fix
+
 // --- SMART CLICK HANDLER (Deep Linking for Live Site) ---
 self.addEventListener('notificationclick', (event) => {
   event.notification.close(); 
   
-  // Find the event ID in the payload (Handles both Apps Script and FCM Console formats)
   const notificationData = event.notification.data;
   const eventId = notificationData?.eventId || notificationData?.FCM_MSG?.data?.eventId;
   
-  // 🟢 ROUTE TO LIVE SITE (index.html) 🟢
-  const urlToOpen = eventId ? `/?openEvent=${eventId}` : '/?tab=events';
+  // 🟢 THE FIX: Build a full, absolute URL so Android doesn't strip the parameter
+  const baseUrl = self.location.origin;
+  const targetUrl = new URL(eventId ? `/?openEvent=${eventId}` : '/?tab=events', baseUrl).href;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
         if (client.url.includes('dashboard.createdbyegm.com') && 'focus' in client) {
-          // If they already have the app open, force it to navigate to the exact event
-          return client.navigate(urlToOpen).then(c => c.focus()); 
+          return client.navigate(targetUrl).then(c => c.focus()); 
         }
       }
-      // If the app is completely closed, open it fresh
       if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
+        return clients.openWindow(targetUrl);
       }
     })
   );
