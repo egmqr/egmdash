@@ -5,6 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>EGM Operations Dashboard</title>
+  <link rel="manifest" href="/beta-manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="EGM Ops">
+  <link rel="apple-touch-icon" href="/egm192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -334,26 +339,58 @@
   </div>
 </div>
 
-<div class="container-fluid" style="max-width: 1400px; margin: auto; padding: 0;">
-  
+<div class="px-2 px-md-0">
   <div class="sticky-header">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="fw-bold mb-0 d-flex align-items-center" style="letter-spacing: -0.5px;">EGM <span class="text-primary ms-1">Ops</span> 
-          <i class="bi bi-arrow-repeat text-primary ms-2" id="syncIcon" style="cursor: pointer; font-size: 1.3rem;" onclick="forceSync()" title="Refresh App"></i>
-          <span id="bgSyncIndicator" class="bg-sync-indicator ms-3"><div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 0.8rem; height: 0.8rem; border-width: 0.15em;"></div> Syncing</span>
-      </h4>
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
       
-      <div class="d-flex align-items-center gap-2">
-          <button id="newEntryBtn" class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm align-items-center gap-1" style="display: flex;" onclick="requireAuth(() => openNewEventModal(), true)">
-            <i class="bi bi-plus-lg"></i> <span class="d-none d-sm-inline">New Entry</span>
+      <div class="d-flex align-items-center">
+          <i class="bi bi-arrow-repeat text-primary" id="syncIcon" style="cursor: pointer; font-size: 1.5rem;" onclick="forceSync()" title="Refresh App"></i>
+          <span id="bgSyncIndicator" class="bg-sync-indicator ms-3"><div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 0.8rem; height: 0.8rem; border-width: 0.15em;"></div> Syncing</span>
+      </div>
+      
+      <div class="d-flex align-items-center gap-2 ms-auto">
+          <button id="newEntryBtn" class="btn btn-primary btn-sm fw-bold shadow-sm d-flex align-items-center justify-content-center" onclick="requireAuth(() => openNewEventModal(), true)" title="New Entry" style="width: 38px; height: 34px;">
+            <i class="bi bi-plus-lg fs-5"></i>
           </button>
+          
           <button id="themeToggleBtn" class="btn btn-light border-secondary-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center" onclick="toggleTheme()" title="Toggle Dark Mode" style="width: 38px; height: 34px;">
             <i id="themeIcon" class="bi bi-moon-fill text-secondary"></i>
           </button>
+          
+          <button id="installAppBtn" class="btn btn-warning border-warning-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center gap-1 fw-bold" style="display: none !important; height: 34px;">
+            <i class="bi bi-download"></i>
+          </button>
+          
           <button id="logoutBtn" class="btn btn-outline-danger btn-sm shadow-sm align-items-center justify-content-center" onclick="signOut()" title="Sign Out / Switch Account" style="width: 38px; height: 34px; display: none;">
             <i class="bi bi-box-arrow-right fs-6"></i>
           </button>
+
+          <div class="input-group input-group-sm shadow-sm" style="max-width: 150px; height: 34px;">
+              <select id="pushCrewName" class="form-select fw-bold border-primary" style="font-size: 0.8rem; padding-right: 20px;">
+                  <option value="">Name...</option>
+                  <option value="Edgar">Edgar</option>
+                  <option value="Francis">Francis</option>
+                  <option value="Mael">Mael</option>
+                  <option value="Lexie">Lexie</option>
+                  <option value="Athan">Athan</option>
+                  <option value="Jovert">Jovert</option>
+                  <option value="May">May</option>
+                  <option value="Tina">Tina</option>
+                  <option value="Jops">Jops</option>
+                  <option value="Grace">Grace</option>
+                  <option value="Jun">Jun</option>
+                  <option value="Tatalino">Tatalino</option>
+                  <option value="Joram">Joram</option>
+                  <option value="Roy">Roy</option>
+                  <option value="Smile">Smile</option>
+                  <option value="Jenielyn">Jenielyn</option>
+              </select>
+              <button class="btn btn-primary d-flex align-items-center justify-content-center" onclick="subscribeToNotifications()" title="Enable Notifications" style="padding: 0 10px;">
+                  <i class="bi bi-bell-fill"></i>
+              </button>
+          </div>
       </div>
+
     </div>
 
     <div class="d-flex justify-content-between align-items-center pb-2">
@@ -368,15 +405,15 @@
       </ul>
       <div class="d-flex gap-2">
         <button id="copyFilterLinkBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" onclick="copyCurrentUrl()" title="Copy link with active filters">
-          <i class="bi bi-link-45deg fs-6"></i> <span class="d-none d-sm-inline">Share View</span>
+          <i class="bi bi-link-45deg fs-6"></i>
         </button>
         <button id="filterToggleBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
-          <i class="bi bi-sliders"></i> <span class="d-none d-sm-inline">Filters</span>
+          <i class="bi bi-sliders"></i>
         </button>
       </div>
     </div>
 
-    <div class="collapse mt-2" id="filterCollapse">
+    <div class="collapse mt-2 mb-2" id="filterCollapse">
       <div class="filter-panel" id="eventFilters">
         <div class="row g-2 align-items-end">
           <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
@@ -1639,11 +1676,70 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-compat.js"></script>
+  <script>
+// 1. Register the exact Firebase Service Worker
+let swRegistration = null;
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+        try {
+            // Register the specific FCM file
+            swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            console.log('✅ Service Worker registered!', swRegistration.scope);
+        } catch(err) {
+            console.error('❌ Service Worker registration failed:', err);
+        }
+    });
+}
+
+// 2. Handle the "Install App" button logic
+let deferredPrompt;
+const installBtn = document.getElementById('installAppBtn');
+
+// Detect if user is on iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+// Detect if the app is ALREADY installed/running in standalone mode
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+if (!isStandalone) {
+    if (isIOS) {
+        // APPLE: Show button, but it triggers a manual instruction modal
+        installBtn.style.setProperty('display', 'flex', 'important');
+        installBtn.onclick = () => {
+            alert('To install on iPhone:\n1. Tap the "Share" icon at the bottom of Safari.\n2. Scroll down and tap "Add to Home Screen".');
+        };
+    } else {
+        // ANDROID/CHROME: Wait for the browser to fire the install event
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome's default mini-infobar from appearing automatically
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            deferredPrompt = e;
+            // Show our custom install button
+            installBtn.style.setProperty('display', 'flex', 'important');
+        });
+
+        installBtn.onclick = async () => {
+            if (deferredPrompt) {
+                // Show the official browser install prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to install prompt: ${outcome}`);
+                // We've used the prompt, and can't use it again, discard it
+                deferredPrompt = null;
+                // Hide the button
+                installBtn.style.setProperty('display', 'none', 'important');
+            }
+        };
+    }
+}
+</script>
 <script>
   // PASTE YOUR FIREBASE CONFIG HERE
   const firebaseConfig = {
@@ -1657,6 +1753,9 @@
   
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+
+  const messaging = firebase.messaging();
+
 
   // 🔥 THE MAGIC FIX: Enable Local Caching so data loads in milliseconds
   db.enablePersistence({ synchronizeTabs: true })
@@ -1705,6 +1804,64 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
+
+async function subscribeToNotifications() {
+    // 🟢 NEW: iOS / Unsupported Browser Check 🟢
+    if (!('Notification' in window)) {
+        alert("Push notifications are not supported in this browser.\n\nIf you are on an iPhone, you MUST open this site in Safari, tap 'Share', and select 'Add to Home Screen' to enable notifications.");
+        return;
+    }
+
+    const crewName = document.getElementById('pushCrewName').value;
+    if (!crewName) {
+        alert("Please select your name first!");
+        return;
+    }
+
+    try {
+        // Ask the phone for permission to show banners
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+            const ov = document.getElementById('submitOverlay');
+            document.getElementById('overlayText').innerText = "Linking device...";
+            ov.style.display = 'flex';
+
+            // IMPORTANT: Wait for the Service Worker to be fully ready
+            if (!swRegistration) {
+                swRegistration = await navigator.serviceWorker.ready;
+            }
+
+            // Pass both the VAPID key AND the explicit Service Worker registration
+            const currentToken = await messaging.getToken({ 
+                vapidKey: 'BP7cle1tzzGEbE9xBWOyHFHToup7UOOzfDmoyZshw51__4Vhebz1jZaTlca8HZxu7KUBnw4nGJTc6C56SjqzsI0',
+                serviceWorkerRegistration: swRegistration
+            });
+
+            if (currentToken) {
+                // 🟢 THE FIX: Save as an Array of tokens instead of a single string
+                await db.collection("crew_tokens").doc(crewName).set({
+                    tokens: firebase.firestore.FieldValue.arrayUnion(currentToken),
+                    lastUpdatedDevice: navigator.userAgent,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }); // <-- CRITICAL: Prevents overwriting the whole document!
+                
+                ov.style.display = 'none';
+                showToast(`Success! Notifications enabled for ${crewName} on this device.`, 'success');
+            } else {
+                ov.style.display = 'none';
+                alert("Could not generate a token. Check console.");
+            }
+        } else {
+            alert("You denied notification permissions. You will need to allow them in your browser/phone settings.");
+        }
+    } catch (error) {
+        document.getElementById('submitOverlay').style.display = 'none';
+        console.error("Error getting token:", error);
+        alert("Failed to enable notifications. Error: " + error.message);
+    }
+}
+  //
   let pendingAuthAction = null;
   // This is your permanently designated Apps Script URL
   const API_URL = 'https://script.google.com/macros/s/AKfycbwYMEUmPOR9spn-_jC3WousZ9L5s8aksFrZwYDTGwW-N54S9q7P1BY-_KIVVEzi1TU/exec';
@@ -3892,7 +4049,44 @@ function generateSingleEventCard(e) {
           });
 
           await batch.commit(); // Execute the bulk upload
+          await batch.commit(); // Execute the bulk upload
           
+          // 🟢 NEW: SEND PUSH NOTIFICATIONS 🟢
+          try {
+              const tokens = [];
+              for (const crewName of obj.manpower) {
+                  // Look up each assigned crew member in the database
+                  const tokenDoc = await db.collection("crew_tokens").doc(crewName).get();
+                  
+                  if (tokenDoc.exists) {
+                      const data = tokenDoc.data();
+                      // Support the new Array format (multiple devices)
+                      if (data.tokens && Array.isArray(data.tokens)) {
+                          tokens.push(...data.tokens); 
+                      } 
+                      // Support the old single string format just in case
+                      else if (data.token) {
+                          tokens.push(data.token);
+                      }
+                  }
+              }
+
+              if (tokens.length > 0) {
+                  // Tell Apps Script to fire the push notifications!
+                  callApi({
+                      action: 'sendPush',
+                      tokens: tokens,
+                      title: `New Shoot: ${obj.eventName}`,
+                      body: `You are booked for ${obj.eventDate}. Call time is ${formatAMPM(obj.callTime)}.`,
+                      eventId: newId
+                  }, 'POST', true);
+              }
+          } catch (pushErr) {
+              console.error("Failed to trigger push:", pushErr);
+          }
+          // 🔴 END NEW PUSH LOGIC 🔴
+
+          bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide();
           bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
           e.target.reset(); 
           document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
