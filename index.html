@@ -1756,7 +1756,7 @@ if (!isStandalone) {
 
 const messaging = firebase.messaging();
 
-  // 🟢 IN-APP FOREGROUND TOASTS 🟢
+  // 🟢 IN-APP FOREGROUND TOASTS & CARD OPENER 🟢
   window.forceOpenCard = function(eventId, toastId) {
       if (toastId) {
           const toastEl = document.getElementById(toastId);
@@ -1774,8 +1774,7 @@ const messaging = firebase.messaging();
               if (targetEvent) {
                   if (currentTab !== 'events') switchTab('events');
                   document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                  const cardModalEl = document.getElementById('eventCardModal');
-                  bootstrap.Modal.getOrCreateInstance(cardModalEl).show();
+                  bootstrap.Modal.getOrCreateInstance(document.getElementById('eventCardModal')).show();
                   
                   // Clean URL if we came from a Cold Start
                   const urlParams = new URLSearchParams(window.location.search);
@@ -1820,40 +1819,21 @@ const messaging = firebase.messaging();
       new bootstrap.Toast(document.getElementById(toastId), { delay: 8000 }).show();
   });
 
-  // 🟢 COLD & WARM START MAILBOX READER 🟢
-  function processDeepLinks() {
-      // 1. Check URL (Cold Start) - TYPO FIXED HERE
-      const urlParams = new URLSearchParams(window.location.search);
-      let eventId = urlParams.get('openEvent');
-      if (eventId) {
-          forceOpenCard(eventId);
-          return;
-      }
-
-      // 2. Check Mailbox Cache (Warm Start)
-      if ('caches' in window) {
-          caches.open('egm-pwa-data').then(cache => {
-              cache.match('/pending-event').then(response => {
-                  if (response) {
-                      response.text().then(id => {
-                          cache.delete('/pending-event'); // Trash the note
-                          forceOpenCard(id);
-                      });
-                  }
-              });
-          });
-      }
+  // 🟢 COLD & WARM START CONTROLLER 🟢
+  // Trigger 1: Cold Start (App boots up and reads URL from the OS)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('openEvent')) {
+      forceOpenCard(urlParams.get('openEvent'));
   }
 
-  // Trigger on Boot (Cold Start)
-  processDeepLinks();
-
-  // Trigger when app unfreezes (Warm Start)
-  document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-          setTimeout(processDeepLinks, 500);
-      }
-  });
+  // Trigger 2: Warm Start (App was in background, receives radio message from Service Worker)
+  if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.action === 'openCard') {
+              forceOpenCard(event.data.eventId);
+          }
+      });
+  }
   // 🔴 END DEEP LINKING CONTROLLER 🔴
 
 
