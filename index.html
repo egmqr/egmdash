@@ -5032,31 +5032,34 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
     // Safely attempt to render the UI
     try {
         updateCrewFilterDropdown(rawEvents);
-        populateExpenseEventsDropdown(); // <--- Fills the Expenses dropdown instantly!
+        populateExpenseEventsDropdown();
         applyFilters();
 
-        // 🟢 NEW: DEEP LINKING - AUTO OPEN EVENT CARD 🟢
+        // 🟢 NEW: DEEP LINKING (Race-Condition Proof) 🟢
         const urlParams = new URLSearchParams(window.location.search);
         const openEventId = urlParams.get('openEvent');
         
         if (openEventId) {
-            // Force the app to switch to the Events tab visually
-            switchTab('events');
-            
-            // Find the specific event data in our freshly downloaded array
+            // Check if the event has arrived from the cloud yet
             const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(openEventId));
             
             if (targetEvent) {
-                // Populate and open the Event Card View Modal
-                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                const cardModalEl = document.getElementById('eventCardModal');
-                const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
-                modal.show();
+                // We found it! Wait a tiny moment for the UI to settle, then open the card
+                setTimeout(() => {
+                    switchTab('events');
+                    document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                    const cardModalEl = document.getElementById('eventCardModal');
+                    const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
+                    modal.show();
+                }, 300);
                 
-                // Erase the 'openEvent' part of the URL so it doesn't re-open if they just hit refresh later
+                // NOW we safely erase the URL so it doesn't get stuck in a loop
                 urlParams.delete('openEvent');
                 const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
                 window.history.replaceState({}, '', newUrl);
+            } else {
+                console.log("Event not yet in local cache. Waiting for cloud sync...");
+                // It will automatically try again a second later when the server responds!
             }
         }
         // 🔴 END DEEP LINKING 🔴
