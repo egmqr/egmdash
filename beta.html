@@ -1811,6 +1811,7 @@ async function subscribeToNotifications() {
                 vapidKey: 'BP7cle1tzzGEbE9xBWOyHFHToup7UOOzfDmoyZshw51__4Vhebz1jZaTlca8HZxu7KUBnw4nGJTc6C56SjqzsI0' 
             });
 
+          
             if (currentToken) {
                 // Save the token to a new Firestore collection called "crew_tokens"
                 await db.collection("crew_tokens").doc(crewName).set({
