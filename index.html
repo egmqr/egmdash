@@ -1780,33 +1780,69 @@ function openEventCard(eventId) {
     setTimeout(() => clearInterval(waitForData), 10000);
 }
 
-// 🟢 BOOT RECOVERY CONTROLLER (Runs on fresh load) 🟢
+// 🟢 DEEP LINKING: BULLETPROOF INTERVAL CONTROLLER 🟢
+let isProcessingLink = false;
+
 function processDeepLink() {
+    if (isProcessingLink) return;
+
     const urlParams = new URLSearchParams(window.location.search);
     let eventId = urlParams.get('openEvent');
 
-    if (eventId) {
-        openEventCard(eventId);
+    if (!eventId) return; // If no deep link, do nothing.
+    
+    isProcessingLink = true;
 
-        // Clean URL
-        urlParams.delete('openEvent');
-        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-        window.history.replaceState({}, '', newUrl);
+    // Format the ID safely
+    if (!eventId.toLowerCase().startsWith('egm')) {
+        eventId = 'egm' + eventId;
     }
+
+    // Loop every 300ms until Firebase finishes downloading the data
+    const waitForData = setInterval(() => {
+        if (typeof rawEvents !== 'undefined' && rawEvents.length > 0) {
+            clearInterval(waitForData); // Data arrived! Stop checking.
+
+            const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === eventId.toLowerCase());
+
+            if (targetEvent) {
+                // Switch to events tab
+                if (currentTab !== 'events') switchTab('events');
+
+                // Draw and show card
+                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                const cardModalEl = document.getElementById('eventCardModal');
+                const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
+                modal.show();
+
+                // Clean URL
+                urlParams.delete('openEvent');
+                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                window.history.replaceState({}, '', newUrl);
+            }
+            
+            // Unlock the processor after a short delay
+            setTimeout(() => { isProcessingLink = false; }, 1000);
+        }
+    }, 300);
+
+    // Safety timeout: Give up after 10 seconds
+    setTimeout(() => {
+        clearInterval(waitForData);
+        isProcessingLink = false;
+    }, 10000);
 }
 
-// Run immediately on boot
+// Trigger 1: Run immediately on boot (Cold Start)
 processDeepLink();
 
-// 🟢 SERVICE WORKER LISTENER (Runs when app is already open) 🟢
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'OPEN_EVENT') {
-            console.log("Deep link received from Service Worker:", event.data.eventId);
-            openEventCard(event.data.eventId);
-        }
-    });
-}
+// Trigger 2: Run every time the app comes back to the screen (Warm Start)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        setTimeout(processDeepLink, 300);
+    }
+});
+// 🔴 END DEEP LINKING CONTROLLER 🔴
 
 
   //---------------------------
