@@ -11,44 +11,10 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
-const bc = new BroadcastChannel('egm_deep_links'); // The dedicated Walkie-Talkie
 
 self.addEventListener('install', (e) => self.skipWaiting());
 self.addEventListener('activate', (e) => self.clients.claim());
+self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
 
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.stopImmediatePropagation();
-
-  // --- DEEP SEARCH FOR ID ---
-  const data = event.notification.data || {};
-  const eventId = data.eventId || 
-                  (data.FCM_MSG && data.FCM_MSG.data && data.FCM_MSG.data.eventId) || 
-                  (data.data && data.data.eventId);
-
-  if (!eventId) return;
-
-  const targetUrl = self.location.origin + '/?openEvent=' + eventId;
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      let matchingClient = null;
-      for (let i = 0; i < windowClients.length; i++) {
-        if (windowClients[i].url.includes('dashboard.createdbyegm.com')) {
-          matchingClient = windowClients[i];
-          break;
-        }
-      }
-
-      if (matchingClient) {
-        // App is open! Bring to front and shout the ID over the Walkie-Talkie
-        return matchingClient.focus().then(() => {
-          bc.postMessage({ action: 'openCard', eventId: eventId });
-        });
-      } else {
-        // App is closed! Open fresh with URL parameter
-        return clients.openWindow(targetUrl);
-      }
-    })
-  );
-});
+// NO custom notificationclick listener here. 
+// This lets the native OS handle the webpush link.
