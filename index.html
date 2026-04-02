@@ -1755,39 +1755,43 @@ if (!isStandalone) {
   const db = firebase.firestore();
 
   const messaging = firebase.messaging();
- // 🟢 DEEP LINKING: UNIFIED MASTER CONTROLLER 🟢
-let isOpeningCard = false; // Prevents the card from trying to open twice
+// 🟢 DEEP LINKING: MEMORY-SAFE MASTER CONTROLLER 🟢
+let isOpeningCard = false;
+window.pendingEventToOpen = null; // Global memory to survive Firebase load times!
 
-async function checkUrlForEventCard() {
+async function checkUrlForEventCard(overrideId = null) {
     if (isOpeningCard) return;
     
-    let openEventId = null;
+    // 1. Gather the ID from anywhere we can (Message, URL, or Cache)
+    if (overrideId) window.pendingEventToOpen = overrideId;
     
-    // 1. Check the URL (Handles Desktop and Cold Starts)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('openEvent')) {
-        openEventId = urlParams.get('openEvent');
+        window.pendingEventToOpen = urlParams.get('openEvent');
     }
     
-    // 2. Check the Cache (Handles iOS/Android Warm Starts)
-    if (!openEventId) {
+    if (!window.pendingEventToOpen) {
         try {
             const cache = await caches.open('egm-pwa-data');
             const response = await cache.match('/pending-event');
             if (response) {
-                openEventId = await response.text();
-                await cache.delete('/pending-event'); // Trash the note immediately
+                window.pendingEventToOpen = await response.text();
             }
-        } catch (e) {
-            console.log("Cache check failed", e);
-        }
+        } catch (e) { console.log("Cache check failed", e); }
     }
 
-    // 3. If we found an ID, and the Firebase data is ready, DRAW THE CARD!
-    if (openEventId && rawEvents && rawEvents.length > 0) {
-        isOpeningCard = true; // Lock it so it doesn't glitch
+    // 2. If we have an ID to open...
+    if (window.pendingEventToOpen) {
         
-        const formattedId = openEventId.startsWith('egm') ? openEventId : 'egm' + openEventId;
+        // 3. CRITICAL FIX: Is the Firebase data actually loaded yet?
+        if (!rawEvents || rawEvents.length === 0) {
+            console.log("Got ID, waiting for Firebase data to load...");
+            return; // Exit and wait! Firebase onSnapshot will automatically trigger this function again when ready.
+        }
+
+        isOpeningCard = true;
+        
+        const formattedId = window.pendingEventToOpen.startsWith('egm') ? window.pendingEventToOpen : 'egm' + window.pendingEventToOpen;
         const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(formattedId));
         
         if (targetEvent) {
@@ -1798,35 +1802,38 @@ async function checkUrlForEventCard() {
             const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
             modal.show();
             
-            // Silently wipe the URL clean
+            // 4. CLEANUP: Only destroy the evidence AFTER a successful open
+            window.pendingEventToOpen = null;
             urlParams.delete('openEvent');
             const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
             window.history.replaceState({}, '', newUrl);
+            
+            try {
+                const cache = await caches.open('egm-pwa-data');
+                await cache.delete('/pending-event');
+            } catch(e){}
         } else {
             showToast(`Could not find Event #${formattedId} in database.`, "warning");
+            window.pendingEventToOpen = null; // Clear it so it doesn't loop
         }
         
-        // Unlock after 1 second
         setTimeout(() => { isOpeningCard = false; }, 1000);
     }
 }
 
 // TRIGGERS
-setTimeout(checkUrlForEventCard, 500); // Check on initial load
+setTimeout(checkUrlForEventCard, 500);
 
 window.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-        setTimeout(checkUrlForEventCard, 300); // Check when app is brought to foreground
+        setTimeout(checkUrlForEventCard, 300);
     }
 });
 
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.action === 'openEventCard') {
-            // If the Service Worker radios us directly, inject it into the URL and run!
-            const newUrl = window.location.pathname + '?openEvent=' + event.data.eventId;
-            window.history.replaceState({}, '', newUrl);
-            checkUrlForEventCard();
+            checkUrlForEventCard(event.data.eventId);
         }
     });
 }
