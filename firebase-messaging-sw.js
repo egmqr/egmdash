@@ -1,6 +1,4 @@
-
-
-// Import Firebase scripts (Must match the version in your index.html) GlkXHxNfhcrp6mzG7J2gYPlTNBqkz08V1m9UZpNnBbg
+// Import Firebase scripts
 importScripts('https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-compat.js');
 
@@ -14,65 +12,58 @@ const firebaseConfig = {
   appId: "1:130288942287:web:68d24ee8d0ef1ae9408bba"
 };
 
-// Initialize Firebase in the Service Worker
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
+// --- 1. PWA LIFECYCLE HANDLERS (Merged from sw.js) ---
+self.addEventListener('install', (e) => {
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (e) => {
+    return self.clients.claim();
+});
+
+self.addEventListener('fetch', (e) => {
+    // Standard fetch pass-through
+    e.respondWith(fetch(e.request));
+});
+
+// --- 2. NOTIFICATION LOGIC ---
+
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message: ', payload);
-  
-  const notificationTitle = payload.notification.title || "New Update";
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/icon-192.png', // Uses your app icon
-    badge: '/icon-192.png',
-    data: payload.data // We will pass the eventId in this data object!
-  };
-
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  console.log('[SW] Background message received ', payload);
+  // 💡 DO NOT call showNotification here. 
+  // Firebase will show the banner automatically because the payload has a 'notification' property.
+  // This prevents the "2 notifs" problem.
 });
 
 // Handle what happens when the user TAPS the notification
 self.addEventListener('notificationclick', (event) => {
-  event.notification.close(); // Close the banner
+  event.notification.close(); 
 
-  // Get the event ID from the payload data
-  const eventId = event.notification.data ? event.notification.data.eventId : null;
+  // Look for the Event ID in different possible locations in the payload
+  const notificationData = event.notification.data;
+  const eventId = notificationData?.eventId || notificationData?.FCM_MSG?.data?.eventId;
+  
   const urlToOpen = eventId ? `/?openEvent=${eventId}` : '/?tab=events';
 
-  // Check if the dashboard is already open in the background
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Check if dashboard is already open
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
         if (client.url.includes('dashboard.createdbyegm.com') && 'focus' in client) {
-          client.navigate(urlToOpen); // Force it to the deep link
-          return client.focus(); // Bring the app to the front
+          // Navigate existing tab to the specific event and focus it
+          client.navigate(urlToOpen);
+          return client.focus();
         }
       }
-      // If the app is completely closed, open it fresh
+      // If closed, open a fresh window
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }
     })
   );
 });
-
-
-// A minimal Service Worker just to pass PWA install requirements
-self.addEventListener('install', (e) => {
-    console.log('[Service Worker] Installed');
-    self.skipWaiting();
-});
-
-self.addEventListener('activate', (e) => {
-    console.log('[Service Worker] Activated');
-    return self.clients.claim();
-});
-
-self.addEventListener('fetch', (e) => {
-    // Just pass the request through to the network
-    e.respondWith(fetch(e.request));
-});
-
