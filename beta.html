@@ -1734,12 +1734,6 @@ if (!isStandalone) {
 }
 </script>
 <script>
-// Add this in index.html after messaging is initialized
-messaging.onMessage((payload) => {
-  console.log('Message received in foreground: ', payload);
-  // Show a manual toast or alert since the browser won't show a banner
-  showToast(payload.notification.title + ": " + payload.notification.body, "info");
-});
   // PASTE YOUR FIREBASE CONFIG HERE
   const firebaseConfig = {
     apiKey: "AIzaSyADWnFhu2xZwGQERFsxP-Xl_OlEaJ6N3NM",
