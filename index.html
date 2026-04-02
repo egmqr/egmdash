@@ -5842,6 +5842,13 @@ function renderPayrollTable() {
                   <textarea id="prModalNotes" class="form-control form-control-sm shadow-sm" rows="2" placeholder="Ex: Deducted 500 for uniform..." oninput="savePayslipNote()">${data.payslipNote || ""}</textarea>
               </div>
 
+              <div class="form-check mt-2 mb-4 p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-3">
+                  <input class="form-check-input ms-1 border-danger" type="checkbox" id="prModalTentative" ${data.isTentative ? 'checked' : ''} onchange="toggleTentativeStatus()">
+                  <label class="form-check-label small fw-bold text-danger ms-2" for="prModalTentative">
+                      Mark as tentative - to be discussed by admin
+                  </label>
+              </div>
+
               <div class="bg-dark text-white p-3 rounded-3 shadow-sm d-flex flex-column justify-content-center">
                   <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-secondary">
                       <span class="fw-bold text-uppercase opacity-75" style="letter-spacing: 1px;">Net Payout</span>
@@ -5849,16 +5856,11 @@ function renderPayrollTable() {
                   </div>
                   <div id="prPayerBreakdown" class="small text-end fw-bold" style="color: #adb5bd; font-size: 0.75rem;"></div>
               </div>
-
-              <div class="form-check mt-3 mb-1 p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-3">
-                  <input class="form-check-input ms-1 border-danger" type="checkbox" id="prModalTentative" ${data.isTentative ? 'checked' : ''} onchange="toggleTentativeStatus()">
-                  <label class="form-check-label small fw-bold text-danger ms-2" for="prModalTentative">
-                      Mark as tentative - to be discussed by admin
-                  </label>
-              </div>
           `;
           
           document.getElementById('prGenerateBtn').style.display = isFullyExempt ? 'none' : 'block';
+          // 🟢 NEW: Lock the Generate button if it's currently marked as Tentative!
+          document.getElementById('prGenerateBtn').disabled = data.isTentative;
           document.getElementById('prMathControls').style.display = isFullyExempt ? 'none' : 'block';
       } else {
           document.getElementById('prGenerateBtn').style.display = 'none';
@@ -5935,7 +5937,12 @@ function renderPayrollTable() {
   
   window.toggleTentativeStatus = function() {
       if(activePayrollPerson) {
-          currentPayrollData[activePayrollPerson].isTentative = document.getElementById('prModalTentative').checked;
+          const isTentative = document.getElementById('prModalTentative').checked;
+          currentPayrollData[activePayrollPerson].isTentative = isTentative;
+          
+          // 🟢 NEW: Instantly disable/enable the Generate button!
+          document.getElementById('prGenerateBtn').disabled = isTentative;
+          
           renderPayrollTable(); // Updates the background color instantly!
       }
   };
