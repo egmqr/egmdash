@@ -352,42 +352,45 @@
           <button id="newEntryBtn" class="btn btn-primary btn-sm fw-bold shadow-sm d-flex align-items-center justify-content-center" onclick="requireAuth(() => openNewEventModal(), true)" title="New Entry" style="width: 38px; height: 34px;">
             <i class="bi bi-plus-lg fs-5"></i>
           </button>
+          
           <button id="themeToggleBtn" class="btn btn-light border-secondary-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center" onclick="toggleTheme()" title="Toggle Dark Mode" style="width: 38px; height: 34px;">
             <i id="themeIcon" class="bi bi-moon-fill text-secondary"></i>
           </button>
+          
           <button id="installAppBtn" class="btn btn-warning border-warning-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center gap-1 fw-bold" style="display: none !important; height: 34px;">
             <i class="bi bi-download"></i>
           </button>
+          
           <button id="logoutBtn" class="btn btn-outline-danger btn-sm shadow-sm align-items-center justify-content-center" onclick="signOut()" title="Sign Out / Switch Account" style="width: 38px; height: 34px; display: none;">
             <i class="bi bi-box-arrow-right fs-6"></i>
           </button>
+
+          <div class="input-group input-group-sm shadow-sm" style="max-width: 150px; height: 34px;">
+              <select id="pushCrewName" class="form-select fw-bold border-primary" style="font-size: 0.8rem; padding-right: 20px;">
+                  <option value="">Identify...</option>
+                  <option value="Edgar">Edgar</option>
+                  <option value="Francis">Francis</option>
+                  <option value="Mael">Mael</option>
+                  <option value="Lexie">Lexie</option>
+                  <option value="Athan">Athan</option>
+                  <option value="Jovert">Jovert</option>
+                  <option value="May">May</option>
+                  <option value="Tina">Tina</option>
+                  <option value="Jops">Jops</option>
+                  <option value="Grace">Grace</option>
+                  <option value="Jun">Jun</option>
+                  <option value="Tatalino">Tatalino</option>
+                  <option value="Joram">Joram</option>
+                  <option value="Roy">Roy</option>
+                  <option value="Smile">Smile</option>
+                  <option value="Jenielyn">Jenielyn</option>
+              </select>
+              <button class="btn btn-primary d-flex align-items-center justify-content-center" onclick="subscribeToNotifications()" title="Enable Notifications" style="padding: 0 10px;">
+                  <i class="bi bi-bell-fill"></i>
+              </button>
+          </div>
       </div>
 
-      <div class="input-group input-group-sm w-100 mt-1 shadow-sm" style="flex: 1 1 100%;">
-          <select id="pushCrewName" class="form-select fw-bold border-primary">
-              <option value="">Identify yourself...</option>
-              <option value="Edgar">Edgar</option>
-              <option value="Francis">Francis</option>
-              <option value="Mael">Mael</option>
-              <option value="Lexie">Lexie</option>
-              <option value="Athan">Athan</option>
-              <option value="Jovert">Jovert</option>
-              <option value="May">May</option>
-              <option value="Tina">Tina</option>
-              <option value="Jops">Jops</option>
-              <option value="Grace">Grace</option>
-              <option value="Jun">Jun</option>
-              <option value="Tatalino">Tatalino</option>
-              <option value="Joram">Joram</option>
-              <option value="Roy">Roy</option>
-              <option value="Smile">Smile</option>
-              <option value="Jenielyn">Jenielyn</option>
-          </select>
-          <button class="btn btn-primary fw-bold px-3" onclick="subscribeToNotifications()">
-              <i class="bi bi-bell-fill me-1"></i> Alert Me
-          </button>
-      </div>
-    </div>
     </div>
 
     <div class="d-flex justify-content-between align-items-center pb-2">
