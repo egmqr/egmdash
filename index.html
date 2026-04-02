@@ -1756,6 +1756,38 @@ if (!isStandalone) {
 
   const messaging = firebase.messaging();
 
+  // 🟢 NEW: LISTEN FOR DIRECT SERVICE WORKER MESSAGES 🟢
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.action === 'openEventCard') {
+            console.log("Received direct message from Service Worker to open:", event.data.eventId);
+            triggerCardWhenReady(event.data.eventId);
+        }
+    });
+}
+
+// Helper function to safely wait for data before drawing the card
+function triggerCardWhenReady(eventId) {
+    switchTab('events');
+    
+    // Check every 300ms if Firebase has finished downloading the rawEvents
+    const checkData = setInterval(() => {
+        if (rawEvents && rawEvents.length > 0) {
+            clearInterval(checkData); // Stop checking
+            
+            const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(eventId));
+            if (targetEvent) {
+                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                const cardModalEl = document.getElementById('eventCardModal');
+                const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
+                modal.show();
+            }
+        }
+    }, 300);
+    
+    // Safety net: Stop checking after 5 seconds so it doesn't loop forever
+    setTimeout(() => clearInterval(checkData), 5000);
+}
 
   // 🔥 THE MAGIC FIX: Enable Local Caching so data loads in milliseconds
   db.enablePersistence({ synchronizeTabs: true })
@@ -5029,44 +5061,27 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
 
     rawEvents = mappedEvents;
     
-    // Safely attempt to render the UI
     try {
         updateCrewFilterDropdown(rawEvents);
         populateExpenseEventsDropdown();
         applyFilters();
 
-        // 🟢 NEW: DEEP LINKING (Race-Condition Proof) 🟢
+        // Check if app was opened from a "Cold Start" via URL
         const urlParams = new URLSearchParams(window.location.search);
         const openEventId = urlParams.get('openEvent');
         
         if (openEventId) {
-            // Check if the event has arrived from the cloud yet
-            const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(openEventId));
+            // Trigger the card drawing using our new safe helper
+            triggerCardWhenReady(openEventId);
             
-            if (targetEvent) {
-                // We found it! Wait a tiny moment for the UI to settle, then open the card
-                setTimeout(() => {
-                    switchTab('events');
-                    document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                    const cardModalEl = document.getElementById('eventCardModal');
-                    const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
-                    modal.show();
-                }, 300);
-                
-                // NOW we safely erase the URL so it doesn't get stuck in a loop
-                urlParams.delete('openEvent');
-                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                window.history.replaceState({}, '', newUrl);
-            } else {
-                console.log("Event not yet in local cache. Waiting for cloud sync...");
-                // It will automatically try again a second later when the server responds!
-            }
+            // Clean the URL silently so it doesn't loop
+            urlParams.delete('openEvent');
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
         }
-        // 🔴 END DEEP LINKING 🔴
 
     } catch(err) {
         console.error("UI Render Error:", err);
-        alert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
     }
     
     // Hide the initial full-page loader
