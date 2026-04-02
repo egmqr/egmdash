@@ -4654,8 +4654,26 @@ function generateSingleEventCard(e) {
 
   window.addEventListener('scroll', checkStickyHeaders, {passive: true});
 
-  window.onload = () => {
+window.onload = () => {
       applyRoleUI(); // <-- This line tells the Sign Out button to appear if you are already logged in!
+      
+      // --- NEW: SECURITY REDIRECT ---
+      // If they close the password box while trying to directly load a restricted URL, kick them to Events
+      const authModalEl = document.getElementById('authModal');
+      if (authModalEl) {
+          authModalEl.addEventListener('hidden.bs.modal', function () {
+              const role = getUserRole();
+              const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+              const urlParams = new URLSearchParams(window.location.search);
+              const currentUrlTab = urlParams.get('tab');
+              
+              // If the URL says payments or payroll, and they don't have a valid Admin session, redirect!
+              if ((currentUrlTab === 'payments' || currentUrlTab === 'payroll') && (role !== 'admin' || isExpired)) {
+                  window.location.href = "https://dashboard.createdbyegm.com/?tab=events";
+              }
+          });
+      }
+      // ------------------------------
       
       // Listen for the Payroll Modal to close, and auto-update the main table!
       const prModalEl = document.getElementById('payrollModal');
