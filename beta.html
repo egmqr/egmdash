@@ -203,6 +203,12 @@
     .logo-gallery-item.selected { border-color: #0d9488; }
     
     /* DARK MODE */
+    .dark-mode .submit-overlay { background: rgba(18, 18, 18, 0.9); }
+    .dark-mode .loader { background: #1e1e1e; border-color: #333333; }
+    .dark-mode #payrollModal .modal-body { background-color: #121212 !important; }
+    .dark-mode .list-group-item { background-color: #1e1e1e; border-color: #333333; color: #d1d5db; }
+.dark-mode .list-group-item:hover, .dark-mode .list-group-item-action:hover { background-color: #2b2b2b; color: #ffffff; }
+    .dark-mode .form-control:disabled, .dark-mode .form-select:disabled { background-color: #1a1a1a; opacity: 0.6; border-color: #333; }
     body.dark-mode { background-color: #121212; color: #d1d5db; }
     .dark-mode .card, .dark-mode .filter-panel, .dark-mode .calendar-container, .dark-mode .table-custom, .dark-mode .modal-content { background: #1e1e1e !important; border-color: #333333 !important; }
     .dark-mode .sticky-header { background: rgba(18, 18, 18, 0.9); border-bottom-color: #333333; }
@@ -398,10 +404,10 @@
         <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-card-list me-1"></i> Events</a></li>
         <li class="nav-item"><a class="nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
         <li class="nav-item"><a class="nav-link" id="eq-tab" onclick="handleTabClick('editqueue')"><i class="bi bi-film me-1"></i> Editing Queue</a></li>
-        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), true)"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
-        <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), true)"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
         <li class="nav-item"><a class="nav-link" id="ex-tab" onclick="handleTabClick('expenses')"><i class="bi bi-receipt me-1"></i> Expenses</a></li>
         <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
+        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), true)"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
+        <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), true)"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
       </ul>
       <div class="d-flex gap-2">
         <button id="copyFilterLinkBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" onclick="copyCurrentUrl()" title="Copy link with active filters">
@@ -492,24 +498,32 @@
 
       <div id="payroll-view" style="display:none;">
           <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 mt-2 gap-3">
-              <h4 class="fw-bold mb-0 text-danger d-flex align-items-center"><i class="bi bi-cash-coin me-2"></i> Payroll Engine</h4>
               
-              <div class="bg-white p-2 rounded-3 border shadow-sm d-flex flex-wrap gap-2 align-items-end">
-                  <div class="px-2">
-                      <span class="form-label-sm text-secondary">Start of Cutoff</span>
-                      <input type="date" id="prStartDate" class="form-control form-control-sm fw-bold text-dark">
+              <div>
+                  <h4 class="fw-bold mb-0 text-danger d-flex align-items-center"><i class="bi bi-cash-coin me-2"></i> Payroll Engine</h4>
+                  <span class="text-muted small fw-bold d-block mt-1 mb-3" style="font-size: 0.75rem;"><i class="bi bi-info-circle-fill opacity-50 me-1"></i>Always set rates first, you won't be able to edit the rates once manual payroll edits are applied.</span>
+                  
+                  <div class="bg-white p-2 rounded-3 border shadow-sm d-inline-flex gap-2">
+                      <div class="px-2">
+                          <span class="form-label-sm text-secondary">Start of Cutoff</span>
+                          <input type="date" id="prStartDate" class="form-control form-control-sm fw-bold text-dark">
+                      </div>
+                      <div class="border-start ps-3 pe-2">
+                          <span class="form-label-sm text-secondary">End of Cutoff</span>
+                          <input type="date" id="prEndDate" class="form-control form-control-sm fw-bold text-dark">
+                      </div>
                   </div>
-                  <div class="border-start ps-2 pe-2 flex-grow-1">
-                      <span class="form-label-sm text-secondary">End of Cutoff</span>
-                      <input type="date" id="prEndDate" class="form-control form-control-sm fw-bold text-dark">
-                  </div>
-                  <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
-                  <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm ms-1 mt-1 text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
-                  <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
-                  <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="exportSessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> EXPORT</button>
-                  <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
-                  <button class="btn btn-secondary btn-sm fw-bold px-3 shadow-sm ms-1 mt-1" onclick="openPayrollHistory()"><i class="bi bi-clock-history me-1"></i> HISTORY</button>
               </div>
+              
+              <div class="d-flex flex-wrap gap-2 justify-content-md-end align-items-end" style="max-width: 450px;">
+                  <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
+                  <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
+                  <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
+                  <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm" onclick="exportSessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> EXPORT</button>
+                  <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm" id="prRatesBtn" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
+                  <button class="btn btn-secondary btn-sm fw-bold px-3 shadow-sm" onclick="openPayrollHistory()"><i class="bi bi-clock-history me-1"></i> HISTORY</button>
+              </div>
+
           </div>
 
           <div class="table-custom bg-white shadow-sm">
@@ -648,14 +662,12 @@
                               <img id="boothLogoPreview" class="booth-thumbnail" src="" onclick="openLightbox(this.src)">
                           </div>
                       </div>
-                      
                       <div class="mt-2 mb-2 p-2 bg-light border border-secondary-subtle rounded">
-                          <label class="form-label-sm text-secondary mb-1">Or select an existing logo:</label>
-                          <div id="existingLogoGallery" class="logo-gallery">
-                              <span class="small text-muted fst-italic">Loading logos...</span>
-                          </div>
-                      </div>
-
+    <label class="form-label-sm text-secondary mb-1">Or select an existing logo:</label>
+    <div id="existingLogoGallery" class="logo-gallery">
+        <span class="small text-muted fst-italic">Loading logos...</span>
+    </div>
+</div>
                       <div class="form-check form-switch mt-2">
                           <input class="form-check-input" type="checkbox" id="boothLogoOnMain">
                           <label class="form-check-label small fw-bold text-dark" for="boothLogoOnMain">Show logo as custom branding</label>
@@ -1754,8 +1766,157 @@ if (!isStandalone) {
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  const messaging = firebase.messaging();
+const messaging = firebase.messaging();
 
+  // 🟢 IN-APP FOREGROUND TOASTS & CARD OPENER 🟢
+  window.forceOpenCard = function(eventId, toastId) {
+      if (toastId) {
+          const toastEl = document.getElementById(toastId);
+          if (toastEl) bootstrap.Toast.getOrCreateInstance(toastEl).hide();
+      }
+      
+      if (!eventId) return;
+      const formattedId = eventId.toLowerCase().startsWith('egm') ? eventId : 'egm' + eventId;
+      
+      const waitForData = setInterval(() => {
+          if (typeof rawEvents !== 'undefined' && rawEvents.length > 0) {
+              clearInterval(waitForData);
+              const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId.toLowerCase());
+              if (targetEvent) {
+                  if (currentTab !== 'events') switchTab('events');
+                  document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                  bootstrap.Modal.getOrCreateInstance(document.getElementById('eventCardModal')).show();
+                  
+                  const urlParams = new URLSearchParams(window.location.search);
+                  if (urlParams.has('openEvent')) {
+                      urlParams.delete('openEvent');
+                      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                      window.history.replaceState({}, '', newUrl);
+                  }
+              }
+          }
+      }, 300);
+      setTimeout(() => clearInterval(waitForData), 10000);
+  };
+
+  messaging.onMessage((payload) => {
+      const eventId = payload.data.eventId;
+      const title = payload.notification.title || "New Event";
+      const body = payload.notification.body || "Tap to view.";
+
+      let container = document.getElementById('fgToastContainer');
+      if (!container) {
+          container = document.createElement('div');
+          container.id = 'fgToastContainer';
+          container.className = 'toast-container position-fixed top-0 end-0 p-3 mt-5';
+          container.style.zIndex = '10600';
+          document.body.appendChild(container);
+      }
+
+      const toastId = 'toast-' + Date.now();
+      const toastHtml = `
+          <div id="${toastId}" class="toast align-items-center text-bg-primary border-0 shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true" style="cursor:pointer;" onclick="forceOpenCard('${eventId}', '${toastId}')">
+              <div class="d-flex">
+                  <div class="toast-body fw-bold">
+                      <div><i class="bi bi-bell-fill me-2"></i>${title}</div>
+                      <div class="small fw-normal mt-1">${body}</div>
+                  </div>
+                  <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" onclick="event.stopPropagation();"></button>
+              </div>
+          </div>
+      `;
+      container.insertAdjacentHTML('beforeend', toastHtml);
+      new bootstrap.Toast(document.getElementById(toastId), { delay: 8000 }).show();
+  });
+
+  // 🟢 COLD & WARM START "PULL" CONTROLLER 🟢
+  
+  // Trigger 1: Cold Start 
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('openEvent')) {
+      forceOpenCard(urlParams.get('openEvent'));
+  }
+
+  // Trigger 2: Listen for the Service Worker's reply
+  if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.action === 'openCard') {
+              forceOpenCard(event.data.eventId);
+          }
+      });
+  }
+
+  // Trigger 3: Every time the app comes to the screen, ASK the Service Worker!
+  document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+          if (navigator.serviceWorker.controller) {
+              // The app is fully awake. Safe to ask for the data!
+              navigator.serviceWorker.controller.postMessage({ action: 'checkPendingClick' });
+              
+              // Failsafe: Ask again 1 second later just in case iOS was being slow
+              setTimeout(() => {
+                  if (navigator.serviceWorker.controller) {
+                      navigator.serviceWorker.controller.postMessage({ action: 'checkPendingClick' });
+                  }
+              }, 1000);
+          }
+      }
+  });
+  // 🔴 END DEEP LINKING CONTROLLER 🔴
+
+
+  //---------------------------
+  // 🟢 NEW: LISTEN FOR DIRECT SERVICE WORKER MESSAGES 🟢
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.action === 'openEventCard') {
+            console.log("Received direct message from Service Worker to open:", event.data.eventId);
+            triggerCardWhenReady(event.data.eventId);
+        }
+    });
+}
+
+// Helper function to safely wait for data before drawing the card
+function triggerCardWhenReady(eventId, rawPayload = "") {
+    // 🟢 MOBILE DIAGNOSTICS: If the ID is missing, show us exactly what the phone received!
+    if (!eventId || eventId === "undefined" || eventId === "null") {
+        showToast("Missing ID. Payload received: " + rawPayload, "warning");
+        return; 
+    }
+
+    const checkData = setInterval(() => {
+        if (rawEvents && rawEvents.length > 0) {
+            clearInterval(checkData); // Stop checking
+            
+            const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(eventId));
+            
+            if (targetEvent) {
+                // ONLY jump to the events tab if we actually found the card!
+                if (currentTab !== 'events') switchTab('events');
+                
+                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                const cardModalEl = document.getElementById('eventCardModal');
+                const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
+                modal.show();
+            } else {
+                showToast(`Could not find Event #${eventId} in the database.`, "danger");
+            }
+        }
+    }, 300);
+    
+    // Safety net: Stop checking after 5 seconds so it doesn't loop forever
+    setTimeout(() => clearInterval(checkData), 5000);
+}
+
+// And update the listener right above it to pass the raw payload for debugging:
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.action === 'openEventCard') {
+            // Pass the ID, and a stringified version of the raw data so we can see it on mobile
+            triggerCardWhenReady(event.data.eventId, event.data.debugPayload);
+        }
+    });
+}
 
   // 🔥 THE MAGIC FIX: Enable Local Caching so data loads in milliseconds
   db.enablePersistence({ synchronizeTabs: true })
@@ -1767,7 +1928,6 @@ if (!isStandalone) {
         }
     });
 
-  // Restored for Photobooth Generator Google Drive operations
   async function callApi(payloadData, method = 'POST', isSilent = false) {
     if (!isSilent) {
         const loader = document.getElementById('loader');
@@ -1778,16 +1938,20 @@ if (!isStandalone) {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payloadData),
+        redirect: "follow" // <--- ABSOLUTELY REQUIRED
       });
+      
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const result = await response.json();
+      
       if (!isSilent) {
         const loader = document.getElementById('loader');
         if (loader) loader.style.display = 'none';
       }
-      if (result.status === "error") {
-          console.error("Backend error:", result.message);
-          alert("Server Error: " + result.message); 
+      
+      if (result.status === "error" || result.success === false) {
+          console.error("Backend error:", result.error || result.message);
+          alert("Server Error: " + (result.error || result.message)); 
           return null;
       }
       return result;
@@ -1864,7 +2028,7 @@ async function subscribeToNotifications() {
   //
   let pendingAuthAction = null;
   // This is your permanently designated Apps Script URL
-  const API_URL = 'https://script.google.com/macros/s/AKfycbwYMEUmPOR9spn-_jC3WousZ9L5s8aksFrZwYDTGwW-N54S9q7P1BY-_KIVVEzi1TU/exec';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwfC_hu14KnzpBTFQL1u1QtaUp4HIQwXdjf_yR5hfdfyc8suKg6BwAGxwpQyfuyB7BdUA/exec';
   let localLastUpdate = "0";
   let rawEvents = [], rawPayments = [], currentTab = 'events';
   let filteredEventsCache = []; 
@@ -3815,9 +3979,22 @@ function generateSingleEventCard(e) {
   }
 
   function openUploadModal(eventId) {
-    document.getElementById('uploadEventId').value = eventId;
-    document.getElementById('uploadFileInput').value = '';
-    new bootstrap.Modal(document.getElementById('uploadFileModal')).show();
+      // --- PREVENT MODAL OVERLAP FREEZE ---
+      const cardModalEl = document.getElementById('eventCardModal');
+      if (cardModalEl && cardModalEl.classList.contains('show')) {
+          bootstrap.Modal.getInstance(cardModalEl).hide();
+          // Wait 350ms for the backdrop to fade away, then try again!
+          setTimeout(() => openUploadModal(eventId), 350);
+          return; // Stop the function here so it doesn't try to open both at once
+      }
+      // ------------------------------------
+
+      document.getElementById('uploadEventId').value = eventId;
+      document.getElementById('uploadFileInput').value = '';
+      
+      const modalEl = document.getElementById('uploadFileModal');
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.show();
   }
 
   function submitFileUpload() {
@@ -3836,12 +4013,17 @@ function generateSingleEventCard(e) {
       bootstrap.Modal.getInstance(document.getElementById('uploadFileModal')).hide();
       ov.style.display = 'flex';
       
+      // FIX: Changed 'uploadFile' to 'uploadEventFile' to match backend router
       const res = await callApi({ 
-         action: 'uploadFile', base64: ev.target.result, filename: file.name, eventId: eventId, label: label
+         action: 'uploadEventFile', base64Data: ev.target.result, filename: file.name, eventId: eventId, label: label
       }, 'POST');
       
       ov.style.display = 'none';
-      if (res.success) {  } else { alert("Error: " + res.error); }
+      if (res && res.success) { 
+          showToast("File uploaded successfully.");
+      } else { 
+          alert("Error: " + (res ? res.error : "Unknown error")); 
+      }
     };
     reader.readAsDataURL(file);
   }
@@ -4690,7 +4872,47 @@ function generateSingleEventCard(e) {
       document.getElementById('boothLightbox').style.display = 'none';
       document.getElementById('boothLightboxImg').src = "";
   }
+async function fetchExistingLogos(forceRefresh = false) {
+      if (!forceRefresh && existingLogosCache) { 
+          renderExistingLogos(existingLogosCache); 
+          return; 
+      }
+      
+      document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-muted fst-italic">Loading logos...</span>';
+      const res = await callApi({ action: "getExistingLogos" }, 'POST', true);
+      
+      if (res && res.success) {
+          existingLogosCache = res.logos;
+          renderExistingLogos(res.logos);
+      } else {
+          document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-danger">Failed to load logos.</span>';
+      }
+  }
 
+  function renderExistingLogos(logos) {
+      const container = document.getElementById('existingLogoGallery');
+      if (logos.length === 0) {
+          container.innerHTML = '<span class="small text-muted fst-italic">No existing logos found.</span>';
+          return;
+      }
+      let html = '';
+      logos.forEach(logo => {
+          html += `<img src="${logo.url}" class="logo-gallery-item" title="${logo.name}" onclick="selectExistingLogo('${logo.id}', '${logo.qrId}', this)">`;
+      });
+      container.innerHTML = html;
+  }
+
+  function selectExistingLogo(id, qrId, el) {
+      selectedExistingLogoId = id;
+      selectedExistingQrLogoId = qrId;
+      document.querySelectorAll('.logo-gallery-item').forEach(img => img.classList.remove('selected'));
+      el.classList.add('selected');
+      
+      document.getElementById('boothLogoFile').value = ""; 
+      document.getElementById('boothLogoFileName').innerText = "Using existing logo";
+      document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
+      croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
+  }
   function renderExistingLogos(logos) {
       const container = document.getElementById('existingLogoGallery');
       if (logos.length === 0) {
@@ -4765,7 +4987,13 @@ function generateSingleEventCard(e) {
   }
 
   async function executeBoothAction(actionName) {
-      const eventId = actionName === 'generateBoothSetup' ? document.getElementById('boothEventId').value : document.getElementById('boothEventSelect').value;
+      let eventId = actionName === 'generateBoothSetup' ? document.getElementById('boothEventId').value : document.getElementById('boothEventSelect').value;
+      
+      if (actionName === 'generateBoothSetup' && (!eventId || eventId.trim() === '')) {
+          eventId = "EVT" + Math.floor(10000 + Math.random() * 90000);
+          document.getElementById('boothEventId').value = eventId;
+      }
+
       const folderName = document.getElementById('boothFolderName').value.trim();
       const eventName = document.getElementById('boothEventName').value.trim();
       const boothCount = document.getElementById('boothCountInput').value;
@@ -4785,6 +5013,7 @@ function generateSingleEventCard(e) {
       
       const logoOnMain = document.getElementById('boothLogoOnMain').checked;
 
+      // REMOVED existingLogoId and existingQrLogoId
       const payload = {
           action: actionName, eventId, folderName, eventName, boothCount,
           bgData, logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
@@ -4796,8 +5025,8 @@ function generateSingleEventCard(e) {
       ov.style.display = 'none';
       
       if (res && res.success) {
-          boothDetailsCache = {}; // Wipe the details memory
-          fetchBoothEvents(true); // Force the dropdown to grab the new project!
+          boothDetailsCache = {}; 
+          fetchBoothEvents(true); 
           
           if (actionName === "updateBoothSetup" || actionName === "generateBoothSetup") {
               setBoothMode('view');
@@ -5027,40 +5256,13 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
         });
     });
 
-    rawEvents = mappedEvents;
+   rawEvents = mappedEvents;
     
     // Safely attempt to render the UI
     try {
         updateCrewFilterDropdown(rawEvents);
-        populateExpenseEventsDropdown(); // <--- Fills the Expenses dropdown instantly!
+        populateExpenseEventsDropdown();
         applyFilters();
-
-        // 🟢 NEW: DEEP LINKING - AUTO OPEN EVENT CARD 🟢
-        const urlParams = new URLSearchParams(window.location.search);
-        const openEventId = urlParams.get('openEvent');
-        
-        if (openEventId) {
-            // Force the app to switch to the Events tab visually
-            switchTab('events');
-            
-            // Find the specific event data in our freshly downloaded array
-            const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(openEventId));
-            
-            if (targetEvent) {
-                // Populate and open the Event Card View Modal
-                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                const cardModalEl = document.getElementById('eventCardModal');
-                const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
-                modal.show();
-                
-                // Erase the 'openEvent' part of the URL so it doesn't re-open if they just hit refresh later
-                urlParams.delete('openEvent');
-                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                window.history.replaceState({}, '', newUrl);
-            }
-        }
-        // 🔴 END DEEP LINKING 🔴
-
     } catch(err) {
         console.error("UI Render Error:", err);
         alert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
@@ -5338,6 +5540,9 @@ async function getNextEventId() {
               renderPayrollTable();
               bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
               showToast("Cloud Session loaded successfully!", "success");
+              
+              // 🟢 NEW: Lock the rates button since we loaded custom historical data!
+              markPayrollEdited(); 
           } catch (e) {
               alert("Error parsing saved session data.");
           }
@@ -5356,6 +5561,21 @@ async function getNextEventId() {
       if (!confirm(`Generate a printable PDF summary report for ${start} to ${end}?`)) return;
 
       let totalPayout = 0;
+      let grandBreakdown = { 'Edgar(EGM)': 0, 'Francis': 0, 'Tina': 0, 'Grace': 0 };
+
+      // Helper for the PDF Master Loop
+      function allocateGrand(amount, payerCode) {
+          if (!amount) return;
+          if (payerCode === 'SDE') {
+              let splitAmt = amount / 3;
+              grandBreakdown['Francis'] += splitAmt;
+              grandBreakdown['Tina'] += splitAmt;
+              grandBreakdown['Grace'] += splitAmt;
+          } else {
+              grandBreakdown[payerCode || 'Edgar(EGM)'] += amount;
+          }
+      }
+
       let html = `
       <html><head><title>Payroll Summary: ${start} to ${end}</title>
       <style>
@@ -5367,6 +5587,12 @@ async function getNextEventId() {
           th { background-color: #f8f9fa; text-transform: uppercase; font-size: 12px; color: #555;}
           .text-right { text-align: right; }
           .total-row { font-weight: bold; font-size: 1.1em; background-color: #f1f3f5; }
+          /* 🟢 The CSS to force the print break! */
+          .page-break { page-break-before: always; display: block; margin-top: 50px; }
+          .breakdown-box { padding: 15px; background-color: #f8f9fa; border: 1px solid #ddd; width: 50%; min-width: 300px; }
+          .breakdown-box h4 { margin-top: 0; margin-bottom: 10px; font-size: 13px; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+          .breakdown-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; border-bottom: 1px dashed #eee; }
+          .breakdown-row:last-child { border-bottom: none; font-weight: bold; padding-top: 8px; margin-top: 4px; border-top: 1px solid #ccc; }
       </style>
       </head><body>
       <h2>EGM PRODUCTIONS - PAYROLL SUMMARY</h2>
@@ -5382,12 +5608,20 @@ async function getNextEventId() {
           let base = data.totalBase || 0;
           let exp = data.expenses || 0;
           let misc = data.misc || 0;
-          let net = base + exp + misc;
-          let finalNet = data.finalTotal || net;
+          let finalNet = data.finalTotal || (base + exp + misc);
           totalPayout += finalNet;
 
+          // Safely calculate this person's breakdown on the fly
+          data.events.forEach(ev => {
+              allocateGrand((ev.basePay || 0) + (ev.extraPay || 0), ev.payer);
+          });
+          allocateGrand(exp, data.expensePayer);
+          allocateGrand(misc, data.miscPayer);
+
+          let nameDisplay = data.isTentative ? `<strong>${name}</strong> <span style="color:red; font-size:10px; vertical-align:super;">(TENTATIVE)</span>` : `<strong>${name}</strong>`;
+
           html += `<tr>
-              <td><strong>${name}</strong></td>
+              <td>${nameDisplay}</td>
               <td class="text-right">₱${base.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
               <td class="text-right">₱${exp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
               <td class="text-right">₱${misc.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
@@ -5401,6 +5635,16 @@ async function getNextEventId() {
               <td class="text-right">₱${totalPayout.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
           </tr>
           </tbody></table>
+          
+          <div class="page-break"></div> <div class="breakdown-box">
+              <h4>Funding Source Breakdown</h4>
+              <div class="breakdown-row"><span>Edgar (EGM)</span><span>₱${grandBreakdown['Edgar(EGM)'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+              <div class="breakdown-row"><span>Francis</span><span>₱${grandBreakdown['Francis'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+              <div class="breakdown-row"><span>Tina</span><span>₱${grandBreakdown['Tina'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+              <div class="breakdown-row"><span>Grace</span><span>₱${grandBreakdown['Grace'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+              <div class="breakdown-row" style="color: #0d9488;"><span><strong>TOTAL</strong></span><span><strong>₱${totalPayout.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></span></div>
+          </div>
+
           <p style="margin-top:40px; font-size:0.8em; color:#999; text-align: center;">Generated automatically from EGM Ops Dashboard on ${new Date().toLocaleString()}</p>
       </body></html>`;
 
@@ -5408,16 +5652,64 @@ async function getNextEventId() {
       printWin.document.write(html);
       printWin.document.close();
       printWin.focus();
+      
       setTimeout(() => { printWin.print(); }, 500);
   }
 
-  
- // Engine: Aggregate the data using the Dynamic Rates (With Memory!)
-function runPayrollEngine(forceNewRates = false) {
+// Tracks manual edits to lock the Rates button
+let hasManualPayrollEdits = false;
+
+function markPayrollEdited() {
+    hasManualPayrollEdits = true;
+    const ratesBtn = document.getElementById('prRatesBtn');
+    if (ratesBtn) {
+        ratesBtn.disabled = true;
+        ratesBtn.title = "Disabled because manual edits have been made. Refresh the page to reset.";
+    }
+}
+// Engine: Aggregate the data using the Dynamic Rates (With Overlap Protection!)
+async function runPayrollEngine(forceNewRates = false) {
     const start = document.getElementById('prStartDate').value;
     const end = document.getElementById('prEndDate').value;
     
     if (!start || !end) return alert("Please select a Start and End date for the cutoff.");
+
+    // 🟢 OVERLAP PROTECTION LOGIC (With Call to Action)
+    if (!forceNewRates) {
+        const ov = document.getElementById('submitOverlay');
+        document.getElementById('overlayText').innerText = "Validating Cutoff Period...";
+        ov.style.display = 'flex';
+
+        try {
+            const snapshot = await db.collection("payroll_sessions").get();
+            let overlapFound = false;
+            let overlapRange = "";
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                // Overlap math: If Start A is before or on End B, AND End A is after or on Start B
+                if (start <= data.endDate && end >= data.startDate) {
+                    overlapFound = true;
+                    overlapRange = `${data.startDate} to ${data.endDate}`;
+                }
+            });
+
+            if (overlapFound) {
+                ov.style.display = 'none';
+                const loadIt = confirm(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session to prevent duplicate accounting.\n\nClick OK to open the Load Menu and view the existing session.`);
+                
+                if (loadIt) {
+                    openLoadSessionModal();
+                }
+                return;
+            }
+        } catch (e) {
+            ov.style.display = 'none';
+            alert("Error checking for overlapping sessions: " + e.message);
+            return;
+        }
+        ov.style.display = 'none';
+    }
 
     // 1. SAVE EXISTING DATA to preserve manual tweaks before we rebuild!
     const existingData = JSON.parse(JSON.stringify(currentPayrollData || {}));
@@ -5432,30 +5724,29 @@ function runPayrollEngine(forceNewRates = false) {
         );
     }
 
-    // Helper: Restore global expenses and misc bonus for a person
+    // Helper: Restore globals including the new fields!
     function restorePersonGlobals(personName) {
         if (existingData[personName]) {
             currentPayrollData[personName].expenses = existingData[personName].expenses || 0;
             currentPayrollData[personName].misc = existingData[personName].misc || 0;
+            currentPayrollData[personName].payslipNote = existingData[personName].payslipNote || "";
+            currentPayrollData[personName].isTentative = existingData[personName].isTentative || false;
+            currentPayrollData[personName].expensePayer = existingData[personName].expensePayer || "Edgar(EGM)";
+            currentPayrollData[personName].miscPayer = existingData[personName].miscPayer || "Edgar(EGM)";
         }
     }
 
-    // Requirement 4: Force Jenielyn to exist with a fixed allowance every cutoff
     initPayrollPerson('Jenielyn');
     let oldJen = getOldEvent('Jenielyn', 'FIXED', 'Allowance');
     
-    // If forcing new rates, reset allowance to default, otherwise keep override
     let jenBase = (oldJen && !forceNewRates) ? oldJen.basePay : 7500; 
-    let jenExtra = oldJen ? oldJen.extraPay : 0;  // Always keep extra pay
+    let jenExtra = oldJen ? oldJen.extraPay : 0; 
+    let jenPayer = oldJen ? (oldJen.payer || 'Edgar(EGM)') : 'Edgar(EGM)'; // Capture Payer
 
     currentPayrollData['Jenielyn'].events.push({
         doc: { 'Event ID': 'FIXED', 'Event Name': 'Bi-monthly Base Allowance', 'Event Date': start },
-        role: 'Allowance',
-        basePay: jenBase,
-        extraPay: jenExtra,
-        isHalfDay: false,
-        isSubsequent: false,
-        isCustom: false
+        role: 'Allowance', basePay: jenBase, extraPay: jenExtra, payer: jenPayer,
+        isHalfDay: false, isSubsequent: false, isCustom: false
     });
     currentPayrollData['Jenielyn'].totalBase += jenBase;
     restorePersonGlobals('Jenielyn');
@@ -5465,7 +5756,6 @@ function runPayrollEngine(forceNewRates = false) {
                e['Event Status'] === 'Confirmed' && e['Event Name'] !== 'Crew Leave';
     });
 
-    // SORT CHRONOLOGICALLY first so we know which day is truly "Day 1"
     validEvents.sort((a, b) => {
         let dateA = a['Event Date'] || '9999-99-99';
         let dateB = b['Event Date'] || '9999-99-99';
@@ -5514,14 +5804,15 @@ function runPayrollEngine(forceNewRates = false) {
                     }
                 }
 
-                // MAGIC: Apply manual overrides if they existed before we clicked Compute
                 let oldEv = getOldEvent(c, evId, 'Crew');
+                let payer = 'Edgar(EGM)'; // Default
                 if (oldEv) {
-                    if (!forceNewRates) rate = oldEv.basePay; // Only keep old base rate if NOT updating rates
-                    extra = oldEv.extraPay; // ALWAYS keep extra pay
+                    if (!forceNewRates) rate = oldEv.basePay; 
+                    extra = oldEv.extraPay; 
+                    payer = oldEv.payer || 'Edgar(EGM)';
                 }
 
-                currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: extra, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
+                currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: extra, payer: payer, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
                 currentPayrollData[c].totalBase += rate;
             });
         }
@@ -5552,14 +5843,15 @@ function runPayrollEngine(forceNewRates = false) {
                 }
             }
 
-            // MAGIC: Apply manual overrides if they existed before we clicked Compute
             let oldEv = getOldEvent(editor, evId, 'Editor');
+            let payer = 'Edgar(EGM)'; // Default
             if (oldEv) {
-                if (!forceNewRates) rate = oldEv.basePay; // Only keep old base rate if NOT updating rates
-                extra = oldEv.extraPay; // ALWAYS keep extra pay
+                if (!forceNewRates) rate = oldEv.basePay;
+                extra = oldEv.extraPay; 
+                payer = oldEv.payer || 'Edgar(EGM)';
             }
 
-            currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: extra, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
+            currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: extra, payer: payer, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
             currentPayrollData[editor].totalBase += rate;
         }
     });
@@ -5574,7 +5866,11 @@ function runPayrollEngine(forceNewRates = false) {
 
 function initPayrollPerson(name) {
     if(!currentPayrollData[name]) {
-        currentPayrollData[name] = { events: [], totalBase: 0, expenses: 0, misc: 0, finalTotal: 0 };
+        currentPayrollData[name] = { 
+            events: [], totalBase: 0, expenses: 0, misc: 0, finalTotal: 0,
+            payslipNote: "", isTentative: false, expensePayer: "Edgar(EGM)", miscPayer: "Edgar(EGM)",
+            payerBreakdown: {}
+        };
     }
 }
 
@@ -5587,6 +5883,7 @@ function showToast(message, type = 'success') {
     toast.show();
 }
   // UI: Draw the Main Table
+// UI: Draw the Main Table
 function renderPayrollTable() {
     const tbody = document.getElementById('pr-body');
     let html = '';
@@ -5602,14 +5899,15 @@ function renderPayrollTable() {
         const shootCount = data.events.filter(e => e.role === 'Crew').length;
         const editCount = data.events.filter(e => e.role === 'Editor').length;
         
-        // Check if fully exempt
         const isFullyExempt = owners.includes(name) && data.totalBase === 0 && editCount === 0;
-        
-        // THE FIX: Use data.finalTotal instead of data.totalBase so it includes Expenses & Extra Pay!
         const estBasePayHtml = isFullyExempt ? '<span class="badge bg-secondary text-white shadow-sm">N/A (Exempt)</span>' : `₱${data.finalTotal.toLocaleString()}`;
         
-        html += `<tr>
-            <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2"></i>${name}</td>
+        // 🔴 NEW: Color the row and add a badge if it is marked as Tentative!
+        const rowClass = data.isTentative ? 'bg-danger bg-opacity-10 border-danger border-opacity-25' : '';
+        const tentativeBadge = data.isTentative ? `<span class="badge bg-danger ms-2 shadow-sm" style="font-size:0.6rem;"><i class="bi bi-exclamation-triangle-fill"></i> TENTATIVE</span>` : '';
+
+        html += `<tr class="${rowClass}">
+            <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2"></i>${name} ${tentativeBadge}</td>
             <td class="text-center"><span class="badge bg-light text-dark border">${shootCount}</span></td>
             <td class="text-center"><span class="badge bg-light text-dark border">${editCount}</span></td>
             <td class="text-end fw-bold ${isFullyExempt ? '' : 'text-success'}">${estBasePayHtml}</td>
@@ -5628,35 +5926,91 @@ function renderPayrollTable() {
       const data = isHistorical ? histData : currentPayrollData[name];
       
       document.getElementById('prModalName').innerText = name + (isHistorical ? ' (Historical)' : '');
-      
-      // Check if they have ANY payable tasks (Editor tasks trigger true even for owners)
       const isFullyExempt = owners.includes(name) && !data.events.some(e => e.role === 'Editor');
       
       if (!isHistorical) {
           const start = document.getElementById('prStartDate').value;
           const end = document.getElementById('prEndDate').value;
           document.getElementById('prModalCutoffDates').innerText = `${start} to ${end}`;
-          document.getElementById('prGlobalExpenses').value = data.expenses || 0;
-          document.getElementById('prGlobalMisc').value = data.misc || 0;
+          
+          document.getElementById('prMathControls').innerHTML = `
+              <div class="row g-3 mb-4 border-top pt-3">
+                  <div class="col-12 col-md-6">
+                      <label class="form-label-sm text-primary">Add Reimbursements / Expenses</label>
+                      <div class="input-group input-group-sm shadow-sm mb-1">
+                          <span class="input-group-text bg-white fw-bold">₱</span>
+                          <input type="number" id="prGlobalExpenses" class="form-control fw-bold text-success" value="${data.expenses || 0}" oninput="markPayrollEdited(); calculateLivePayslipTotals()">
+                      </div>
+                      <select id="prExpensePayer" class="form-select form-select-sm text-secondary fw-bold shadow-sm" onchange="markPayrollEdited(); calculateLivePayslipTotals()">
+                          <option value="Edgar(EGM)" ${data.expensePayer === 'Edgar(EGM)' ? 'selected' : ''}>Source: Edgar</option>
+                          <option value="Francis" ${data.expensePayer === 'Francis' ? 'selected' : ''}>Source: Francis</option>
+                          <option value="Tina" ${data.expensePayer === 'Tina' ? 'selected' : ''}>Source: Tina</option>
+                          <option value="Grace" ${data.expensePayer === 'Grace' ? 'selected' : ''}>Source: Grace</option>
+                          <option value="SDE" ${data.expensePayer === 'SDE' ? 'selected' : ''}>Source: SDE (Split 3)</option>
+                      </select>
+                  </div>
+                  <div class="col-12 col-md-6">
+                      <label class="form-label-sm text-success">Add Misc. Bonus Pay</label>
+                      <div class="input-group input-group-sm shadow-sm mb-1">
+                          <span class="input-group-text bg-white fw-bold">₱</span>
+                          <input type="number" id="prGlobalMisc" class="form-control fw-bold text-success" value="${data.misc || 0}" oninput="markPayrollEdited(); calculateLivePayslipTotals()">
+                      </div>
+                      <select id="prMiscPayer" class="form-select form-select-sm text-secondary fw-bold shadow-sm" onchange="markPayrollEdited(); calculateLivePayslipTotals()">
+                          <option value="Edgar(EGM)" ${data.miscPayer === 'Edgar(EGM)' ? 'selected' : ''}>Source: Edgar</option>
+                          <option value="Francis" ${data.miscPayer === 'Francis' ? 'selected' : ''}>Source: Francis</option>
+                          <option value="Tina" ${data.miscPayer === 'Tina' ? 'selected' : ''}>Source: Tina</option>
+                          <option value="Grace" ${data.miscPayer === 'Grace' ? 'selected' : ''}>Source: Grace</option>
+                          <option value="SDE" ${data.miscPayer === 'SDE' ? 'selected' : ''}>Source: SDE (Split 3)</option>
+                      </select>
+                  </div>
+              </div>
+              
+              <div class="mb-3">
+                  <label class="form-label-sm text-secondary"><i class="bi bi-journal-text me-1"></i> Payslip Notes</label>
+                  <textarea id="prModalNotes" class="form-control form-control-sm shadow-sm" rows="2" placeholder="Ex: Deducted 500 for uniform..." oninput="markPayrollEdited(); savePayslipNote()">${data.payslipNote || ""}</textarea>
+              </div>
 
-          // --- THE FIX: Explicitly wake up the input boxes! ---
-          document.getElementById('prGlobalExpenses').disabled = false;
-          document.getElementById('prGlobalMisc').disabled = false;
-          // ----------------------------------------------------
-        
-          // Hide controls ONLY if fully exempt
+              <div class="form-check mt-2 mb-4 p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-3">
+                  <input class="form-check-input ms-1 border-danger" type="checkbox" id="prModalTentative" ${data.isTentative ? 'checked' : ''} onchange="markPayrollEdited(); toggleTentativeStatus()">
+                  <label class="form-check-label small fw-bold text-danger ms-2" for="prModalTentative">
+                      Mark as tentative - to be discussed by admin
+                  </label>
+              </div>
+
+              <div class="bg-dark text-white p-3 rounded-3 shadow-sm d-flex flex-column justify-content-center">
+                  <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-secondary">
+                      <span class="fw-bold text-uppercase opacity-75" style="letter-spacing: 1px;">Net Payout</span>
+                      <h3 class="fw-bold mb-0 text-success">₱ <span id="prLiveTotal">0</span></h3>
+                  </div>
+                  <div id="prPayerBreakdown" class="small text-end fw-bold" style="color: #adb5bd; font-size: 0.75rem;"></div>
+              </div>
+          `;
+          
           document.getElementById('prGenerateBtn').style.display = isFullyExempt ? 'none' : 'block';
+          document.getElementById('prGenerateBtn').disabled = data.isTentative;
           document.getElementById('prMathControls').style.display = isFullyExempt ? 'none' : 'block';
       } else {
+          // HISTORICAL VIEW - Read Only Display for Expenses and Misc
+          document.getElementById('prMathControls').innerHTML = `
+              <div class="row g-3 mb-4 border-top pt-3">
+                  <div class="col-12 col-md-6">
+                      <label class="form-label-sm text-primary">Reimbursements / Expenses</label>
+                      <div class="fw-bold text-success fs-5">₱${(data.expenses || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                      <label class="form-label-sm text-success">Misc. Bonus Pay</label>
+                      <div class="fw-bold text-success fs-5">₱${(data.misc || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                  </div>
+              </div>
+              <div class="bg-dark text-white p-3 rounded-3 shadow-sm d-flex justify-content-between align-items-center">
+                  <span class="fw-bold text-uppercase opacity-75" style="letter-spacing: 1px;">Net Payout</span>
+                  <h3 class="fw-bold mb-0 text-success">₱ <span id="prLiveTotal">${Number(data.finalTotal || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</span></h3>
+              </div>
+          `;
           document.getElementById('prGenerateBtn').style.display = 'none';
           document.getElementById('prMathControls').style.display = 'block';
-          document.getElementById('prGlobalExpenses').value = histData.expenses || 0;
-          document.getElementById('prGlobalMisc').value = histData.misc || 0;
-          document.getElementById('prGlobalExpenses').disabled = true;
-          document.getElementById('prGlobalMisc').disabled = true;
       }
       
-      // Build Itemized List
       let eventsHtml = '';
       data.events.sort((a,b) => (a.doc ? a.doc['Event Date'] : a.date).localeCompare(b.doc ? b.doc['Event Date'] : b.date)).forEach((item, index) => {
           let roleBadge = item.role === 'Editor' ? 'bg-info text-dark' : (item.role === 'Allowance' ? 'bg-warning text-dark' : 'bg-secondary text-white');
@@ -5664,63 +6018,50 @@ function renderPayrollTable() {
           let eventName = item.doc ? item.doc['Event Name'] : (item.name || 'Historic Event');
           let eventDate = item.doc ? item.doc['Event Date'] : item.date;
           
-          // THE FIX: Correctly check if this SPECIFIC task is exempt (Owners are exempt as Crew, but paid as Editors)
           let isItemExempt = owners.includes(name) && item.role !== 'Editor';
           
-          let basePayUI = '';
+          let basePayUI = '', extraPayUI = '', payerUI = '';
           if (isItemExempt) {
               basePayUI = `<span class="d-block text-muted fw-bold" style="font-size:0.65rem; text-transform:uppercase;">Task</span><span class="badge bg-light text-dark border mt-1">Exempt</span>`;
           } else if (isHistorical) {
               basePayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Base Rate</span><strong class="text-success d-block mt-1">₱${Number(item.basePay || item.base).toLocaleString()}</strong>`;
+              if(item.extra > 0 || item.extraPay > 0) extraPayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Extra</span><strong class="text-success d-block mt-1">+ ₱${Number(item.extra || item.extraPay).toLocaleString()}</strong>`;
+              payerUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Source</span><strong class="text-dark d-block mt-1">${item.payer === 'SDE' ? 'SDE (Split 3)' : (item.payer || 'Edgar(EGM)')}</strong>`;
           } else {
-              // ALWAYS render an editable input box for active (non-exempt, non-historical) tasks!
-              let label = 'Base Rate';
-              let labelClass = 'text-primary';
-              
-              if (item.isSubsequent) { label = 'Add-Day Pay'; labelClass = 'text-warning'; }
-              else if (item.isHalfDay) { label = 'Half-Day Pay'; labelClass = 'text-warning'; }
-              else if (item.isCustom) { label = 'Custom Pay'; labelClass = 'text-warning'; }
-              else if (item.role === 'Editor') { label = 'Editing Rate'; labelClass = 'text-info'; }
-              else if (item.role === 'Allowance') { label = 'Allowance'; labelClass = 'text-primary'; }
+              let label = item.isSubsequent ? 'Add-Day Pay' : (item.isHalfDay ? 'Half-Day Pay' : (item.isCustom ? 'Custom Pay' : (item.role === 'Editor' ? 'Editing Rate' : 'Base Rate')));
+              basePayUI = `<span class="d-block text-primary mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">${label}</span>
+                  <div class="input-group input-group-sm" style="width: 95px;"><span class="input-group-text bg-light text-muted">₱</span>
+                  <input type="number" class="form-control fw-bold pr-event-base text-success shadow-sm px-1" data-index="${index}" value="${item.basePay}" oninput="markPayrollEdited(); calculateLivePayslipTotals()"></div>`;
+                  
+              extraPayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">+ Extra</span>
+                  <div class="input-group input-group-sm" style="width: 85px;"><span class="input-group-text bg-light text-muted px-1">₱</span>
+                  <input type="number" class="form-control fw-bold pr-event-extra shadow-sm px-1" data-index="${index}" value="${item.extraPay}" oninput="markPayrollEdited(); calculateLivePayslipTotals()"></div>`;
 
-              basePayUI = `
-                  <span class="d-block ${labelClass} mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">${label}</span>
-                  <div class="input-group input-group-sm" style="width: 105px;">
-                      <span class="input-group-text bg-light text-muted">₱</span>
-                      <input type="number" class="form-control fw-bold pr-event-base text-success shadow-sm" data-index="${index}" value="${item.basePay}" oninput="calculateLivePayslipTotals()">
-                  </div>`;
-          }
-
-          let extraPayUI = '';
-          if (!isItemExempt) {
-              if (isHistorical) {
-                 if(item.extra > 0) extraPayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Extra</span><strong class="text-success d-block mt-1">+ ₱${Number(item.extra).toLocaleString()}</strong>`;
-              } else {
-                  extraPayUI = `
-                  <span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">+ Extra Pay</span>
-                  <div class="input-group input-group-sm" style="width: 100px;">
-                      <span class="input-group-text bg-light text-muted">₱</span>
-                      <input type="number" class="form-control fw-bold pr-event-extra shadow-sm" data-index="${index}" value="${item.extraPay}" oninput="calculateLivePayslipTotals()">
-                  </div>`;
-              }
+              payerUI = `<span class="d-block text-info mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Source</span>
+                  <select class="form-select form-select-sm fw-bold pr-event-payer shadow-sm text-secondary px-1" style="width: 95px; font-size: 0.75rem;" data-index="${index}" onchange="markPayrollEdited(); calculateLivePayslipTotals()">
+                      <option value="Edgar(EGM)" ${item.payer === 'Edgar(EGM)' || !item.payer ? 'selected' : ''}>Edgar</option>
+                      <option value="Francis" ${item.payer === 'Francis' ? 'selected' : ''}>Francis</option>
+                      <option value="Tina" ${item.payer === 'Tina' ? 'selected' : ''}>Tina</option>
+                      <option value="Grace" ${item.payer === 'Grace' ? 'selected' : ''}>Grace</option>
+                      <option value="SDE" ${item.payer === 'SDE' ? 'selected' : ''}>SDE</option>
+                  </select>`;
           }
 
           let badgesHtml = '';
           if (item.isHalfDay && !isHistorical) badgesHtml += '<span class="badge bg-warning text-dark ms-1 shadow-sm"><i class="bi bi-star-half"></i> Half-Day</span>';
           if (item.isSubsequent && !isHistorical) badgesHtml += '<span class="badge bg-secondary opacity-75 text-white ms-1 shadow-sm">+Add Day</span>';
-          if (item.isCustom && !isHistorical) badgesHtml += '<span class="badge bg-primary text-white ms-1 shadow-sm"><i class="bi bi-person-gear"></i> Custom</span>';
 
           eventsHtml += `
-          <div class="bg-white p-3 rounded-3 border shadow-sm mb-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+          <div class="bg-white p-2 p-md-3 rounded-3 border shadow-sm mb-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
               <div>
                   <span class="d-block small text-muted fw-bold mb-1"><i class="bi bi-calendar-event me-1"></i>${eventDate}</span>
-                  <strong class="text-dark">${eventId !== 'FIXED' ? '#'+eventId+' - ' : ''}${eventName}</strong>
-                  ${badgesHtml}
-                  <span class="badge ${roleBadge} ms-1 shadow-sm">${item.role}</span>
+                  <strong class="text-dark" style="font-size: 0.9rem;">${eventId !== 'FIXED' ? '#'+eventId+' - ' : ''}${eventName}</strong>
+                  ${badgesHtml} <span class="badge ${roleBadge} ms-1 shadow-sm">${item.role}</span>
               </div>
-              <div class="d-flex align-items-center gap-3">
-                  <div class="text-end">${basePayUI}</div>
+              <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 overflow-auto pb-1">
+                  <div>${basePayUI}</div>
                   <div>${extraPayUI}</div>
+                  <div>${payerUI}</div>
               </div>
           </div>`;
       });
@@ -5728,96 +6069,125 @@ function renderPayrollTable() {
       document.getElementById('prModalEventsList').innerHTML = eventsHtml;
       
       if (!isHistorical) calculateLivePayslipTotals(); 
-      else document.getElementById('prLiveTotal').innerText = Number(histData.finalTotal).toLocaleString();
+      // The total is handled directly in the HTML block for historical views now
       
-      const modalEl = document.getElementById('payrollModal');
-      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-      modal.show();
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('payrollModal')).show();
   }
-  // Math: Live calculation based on inputs
+
+  // Two tiny UI helper functions for the new inputs
+  window.savePayslipNote = function() {
+      if(activePayrollPerson) currentPayrollData[activePayrollPerson].payslipNote = document.getElementById('prModalNotes').value;
+  };
+  
+  window.toggleTentativeStatus = function() {
+      if(activePayrollPerson) {
+          const isTentative = document.getElementById('prModalTentative').checked;
+          currentPayrollData[activePayrollPerson].isTentative = isTentative;
+          
+          // 🟢 NEW: Instantly disable/enable the Generate button!
+          document.getElementById('prGenerateBtn').disabled = isTentative;
+          
+          renderPayrollTable(); // Updates the background color instantly!
+      }
+  };
+ // Math: Live calculation based on inputs (With 3-Way SDE Split)
   function calculateLivePayslipTotals() {
       if(!activePayrollPerson) return;
       const data = currentPayrollData[activePayrollPerson];
       
-      // THE FIX: We removed the "if(owners.includes) return;" block. 
-      // Owners now calculate normally. Their Exempt tasks simply have a basePay of 0!
+      let breakdown = { 'Edgar(EGM)': 0, 'Francis': 0, 'Tina': 0, 'Grace': 0 };
 
-      // Save manually assigned Base Rates back to state
       document.querySelectorAll('.pr-event-base').forEach(input => {
-          let idx = input.getAttribute('data-index');
-          data.events[idx].basePay = parseFloat(input.value) || 0;
+          data.events[input.getAttribute('data-index')].basePay = parseFloat(input.value) || 0;
       });
 
-      // Save Extras back to state
       document.querySelectorAll('.pr-event-extra').forEach(input => {
-          let idx = input.getAttribute('data-index');
-          data.events[idx].extraPay = parseFloat(input.value) || 0;
+          data.events[input.getAttribute('data-index')].extraPay = parseFloat(input.value) || 0;
+      });
+
+      document.querySelectorAll('.pr-event-payer').forEach(select => {
+          data.events[select.getAttribute('data-index')].payer = select.value;
       });
       
       data.expenses = parseFloat(document.getElementById('prGlobalExpenses').value) || 0;
       data.misc = parseFloat(document.getElementById('prGlobalMisc').value) || 0;
+      data.expensePayer = document.getElementById('prExpensePayer').value;
+      data.miscPayer = document.getElementById('prMiscPayer').value;
       
-      // Recalculate Grand Total dynamically
       let total = 0;
+
+      // 🟢 Helper to allocate funds cleanly, handling the SDE split
+      function allocateFunds(amount, payerCode) {
+          if (!amount) return;
+          if (payerCode === 'SDE') {
+              let splitAmt = amount / 3;
+              breakdown['Francis'] += splitAmt;
+              breakdown['Tina'] += splitAmt;
+              breakdown['Grace'] += splitAmt;
+          } else {
+              breakdown[payerCode || 'Edgar(EGM)'] += amount;
+          }
+      }
+
       data.events.forEach(ev => {
-          total += ev.basePay;
-          total += ev.extraPay;
+          let lineTotal = ev.basePay + ev.extraPay;
+          total += lineTotal;
+          allocateFunds(lineTotal, ev.payer);
       });
       
-      // Update data.totalBase to safely reflect manual adjustments for the Final Generation Card
       data.totalBase = data.events.reduce((sum, ev) => sum + ev.basePay, 0);
 
       total += data.expenses;
+      allocateFunds(data.expenses, data.expensePayer);
+      
       total += data.misc;
+      allocateFunds(data.misc, data.miscPayer);
       
       data.finalTotal = total;
-      document.getElementById('prLiveTotal').innerText = total.toLocaleString();
+      data.payerBreakdown = breakdown;
+
+      // Format with decimals since splitting by 3 causes fractions (.33 or .67)
+      document.getElementById('prLiveTotal').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+      let breakdownHtml = '';
+      for (let [person, amount] of Object.entries(breakdown)) {
+          if (amount > 0) {
+              breakdownHtml += `<span class="ms-3 opacity-75">${person}: <span class="text-white">₱${amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></span>`;
+          }
+      }
+      document.getElementById('prPayerBreakdown').innerHTML = breakdownHtml;
   }
 
   // Helper to collapse multi-day events into a single line item for printing/logging
   function getCollapsedEvents(events) {
-      const collapsed = {};
-      const result = [];
-      
+      const collapsed = {}; const result = [];
       events.forEach(ev => {
           const id = ev.doc ? ev.doc['Event ID'] : ev.id;
           const role = ev.role;
-          const key = `${id}_${role}`; // Group by Event ID and Role
-          
+          const p = ev.payer || 'Edgar(EGM)';
+          const key = `${id}_${role}_${p}`; // Group by Event, Role, AND Payer
+
           if (!collapsed[key]) {
               collapsed[key] = {
-                  id: id,
-                  name: ev.doc ? ev.doc['Event Name'] : ev.name,
-                  date: ev.doc ? ev.doc['Event Date'] : ev.date, 
-                  role: role,
-                  basePay: ev.basePay || ev.base || 0,
-                  extraPay: ev.extraPay || ev.extra || 0,
-                  dayCount: 1,
-                  lastDate: ev.doc ? ev.doc['Event Date'] : ev.date
+                  id: id, name: ev.doc ? ev.doc['Event Name'] : ev.name,
+                  date: ev.doc ? ev.doc['Event Date'] : ev.date, role: role,
+                  basePay: ev.basePay || ev.base || 0, extraPay: ev.extraPay || ev.extra || 0,
+                  payer: p, dayCount: 1, lastDate: ev.doc ? ev.doc['Event Date'] : ev.date
               };
               result.push(collapsed[key]);
           } else {
               collapsed[key].basePay += (ev.basePay || ev.base || 0);
               collapsed[key].extraPay += (ev.extraPay || ev.extra || 0);
               collapsed[key].dayCount += 1;
-              
-              // Update the date range
               let d = ev.doc ? ev.doc['Event Date'] : ev.date;
-              if (d > collapsed[key].lastDate) {
-                   collapsed[key].lastDate = d;
-              }
+              if (d > collapsed[key].lastDate) collapsed[key].lastDate = d;
           }
       });
-      
-      // Format dates (e.g. "2025-10-15 to 2025-10-17")
+
       result.forEach(item => {
-          if (item.dayCount > 1 && item.date !== item.lastDate) {
-              item.dateString = `${item.date} to ${item.lastDate}`;
-          } else {
-              item.dateString = item.date;
-          }
+          if (item.dayCount > 1 && item.date !== item.lastDate) item.dateString = `${item.date} to ${item.lastDate}`;
+          else item.dateString = item.date;
       });
-      
       return result;
   }
 
@@ -5829,73 +6199,46 @@ function renderPayrollTable() {
       const rowHeight = 30;
       const collapsedItems = getCollapsedEvents(data.events); // Use the collapsed version
       
-      // Base dimensions
+      // Base dimensions (Height recalibrated to remove breakdown)
       const baseWidth = 600;
-      const baseHeight = 320 + (collapsedItems.length * rowHeight) + (data.expenses > 0 ? 30 : 0) + (data.misc > 0 ? 30 : 0);
-
-      // SCALE FACTOR: Make the image 3x larger for high resolution!
+      const baseHeight = 300 + (collapsedItems.length * rowHeight) + (data.expenses > 0 ? 30 : 0) + (data.misc > 0 ? 30 : 0) + (data.payslipNote ? 40 : 0);
       const scale = 3;
-      canvas.width = baseWidth * scale;
-      canvas.height = baseHeight * scale;
-
-      // Scale the drawing context so we don't have to rewrite every coordinate manually
+      canvas.width = baseWidth * scale; canvas.height = baseHeight * scale;
       ctx.scale(scale, scale);
 
-      // Draw white background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, baseWidth, baseHeight);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, baseWidth, baseHeight);
 
       // Header
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 24px Inter, sans-serif';
-      ctx.textAlign = 'center';
+      ctx.fillStyle = '#000000'; ctx.font = 'bold 24px Inter, sans-serif'; ctx.textAlign = 'center';
       ctx.fillText('EGM PRODUCTIONS', 300, 50);
-      ctx.font = '14px Inter, sans-serif';
-      ctx.fillStyle = '#666666';
-      ctx.fillText('PAYMENT VOUCHER', 300, 75);
-
-      // Separator
+      ctx.font = '14px Inter, sans-serif'; ctx.fillStyle = '#666666'; ctx.fillText('PAYMENT VOUCHER', 300, 75);
       ctx.beginPath(); ctx.moveTo(40, 100); ctx.lineTo(560, 100); ctx.strokeStyle = '#cccccc'; ctx.stroke();
 
-      // Info
-      ctx.textAlign = 'left';
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 16px Inter, sans-serif';
+      ctx.textAlign = 'left'; ctx.fillStyle = '#000000'; ctx.font = 'bold 16px Inter, sans-serif';
       ctx.fillText('Issued To: ' + name, 40, 130);
-      ctx.textAlign = 'right';
-      ctx.font = '14px Inter, sans-serif';
-      ctx.fillText('Cutoff: ' + datesStr, 560, 130);
+      ctx.textAlign = 'right'; ctx.font = '14px Inter, sans-serif'; ctx.fillText('Cutoff: ' + datesStr, 560, 130);
 
-      // Items Header
-      ctx.textAlign = 'left';
-      ctx.font = 'bold 14px Inter, sans-serif';
-      ctx.fillStyle = '#666666';
-      ctx.fillText('DESCRIPTION', 40, 170);
-      ctx.textAlign = 'right';
-      ctx.fillText('AMOUNT', 560, 170);
-
+      ctx.textAlign = 'left'; ctx.font = 'bold 14px Inter, sans-serif'; ctx.fillStyle = '#666666';
+      ctx.fillText('DESCRIPTION', 40, 170); ctx.textAlign = 'right'; ctx.fillText('AMOUNT', 560, 170);
       ctx.beginPath(); ctx.moveTo(40, 185); ctx.lineTo(560, 185); ctx.stroke();
 
-      let y = 215;
-      ctx.fillStyle = '#000000';
-      ctx.font = '14px Inter, sans-serif';
+      let y = 215; ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
 
-      // Draw Items
       collapsedItems.forEach(item => {
           ctx.textAlign = 'left';
           let desc = item.id === 'FIXED' ? `${item.name} (${item.role})` : `#${item.id} - ${item.name} (${item.role})`;
-          
-          if (item.dayCount > 1) { desc += ` [${item.dayCount} Days]`; }
-          
-          ctx.fillText(desc.substring(0, 50), 40, y);
-          
-          ctx.textAlign = 'right';
-          let totalLine = item.basePay + item.extraPay;
-          ctx.fillText('₱ ' + totalLine.toLocaleString(), 560, y);
-          y += rowHeight;
+          if (item.dayCount > 1) desc += ` [${item.dayCount} Days]`;
+
+          ctx.fillText(desc.substring(0, 45), 40, y);
+          // Draw a tiny tag for the Payer source
+          ctx.font = '10px Inter, sans-serif'; ctx.fillStyle = '#999999';
+          ctx.fillText(`Source: ${item.payer}`, 40, y + 14);
+
+          ctx.textAlign = 'right'; ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
+          ctx.fillText('₱ ' + (item.basePay + item.extraPay).toLocaleString(), 560, y);
+          y += (rowHeight + 10);
       });
 
-      // Draw Globals
       if (data.expenses > 0) {
           ctx.textAlign = 'left'; ctx.fillText('Reimbursements / Expenses', 40, y);
           ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.expenses.toLocaleString(), 560, y);
@@ -5907,16 +6250,19 @@ function renderPayrollTable() {
           y += rowHeight;
       }
 
-      // Final Total
       ctx.beginPath(); ctx.moveTo(40, y - 10); ctx.lineTo(560, y - 10); ctx.stroke();
       y += 25;
-      ctx.textAlign = 'left';
-      ctx.font = 'bold 18px Inter, sans-serif';
-      ctx.fillText('TOTAL NET PAY', 40, y);
-      ctx.textAlign = 'right';
-      ctx.fillText('₱ ' + data.finalTotal.toLocaleString(), 560, y);
+      ctx.textAlign = 'left'; ctx.font = 'bold 18px Inter, sans-serif'; ctx.fillText('TOTAL NET PAY', 40, y);
+      ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.finalTotal.toLocaleString(), 560, y);
 
-      // Download Trigger (Quality set to 1.0 for max sharpness)
+      // Payslip Notes
+      if (data.payslipNote) {
+          y += 35;
+          ctx.textAlign = 'left';
+          ctx.fillStyle = '#666666'; ctx.font = 'italic 12px Inter, sans-serif';
+          ctx.fillText('Notes: ' + data.payslipNote.substring(0, 85), 40, y);
+      }
+
       const link = document.createElement('a');
       link.download = `Payslip_${name}_${datesStr.replace(/[^a-zA-Z0-9]/g, '')}.jpg`;
       link.href = canvas.toDataURL('image/jpeg', 1.0);
