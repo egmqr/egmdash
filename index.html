@@ -1924,7 +1924,6 @@ if ('serviceWorker' in navigator) {
         }
     });
 
-  // Restored for Photobooth Generator Google Drive operations
   async function callApi(payloadData, method = 'POST', isSilent = false) {
     if (!isSilent) {
         const loader = document.getElementById('loader');
@@ -1935,7 +1934,7 @@ if ('serviceWorker' in navigator) {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payloadData),
-        redirect: "follow" // <--- THIS PREVENTS CORS CRASHES
+        redirect: "follow" // <--- ABSOLUTELY REQUIRED
       });
       
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -1946,9 +1945,9 @@ if ('serviceWorker' in navigator) {
         if (loader) loader.style.display = 'none';
       }
       
-      if (result.status === "error") {
-          console.error("Backend error:", result.message);
-          alert("Server Error: " + result.message); 
+      if (result.status === "error" || result.success === false) {
+          console.error("Backend error:", result.error || result.message);
+          alert("Server Error: " + (result.error || result.message)); 
           return null;
       }
       return result;
