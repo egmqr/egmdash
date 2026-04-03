@@ -656,13 +656,6 @@
                               <img id="boothLogoPreview" class="booth-thumbnail" src="" onclick="openLightbox(this.src)">
                           </div>
                       </div>
-                      
-                      <div class="mt-2 mb-2 p-2 bg-light border border-secondary-subtle rounded">
-                          <label class="form-label-sm text-secondary mb-1">Or select an existing logo:</label>
-                          <div id="existingLogoGallery" class="logo-gallery">
-                              <span class="small text-muted fst-italic">Loading logos...</span>
-                          </div>
-                      </div>
 
                       <div class="form-check form-switch mt-2">
                           <input class="form-check-input" type="checkbox" id="boothLogoOnMain">
@@ -4932,7 +4925,6 @@ function generateSingleEventCard(e) {
   async function executeBoothAction(actionName) {
       let eventId = actionName === 'generateBoothSetup' ? document.getElementById('boothEventId').value : document.getElementById('boothEventSelect').value;
       
-      // FIX: If the user manually clicked "New Setup" and the ID is blank, generate one!
       if (actionName === 'generateBoothSetup' && (!eventId || eventId.trim() === '')) {
           eventId = "EVT" + Math.floor(10000 + Math.random() * 90000);
           document.getElementById('boothEventId').value = eventId;
@@ -4957,11 +4949,11 @@ function generateSingleEventCard(e) {
       
       const logoOnMain = document.getElementById('boothLogoOnMain').checked;
 
+      // REMOVED existingLogoId and existingQrLogoId
       const payload = {
           action: actionName, eventId, folderName, eventName, boothCount,
           bgData, logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
-          fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
-          existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId
+          fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value
       };
 
       const res = await callApi(payload, 'POST');
