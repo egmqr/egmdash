@@ -1935,13 +1935,17 @@ if ('serviceWorker' in navigator) {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payloadData),
+        redirect: "follow" // <--- THIS PREVENTS CORS CRASHES
       });
+      
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const result = await response.json();
+      
       if (!isSilent) {
         const loader = document.getElementById('loader');
         if (loader) loader.style.display = 'none';
       }
+      
       if (result.status === "error") {
           console.error("Backend error:", result.message);
           alert("Server Error: " + result.message); 
