@@ -3996,12 +3996,17 @@ function generateSingleEventCard(e) {
       bootstrap.Modal.getInstance(document.getElementById('uploadFileModal')).hide();
       ov.style.display = 'flex';
       
+      // FIX: Changed 'uploadFile' to 'uploadEventFile' to match backend router
       const res = await callApi({ 
-         action: 'uploadFile', base64: ev.target.result, filename: file.name, eventId: eventId, label: label
+         action: 'uploadEventFile', base64Data: ev.target.result, filename: file.name, eventId: eventId, label: label
       }, 'POST');
       
       ov.style.display = 'none';
-      if (res.success) {  } else { alert("Error: " + res.error); }
+      if (res && res.success) { 
+          showToast("File uploaded successfully.");
+      } else { 
+          alert("Error: " + (res ? res.error : "Unknown error")); 
+      }
     };
     reader.readAsDataURL(file);
   }
@@ -4925,7 +4930,14 @@ function generateSingleEventCard(e) {
   }
 
   async function executeBoothAction(actionName) {
-      const eventId = actionName === 'generateBoothSetup' ? document.getElementById('boothEventId').value : document.getElementById('boothEventSelect').value;
+      let eventId = actionName === 'generateBoothSetup' ? document.getElementById('boothEventId').value : document.getElementById('boothEventSelect').value;
+      
+      // FIX: If the user manually clicked "New Setup" and the ID is blank, generate one!
+      if (actionName === 'generateBoothSetup' && (!eventId || eventId.trim() === '')) {
+          eventId = "EVT" + Math.floor(10000 + Math.random() * 90000);
+          document.getElementById('boothEventId').value = eventId;
+      }
+
       const folderName = document.getElementById('boothFolderName').value.trim();
       const eventName = document.getElementById('boothEventName').value.trim();
       const boothCount = document.getElementById('boothCountInput').value;
@@ -4956,8 +4968,8 @@ function generateSingleEventCard(e) {
       ov.style.display = 'none';
       
       if (res && res.success) {
-          boothDetailsCache = {}; // Wipe the details memory
-          fetchBoothEvents(true); // Force the dropdown to grab the new project!
+          boothDetailsCache = {}; 
+          fetchBoothEvents(true); 
           
           if (actionName === "updateBoothSetup" || actionName === "generateBoothSetup") {
               setBoothMode('view');
