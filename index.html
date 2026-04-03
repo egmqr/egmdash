@@ -656,7 +656,12 @@
                               <img id="boothLogoPreview" class="booth-thumbnail" src="" onclick="openLightbox(this.src)">
                           </div>
                       </div>
-
+                      <div class="mt-2 mb-2 p-2 bg-light border border-secondary-subtle rounded">
+    <label class="form-label-sm text-secondary mb-1">Or select an existing logo:</label>
+    <div id="existingLogoGallery" class="logo-gallery">
+        <span class="small text-muted fst-italic">Loading logos...</span>
+    </div>
+</div>
                       <div class="form-check form-switch mt-2">
                           <input class="form-check-input" type="checkbox" id="boothLogoOnMain">
                           <label class="form-check-label small fw-bold text-dark" for="boothLogoOnMain">Show logo as custom branding</label>
@@ -4848,7 +4853,47 @@ function generateSingleEventCard(e) {
       document.getElementById('boothLightbox').style.display = 'none';
       document.getElementById('boothLightboxImg').src = "";
   }
+async function fetchExistingLogos(forceRefresh = false) {
+      if (!forceRefresh && existingLogosCache) { 
+          renderExistingLogos(existingLogosCache); 
+          return; 
+      }
+      
+      document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-muted fst-italic">Loading logos...</span>';
+      const res = await callApi({ action: "getExistingLogos" }, 'POST', true);
+      
+      if (res && res.success) {
+          existingLogosCache = res.logos;
+          renderExistingLogos(res.logos);
+      } else {
+          document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-danger">Failed to load logos.</span>';
+      }
+  }
 
+  function renderExistingLogos(logos) {
+      const container = document.getElementById('existingLogoGallery');
+      if (logos.length === 0) {
+          container.innerHTML = '<span class="small text-muted fst-italic">No existing logos found.</span>';
+          return;
+      }
+      let html = '';
+      logos.forEach(logo => {
+          html += `<img src="${logo.url}" class="logo-gallery-item" title="${logo.name}" onclick="selectExistingLogo('${logo.id}', '${logo.qrId}', this)">`;
+      });
+      container.innerHTML = html;
+  }
+
+  function selectExistingLogo(id, qrId, el) {
+      selectedExistingLogoId = id;
+      selectedExistingQrLogoId = qrId;
+      document.querySelectorAll('.logo-gallery-item').forEach(img => img.classList.remove('selected'));
+      el.classList.add('selected');
+      
+      document.getElementById('boothLogoFile').value = ""; 
+      document.getElementById('boothLogoFileName').innerText = "Using existing logo";
+      document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
+      croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
+  }
   function renderExistingLogos(logos) {
       const container = document.getElementById('existingLogoGallery');
       if (logos.length === 0) {
@@ -4953,7 +4998,8 @@ function generateSingleEventCard(e) {
       const payload = {
           action: actionName, eventId, folderName, eventName, boothCount,
           bgData, logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
-          fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value
+          fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
+          existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId
       };
 
       const res = await callApi(payload, 'POST');
