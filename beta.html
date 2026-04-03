@@ -5485,6 +5485,9 @@ async function getNextEventId() {
 
       document.getElementById('prStartDate').value = sDate.toISOString().split('T')[0];
       document.getElementById('prEndDate').value = eDate.toISOString().split('T')[0];
+      
+      // 🟢 NEW: Force the Expense Queue to check the auto-calculated dates!
+      renderExpenseQueue();
   }
 // Engine: Save the current session to Firebase Cloud
   async function savePayrollSession() {
@@ -5590,13 +5593,15 @@ async function getNextEventId() {
           document.getElementById('prStartDate').value = data.startDate;
           document.getElementById('prEndDate').value = data.endDate;
           
+          // 🟢 NEW: Force the Expense Queue to check the newly loaded dates!
+          renderExpenseQueue();
+          
           try {
               currentPayrollData = JSON.parse(data.sessionData);
               renderPayrollTable();
               bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
               showToast("Cloud Session loaded successfully!", "success");
               
-              // 🟢 NEW: Lock the rates button since we loaded custom historical data!
               markPayrollEdited(); 
           } catch (e) {
               alert("Error parsing saved session data.");
