@@ -5915,9 +5915,9 @@ function renderPayrollTable() {
           document.getElementById('prModalCutoffDates').innerText = `${start} to ${end}`;
           
           document.getElementById('prMathControls').innerHTML = `
-              <div class="row g-3 mb-3 border-top pt-3">
+              <div class="row g-3 mb-4 border-top pt-3">
                   <div class="col-12 col-md-6">
-                      <label class="form-label-sm text-primary">Reimbursements / Expenses</label>
+                      <label class="form-label-sm text-primary">Add Reimbursements / Expenses</label>
                       <div class="input-group input-group-sm shadow-sm mb-1">
                           <span class="input-group-text bg-white fw-bold">₱</span>
                           <input type="number" id="prGlobalExpenses" class="form-control fw-bold text-success" value="${data.expenses || 0}" oninput="markPayrollEdited(); calculateLivePayslipTotals()">
@@ -5931,7 +5931,7 @@ function renderPayrollTable() {
                       </select>
                   </div>
                   <div class="col-12 col-md-6">
-                      <label class="form-label-sm text-success">Misc. Bonus Pay</label>
+                      <label class="form-label-sm text-success">Add Misc. Bonus Pay</label>
                       <div class="input-group input-group-sm shadow-sm mb-1">
                           <span class="input-group-text bg-white fw-bold">₱</span>
                           <input type="number" id="prGlobalMisc" class="form-control fw-bold text-success" value="${data.misc || 0}" oninput="markPayrollEdited(); calculateLivePayslipTotals()">
@@ -5971,8 +5971,25 @@ function renderPayrollTable() {
           document.getElementById('prGenerateBtn').disabled = data.isTentative;
           document.getElementById('prMathControls').style.display = isFullyExempt ? 'none' : 'block';
       } else {
+          // HISTORICAL VIEW - Read Only Display for Expenses and Misc
+          document.getElementById('prMathControls').innerHTML = `
+              <div class="row g-3 mb-4 border-top pt-3">
+                  <div class="col-12 col-md-6">
+                      <label class="form-label-sm text-primary">Reimbursements / Expenses</label>
+                      <div class="fw-bold text-success fs-5">₱${(data.expenses || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                      <label class="form-label-sm text-success">Misc. Bonus Pay</label>
+                      <div class="fw-bold text-success fs-5">₱${(data.misc || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                  </div>
+              </div>
+              <div class="bg-dark text-white p-3 rounded-3 shadow-sm d-flex justify-content-between align-items-center">
+                  <span class="fw-bold text-uppercase opacity-75" style="letter-spacing: 1px;">Net Payout</span>
+                  <h3 class="fw-bold mb-0 text-success">₱ <span id="prLiveTotal">${Number(data.finalTotal || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</span></h3>
+              </div>
+          `;
           document.getElementById('prGenerateBtn').style.display = 'none';
-          document.getElementById('prMathControls').style.display = 'none';
+          document.getElementById('prMathControls').style.display = 'block';
       }
       
       let eventsHtml = '';
@@ -5989,7 +6006,7 @@ function renderPayrollTable() {
               basePayUI = `<span class="d-block text-muted fw-bold" style="font-size:0.65rem; text-transform:uppercase;">Task</span><span class="badge bg-light text-dark border mt-1">Exempt</span>`;
           } else if (isHistorical) {
               basePayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Base Rate</span><strong class="text-success d-block mt-1">₱${Number(item.basePay || item.base).toLocaleString()}</strong>`;
-              if(item.extra > 0) extraPayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Extra</span><strong class="text-success d-block mt-1">+ ₱${Number(item.extra).toLocaleString()}</strong>`;
+              if(item.extra > 0 || item.extraPay > 0) extraPayUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Extra</span><strong class="text-success d-block mt-1">+ ₱${Number(item.extra || item.extraPay).toLocaleString()}</strong>`;
               payerUI = `<span class="d-block text-muted mb-1" style="font-size:0.65rem; text-transform:uppercase; font-weight:700;">Source</span><strong class="text-dark d-block mt-1">${item.payer === 'SDE' ? 'SDE (Split 3)' : (item.payer || 'Edgar(EGM)')}</strong>`;
           } else {
               let label = item.isSubsequent ? 'Add-Day Pay' : (item.isHalfDay ? 'Half-Day Pay' : (item.isCustom ? 'Custom Pay' : (item.role === 'Editor' ? 'Editing Rate' : 'Base Rate')));
@@ -6033,7 +6050,7 @@ function renderPayrollTable() {
       document.getElementById('prModalEventsList').innerHTML = eventsHtml;
       
       if (!isHistorical) calculateLivePayslipTotals(); 
-      else document.getElementById('prLiveTotal').innerText = Number(histData.finalTotal).toLocaleString();
+      // The total is handled directly in the HTML block for historical views now
       
       bootstrap.Modal.getOrCreateInstance(document.getElementById('payrollModal')).show();
   }
@@ -6163,86 +6180,74 @@ function renderPayrollTable() {
       const rowHeight = 30;
       const collapsedItems = getCollapsedEvents(data.events); // Use the collapsed version
       
-      // Base dimensions
+      // Base dimensions (Height recalibrated to remove breakdown)
       const baseWidth = 600;
-      // Make the image slightly taller to fit the breakdown and notes
-  const baseHeight = 380 + (collapsedItems.length * rowHeight) + (data.expenses > 0 ? 30 : 0) + (data.misc > 0 ? 30 : 0);
-  const scale = 3;
-  canvas.width = baseWidth * scale; canvas.height = baseHeight * scale;
-  ctx.scale(scale, scale);
+      const baseHeight = 300 + (collapsedItems.length * rowHeight) + (data.expenses > 0 ? 30 : 0) + (data.misc > 0 ? 30 : 0) + (data.payslipNote ? 40 : 0);
+      const scale = 3;
+      canvas.width = baseWidth * scale; canvas.height = baseHeight * scale;
+      ctx.scale(scale, scale);
 
-  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, baseWidth, baseHeight);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, baseWidth, baseHeight);
 
-  // Header
-  ctx.fillStyle = '#000000'; ctx.font = 'bold 24px Inter, sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('EGM PRODUCTIONS', 300, 50);
-  ctx.font = '14px Inter, sans-serif'; ctx.fillStyle = '#666666'; ctx.fillText('PAYMENT VOUCHER', 300, 75);
-  ctx.beginPath(); ctx.moveTo(40, 100); ctx.lineTo(560, 100); ctx.strokeStyle = '#cccccc'; ctx.stroke();
+      // Header
+      ctx.fillStyle = '#000000'; ctx.font = 'bold 24px Inter, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('EGM PRODUCTIONS', 300, 50);
+      ctx.font = '14px Inter, sans-serif'; ctx.fillStyle = '#666666'; ctx.fillText('PAYMENT VOUCHER', 300, 75);
+      ctx.beginPath(); ctx.moveTo(40, 100); ctx.lineTo(560, 100); ctx.strokeStyle = '#cccccc'; ctx.stroke();
 
-  ctx.textAlign = 'left'; ctx.fillStyle = '#000000'; ctx.font = 'bold 16px Inter, sans-serif';
-  ctx.fillText('Issued To: ' + name, 40, 130);
-  ctx.textAlign = 'right'; ctx.font = '14px Inter, sans-serif'; ctx.fillText('Cutoff: ' + datesStr, 560, 130);
+      ctx.textAlign = 'left'; ctx.fillStyle = '#000000'; ctx.font = 'bold 16px Inter, sans-serif';
+      ctx.fillText('Issued To: ' + name, 40, 130);
+      ctx.textAlign = 'right'; ctx.font = '14px Inter, sans-serif'; ctx.fillText('Cutoff: ' + datesStr, 560, 130);
 
-  ctx.textAlign = 'left'; ctx.font = 'bold 14px Inter, sans-serif'; ctx.fillStyle = '#666666';
-  ctx.fillText('DESCRIPTION', 40, 170); ctx.textAlign = 'right'; ctx.fillText('AMOUNT', 560, 170);
-  ctx.beginPath(); ctx.moveTo(40, 185); ctx.lineTo(560, 185); ctx.stroke();
+      ctx.textAlign = 'left'; ctx.font = 'bold 14px Inter, sans-serif'; ctx.fillStyle = '#666666';
+      ctx.fillText('DESCRIPTION', 40, 170); ctx.textAlign = 'right'; ctx.fillText('AMOUNT', 560, 170);
+      ctx.beginPath(); ctx.moveTo(40, 185); ctx.lineTo(560, 185); ctx.stroke();
 
-  let y = 215; ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
+      let y = 215; ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
 
-  collapsedItems.forEach(item => {
-      ctx.textAlign = 'left';
-      let desc = item.id === 'FIXED' ? `${item.name} (${item.role})` : `#${item.id} - ${item.name} (${item.role})`;
-      if (item.dayCount > 1) desc += ` [${item.dayCount} Days]`;
+      collapsedItems.forEach(item => {
+          ctx.textAlign = 'left';
+          let desc = item.id === 'FIXED' ? `${item.name} (${item.role})` : `#${item.id} - ${item.name} (${item.role})`;
+          if (item.dayCount > 1) desc += ` [${item.dayCount} Days]`;
 
-      ctx.fillText(desc.substring(0, 45), 40, y);
-      // Draw a tiny tag for the Payer source
-      ctx.font = '10px Inter, sans-serif'; ctx.fillStyle = '#999999';
-      ctx.fillText(`Source: ${item.payer}`, 40, y + 14);
+          ctx.fillText(desc.substring(0, 45), 40, y);
+          // Draw a tiny tag for the Payer source
+          ctx.font = '10px Inter, sans-serif'; ctx.fillStyle = '#999999';
+          ctx.fillText(`Source: ${item.payer}`, 40, y + 14);
 
-      ctx.textAlign = 'right'; ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
-      ctx.fillText('₱ ' + (item.basePay + item.extraPay).toLocaleString(), 560, y);
-      y += (rowHeight + 10);
-  });
+          ctx.textAlign = 'right'; ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
+          ctx.fillText('₱ ' + (item.basePay + item.extraPay).toLocaleString(), 560, y);
+          y += (rowHeight + 10);
+      });
 
-  if (data.expenses > 0) {
-      ctx.textAlign = 'left'; ctx.fillText('Reimbursements / Expenses', 40, y);
-      ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.expenses.toLocaleString(), 560, y);
-      y += rowHeight;
-  }
-  if (data.misc > 0) {
-      ctx.textAlign = 'left'; ctx.fillText('Misc Bonus', 40, y);
-      ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.misc.toLocaleString(), 560, y);
-      y += rowHeight;
-  }
-
-  ctx.beginPath(); ctx.moveTo(40, y - 10); ctx.lineTo(560, y - 10); ctx.stroke();
-  y += 25;
-  ctx.textAlign = 'left'; ctx.font = 'bold 18px Inter, sans-serif'; ctx.fillText('TOTAL NET PAY', 40, y);
-  ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.finalTotal.toLocaleString(), 560, y);
-
-  // Print the Breakdown and Notes!
-  y += 35;
-  ctx.textAlign = 'left'; ctx.font = 'bold 12px Inter, sans-serif'; ctx.fillStyle = '#999999';
-  ctx.fillText('FUNDING BREAKDOWN:', 40, y);
-
-  let bx = 40; y += 20;
-  for (let [person, amount] of Object.entries(data.payerBreakdown || {})) {
-      if (amount > 0) {
-          ctx.fillText(`${person}: ₱${amount.toLocaleString()}`, bx, y);
-          bx += 130; // Move text to the right for the next person
+      if (data.expenses > 0) {
+          ctx.textAlign = 'left'; ctx.fillText('Reimbursements / Expenses', 40, y);
+          ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.expenses.toLocaleString(), 560, y);
+          y += rowHeight;
       }
-  }
+      if (data.misc > 0) {
+          ctx.textAlign = 'left'; ctx.fillText('Misc Bonus', 40, y);
+          ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.misc.toLocaleString(), 560, y);
+          y += rowHeight;
+      }
 
-  if (data.payslipNote) {
-      y += 30;
-      ctx.fillStyle = '#666666'; ctx.font = 'italic 12px Inter, sans-serif';
-      ctx.fillText('Notes: ' + data.payslipNote.substring(0, 85), 40, y);
-  }
+      ctx.beginPath(); ctx.moveTo(40, y - 10); ctx.lineTo(560, y - 10); ctx.stroke();
+      y += 25;
+      ctx.textAlign = 'left'; ctx.font = 'bold 18px Inter, sans-serif'; ctx.fillText('TOTAL NET PAY', 40, y);
+      ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.finalTotal.toLocaleString(), 560, y);
 
-  const link = document.createElement('a');
-  link.download = `Payslip_${name}_${datesStr.replace(/[^a-zA-Z0-9]/g, '')}.jpg`;
-  link.href = canvas.toDataURL('image/jpeg', 1.0);
-  link.click();
+      // Payslip Notes
+      if (data.payslipNote) {
+          y += 35;
+          ctx.textAlign = 'left';
+          ctx.fillStyle = '#666666'; ctx.font = 'italic 12px Inter, sans-serif';
+          ctx.fillText('Notes: ' + data.payslipNote.substring(0, 85), 40, y);
+      }
+
+      const link = document.createElement('a');
+      link.download = `Payslip_${name}_${datesStr.replace(/[^a-zA-Z0-9]/g, '')}.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 1.0);
+      link.click();
   }
 
   // Combined Generator and Logger Function
