@@ -6422,19 +6422,31 @@ async function processExpenseAction(docId, newStatus) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
-      const rowHeight = 30;
-      const collapsedItems = getCollapsedEvents(data.events); // Use the collapsed version
+      const collapsedItems = getCollapsedEvents(data.events);
       
-      // Base dimensions (Height recalibrated to remove breakdown)
+      // 🟢 BULLETPROOF HEIGHT CALCULATION 🟢
+      // Calculate exactly how many pixels we need BEFORE creating the canvas
+      let dynamicHeight = 215; // Top header down to the first item
+      dynamicHeight += (collapsedItems.length * 40); // 40px per item row
+      if (data.expenses > 0) dynamicHeight += 30; // 30px for expenses
+      if (data.misc > 0) dynamicHeight += 30; // 30px for misc
+      dynamicHeight += 60; // Space for the Total Net Pay line and text
+      if (data.payslipNote) dynamicHeight += 40; // Space for notes
+      dynamicHeight += 50; // Generous extra padding at the very bottom
+      
       const baseWidth = 600;
-      const baseHeight = 300 + (collapsedItems.length * rowHeight) + (data.expenses > 0 ? 30 : 0) + (data.misc > 0 ? 30 : 0) + (data.payslipNote ? 40 : 0);
-      const scale = 3;
-      canvas.width = baseWidth * scale; canvas.height = baseHeight * scale;
+      const scale = 3; // High resolution multiplier
+      
+      // Apply the dynamic height directly to the canvas
+      canvas.width = baseWidth * scale; 
+      canvas.height = dynamicHeight * scale;
       ctx.scale(scale, scale);
 
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, baseWidth, baseHeight);
+      // Fill the background white
+      ctx.fillStyle = '#ffffff'; 
+      ctx.fillRect(0, 0, baseWidth, dynamicHeight);
 
-      // Header
+      // --- Draw Header ---
       ctx.fillStyle = '#000000'; ctx.font = 'bold 24px Inter, sans-serif'; ctx.textAlign = 'center';
       ctx.fillText('EGM PRODUCTIONS', 300, 50);
       ctx.font = '14px Inter, sans-serif'; ctx.fillStyle = '#666666'; ctx.fillText('PAYMENT VOUCHER', 300, 75);
@@ -6448,7 +6460,9 @@ async function processExpenseAction(docId, newStatus) {
       ctx.fillText('DESCRIPTION', 40, 170); ctx.textAlign = 'right'; ctx.fillText('AMOUNT', 560, 170);
       ctx.beginPath(); ctx.moveTo(40, 185); ctx.lineTo(560, 185); ctx.stroke();
 
-      let y = 215; ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
+      // --- Draw List Items ---
+      let y = 215; 
+      ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
 
       collapsedItems.forEach(item => {
           ctx.textAlign = 'left';
@@ -6456,32 +6470,37 @@ async function processExpenseAction(docId, newStatus) {
           if (item.dayCount > 1) desc += ` [${item.dayCount} Days]`;
 
           ctx.fillText(desc.substring(0, 45), 40, y);
+          
           // Draw a tiny tag for the Payer source
           ctx.font = '10px Inter, sans-serif'; ctx.fillStyle = '#999999';
           ctx.fillText(`Source: ${item.payer}`, 40, y + 14);
 
           ctx.textAlign = 'right'; ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
           ctx.fillText('₱ ' + (item.basePay + item.extraPay).toLocaleString(), 560, y);
-          y += (rowHeight + 10);
+          
+          // Move Y down by exactly 40 pixels for the next row
+          y += 40; 
       });
 
+      // --- Draw Add-ons ---
       if (data.expenses > 0) {
           ctx.textAlign = 'left'; ctx.fillText('Reimbursements / Expenses', 40, y);
           ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.expenses.toLocaleString(), 560, y);
-          y += rowHeight;
+          y += 30;
       }
       if (data.misc > 0) {
           ctx.textAlign = 'left'; ctx.fillText('Misc Bonus', 40, y);
           ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.misc.toLocaleString(), 560, y);
-          y += rowHeight;
+          y += 30;
       }
 
+      // --- Draw Total ---
       ctx.beginPath(); ctx.moveTo(40, y - 10); ctx.lineTo(560, y - 10); ctx.stroke();
       y += 25;
       ctx.textAlign = 'left'; ctx.font = 'bold 18px Inter, sans-serif'; ctx.fillText('TOTAL NET PAY', 40, y);
       ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.finalTotal.toLocaleString(), 560, y);
 
-      // Payslip Notes
+      // --- Draw Payslip Notes ---
       if (data.payslipNote) {
           y += 35;
           ctx.textAlign = 'left';
@@ -6489,6 +6508,7 @@ async function processExpenseAction(docId, newStatus) {
           ctx.fillText('Notes: ' + data.payslipNote.substring(0, 85), 40, y);
       }
 
+      // --- Export Image ---
       const link = document.createElement('a');
       link.download = `Payslip_${name}_${datesStr.replace(/[^a-zA-Z0-9]/g, '')}.jpg`;
       link.href = canvas.toDataURL('image/jpeg', 1.0);
