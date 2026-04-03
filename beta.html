@@ -2072,13 +2072,14 @@ async function subscribeToNotifications() {
   const owners = ["Edgar", "Francis", "Grace", "Tina"];
   // --- DYNAMIC PAYROLL RATES ENGINE ---
   const DEFAULT_CREW_RATE = 1500;
-  const DEFAULT_EDITOR_RATE = 2000;
+  const DEFAULT_EDITOR_RATE = 1000;
   
   // --- NEW: CLOUD RATE MEMORY ---
   let dbCrewRates = {};
-  let dbEditingRate = 2000;
+  let dbEditingRate = 1000;
   
   let currentPayrollData = {}; 
+  let lastComputedRange = "";
   let activePayrollPerson = null;
   let isHistoricalView = false;
 
@@ -5733,8 +5734,10 @@ async function runPayrollEngine(forceNewRates = false) {
     const end = document.getElementById('prEndDate').value;
     
     if (!start || !end) return alert("Please select a Start and End date for the cutoff.");
+    
+    const currentRange = `${start}_${end}`;
 
-    // 🟢 OVERLAP PROTECTION LOGIC (With Call to Action)
+    // 🟢 OVERLAP PROTECTION LOGIC
     if (!forceNewRates) {
         const ov = document.getElementById('submitOverlay');
         document.getElementById('overlayText').innerText = "Validating Cutoff Period...";
@@ -5770,8 +5773,21 @@ async function runPayrollEngine(forceNewRates = false) {
         ov.style.display = 'none';
     }
 
-    // 1. SAVE EXISTING DATA to preserve manual tweaks before we rebuild!
-    const existingData = JSON.parse(JSON.stringify(currentPayrollData || {}));
+    // 1. THE FIX: ONLY SAVE EXISTING DATA IF RE-COMPUTING THE EXACT SAME DATES
+    let existingData = {};
+    if (lastComputedRange === currentRange) {
+        existingData = JSON.parse(JSON.stringify(currentPayrollData || {}));
+    } else {
+        // Dates changed! Unlock the Rates button and start fresh.
+        hasManualPayrollEdits = false;
+        const ratesBtn = document.getElementById('prRatesBtn');
+        if (ratesBtn) {
+            ratesBtn.disabled = false;
+            ratesBtn.title = "Manage Base Rates";
+        }
+    }
+    
+    lastComputedRange = currentRange;
     currentPayrollData = {};
 
     // 🟢 PHASE 4: FETCH AUTOMATIC APPROVED EXPENSES 🟢
@@ -5803,7 +5819,7 @@ async function runPayrollEngine(forceNewRates = false) {
     // Helper: Restore globals OR Inject Auto-Expenses!
     function restorePersonGlobals(personName) {
         if (existingData[personName]) {
-            // Keep the admin's manual session tweaks if they exist
+            // Keep the admin's manual session tweaks if computing the same dates
             currentPayrollData[personName].expenses = existingData[personName].expenses || 0;
             currentPayrollData[personName].misc = existingData[personName].misc || 0;
             currentPayrollData[personName].payslipNote = existingData[personName].payslipNote || "";
@@ -5813,8 +5829,15 @@ async function runPayrollEngine(forceNewRates = false) {
         } else {
             // Fresh compute: Inject the Approved Expenses automatically!
             currentPayrollData[personName].expenses = autoExpenses[personName] || 0;
-            if (autoExpenseNotes[personName]) {
+            currentPayrollData[personName].misc = 0;
+            currentPayrollData[personName].isTentative = false;
+            currentPayrollData[personName].expensePayer = "Edgar(EGM)";
+            currentPayrollData[personName].miscPayer = "Edgar(EGM)";
+            
+            if (autoExpenseNotes[personName] && autoExpenseNotes[personName].length > 0) {
                 currentPayrollData[personName].payslipNote = "Auto-Reimbursed: " + autoExpenseNotes[personName].join(', ');
+            } else {
+                currentPayrollData[personName].payslipNote = "";
             }
         }
     }
