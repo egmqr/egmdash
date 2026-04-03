@@ -5594,11 +5594,13 @@ async function getNextEventId() {
           document.getElementById('prStartDate').value = data.startDate;
           document.getElementById('prEndDate').value = data.endDate;
           
-          // 🟢 NEW: Force the Expense Queue to check the newly loaded dates!
           renderExpenseQueue();
           
           try {
               currentPayrollData = JSON.parse(data.sessionData);
+              // 🟢 CRITICAL FIX: Tell the engine's memory exactly what dates we just loaded!
+              lastComputedRange = `${data.startDate}_${data.endDate}`; 
+              
               renderPayrollTable();
               bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
               showToast("Cloud Session loaded successfully!", "success");
@@ -5760,9 +5762,7 @@ async function runPayrollEngine(forceNewRates = false) {
                 ov.style.display = 'none';
                 const loadIt = confirm(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session to prevent duplicate accounting.\n\nClick OK to open the Load Menu and view the existing session.`);
                 
-                if (loadIt) {
-                    openLoadSessionModal();
-                }
+                if (loadIt) openLoadSessionModal();
                 return;
             }
         } catch (e) {
@@ -5807,7 +5807,6 @@ async function runPayrollEngine(forceNewRates = false) {
         });
     }
 
-    // Helper: Find old manual overrides for a specific event/role
     function getOldEvent(personName, eventId, role) {
         if (!existingData[personName]) return null;
         return existingData[personName].events.find(e => 
@@ -5816,26 +5815,48 @@ async function runPayrollEngine(forceNewRates = false) {
         );
     }
 
-    // Helper: Restore globals OR Inject Auto-Expenses!
+    // 🟢 THE SMART MERGER: Separates manual typing from Cloud Auto-Expenses!
     function restorePersonGlobals(personName) {
+        let newAutoExp = autoExpenses[personName] || 0;
+        let newAutoNotes = autoExpenseNotes[personName] ? autoExpenseNotes[personName].join(', ') : "";
+
         if (existingData[personName]) {
-            // Keep the admin's manual session tweaks if computing the same dates
-            currentPayrollData[personName].expenses = existingData[personName].expenses || 0;
+            // Calculate what portion of the previous expenses was manually typed by the admin
+            let oldAutoExp = existingData[personName].autoExpenseAmount || 0;
+            let oldTotalExp = existingData[personName].expenses || 0;
+            let manualExp = oldTotalExp - oldAutoExp;
+            if (manualExp < 0) manualExp = 0; // Fallback safety
+
+            // The new total is the fresh Auto Expenses + their previous manual tweaks!
+            currentPayrollData[personName].expenses = newAutoExp + manualExp;
+            currentPayrollData[personName].autoExpenseAmount = newAutoExp; 
+
             currentPayrollData[personName].misc = existingData[personName].misc || 0;
-            currentPayrollData[personName].payslipNote = existingData[personName].payslipNote || "";
             currentPayrollData[personName].isTentative = existingData[personName].isTentative || false;
             currentPayrollData[personName].expensePayer = existingData[personName].expensePayer || "Edgar(EGM)";
             currentPayrollData[personName].miscPayer = existingData[personName].miscPayer || "Edgar(EGM)";
+
+            // Smartly update the notes: combine old manual notes with new auto notes
+            let oldNote = existingData[personName].payslipNote || "";
+            oldNote = oldNote.replace(/Auto-Reimbursed:.*?(;|$)/g, '').trim(); // Strip old auto-notes
+            
+            let finalNote = "";
+            if (newAutoNotes) finalNote = "Auto-Reimbursed: " + newAutoNotes + "; ";
+            if (oldNote) finalNote += oldNote;
+            
+            currentPayrollData[personName].payslipNote = finalNote.trim();
+
         } else {
-            // Fresh compute: Inject the Approved Expenses automatically!
-            currentPayrollData[personName].expenses = autoExpenses[personName] || 0;
+            // Fresh compute!
+            currentPayrollData[personName].expenses = newAutoExp;
+            currentPayrollData[personName].autoExpenseAmount = newAutoExp; 
             currentPayrollData[personName].misc = 0;
             currentPayrollData[personName].isTentative = false;
             currentPayrollData[personName].expensePayer = "Edgar(EGM)";
             currentPayrollData[personName].miscPayer = "Edgar(EGM)";
             
-            if (autoExpenseNotes[personName] && autoExpenseNotes[personName].length > 0) {
-                currentPayrollData[personName].payslipNote = "Auto-Reimbursed: " + autoExpenseNotes[personName].join(', ');
+            if (newAutoNotes) {
+                currentPayrollData[personName].payslipNote = "Auto-Reimbursed: " + newAutoNotes + ";";
             } else {
                 currentPayrollData[personName].payslipNote = "";
             }
@@ -5961,7 +5982,6 @@ async function runPayrollEngine(forceNewRates = false) {
         }
     });
 
-    // 🟢 PHASE 4 Edge Case: Initialize anyone who has Approved Expenses but NO shoots!
     Object.keys(autoExpenses).forEach(name => {
         if (!currentPayrollData[name]) {
             initPayrollPerson(name);
