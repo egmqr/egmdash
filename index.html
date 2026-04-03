@@ -3979,9 +3979,22 @@ function generateSingleEventCard(e) {
   }
 
   function openUploadModal(eventId) {
-    document.getElementById('uploadEventId').value = eventId;
-    document.getElementById('uploadFileInput').value = '';
-    new bootstrap.Modal(document.getElementById('uploadFileModal')).show();
+      // --- PREVENT MODAL OVERLAP FREEZE ---
+      const cardModalEl = document.getElementById('eventCardModal');
+      if (cardModalEl && cardModalEl.classList.contains('show')) {
+          bootstrap.Modal.getInstance(cardModalEl).hide();
+          // Wait 350ms for the backdrop to fade away, then try again!
+          setTimeout(() => openUploadModal(eventId), 350);
+          return; // Stop the function here so it doesn't try to open both at once
+      }
+      // ------------------------------------
+
+      document.getElementById('uploadEventId').value = eventId;
+      document.getElementById('uploadFileInput').value = '';
+      
+      const modalEl = document.getElementById('uploadFileModal');
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.show();
   }
 
   function submitFileUpload() {
