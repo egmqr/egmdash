@@ -5695,7 +5695,7 @@ function markPayrollEdited() {
         ratesBtn.title = "Disabled because manual edits have been made. Refresh the page to reset.";
     }
 }
-// Engine: Aggregate the data using the Dynamic Rates (With Overlap Protection!)
+// Engine: Aggregate the data using the Dynamic Rates (With Auto-Expenses & Overlap Protection!)
 async function runPayrollEngine(forceNewRates = false) {
     const start = document.getElementById('prStartDate').value;
     const end = document.getElementById('prEndDate').value;
@@ -5715,7 +5715,6 @@ async function runPayrollEngine(forceNewRates = false) {
 
             snapshot.forEach(doc => {
                 const data = doc.data();
-                // Overlap math: If Start A is before or on End B, AND End A is after or on Start B
                 if (start <= data.endDate && end >= data.startDate) {
                     overlapFound = true;
                     overlapRange = `${data.startDate} to ${data.endDate}`;
@@ -5743,6 +5742,23 @@ async function runPayrollEngine(forceNewRates = false) {
     const existingData = JSON.parse(JSON.stringify(currentPayrollData || {}));
     currentPayrollData = {};
 
+    // 🟢 PHASE 4: FETCH AUTOMATIC APPROVED EXPENSES 🟢
+    let autoExpenses = {};
+    let autoExpenseNotes = {};
+    
+    if (typeof rawExpenses !== 'undefined') {
+        rawExpenses.forEach(exp => {
+            if (exp.status === 'Approved' && exp.expenseDate >= start && exp.expenseDate <= end) {
+                let pName = exp.submittedBy;
+                if (!autoExpenses[pName]) autoExpenses[pName] = 0;
+                if (!autoExpenseNotes[pName]) autoExpenseNotes[pName] = [];
+                
+                autoExpenses[pName] += Number(exp.amount) || 0;
+                autoExpenseNotes[pName].push(`${exp.category} (₱${Number(exp.amount).toLocaleString()})`);
+            }
+        });
+    }
+
     // Helper: Find old manual overrides for a specific event/role
     function getOldEvent(personName, eventId, role) {
         if (!existingData[personName]) return null;
@@ -5752,15 +5768,22 @@ async function runPayrollEngine(forceNewRates = false) {
         );
     }
 
-    // Helper: Restore globals including the new fields!
+    // Helper: Restore globals OR Inject Auto-Expenses!
     function restorePersonGlobals(personName) {
         if (existingData[personName]) {
+            // Keep the admin's manual session tweaks if they exist
             currentPayrollData[personName].expenses = existingData[personName].expenses || 0;
             currentPayrollData[personName].misc = existingData[personName].misc || 0;
             currentPayrollData[personName].payslipNote = existingData[personName].payslipNote || "";
             currentPayrollData[personName].isTentative = existingData[personName].isTentative || false;
             currentPayrollData[personName].expensePayer = existingData[personName].expensePayer || "Edgar(EGM)";
             currentPayrollData[personName].miscPayer = existingData[personName].miscPayer || "Edgar(EGM)";
+        } else {
+            // Fresh compute: Inject the Approved Expenses automatically!
+            currentPayrollData[personName].expenses = autoExpenses[personName] || 0;
+            if (autoExpenseNotes[personName]) {
+                currentPayrollData[personName].payslipNote = "Auto-Reimbursed: " + autoExpenseNotes[personName].join(', ');
+            }
         }
     }
 
@@ -5769,7 +5792,7 @@ async function runPayrollEngine(forceNewRates = false) {
     
     let jenBase = (oldJen && !forceNewRates) ? oldJen.basePay : 7500; 
     let jenExtra = oldJen ? oldJen.extraPay : 0; 
-    let jenPayer = oldJen ? (oldJen.payer || 'Edgar(EGM)') : 'Edgar(EGM)'; // Capture Payer
+    let jenPayer = oldJen ? (oldJen.payer || 'Edgar(EGM)') : 'Edgar(EGM)';
 
     currentPayrollData['Jenielyn'].events.push({
         doc: { 'Event ID': 'FIXED', 'Event Name': 'Bi-monthly Base Allowance', 'Event Date': start },
@@ -5792,7 +5815,6 @@ async function runPayrollEngine(forceNewRates = false) {
     });
 
     let eventTracker = {}; 
-    
     const standardStaff = [...baseCrew, "Athan", "Jovert", "May", "Tina", "Grace", "Jops"];
     let savedRates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
 
@@ -5833,7 +5855,7 @@ async function runPayrollEngine(forceNewRates = false) {
                 }
 
                 let oldEv = getOldEvent(c, evId, 'Crew');
-                let payer = 'Edgar(EGM)'; // Default
+                let payer = 'Edgar(EGM)';
                 if (oldEv) {
                     if (!forceNewRates) rate = oldEv.basePay; 
                     extra = oldEv.extraPay; 
@@ -5872,7 +5894,7 @@ async function runPayrollEngine(forceNewRates = false) {
             }
 
             let oldEv = getOldEvent(editor, evId, 'Editor');
-            let payer = 'Edgar(EGM)'; // Default
+            let payer = 'Edgar(EGM)';
             if (oldEv) {
                 if (!forceNewRates) rate = oldEv.basePay;
                 extra = oldEv.extraPay; 
@@ -5881,6 +5903,14 @@ async function runPayrollEngine(forceNewRates = false) {
 
             currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: extra, payer: payer, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
             currentPayrollData[editor].totalBase += rate;
+        }
+    });
+
+    // 🟢 PHASE 4 Edge Case: Initialize anyone who has Approved Expenses but NO shoots!
+    Object.keys(autoExpenses).forEach(name => {
+        if (!currentPayrollData[name]) {
+            initPayrollPerson(name);
+            restorePersonGlobals(name);
         }
     });
 
