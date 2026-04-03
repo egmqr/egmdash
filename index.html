@@ -497,6 +497,40 @@
       </div>
 
       <div id="payroll-view" style="display:none;">
+        <div id="expenseApprovalBanner" style="display:none;" class="alert alert-warning shadow-sm border-warning border-opacity-50 flex-column flex-md-row justify-content-between align-items-md-center mb-4 mt-2">
+              <div class="mb-2 mb-md-0">
+                  <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i> Action Required</h6>
+                  <span class="small text-dark">You have pending expenses in this cutoff waiting for approval.</span>
+              </div>
+              <button class="btn btn-warning btn-sm fw-bold shadow-sm text-dark px-3" onclick="openExpenseModal()">REVIEW EXPENSES</button>
+          </div>
+
+          <div class="modal fade" id="expenseApprovalModal" tabindex="-1">
+              <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                  <div class="modal-content border-0 shadow-lg">
+                      <div class="modal-header bg-warning border-bottom border-warning border-opacity-50">
+                          <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-receipt-cutoff me-2"></i> Pending Expenses</h6>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body p-0">
+                          <div class="table-responsive">
+                              <table class="table table-hover mb-0 align-middle small">
+                                  <thead class="bg-light">
+                                      <tr>
+                                          <th class="py-3 px-3">Date</th>
+                                          <th class="py-3">Crew Member</th>
+                                          <th class="py-3">Details</th>
+                                          <th class="py-3 text-end">Amount</th>
+                                          <th class="py-3 text-end px-3">Action</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody id="pendingExpensesTableBody"></tbody>
+                              </table>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
           <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 mt-2 gap-3">
               
               <div>
@@ -504,14 +538,14 @@
                   <span class="text-muted small fw-bold d-block mt-1 mb-3" style="font-size: 0.75rem;"><i class="bi bi-info-circle-fill opacity-50 me-1"></i>Always set rates first, you won't be able to edit the rates once manual payroll edits are applied.</span>
                   
                   <div class="bg-white p-2 rounded-3 border shadow-sm d-inline-flex gap-2">
-                      <div class="px-2">
-                          <span class="form-label-sm text-secondary">Start of Cutoff</span>
-                          <input type="date" id="prStartDate" class="form-control form-control-sm fw-bold text-dark">
-                      </div>
-                      <div class="border-start ps-3 pe-2">
-                          <span class="form-label-sm text-secondary">End of Cutoff</span>
-                          <input type="date" id="prEndDate" class="form-control form-control-sm fw-bold text-dark">
-                      </div>
+                     <div class="px-2">
+    <span class="form-label-sm text-secondary">Start of Cutoff</span>
+    <input type="date" id="prStartDate" class="form-control form-control-sm fw-bold text-dark" onchange="renderExpenseQueue()">
+</div>
+<div class="border-start ps-3 pe-2">
+    <span class="form-label-sm text-secondary">End of Cutoff</span>
+    <input type="date" id="prEndDate" class="form-control form-control-sm fw-bold text-dark" onchange="renderExpenseQueue()">
+</div>
                   </div>
               </div>
               
@@ -2030,7 +2064,7 @@ async function subscribeToNotifications() {
   // This is your permanently designated Apps Script URL
   const API_URL = 'https://script.google.com/macros/s/AKfycbwfC_hu14KnzpBTFQL1u1QtaUp4HIQwXdjf_yR5hfdfyc8suKg6BwAGxwpQyfuyB7BdUA/exec';
   let localLastUpdate = "0";
-  let rawEvents = [], rawPayments = [], currentTab = 'events';
+  let rawEvents = [], rawPayments = [], rawExpenses = [], currentTab = 'events';
   let filteredEventsCache = []; 
   let currentCalendarDate = new Date(); 
   
@@ -2038,13 +2072,14 @@ async function subscribeToNotifications() {
   const owners = ["Edgar", "Francis", "Grace", "Tina"];
   // --- DYNAMIC PAYROLL RATES ENGINE ---
   const DEFAULT_CREW_RATE = 1500;
-  const DEFAULT_EDITOR_RATE = 2000;
+  const DEFAULT_EDITOR_RATE = 1000;
   
   // --- NEW: CLOUD RATE MEMORY ---
   let dbCrewRates = {};
-  let dbEditingRate = 2000;
+  let dbEditingRate = 1000;
   
   let currentPayrollData = {}; 
+  let lastComputedRange = "";
   let activePayrollPerson = null;
   let isHistoricalView = false;
 
@@ -2822,6 +2857,7 @@ function handleEqSearch() {
         window.history.replaceState({}, '', url);
 
     } else if (currentTab === 'payroll') {
+      renderExpenseQueue(); // <-- ADD THIS LINE HERE
         // Push Payroll tab to URL
         url.searchParams.set('tab', 'payroll');
         
@@ -5280,6 +5316,26 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
     alert("Firebase Connection Blocked! Check Firestore Rules. Error: " + error.message);
 });
 
+// THE MAGIC REAL-TIME LISTENER FOR EXPENSES
+db.collection("dashboard_expenses").onSnapshot((snapshot) => {
+    rawExpenses = [];
+    snapshot.forEach((doc) => {
+        let d = doc.data() || {};
+        d.docId = doc.id;
+        rawExpenses.push(d);
+    });
+    
+    // Sort so the newest expenses are at the top
+    rawExpenses.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    // If the admin is currently looking at the Payroll tab, refresh the queue instantly!
+    if (currentTab === 'payroll') {
+        renderExpenseQueue();
+    }
+}, (error) => {
+    console.error("Expense Firestore Error:", error);
+});
+
 // Helper to get the next Event ID (egm0015)
 async function getNextEventId() {
     const snapshot = await db.collection("dashboard_events").orderBy("eventId", "desc").limit(1).get();
@@ -5430,6 +5486,9 @@ async function getNextEventId() {
 
       document.getElementById('prStartDate').value = sDate.toISOString().split('T')[0];
       document.getElementById('prEndDate').value = eDate.toISOString().split('T')[0];
+      
+      // 🟢 NEW: Force the Expense Queue to check the auto-calculated dates!
+      renderExpenseQueue();
   }
 // Engine: Save the current session to Firebase Cloud
   async function savePayrollSession() {
@@ -5535,13 +5594,17 @@ async function getNextEventId() {
           document.getElementById('prStartDate').value = data.startDate;
           document.getElementById('prEndDate').value = data.endDate;
           
+          renderExpenseQueue();
+          
           try {
               currentPayrollData = JSON.parse(data.sessionData);
+              // 🟢 CRITICAL FIX: Tell the engine's memory exactly what dates we just loaded!
+              lastComputedRange = `${data.startDate}_${data.endDate}`; 
+              
               renderPayrollTable();
               bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
               showToast("Cloud Session loaded successfully!", "success");
               
-              // 🟢 NEW: Lock the rates button since we loaded custom historical data!
               markPayrollEdited(); 
           } catch (e) {
               alert("Error parsing saved session data.");
@@ -5667,14 +5730,16 @@ function markPayrollEdited() {
         ratesBtn.title = "Disabled because manual edits have been made. Refresh the page to reset.";
     }
 }
-// Engine: Aggregate the data using the Dynamic Rates (With Overlap Protection!)
+// Engine: Aggregate the data using the Dynamic Rates (With Auto-Expenses & Overlap Protection!)
 async function runPayrollEngine(forceNewRates = false) {
     const start = document.getElementById('prStartDate').value;
     const end = document.getElementById('prEndDate').value;
     
     if (!start || !end) return alert("Please select a Start and End date for the cutoff.");
+    
+    const currentRange = `${start}_${end}`;
 
-    // 🟢 OVERLAP PROTECTION LOGIC (With Call to Action)
+    // 🟢 OVERLAP PROTECTION LOGIC
     if (!forceNewRates) {
         const ov = document.getElementById('submitOverlay');
         document.getElementById('overlayText').innerText = "Validating Cutoff Period...";
@@ -5687,7 +5752,6 @@ async function runPayrollEngine(forceNewRates = false) {
 
             snapshot.forEach(doc => {
                 const data = doc.data();
-                // Overlap math: If Start A is before or on End B, AND End A is after or on Start B
                 if (start <= data.endDate && end >= data.startDate) {
                     overlapFound = true;
                     overlapRange = `${data.startDate} to ${data.endDate}`;
@@ -5698,9 +5762,7 @@ async function runPayrollEngine(forceNewRates = false) {
                 ov.style.display = 'none';
                 const loadIt = confirm(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session to prevent duplicate accounting.\n\nClick OK to open the Load Menu and view the existing session.`);
                 
-                if (loadIt) {
-                    openLoadSessionModal();
-                }
+                if (loadIt) openLoadSessionModal();
                 return;
             }
         } catch (e) {
@@ -5711,11 +5773,40 @@ async function runPayrollEngine(forceNewRates = false) {
         ov.style.display = 'none';
     }
 
-    // 1. SAVE EXISTING DATA to preserve manual tweaks before we rebuild!
-    const existingData = JSON.parse(JSON.stringify(currentPayrollData || {}));
+    // 1. THE FIX: ONLY SAVE EXISTING DATA IF RE-COMPUTING THE EXACT SAME DATES
+    let existingData = {};
+    if (lastComputedRange === currentRange) {
+        existingData = JSON.parse(JSON.stringify(currentPayrollData || {}));
+    } else {
+        // Dates changed! Unlock the Rates button and start fresh.
+        hasManualPayrollEdits = false;
+        const ratesBtn = document.getElementById('prRatesBtn');
+        if (ratesBtn) {
+            ratesBtn.disabled = false;
+            ratesBtn.title = "Manage Base Rates";
+        }
+    }
+    
+    lastComputedRange = currentRange;
     currentPayrollData = {};
 
-    // Helper: Find old manual overrides for a specific event/role
+    // 🟢 PHASE 4: FETCH AUTOMATIC APPROVED EXPENSES 🟢
+    let autoExpenses = {};
+    let autoExpenseNotes = {};
+    
+    if (typeof rawExpenses !== 'undefined') {
+        rawExpenses.forEach(exp => {
+            if (exp.status === 'Approved' && exp.expenseDate >= start && exp.expenseDate <= end) {
+                let pName = exp.submittedBy;
+                if (!autoExpenses[pName]) autoExpenses[pName] = 0;
+                if (!autoExpenseNotes[pName]) autoExpenseNotes[pName] = [];
+                
+                autoExpenses[pName] += Number(exp.amount) || 0;
+                autoExpenseNotes[pName].push(`${exp.category} (₱${Number(exp.amount).toLocaleString()})`);
+            }
+        });
+    }
+
     function getOldEvent(personName, eventId, role) {
         if (!existingData[personName]) return null;
         return existingData[personName].events.find(e => 
@@ -5724,15 +5815,51 @@ async function runPayrollEngine(forceNewRates = false) {
         );
     }
 
-    // Helper: Restore globals including the new fields!
+    // 🟢 THE SMART MERGER: Separates manual typing from Cloud Auto-Expenses!
     function restorePersonGlobals(personName) {
+        let newAutoExp = autoExpenses[personName] || 0;
+        let newAutoNotes = autoExpenseNotes[personName] ? autoExpenseNotes[personName].join(', ') : "";
+
         if (existingData[personName]) {
-            currentPayrollData[personName].expenses = existingData[personName].expenses || 0;
+            // Calculate what portion of the previous expenses was manually typed by the admin
+            let oldAutoExp = existingData[personName].autoExpenseAmount || 0;
+            let oldTotalExp = existingData[personName].expenses || 0;
+            let manualExp = oldTotalExp - oldAutoExp;
+            if (manualExp < 0) manualExp = 0; // Fallback safety
+
+            // The new total is the fresh Auto Expenses + their previous manual tweaks!
+            currentPayrollData[personName].expenses = newAutoExp + manualExp;
+            currentPayrollData[personName].autoExpenseAmount = newAutoExp; 
+
             currentPayrollData[personName].misc = existingData[personName].misc || 0;
-            currentPayrollData[personName].payslipNote = existingData[personName].payslipNote || "";
             currentPayrollData[personName].isTentative = existingData[personName].isTentative || false;
             currentPayrollData[personName].expensePayer = existingData[personName].expensePayer || "Edgar(EGM)";
             currentPayrollData[personName].miscPayer = existingData[personName].miscPayer || "Edgar(EGM)";
+
+            // Smartly update the notes: combine old manual notes with new auto notes
+            let oldNote = existingData[personName].payslipNote || "";
+            oldNote = oldNote.replace(/Auto-Reimbursed:.*?(;|$)/g, '').trim(); // Strip old auto-notes
+            
+            let finalNote = "";
+            if (newAutoNotes) finalNote = "Auto-Reimbursed: " + newAutoNotes + "; ";
+            if (oldNote) finalNote += oldNote;
+            
+            currentPayrollData[personName].payslipNote = finalNote.trim();
+
+        } else {
+            // Fresh compute!
+            currentPayrollData[personName].expenses = newAutoExp;
+            currentPayrollData[personName].autoExpenseAmount = newAutoExp; 
+            currentPayrollData[personName].misc = 0;
+            currentPayrollData[personName].isTentative = false;
+            currentPayrollData[personName].expensePayer = "Edgar(EGM)";
+            currentPayrollData[personName].miscPayer = "Edgar(EGM)";
+            
+            if (newAutoNotes) {
+                currentPayrollData[personName].payslipNote = "Auto-Reimbursed: " + newAutoNotes + ";";
+            } else {
+                currentPayrollData[personName].payslipNote = "";
+            }
         }
     }
 
@@ -5741,7 +5868,7 @@ async function runPayrollEngine(forceNewRates = false) {
     
     let jenBase = (oldJen && !forceNewRates) ? oldJen.basePay : 7500; 
     let jenExtra = oldJen ? oldJen.extraPay : 0; 
-    let jenPayer = oldJen ? (oldJen.payer || 'Edgar(EGM)') : 'Edgar(EGM)'; // Capture Payer
+    let jenPayer = oldJen ? (oldJen.payer || 'Edgar(EGM)') : 'Edgar(EGM)';
 
     currentPayrollData['Jenielyn'].events.push({
         doc: { 'Event ID': 'FIXED', 'Event Name': 'Bi-monthly Base Allowance', 'Event Date': start },
@@ -5764,7 +5891,6 @@ async function runPayrollEngine(forceNewRates = false) {
     });
 
     let eventTracker = {}; 
-    
     const standardStaff = [...baseCrew, "Athan", "Jovert", "May", "Tina", "Grace", "Jops"];
     let savedRates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
 
@@ -5805,7 +5931,7 @@ async function runPayrollEngine(forceNewRates = false) {
                 }
 
                 let oldEv = getOldEvent(c, evId, 'Crew');
-                let payer = 'Edgar(EGM)'; // Default
+                let payer = 'Edgar(EGM)';
                 if (oldEv) {
                     if (!forceNewRates) rate = oldEv.basePay; 
                     extra = oldEv.extraPay; 
@@ -5844,7 +5970,7 @@ async function runPayrollEngine(forceNewRates = false) {
             }
 
             let oldEv = getOldEvent(editor, evId, 'Editor');
-            let payer = 'Edgar(EGM)'; // Default
+            let payer = 'Edgar(EGM)';
             if (oldEv) {
                 if (!forceNewRates) rate = oldEv.basePay;
                 extra = oldEv.extraPay; 
@@ -5853,6 +5979,13 @@ async function runPayrollEngine(forceNewRates = false) {
 
             currentPayrollData[editor].events.push({ doc: e, role: 'Editor', basePay: rate, extraPay: extra, payer: payer, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });
             currentPayrollData[editor].totalBase += rate;
+        }
+    });
+
+    Object.keys(autoExpenses).forEach(name => {
+        if (!currentPayrollData[name]) {
+            initPayrollPerson(name);
+            restorePersonGlobals(name);
         }
     });
 
@@ -5917,6 +6050,99 @@ function renderPayrollTable() {
         </tr>`;
     });
     tbody.innerHTML = html;
+}
+
+// ==============================================================================
+// EXPENSE APPROVAL QUEUE (FRONTEND)
+// ==============================================================================
+
+function renderExpenseQueue() {
+    const banner = document.getElementById('expenseApprovalBanner');
+    const tbody = document.getElementById('pendingExpensesTableBody');
+    const modalEl = document.getElementById('expenseApprovalModal');
+    
+    if (!banner || !tbody) return;
+
+    const role = getUserRole();
+    if (role !== 'admin') {
+        banner.style.setProperty('display', 'none', 'important');
+        return;
+    }
+
+    const start = document.getElementById('prStartDate').value;
+    const end = document.getElementById('prEndDate').value;
+
+    // RULE 1: Hide banner if BOTH dates are not set yet
+    if (!start || !end) {
+        banner.style.setProperty('display', 'none', 'important');
+        if (modalEl && modalEl.classList.contains('show')) bootstrap.Modal.getInstance(modalEl).hide();
+        return;
+    }
+
+    // RULE 2: Filter for Pending AND strictly within the chosen date range
+    const pendingExpenses = rawExpenses.filter(e => {
+        return e.status === 'Pending' && e.expenseDate >= start && e.expenseDate <= end;
+    });
+
+    if (pendingExpenses.length === 0) {
+        banner.style.setProperty('display', 'none', 'important');
+        // Auto-close modal if you just approved/rejected the very last pending expense
+        if (modalEl && modalEl.classList.contains('show')) {
+            bootstrap.Modal.getInstance(modalEl).hide();
+        }
+        return;
+    }
+
+    // Pass rules: Show banner and build table
+    banner.style.setProperty('display', 'flex', 'important');
+
+    let html = '';
+    pendingExpenses.forEach(exp => {
+        html += `
+        <tr>
+            <td class="text-nowrap px-3 text-muted">${exp.expenseDate}</td>
+            <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-1 opacity-50"></i>${exp.submittedBy}</td>
+            <td style="min-width: 180px;">
+                <span class="badge bg-light text-dark border mb-1">${exp.category}</span><br>
+                <span class="text-muted fst-italic text-wrap" style="font-size: 0.75rem; display:inline-block; line-height:1.2;">"${exp.description}"</span>
+            </td>
+            <td class="text-end fw-bold text-success text-nowrap">₱${Number(exp.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td class="text-end px-3 text-nowrap">
+                <button class="btn btn-sm btn-outline-secondary py-1 me-1 shadow-sm" onclick="window.open('${exp.receiptUrl}', '_blank')" title="View Receipt"><i class="bi bi-receipt"></i></button>
+                <button class="btn btn-sm btn-outline-danger py-1 me-1 shadow-sm" onclick="processExpenseAction('${exp.docId}', 'Rejected')" title="Reject"><i class="bi bi-x-lg"></i></button>
+                <button class="btn btn-sm btn-success py-1 shadow-sm" onclick="processExpenseAction('${exp.docId}', 'Approved')" title="Approve"><i class="bi bi-check-lg"></i></button>
+            </td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+function openExpenseModal() {
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('expenseApprovalModal')).show();
+}
+
+async function processExpenseAction(docId, newStatus) {
+    if (!confirm(`Are you sure you want to mark this expense as ${newStatus.toUpperCase()}?`)) return;
+
+    const ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = `Marking as ${newStatus}...`;
+    ov.style.display = 'flex';
+
+    // Call the backend function we built in Step 1!
+    const res = await callApi({ 
+        action: 'updateExpenseStatus', 
+        docId: docId, 
+        status: newStatus 
+    }, 'POST');
+
+    ov.style.display = 'none';
+
+    if (res && res.success) {
+        showToast(`Expense ${newStatus}!`, newStatus === 'Approved' ? 'success' : 'danger');
+        // The Firebase real-time listener will automatically remove it from the screen!
+    } else {
+        alert("Error updating expense: " + (res ? res.error || res.message : "Unknown error"));
+    }
 }
 
   // Modal: Open and build the interactive calculator
