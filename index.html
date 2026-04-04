@@ -2077,7 +2077,7 @@ async function subscribeToNotifications() {
   // --- NEW: CLOUD RATE MEMORY ---
   let dbCrewRates = {};
   let dbEditingRate = 1000;
-  
+  let activePayrollSnapshot = null; // <-- NEW
   let currentPayrollData = {}; 
   let lastComputedRange = "";
   let activePayrollPerson = null;
@@ -5134,13 +5134,17 @@ window.onload = () => {
       }
       // ------------------------------
       
-      // Listen for the Payroll Modal to close, and auto-update the main table!
+      // Listen for the Payroll Modal to close!
       const prModalEl = document.getElementById('payrollModal');
       if (prModalEl) {
           prModalEl.addEventListener('hidden.bs.modal', function () {
               if (!isHistoricalView && activePayrollPerson) {
-                  renderPayrollTable();
-                  showToast("Changes applied to active session.", "success");
+                  // 🟢 THE REVERT TRIGGER: If snapshot exists, they clicked 'X' without saving!
+                  if (activePayrollSnapshot) {
+                      currentPayrollData[activePayrollPerson] = JSON.parse(activePayrollSnapshot);
+                      activePayrollSnapshot = null; // Clear it
+                      renderPayrollTable(); // Re-render to wipe the cancelled changes
+                  }
               } else if (isHistoricalView) {
                   // Re-open the history vault when closing a historical payslip
                   const histModalEl = document.getElementById('payrollHistoryModal');
@@ -6158,6 +6162,11 @@ async function processExpenseAction(docId, newStatus) {
       isHistoricalView = isHistorical;
       const data = isHistorical ? histData : currentPayrollData[name];
       
+      // 🟢 CREATE A SNAPSHOT TO REVERT IF THEY CANCEL 🟢
+      if (!isHistorical) {
+          activePayrollSnapshot = JSON.stringify(data);
+      }
+
       document.getElementById('prModalName').innerText = name + (isHistorical ? ' (Historical)' : '');
       const isFullyExempt = owners.includes(name) && !data.events.some(e => e.role === 'Editor');
       
@@ -6217,13 +6226,20 @@ async function processExpenseAction(docId, newStatus) {
                   </div>
                   <div id="prPayerBreakdown" class="small text-end fw-bold" style="color: #adb5bd; font-size: 0.75rem;"></div>
               </div>
+              
+              <button id="prSaveChangesBtn" type="button" class="btn btn-warning w-100 py-3 fw-bold shadow-sm mt-4" onclick="savePayrollModalChanges()"><i class="bi bi-save me-1"></i> SAVE CHANGES</button>
           `;
           
           document.getElementById('prGenerateBtn').style.display = isFullyExempt ? 'none' : 'block';
+          
+          // Tighten the margin so it looks grouped with the Save button
+          document.getElementById('prGenerateBtn').classList.remove('mt-4'); 
+          document.getElementById('prGenerateBtn').classList.add('mt-2'); 
+          
           document.getElementById('prGenerateBtn').disabled = data.isTentative;
           document.getElementById('prMathControls').style.display = isFullyExempt ? 'none' : 'block';
       } else {
-          // HISTORICAL VIEW - Read Only Display for Expenses and Misc
+          // HISTORICAL VIEW
           document.getElementById('prMathControls').innerHTML = `
               <div class="row g-3 mb-4 border-top pt-3">
                   <div class="col-12 col-md-6">
@@ -6306,11 +6322,19 @@ async function processExpenseAction(docId, newStatus) {
       document.getElementById('prModalEventsList').innerHTML = eventsHtml;
       
       if (!isHistorical) calculateLivePayslipTotals(); 
-      // The total is handled directly in the HTML block for historical views now
       
       bootstrap.Modal.getOrCreateInstance(document.getElementById('payrollModal')).show();
   }
-
+window.savePayrollModalChanges = function() {
+      if (!activePayrollPerson) return;
+      
+      // Clear the snapshot so the 'X' button doesn't overwrite your changes!
+      activePayrollSnapshot = null; 
+      
+      bootstrap.Modal.getInstance(document.getElementById('payrollModal')).hide();
+      renderPayrollTable();
+      showToast("Changes saved to active session.", "success");
+  };
   // Two tiny UI helper functions for the new inputs
   window.savePayslipNote = function() {
       if(activePayrollPerson) currentPayrollData[activePayrollPerson].payslipNote = document.getElementById('prModalNotes').value;
@@ -6526,9 +6550,10 @@ async function processExpenseAction(docId, newStatus) {
       link.click();
   }
 
-  // Combined Generator and Logger Function
   async function generateAndLogPayslip() {
       if(!activePayrollPerson) return;
+      
+      activePayrollSnapshot = null; // Clear snapshot so it doesn't revert after generating!
       
       const btn = document.getElementById('prGenerateBtn');
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> PROCESSING...';
