@@ -5621,6 +5621,14 @@ async function getNextEventId() {
       const names = Object.keys(currentPayrollData).sort();
       if (names.length === 0) return showToast("No payroll data to export.", "warning");
 
+      // 🟢 NEW: TENTATIVE LOCKDOWN 🟢
+      // Find anyone who currently has the tentative checkbox checked
+      const tentativeCrew = names.filter(name => currentPayrollData[name].isTentative);
+      if (tentativeCrew.length > 0) {
+          alert(`EXPORT BLOCKED:\n\nThe following crew members have a TENTATIVE status:\n- ${tentativeCrew.join('\n- ')}\n\nPlease click 'VIEW DETAILS' to review and uncheck their tentative status before proceeding with the PDF export.`);
+          return; // Stop the export dead in its tracks
+      }
+
       if (!confirm(`Generate a printable PDF summary report for ${start} to ${end}?`)) return;
 
       let totalPayout = 0;
@@ -5650,7 +5658,6 @@ async function getNextEventId() {
           th { background-color: #f8f9fa; text-transform: uppercase; font-size: 12px; color: #555;}
           .text-right { text-align: right; }
           .total-row { font-weight: bold; font-size: 1.1em; background-color: #f1f3f5; }
-          /* 🟢 The CSS to force the print break! */
           .page-break { page-break-before: always; display: block; margin-top: 50px; }
           .breakdown-box { padding: 15px; background-color: #f8f9fa; border: 1px solid #ddd; width: 50%; min-width: 300px; }
           .breakdown-box h4 { margin-top: 0; margin-bottom: 10px; font-size: 13px; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
