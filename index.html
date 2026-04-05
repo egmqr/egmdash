@@ -4791,10 +4791,11 @@ function generateSingleEventCard(e) {
                   const folderId = match ? match[1] : '';
                   
                   const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${boothNum}`;
-                  const pgDashUrl = `${MASTER_QR_URL}?folderId=${folderId}&booth=${boothNum}`;
                   const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${boothNum}`;
-                  const backupPgDashUrl = `${BACKUP_MASTER_QR_URL}?folderId=${folderId}&booth=${boothNum}`;
                   const driveUrl = `https://drive.google.com/drive/folders/${folderId}`;
+                  
+                  // 🟢 NEW: BOOTH CLOUD LINK (With Hardcoded Backend) 🟢
+                  const boothCloudUrl = `https://webqr.createdbyegm.com/gallery?folderId=${folderId}&backend=https://script.google.com/macros/s/AKfycbwjQbyGEoK5HkmIOmVmGsYbYntYiA9Jg5YRuQAOpJ35m98BIN8EJtKC3lEAsmqVIFuQ/exec`;
                   
                   const qrFileId = qrIdsArr[i] || "";
                   let qrCodeActionHtml = '';
@@ -4831,11 +4832,10 @@ function generateSingleEventCard(e) {
                         </div>
                      </div>
                      <div class="booth-link-row">
-                        <span>PG Dash</span>
+                        <span>Booth Cloud Link</span>
                         <div class="booth-link-actions">
-                           <button class="booth-mini-btn" onclick="copyBoothLink(this, '${pgDashUrl}')">Copy link</button>
-                           <button class="booth-mini-btn backup" title="Fallback link" onclick="copyBoothLink(this, '${backupPgDashUrl}')">Backup</button>
-                           <button class="booth-mini-btn" onclick="window.open('${pgDashUrl}', '_blank')">Go</button>
+                           <button class="booth-mini-btn" onclick="copyBoothLink(this, '${boothCloudUrl}')">Copy link</button>
+                           <button class="booth-mini-btn" onclick="window.open('${boothCloudUrl}', '_blank')">Go</button>
                         </div>
                      </div>
                      <div class="booth-link-row">
