@@ -4729,7 +4729,10 @@ for (const personName of peopleToNotify){
               // --- LANE 2: CREW NOTIFICATIONS (Additions & General Changes) ---
               const isStatusChanged = cachedOldStatus !== newStatus;
               const isScheduleChanged = cachedOldDate !== newDate || cachedOldCall !== newCall;
-              const isCrewAdded = newCrewArray.some(name => !oldCrewArray.includes(name));
+              
+              // 🟢 ISOLATE EXACTLY WHO WAS ADDED
+              const addedCrew = newCrewArray.filter(name => !oldCrewArray.includes(name));
+              const isCrewAdded = addedCrew.length > 0;
 
               if (newStatus === "Confirmed" && (isStatusChanged || isScheduleChanged || isCrewAdded)) {
                   let crewTitle = `Event Updated: ${obj.eventName}`;
@@ -4739,8 +4742,12 @@ for (const personName of peopleToNotify){
                       crewTitle = `Event Confirmed: ${obj.eventName}`;
                       crewBody = `The event is now CONFIRMED for ${newDate}. Call time: ${formatAMPM(obj.callTime)}.`;
                   } else if (isCrewAdded && !isScheduleChanged) {
-                      crewTitle = `New Assignment: ${obj.eventName}`;
-                      crewBody = `You (or a new member) have been added to #${obj.eventId}. Call time: ${formatAMPM(obj.callTime)}.`;
+                      // 🟢 DYNAMIC NOTIFICATION TEXT
+                      const addedNames = addedCrew.join(' and ');
+                      const verb = addedCrew.length > 1 ? 'have' : 'has';
+                      
+                      crewTitle = `Crew Update: ${obj.eventName}`;
+                      crewBody = `${addedNames} ${verb} been added to this event. Call time: ${formatAMPM(obj.callTime)}.`;
                   }
 
                   // Notify everyone currently in the Crew List (Lane 2 excludes the Editor automatically)
