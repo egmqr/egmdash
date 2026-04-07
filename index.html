@@ -4545,91 +4545,129 @@ function generateSingleEventCard(e) {
               invoiceUrl: obj.invoiceUrl || "",
               checkUrl: obj.checkUrl || ""
           });
-      // 🟢 SMART EDIT NOTIFIER: PINGS CREW ON STATUS CHANGES & UPDATES 🟢
+      // 🟢 CAPTURE OLD STATE BEFORE FIREBASE OVERWRITES IT! 🟢
+      const oldEvent = rawEvents.find(ev => ev['Doc ID'] === obj.firestoreDocId);
+      let oldStatus = "", oldDate = "", oldCall = "", oldStart = "", oldEnd = "";
+      if (oldEvent) {
+          oldStatus = oldEvent['Event Status'] || "";
+          oldDate = oldEvent['Event Date'] || "";
+          oldCall = to24Hour(oldEvent['Call Time']) || "";
+          oldStart = to24Hour(oldEvent['Event Start Time']) || "";
+          oldEnd = to24Hour(oldEvent['Event End Time']) || "";
+      }
+
+      document.getElementById('overlayText').innerText = "Updating Database...";
+      btn.disabled = true; ov.style.display = 'flex';
+
+    try {
+          await db.collection("dashboard_events").doc(obj.firestoreDocId).update({
+              eventName: obj.eventName || "",
+              eventDate: obj.eventDate || "",
+              eventVenue: obj.eventVenue || "",
+              venueLink: obj.venueLink || "",
+              eventStatus: obj.eventStatus || "Pencil Booked",
+              avpRequired: obj.avp === "true",
+              services: (obj.services || []).join(", "),
+              startTime: obj.startTime || "",
+              endTime: obj.endTime || "",
+              halfDay: document.getElementById('editHalfDayCheck') ? document.getElementById('editHalfDayCheck').checked : false,
+              callTime: obj.callTime || "",
+              manpower: (obj.manpower || []).join(", "),
+              contactPerson: obj.contactPerson || "",
+              contactNumber: obj.contactNumber || "",
+              notes: obj.notes || "",
+              editorAssigned: obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || ""),
+              sentToClient: document.getElementById('editSentToClient') ? document.getElementById('editSentToClient').checked : false,
+              rawLink: obj.rawLink || "",
+              editedLink: obj.editedLink || "",
+              rawTimestamp: (obj.rawLink && !obj.rawTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (obj.rawLink ? obj.rawTimestamp : ""),
+              editedTimestamp: (obj.editedLink && !obj.editedTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (obj.editedLink ? obj.editedTimestamp : ""),
+              sentTimestamp: (document.getElementById('editSentToClient') && document.getElementById('editSentToClient').checked && !obj.sentTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (document.getElementById('editSentToClient') && document.getElementById('editSentToClient').checked ? obj.sentTimestamp : ""),
+              paymentType: obj.paymentType || "",
+              emailThread: obj.emailThread || "",
+              billingStatus: obj.billingStatus || "",
+              billingStatusDate: obj.billingStatusDate || "",
+              grNumber: obj.grNumber || "",
+              invoiceNumber: obj.invoiceNumber || "",
+              amount: obj.amount || "0",
+              paymentNotes: obj.paymentNotes || "",
+              invoiceUrl: obj.invoiceUrl || "",
+              checkUrl: obj.checkUrl || ""
+          });
+
+          // 🟢 SMART EDIT NOTIFIER: PINGS CREW ON STATUS CHANGES & UPDATES 🟢
           try {
-              // Look up the old event data before we overwrote it
-              const oldEvent = rawEvents.find(ev => ev['Doc ID'] === obj.firestoreDocId);
-              
-              if (oldEvent) {
-                  const oldStatus = oldEvent['Event Status'] || "";
-                  const oldDate = oldEvent['Event Date'] || "";
+              let shouldNotify = false;
+              let pushTitle = "";
+              let pushBody = "";
+              let changes = [];
+
+              // Rule 1: Major Status Changes
+              if (oldStatus === "Pencil Booked" && obj.eventStatus === "Confirmed") {
+                  shouldNotify = true;
+                  pushTitle = `Event Confirmed: ${obj.eventName}`;
+                  pushBody = `The event on ${obj.eventDate} is now CONFIRMED. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
+              } 
+              else if (oldStatus !== "Cancelled" && obj.eventStatus === "Cancelled") {
+                  shouldNotify = true;
+                  pushTitle = `Event Cancelled: ${obj.eventName}`;
+                  pushBody = `The event on ${obj.eventDate} has been CANCELLED.`;
+              }
+              // Confirmed -> Pencil Booked
+              else if (oldStatus === "Confirmed" && obj.eventStatus === "Pencil Booked") {
+                  shouldNotify = true;
+                  pushTitle = `Status Reverted: ${obj.eventName}`;
+                  pushBody = `The event on ${obj.eventDate} has been changed back to PENCIL BOOKED.`;
+              }
+              // Rule 2: Detail Changes (ONLY if currently Confirmed)
+              else if (obj.eventStatus === "Confirmed") {
+                  if (oldDate !== obj.eventDate) changes.push(`Date moved to ${obj.eventDate}`);
+                  if (oldCall !== obj.callTime) changes.push(`Call time changed to ${formatAMPM(obj.callTime) || 'TBA'}`);
+                  if (oldStart !== obj.startTime || oldEnd !== obj.endTime) {
+                      changes.push(`Shoot time updated to ${formatAMPM(obj.startTime) || '--:--'} - ${formatAMPM(obj.endTime) || '--:--'}`);
+                  }
+
+                  // If we detected any time/date shifts, build a custom message!
+                  if (changes.length > 0) {
+                      shouldNotify = true;
+                      pushTitle = `Schedule Updated: ${obj.eventName}`;
+                      pushBody = `Updates for #${obj.eventId}: ` + changes.join(', ') + ".";
+                  }
+              }
+
+              if (shouldNotify) {
+                  const tokens = [];
+                  const peopleToNotify = [...obj.manpower];
                   
-                  // Convert old times to 24-hour format so they perfectly match the input values (obj.callTime, etc.)
-                  const oldCall = to24Hour(oldEvent['Call Time']) || "";
-                  const oldStart = to24Hour(oldEvent['Event Start Time']) || "";
-                  const oldEnd = to24Hour(oldEvent['Event End Time']) || "";
-                  
-                  let shouldNotify = false;
-                  let pushTitle = "";
-                  let pushBody = "";
-                  let changes = [];
-
-                  // Rule 1: Major Status Changes
-                  if (oldStatus === "Pencil Booked" && obj.eventStatus === "Confirmed") {
-                      shouldNotify = true;
-                      pushTitle = `Event Confirmed: ${obj.eventName}`;
-                      pushBody = `The event on ${obj.eventDate} is now CONFIRMED. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
-                  } 
-                  else if (oldStatus !== "Cancelled" && obj.eventStatus === "Cancelled") {
-                      shouldNotify = true;
-                      pushTitle = `Event Cancelled: ${obj.eventName}`;
-                      pushBody = `The event on ${obj.eventDate} has been CANCELLED.`;
+                  const assignedEditor = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "");
+                  if (assignedEditor && !peopleToNotify.includes(assignedEditor)) {
+                      peopleToNotify.push(assignedEditor);
                   }
-                  // 🟢 NEW: Confirmed -> Pencil Booked
-                  else if (oldStatus === "Confirmed" && obj.eventStatus === "Pencil Booked") {
-                      shouldNotify = true;
-                      pushTitle = `Status Reverted: ${obj.eventName}`;
-                      pushBody = `The event on ${obj.eventDate} has been changed back to PENCIL BOOKED.`;
-                  }
-                  // Rule 2: Detail Changes (Date or Time)
-                  else if (obj.eventStatus !== "Cancelled") {
-                      if (oldDate !== obj.eventDate) changes.push(`Date moved to ${obj.eventDate}`);
-                      if (oldCall !== obj.callTime) changes.push(`Call time changed to ${formatAMPM(obj.callTime) || 'TBA'}`);
-                      if (oldStart !== obj.startTime || oldEnd !== obj.endTime) {
-                          changes.push(`Shoot time updated to ${formatAMPM(obj.startTime) || '--:--'} - ${formatAMPM(obj.endTime) || '--:--'}`);
-                      }
 
-                      // If we detected any time/date shifts, build a custom message!
-                      if (changes.length > 0) {
-                          shouldNotify = true;
-                          pushTitle = `Schedule Updated: ${obj.eventName}`;
-                          pushBody = `Updates for #${obj.eventId}: ` + changes.join(', ') + ".";
+                  for (const personName of peopleToNotify) {
+                      const tokenDoc = await db.collection("crew_tokens").doc(personName).get();
+                      if (tokenDoc.exists) {
+                          const data = tokenDoc.data();
+                          if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
+                          else if (data.token) tokens.push(data.token);
                       }
                   }
 
-                  if (shouldNotify) {
-                      const tokens = [];
-                      const peopleToNotify = [...obj.manpower];
-                      
-                      const assignedEditor = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "");
-                      if (assignedEditor && !peopleToNotify.includes(assignedEditor)) {
-                          peopleToNotify.push(assignedEditor);
-                      }
-
-                      for (const personName of peopleToNotify) {
-                          const tokenDoc = await db.collection("crew_tokens").doc(personName).get();
-                          if (tokenDoc.exists) {
-                              const data = tokenDoc.data();
-                              if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
-                              else if (data.token) tokens.push(data.token);
-                          }
-                      }
-
-                      if (tokens.length > 0) {
-                          callApi({
-                              action: 'sendPush',
-                              tokens: tokens,
-                              title: pushTitle,
-                              body: pushBody,
-                              eventId: obj.eventId
-                          }, 'POST', true);
-                      }
+                  if (tokens.length > 0) {
+                      callApi({
+                          action: 'sendPush',
+                          tokens: tokens,
+                          title: pushTitle,
+                          body: pushBody,
+                          eventId: obj.eventId
+                      }, 'POST', true);
                   }
               }
           } catch (pushErr) {
               console.error("Failed to trigger edit push:", pushErr);
           }
           // 🔴 END SMART EDIT NOTIFIER 🔴
+
           bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
       } catch (err) {
           alert("Error updating: " + err.message);
