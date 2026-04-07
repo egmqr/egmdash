@@ -2954,7 +2954,8 @@ function handleEqSearch() {
       else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
 
       if (!q && !grInv) {
-          filtered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
+          // 🟢 THE FIX: Exempt AVPs from the 'Pencil Booked' purge
+          filtered = filtered.filter(e => e['Event Status'] !== 'Cancelled' && (e['Event Status'] !== 'Pencil Booked' || e['AVP Required'] === 'TRUE'));
       }
       
       renderPayments(filtered);
@@ -3424,8 +3425,8 @@ function generateSingleEventCard(e) {
         // Text search WITHOUT specific payment filters: Show Main Days and Added Days
         displayData = data.filter(item => item['Event Name'] !== 'Crew Leave');
     } else {
-        // Default view OR Explicit Payment Filter: ONLY show the true Main Day
-        displayData = data.filter(item => item['Doc ID'] === projectMainDays[item['Event ID']] && item['Event Name'] !== 'Crew Leave');
+        // 🟢 THE FIX: ALWAYS show the true Main Day AND any AVPs, bypassing the group-hide
+        displayData = data.filter(item => (item['Doc ID'] === projectMainDays[item['Event ID']] || item['AVP Required'] === 'TRUE') && item['Event Name'] !== 'Crew Leave');
     }
 
     // Sort the final display rows
