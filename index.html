@@ -39,18 +39,28 @@
     .floating-back-btn:hover {
         transform: translateX(-50%) scale(1.05);
     }
-    /* 🟢 SUCCESS PULSE ANIMATION */
-    @keyframes blinkEmphasis {
-        0%   { background-color: var(--bs-card-bg, #ffffff) !important; }
-        15%  { background-color: #d1e7dd !important; } /* Bootstrap soft green */
-        30%  { background-color: var(--bs-card-bg, #ffffff) !important; }
-        45%  { background-color: #d1e7dd !important; }
-        100% { background-color: var(--bs-card-bg, #ffffff) !important; }
-    }
-    
-    .card-blink-emphasis {
-        animation: blinkEmphasis 2s ease-in-out forwards !important;
-    }
+    /* 🟢 IMPROVED SUCCESS PULSE */
+@keyframes blinkEmphasis {
+    0%   { background-color: #ffffff; box-shadow: 0 0 0 rgba(13, 148, 136, 0); }
+    20%  { background-color: #d1e7dd !important; box-shadow: 0 0 20px rgba(13, 148, 136, 0.5); }
+    100% { background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+}
+
+.card-blink-emphasis {
+    animation: blinkEmphasis 1.5s ease-out !important;
+    z-index: 10;
+}
+
+/* Ensure dark mode doesn't block the blink */
+.dark-mode .card-blink-emphasis {
+    animation: blinkEmphasisDark 1.5s ease-out !important;
+}
+
+@keyframes blinkEmphasisDark {
+    0%   { background-color: #1e1e1e; }
+    20%  { background-color: #064e3b !important; }
+    100% { background-color: #1e1e1e; }
+}
     .text-primary { color: #0d9488 !important; }
     .bg-primary { background-color: #0d9488 !important; }
     .btn-primary { background-color: #0d9488; border-color: #0d9488; }
@@ -3234,21 +3244,26 @@ function generateSingleEventCard(e) {
       }
     });
 
+    // ... (rest of renderEvents code above) ...
+
     // Inject the HTML
     document.getElementById('events-list').innerHTML = html;
     setTimeout(checkStickyHeaders, 50); 
 
-    // 🟢 WEB TEST TRIGGER: If the user is actively filtering, trigger the blink
-    const isFiltering = document.getElementById('fName').value.length > 0 || 
-                        document.getElementById('fCrew').value !== "" || 
-                        document.getElementById('fStatus').value !== "";
+    // 🟢 BULLETPROOF BLINK TRIGGER
+    const searchVal = document.getElementById('fName').value;
+    const crewVal = document.getElementById('fCrew').value;
 
-    if (isFiltering) {
-        const visibleCards = document.querySelectorAll('#events-list .card');
-        visibleCards.forEach(card => {
-            card.classList.remove('card-blink-emphasis');
-            void card.offsetWidth; // Force Reflow
-            card.classList.add('card-blink-emphasis');
+    if (searchVal.length > 0 || crewVal !== "") {
+        // We wait a tiny slice of time for the browser to finish rendering the HTML
+        requestAnimationFrame(() => {
+            const cards = document.querySelectorAll('#events-list .card');
+            cards.forEach(card => {
+                card.classList.remove('card-blink-emphasis');
+                // Force a hardware-level update
+                void card.offsetWidth; 
+                card.classList.add('card-blink-emphasis');
+            });
         });
     }
 }
