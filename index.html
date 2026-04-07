@@ -39,6 +39,18 @@
     .floating-back-btn:hover {
         transform: translateX(-50%) scale(1.05);
     }
+    /* 🟢 SUCCESS PULSE ANIMATION */
+    @keyframes blinkEmphasis {
+        0%   { background-color: var(--bs-card-bg, #ffffff); }
+        15%  { background-color: #d1e7dd; } /* Bootstrap soft green */
+        30%  { background-color: var(--bs-card-bg, #ffffff); }
+        45%  { background-color: #d1e7dd; }
+        100% { background-color: var(--bs-card-bg, #ffffff); }
+    }
+    
+    .card-blink-emphasis {
+        animation: blinkEmphasis 2s ease-in-out;
+    }
     .text-primary { color: #0d9488 !important; }
     .bg-primary { background-color: #0d9488 !important; }
     .btn-primary { background-color: #0d9488; border-color: #0d9488; }
@@ -1874,6 +1886,17 @@ const messaging = firebase.messaging();
               // Inject the ID into the search bar and trigger the filter!
               document.getElementById('fName').value = formattedId;
               applyFilters();
+
+              // 🟢 NEW: Apply the blink animation to the newly filtered card
+              setTimeout(() => {
+                  // Grab the cards currently sitting in the events list
+                  const visibleCards = document.querySelectorAll('#events-list .card');
+                  visibleCards.forEach(card => {
+                      card.classList.remove('card-blink-emphasis');
+                      void card.offsetWidth; // This "magic trick" forces the browser to restart the animation if clicked twice
+                      card.classList.add('card-blink-emphasis');
+                  });
+              }, 50); // A tiny 50ms delay ensures the DOM has finished rendering the cards first
 
               // Show the floating "Go Back" button
               document.getElementById('floatingBackBtn').style.display = 'flex';
