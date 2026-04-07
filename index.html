@@ -1845,33 +1845,34 @@ const messaging = firebase.messaging();
                   // Switch to the Events tab so the background content looks correct
                   if (currentTab !== 'events') switchTab('events');
                   
-                  // 🟢 STEP A: Ask Bootstrap to gracefully close EVERY open modal
-                  const allModals = ['addEventModal', 'editEventModal', 'addDayModal', 'payrollModal', 'uploadFileModal', 'uploadPaymentDocModal', 'ratesModal', 'payrollHistoryModal', 'loadSessionModal', 'eventCardModal', 'authModal', 'expenseApprovalModal'];
-                  
-                  let hadOpenModals = false;
-                  allModals.forEach(mId => {
-                      const mEl = document.getElementById(mId);
-                      if (mEl && mEl.classList.contains('show')) {
-                          const inst = bootstrap.Modal.getInstance(mEl);
-                          if (inst) inst.hide();
-                          hadOpenModals = true;
-                      }
+                  // 🟢 STEP A: Find all currently open modals
+                  const openModals = document.querySelectorAll('.modal.show');
+                  let needsDelay = openModals.length > 0;
+
+                  // Politely ask them to hide
+                  openModals.forEach(mEl => {
+                      const inst = bootstrap.Modal.getInstance(mEl);
+                      if (inst) inst.hide();
                   });
 
-                  // 🟢 STEP B: Wait 400ms for Bootstrap to finish its fade-out animations!
+                  // 🟢 STEP B: Wait for the hide animation to finish (if there was one)
                   setTimeout(() => {
-                      // 🟢 STEP C: Nuclear Cleanup! Shred any stuck backdrops
+                      // 🟢 STEP C: Nuclear Cleanup! Shred any stuck HTML backdrops
                       document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
                       document.body.classList.remove('modal-open');
-                      document.body.style.overflow = '';
-                      document.body.style.paddingRight = '';
-
-                      // 🟢 STEP D: Build and open the new card safely
-                      document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                      document.body.style.removeProperty('overflow');
+                      document.body.style.removeProperty('padding-right');
                       
                       const cardModalEl = document.getElementById('eventCardModal');
-                      const modal = bootstrap.Modal.getOrCreateInstance(cardModalEl);
-                      modal.show();
+                      
+                      // 🟢 STEP D: MEMORY WIPE! Destroy Bootstrap's corrupted internal state
+                      const oldInst = bootstrap.Modal.getInstance(cardModalEl);
+                      if (oldInst) oldInst.dispose();
+
+                      // 🟢 STEP E: Build the HTML and spawn a fresh, clean modal
+                      document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                      const freshModal = new bootstrap.Modal(cardModalEl);
+                      freshModal.show();
                       
                       // Scrub the URL so refreshing doesn't loop the pop-up
                       const urlParams = new URLSearchParams(window.location.search);
@@ -1884,7 +1885,7 @@ const messaging = firebase.messaging();
                       // Release the lock so other cards can be opened later
                       setTimeout(() => { isOpeningCard = false; }, 300);
 
-                  }, hadOpenModals ? 400 : 50); // Only wait 400ms if something was actually open
+                  }, needsDelay ? 400 : 10); 
                   
               } else {
                   showToast(`Could not find Event #${formattedId} in the database.`, "warning");
