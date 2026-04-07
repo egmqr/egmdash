@@ -39,27 +39,57 @@
     .floating-back-btn:hover {
         transform: translateX(-50%) scale(1.05);
     }
-    /* 🟢 IMPROVED SUCCESS PULSE */
-@keyframes blinkEmphasis {
-    0%   { background-color: #ffffff; box-shadow: 0 0 0 rgba(13, 148, 136, 0); }
-    20%  { background-color: #d1e7dd !important; box-shadow: 0 0 20px rgba(13, 148, 136, 0.5); }
-    100% { background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+   /* 🚀 HIGH-IMPACT BLINK ANIMATION */
+@keyframes megaPop {
+    0% { 
+        transform: scale(1);
+        background-color: var(--bs-card-bg, #ffffff);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-color: #e2e8f0;
+    }
+    15% { 
+        transform: scale(1.03); /* Subtle grow */
+        background-color: #ccfbf1 !important; /* Bright Teal tint */
+        box-shadow: 0 0 25px rgba(13, 148, 136, 0.4); /* Neon Glow */
+        border-color: #0d9488 !important; /* Thick border color */
+    }
+    100% { 
+        transform: scale(1);
+        background-color: var(--bs-card-bg, #ffffff);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-color: #e2e8f0;
+    }
+}
+
+/* Dark Mode Specific Pop */
+@keyframes megaPopDark {
+    0% { 
+        transform: scale(1);
+        background-color: #1e1e1e;
+        border-color: #333333;
+    }
+    15% { 
+        transform: scale(1.03);
+        background-color: #064e3b !important;
+        box-shadow: 0 0 30px rgba(13, 148, 136, 0.6);
+        border-color: #5eead4 !important;
+    }
+    100% { 
+        transform: scale(1);
+        background-color: #1e1e1e;
+        border-color: #333333;
+    }
 }
 
 .card-blink-emphasis {
-    animation: blinkEmphasis 1.5s ease-out !important;
-    z-index: 10;
+    animation: megaPop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    z-index: 50; /* Ensure it stays above other cards during scale */
+    position: relative;
+    border-width: 2px !important;
 }
 
-/* Ensure dark mode doesn't block the blink */
 .dark-mode .card-blink-emphasis {
-    animation: blinkEmphasisDark 1.5s ease-out !important;
-}
-
-@keyframes blinkEmphasisDark {
-    0%   { background-color: #1e1e1e; }
-    20%  { background-color: #064e3b !important; }
-    100% { background-color: #1e1e1e; }
+    animation: megaPopDark 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
     .text-primary { color: #0d9488 !important; }
     .bg-primary { background-color: #0d9488 !important; }
@@ -3254,13 +3284,17 @@ function generateSingleEventCard(e) {
     const searchVal = document.getElementById('fName').value;
     const crewVal = document.getElementById('fCrew').value;
 
+    // Inside renderEvents...
     if (searchVal.length > 0 || crewVal !== "") {
-        // We wait a tiny slice of time for the browser to finish rendering the HTML
         requestAnimationFrame(() => {
             const cards = document.querySelectorAll('#events-list .card');
             cards.forEach(card => {
+                // Ensure we strip any existing animation state
+                card.style.animation = 'none';
+                void card.offsetWidth; // Force Reflow
+                card.style.animation = null; // Re-enable CSS animation
+                
                 card.classList.remove('card-blink-emphasis');
-                // Force a hardware-level update
                 void card.offsetWidth; 
                 card.classList.add('card-blink-emphasis');
             });
