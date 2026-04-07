@@ -1802,37 +1802,61 @@ if (!isStandalone) {
 
 const messaging = firebase.messaging();
 
-  // 🟢 IN-APP FOREGROUND TOASTS & CARD OPENER 🟢
-  window.forceOpenCard = function(eventId, toastId) {
+  // 🟢 IN-APP FOREGROUND TOASTS & UNIFIED CARD OPENER 🟢
+  window.forceOpenCard = function(eventId, toastId = null) {
+      // 1. Hide the toast notification if it was clicked
       if (toastId) {
           const toastEl = document.getElementById(toastId);
           if (toastEl) bootstrap.Toast.getOrCreateInstance(toastEl).hide();
       }
       
-      if (!eventId) return;
-      const formattedId = eventId.toLowerCase().startsWith('egm') ? eventId : 'egm' + eventId;
+      // 2. Validate the ID
+      if (!eventId || String(eventId).trim() === "undefined" || String(eventId).trim() === "null") return;
       
+      // 3. Format ID: Automatically add 'egm' if the notification payload forgot it
+      let formattedId = String(eventId).trim().toLowerCase();
+      if (!formattedId.startsWith('egm')) {
+          formattedId = 'egm' + formattedId;
+      }
+
+      document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+
+      // 4. Wait for Firebase data to load
       const waitForData = setInterval(() => {
           if (typeof rawEvents !== 'undefined' && rawEvents.length > 0) {
               clearInterval(waitForData);
-              const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId.toLowerCase());
+              document.getElementById('bgSyncIndicator').style.display = 'none';
+
+              const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId);
+
               if (targetEvent) {
+                  // Switch to the Events tab so the backdrop looks correct
                   if (currentTab !== 'events') switchTab('events');
-                  document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                  bootstrap.Modal.getOrCreateInstance(document.getElementById('eventCardModal')).show();
                   
+                  // Build and show the modal
+                  document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                  const cardModalEl = document.getElementById('eventCardModal');
+                  const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
+                  modal.show();
+                  
+                  // Scrub the URL so refreshing the page doesn't loop the pop-up
                   const urlParams = new URLSearchParams(window.location.search);
                   if (urlParams.has('openEvent')) {
                       urlParams.delete('openEvent');
                       const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
                       window.history.replaceState({}, '', newUrl);
                   }
+              } else {
+                  showToast(`Could not find Event #${formattedId} in the database.`, "warning");
               }
           }
       }, 300);
-      setTimeout(() => clearInterval(waitForData), 10000);
+      
+      // Safety net: Stop checking after 8 seconds
+      setTimeout(() => clearInterval(waitForData), 8000);
   };
 
+  // Listen for Foreground Firebase Messages
   messaging.onMessage((payload) => {
       const eventId = payload.data.eventId;
       const title = payload.notification.title || "New Event";
@@ -1863,31 +1887,28 @@ const messaging = firebase.messaging();
       new bootstrap.Toast(document.getElementById(toastId), { delay: 8000 }).show();
   });
 
-  // 🟢 COLD & WARM START "PULL" CONTROLLER 🟢
+  // 🟢 DEEP LINKING CONTROLLER 🟢
   
-  // Trigger 1: Cold Start 
+  // Trigger 1: Cold Start (URL Parameter)
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('openEvent')) {
       forceOpenCard(urlParams.get('openEvent'));
   }
 
-  // Trigger 2: Listen for the Service Worker's reply
+  // Trigger 2: Listen for Service Worker clicks (Background tap)
   if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.action === 'openCard') {
+          if (event.data && (event.data.action === 'openCard' || event.data.action === 'openEventCard')) {
               forceOpenCard(event.data.eventId);
           }
       });
   }
 
-  // Trigger 3: Every time the app comes to the screen, ASK the Service Worker!
+  // Trigger 3: App comes to foreground, ask the Service Worker if a notification was tapped
   document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
           if (navigator.serviceWorker.controller) {
-              // The app is fully awake. Safe to ask for the data!
               navigator.serviceWorker.controller.postMessage({ action: 'checkPendingClick' });
-              
-              // Failsafe: Ask again 1 second later just in case iOS was being slow
               setTimeout(() => {
                   if (navigator.serviceWorker.controller) {
                       navigator.serviceWorker.controller.postMessage({ action: 'checkPendingClick' });
@@ -1896,61 +1917,6 @@ const messaging = firebase.messaging();
           }
       }
   });
-  // 🔴 END DEEP LINKING CONTROLLER 🔴
-
-
-  //---------------------------
-  // 🟢 NEW: LISTEN FOR DIRECT SERVICE WORKER MESSAGES 🟢
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.action === 'openEventCard') {
-            console.log("Received direct message from Service Worker to open:", event.data.eventId);
-            triggerCardWhenReady(event.data.eventId);
-        }
-    });
-}
-
-// Helper function to safely wait for data before drawing the card
-function triggerCardWhenReady(eventId, rawPayload = "") {
-    // 🟢 MOBILE DIAGNOSTICS: If the ID is missing, show us exactly what the phone received!
-    if (!eventId || eventId === "undefined" || eventId === "null") {
-        showToast("Missing ID. Payload received: " + rawPayload, "warning");
-        return; 
-    }
-
-    const checkData = setInterval(() => {
-        if (rawEvents && rawEvents.length > 0) {
-            clearInterval(checkData); // Stop checking
-            
-            const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(eventId));
-            
-            if (targetEvent) {
-                // ONLY jump to the events tab if we actually found the card!
-                if (currentTab !== 'events') switchTab('events');
-                
-                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                const cardModalEl = document.getElementById('eventCardModal');
-                const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
-                modal.show();
-            } else {
-                showToast(`Could not find Event #${eventId} in the database.`, "danger");
-            }
-        }
-    }, 300);
-    
-    // Safety net: Stop checking after 5 seconds so it doesn't loop forever
-    setTimeout(() => clearInterval(checkData), 5000);
-}
-
-// And update the listener right above it to pass the raw payload for debugging:
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.action === 'openEventCard') {
-            // Pass the ID, and a stringified version of the raw data so we can see it on mobile
-            triggerCardWhenReady(event.data.eventId, event.data.debugPayload);
-        }
-    });
-}
 
   // 🔥 THE MAGIC FIX: Enable Local Caching so data loads in milliseconds
   db.enablePersistence({ synchronizeTabs: true })
@@ -5166,8 +5132,9 @@ async function fetchExistingLogos(forceRefresh = false) {
   async function executeBoothAction(actionName) {
       let eventId = actionName === 'generateBoothSetup' ? document.getElementById('boothEventId').value : document.getElementById('boothEventSelect').value;
       
+      // 🟢 THE FIX: Generate an egm ID instead of EVT!
       if (actionName === 'generateBoothSetup' && (!eventId || eventId.trim() === '')) {
-          eventId = "EVT" + Math.floor(10000 + Math.random() * 90000);
+          eventId = "egm" + Math.floor(10000 + Math.random() * 90000);
           document.getElementById('boothEventId').value = eventId;
       }
 
