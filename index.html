@@ -2237,17 +2237,27 @@ async function subscribeToNotifications() {
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>VERIFYING...';
       btn.disabled = true;
 
-      // Custom Role Checking
-      if (pass === "egmadmin") {
-          localStorage.setItem('egm_auth_role', 'admin');
-          localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000)); // 12 hours
-          finalizeAuth(btn, originalText);
-      } else if (pass === "editors1") {
-          localStorage.setItem('egm_auth_role', 'editor');
-          localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000));
-          finalizeAuth(btn, originalText);
-      } else {
-          document.getElementById('authError').innerText = "Incorrect Password!";
+      // 🟢 THE FIX: Send the password to the secure backend to be checked
+      try {
+          const res = await callApi({ action: 'verifyPassword', password: pass }, 'POST', true);
+          
+          if (res && res.success) {
+              // The backend said yes, and told us which role they get!
+              localStorage.setItem('egm_auth_role', res.role);
+              localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000)); // 12 hours
+              
+              document.getElementById('authError').style.display = 'none';
+              document.getElementById('authPassword').value = '';
+              finalizeAuth(btn, originalText);
+          } else {
+              // The backend said no
+              document.getElementById('authError').innerText = "Incorrect Password!";
+              document.getElementById('authError').style.display = 'block';
+              btn.innerHTML = originalText;
+              btn.disabled = false;
+          }
+      } catch (err) {
+          document.getElementById('authError').innerText = "Network Error. Try again.";
           document.getElementById('authError').style.display = 'block';
           btn.innerHTML = originalText;
           btn.disabled = false;
