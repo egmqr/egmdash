@@ -4544,14 +4544,21 @@ function generateSingleEventCard(e) {
               paymentType: "", emailThread: "", billingStatus: "", billingStatusDate: "",
               grNumber: "", invoiceNumber: "", amount: "0", paymentNotes: "", invoiceUrl: "", checkUrl: ""
           });
-
+          
           // 🟢 NEW: SEND PUSH NOTIFICATION FOR ADDED DAY (Status Aware) 🟢
           // Only send notifications if the event is NOT Pencil Booked
           if (obj.eventStatus === 'Confirmed' || obj.eventStatus === 'Cancelled') {
               try {
                   const tokens = [];
                   if (obj.manpower && obj.manpower.length > 0) {
-                      for (const crewName of obj.manpower) {
+                    let peopleToNotify = [...(obj.manpower || [])];
+// We pull the editor from the base project data we fetched earlier in the function
+if (baseData.editorAssigned && !peopleToNotify.includes(baseData.editorAssigned)) {
+    peopleToNotify.push(baseData.editorAssigned);
+}
+
+// Then change your loop to:
+for (const personName of peopleToNotify){
                           const tokenDoc = await db.collection("crew_tokens").doc(crewName).get();
                           if (tokenDoc.exists) {
                               const data = tokenDoc.data();
