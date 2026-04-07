@@ -4506,16 +4506,13 @@ function generateSingleEventCard(e) {
           if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
       }
 
-      // 🟢 CAPTURE OLD STATE BEFORE FIREBASE OVERWRITES IT! 🟢
+      // 🟢 CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
       const oldEvent = rawEvents.find(ev => ev['Doc ID'] === obj.firestoreDocId);
-      let oldStatus = "", oldDate = "", oldCall = "", oldStart = "", oldEnd = "";
-      if (oldEvent) {
-          oldStatus = oldEvent['Event Status'] || "";
-          oldDate = oldEvent['Event Date'] || "";
-          oldCall = to24Hour(oldEvent['Call Time']) || "";
-          oldStart = to24Hour(oldEvent['Event Start Time']) || "";
-          oldEnd = to24Hour(oldEvent['Event End Time']) || "";
-      }
+      const cachedOldStatus = oldEvent ? String(oldEvent['Event Status'] || "").trim() : "";
+      const cachedOldDate = oldEvent ? String(oldEvent['Event Date'] || "").trim() : "";
+      const cachedOldCall = oldEvent ? String(to24Hour(oldEvent['Call Time']) || "").trim() : "";
+      const cachedOldStart = oldEvent ? String(to24Hour(oldEvent['Event Start Time']) || "").trim() : "";
+      const cachedOldEnd = oldEvent ? String(to24Hour(oldEvent['Event End Time']) || "").trim() : "";
 
       document.getElementById('overlayText').innerText = "Updating Database...";
       btn.disabled = true; ov.style.display = 'flex';
@@ -4558,34 +4555,36 @@ function generateSingleEventCard(e) {
 
           // 🟢 SMART EDIT NOTIFIER: PINGS CREW ON STATUS CHANGES & UPDATES 🟢
           try {
-              // Ensure we are working with clean, trimmed strings to prevent ghost mismatches
-              const oldStatus = oldEvent ? String(oldEvent['Event Status'] || "").trim() : "";
               const newStatus = String(obj.eventStatus || "Pencil Booked").trim();
-              
+              const newDate = String(obj.eventDate || "").trim();
+              const newCall = String(to24Hour(obj.callTime) || "").trim();
+              const newStart = String(to24Hour(obj.startTime) || "").trim();
+              const newEnd = String(to24Hour(obj.endTime) || "").trim();
+
               let shouldNotify = false;
               let pushTitle = "";
               let pushBody = "";
               let changes = [];
 
               // Rule 1: ANY change in Status
-              if (oldStatus !== newStatus) {
+              if (cachedOldStatus !== newStatus) {
                   shouldNotify = true;
                   if (newStatus === "Confirmed") {
                       pushTitle = `Event Confirmed: ${obj.eventName}`;
-                      pushBody = `The event on ${obj.eventDate} is now CONFIRMED. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
+                      pushBody = `The event on ${newDate} is now CONFIRMED. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
                   } else if (newStatus === "Cancelled") {
                       pushTitle = `Event Cancelled: ${obj.eventName}`;
-                      pushBody = `The event on ${oldDate || obj.eventDate} has been CANCELLED.`;
+                      pushBody = `The event on ${cachedOldDate || newDate} has been CANCELLED.`;
                   } else if (newStatus === "Pencil Booked") {
                       pushTitle = `Status Reverted: ${obj.eventName}`;
-                      pushBody = `The event on ${obj.eventDate} is now PENCIL BOOKED.`;
+                      pushBody = `The event on ${newDate} is now PENCIL BOOKED.`;
                   }
               }
               // Rule 2: Status stayed the same, but Schedule changed (ONLY if Confirmed)
               else if (newStatus === "Confirmed") {
-                  if (oldDate !== obj.eventDate) changes.push(`Date moved to ${obj.eventDate}`);
-                  if (oldCall !== obj.callTime) changes.push(`Call time changed to ${formatAMPM(obj.callTime) || 'TBA'}`);
-                  if (oldStart !== obj.startTime || oldEnd !== obj.endTime) {
+                  if (cachedOldDate !== newDate) changes.push(`Date moved to ${newDate}`);
+                  if (cachedOldCall !== newCall) changes.push(`Call time changed to ${formatAMPM(obj.callTime) || 'TBA'}`);
+                  if (cachedOldStart !== newStart || cachedOldEnd !== newEnd) {
                       changes.push(`Shoot time updated to ${formatAMPM(obj.startTime) || '--:--'} - ${formatAMPM(obj.endTime) || '--:--'}`);
                   }
 
