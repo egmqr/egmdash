@@ -4845,7 +4845,7 @@ for (const personName of peopleToNotify){
   // ==============================================================================
 
   function goToBoothQR(eventId, booths, eventName) {
-      // 🟢 NEW: Instantly close the Event Card modal if it's open!
+      // Instantly close the Event Card modal if it's open
       const cardModalEl = document.getElementById('eventCardModal');
       if (cardModalEl) {
           const modalInstance = bootstrap.Modal.getInstance(cardModalEl);
@@ -4853,15 +4853,36 @@ for (const personName of peopleToNotify){
       }
 
       switchTab('booth');
-      document.getElementById('btnModeNew').style.display = 'block';
-      setBoothMode('new');
-      
-      document.getElementById('boothEventId').value = eventId;
-      document.getElementById('boothEventName').value = eventName;
-      document.getElementById('boothCountInput').value = booths;
-      
-      const shortName = eventName.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
-      document.getElementById('boothFolderName').value = shortName;
+
+      // 🟢 THE SMART ROUTER: Check if this booth already exists in our memory!
+      const existingBooth = allFetchedBoothEvents.find(b => String(b.id) === String(eventId));
+
+      if (existingBooth) {
+          // SCENARIO A: Booth already exists! Jump straight to View QR.
+          setBoothMode('view');
+          
+          // Force the dropdown to select this event and load its details
+          setTimeout(() => {
+              const selectEl = document.getElementById('boothEventSelect');
+              if (selectEl) {
+                  selectEl.value = eventId;
+                  loadBoothEventDetails();
+                  showToast("Existing booth setup found and loaded.", "info");
+              }
+          }, 100);
+
+      } else {
+          // SCENARIO B: No booth exists yet. Jump to New Setup.
+          document.getElementById('btnModeNew').style.display = 'block';
+          setBoothMode('new');
+          
+          document.getElementById('boothEventId').value = eventId;
+          document.getElementById('boothEventName').value = eventName;
+          document.getElementById('boothCountInput').value = booths;
+          
+          const shortName = eventName.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
+          document.getElementById('boothFolderName').value = shortName;
+      }
   }
 
   function setBoothMode(mode) {
