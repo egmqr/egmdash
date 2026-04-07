@@ -1803,7 +1803,7 @@ if (!isStandalone) {
 const messaging = firebase.messaging();
 
   // 🟢 IN-APP FOREGROUND TOASTS & UNIFIED CARD OPENER 🟢
-  let isOpeningCard = false; // Prevents double-taps from stacking backgrounds
+  let isOpeningCard = false; // Locks the function to prevent double-taps!
 
   window.forceOpenCard = function(eventId, toastId = null) {
       if (isOpeningCard) return; 
@@ -1833,15 +1833,13 @@ const messaging = firebase.messaging();
 
       document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
 
-      // 4. Wait for Firebase data to load (and wait for the fresh server sync!)
+      // 4. Wait for Firebase data to load (and wait for fresh server sync!)
       let waitAttempts = 0;
       const waitForData = setInterval(() => {
           waitAttempts++;
           const hasData = typeof rawEvents !== 'undefined' && rawEvents.length > 0;
-          const isFresh = window.isDataFromCache === false; // Did the server finish syncing?
+          const isFresh = window.isDataFromCache === false;
 
-          // 🟢 THE FIX: Wait for fresh server data! 
-          // (Fallback: If 2.5 seconds pass and it's still caching, they might be offline, so show it anyway).
           if (hasData && (isFresh || waitAttempts > 8)) {
               clearInterval(waitForData);
               document.getElementById('bgSyncIndicator').style.display = 'none';
@@ -1849,54 +1847,47 @@ const messaging = firebase.messaging();
               const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId);
 
               if (targetEvent) {
-                  // Switch to the Events tab so the background content looks correct
                   if (currentTab !== 'events') switchTab('events');
+                  window.currentOpenModalEventId = targetEvent['Event ID'];
+                  const cardModalEl = document.getElementById('eventCardModal');
                   
-                  // Ask Bootstrap to gracefully close EVERY open modal
-                  const allModals = ['addEventModal', 'editEventModal', 'addDayModal', 'payrollModal', 'uploadFileModal', 'uploadPaymentDocModal', 'ratesModal', 'payrollHistoryModal', 'loadSessionModal', 'eventCardModal', 'authModal', 'expenseApprovalModal'];
-                  
-                  let hadOpenModals = false;
-                  allModals.forEach(mId => {
-                      const mEl = document.getElementById(mId);
-                      if (mEl && mEl.classList.contains('show')) {
-                          const inst = bootstrap.Modal.getInstance(mEl);
-                          if (inst) inst.hide();
-                          hadOpenModals = true;
-                      }
-                  });
+                  // 🟢 THE FIX: Find any open modal EXCEPT the card we want to show
+                  const otherOpenModals = Array.from(document.querySelectorAll('.modal.show')).filter(m => m.id !== 'eventCardModal');
 
-                  // Wait for the hide animation to finish (if there was one)
-                  setTimeout(() => {
-                      // Nuclear Cleanup! Shred any stuck HTML backdrops
-                      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-                      document.body.classList.remove('modal-open');
-                      document.body.style.removeProperty('overflow');
-                      document.body.style.removeProperty('padding-right');
-                      
-                      const cardModalEl = document.getElementById('eventCardModal');
-                      
-                      // MEMORY WIPE! Destroy Bootstrap's corrupted internal state
-                      const oldInst = bootstrap.Modal.getInstance(cardModalEl);
-                      if (oldInst) oldInst.dispose();
-
-                      // Build the HTML and spawn a fresh, clean modal
-                      window.currentOpenModalEventId = targetEvent['Event ID'];
+                  // Helper function to safely render the card
+                  const showFreshCard = () => {
                       document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                      const freshModal = new bootstrap.Modal(cardModalEl);
-                      freshModal.show();
+                      bootstrap.Modal.getOrCreateInstance(cardModalEl).show();
                       
-                      // Scrub the URL so refreshing doesn't loop the pop-up
                       const urlParams = new URLSearchParams(window.location.search);
                       if (urlParams.has('openEvent')) {
                           urlParams.delete('openEvent');
                           const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
                           window.history.replaceState({}, '', newUrl);
                       }
-
-                      // Release the lock so other cards can be opened later
+                      
+                      // Release the lock so they can click notifications again later
                       setTimeout(() => { isOpeningCard = false; }, 300);
+                  };
 
-                  }, hadOpenModals ? 400 : 10); 
+                  if (otherOpenModals.length > 0) {
+                      // 🟢 NATIVE BOOTSTRAP LISTENER: Wait for the exact moment the CSS animation finishes
+                      const firstToClose = otherOpenModals[0];
+                      const onModalHidden = () => {
+                          firstToClose.removeEventListener('hidden.bs.modal', onModalHidden);
+                          showFreshCard(); // Only open the new card AFTER Bootstrap cleans up the background natively
+                      };
+                      firstToClose.addEventListener('hidden.bs.modal', onModalHidden);
+                      
+                      // Command them to close
+                      otherOpenModals.forEach(mEl => {
+                          const inst = bootstrap.Modal.getInstance(mEl);
+                          if (inst) inst.hide();
+                      });
+                  } else {
+                      // No conflicting modals are open! Just update the HTML and show it.
+                      showFreshCard();
+                  }
                   
               } else {
                   showToast(`Could not find Event #${formattedId} in the database.`, "warning");
