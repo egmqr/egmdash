@@ -1803,7 +1803,7 @@ if (!isStandalone) {
 const messaging = firebase.messaging();
 
   // 🟢 IN-APP FOREGROUND TOASTS & UNIFIED CARD OPENER 🟢
-  let isOpeningCard = false; // Prevents double-taps from stacking backgrounds!
+  let isOpeningCard = false; // Prevents double-taps from stacking backgrounds
 
   window.forceOpenCard = function(eventId, toastId = null) {
       if (isOpeningCard) return; 
@@ -1813,8 +1813,8 @@ const messaging = firebase.messaging();
       if (toastId) {
           const toastEl = document.getElementById(toastId);
           if (toastEl) {
-              const toastInst = bootstrap.Toast.getInstance(toastEl);
-              if (toastInst) toastInst.hide();
+              const toastInst = bootstrap.Toast.getInstance(toastEl) || new bootstrap.Toast(toastEl);
+              toastInst.hide();
               setTimeout(() => toastEl.remove(), 400); 
           }
       }
@@ -1842,33 +1842,33 @@ const messaging = firebase.messaging();
               const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId);
 
               if (targetEvent) {
-                  // Switch to the Events tab so the backdrop looks correct
+                  // Switch to the Events tab so the background content looks correct
                   if (currentTab !== 'events') switchTab('events');
                   
-                  // 🟢 THE FIX: Safely ask Bootstrap to close any open modals first
-                  let activeModalFound = false;
-                  ['addEventModal', 'editEventModal', 'addDayModal', 'payrollModal', 'eventCardModal'].forEach(mId => {
+                  // 🟢 STEP A: Ask Bootstrap to gracefully close EVERY open modal
+                  const allModals = ['addEventModal', 'editEventModal', 'addDayModal', 'payrollModal', 'uploadFileModal', 'uploadPaymentDocModal', 'ratesModal', 'payrollHistoryModal', 'loadSessionModal', 'eventCardModal', 'authModal', 'expenseApprovalModal'];
+                  
+                  let hadOpenModals = false;
+                  allModals.forEach(mId => {
                       const mEl = document.getElementById(mId);
                       if (mEl && mEl.classList.contains('show')) {
                           const inst = bootstrap.Modal.getInstance(mEl);
                           if (inst) inst.hide();
-                          activeModalFound = true;
+                          hadOpenModals = true;
                       }
                   });
 
-                  // 🟢 THE TIMING LOCK: We MUST wait for Bootstrap's fade animation to finish (350ms)
-                  // before we attempt to open the new card, otherwise the backdrop gets permanently stuck!
+                  // 🟢 STEP B: Wait 400ms for Bootstrap to finish its fade-out animations!
                   setTimeout(() => {
-                      // Nuclear cleanup: Shred any ghost backdrops that Bootstrap left behind
+                      // 🟢 STEP C: Nuclear Cleanup! Shred any stuck backdrops
                       document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
                       document.body.classList.remove('modal-open');
                       document.body.style.overflow = '';
                       document.body.style.paddingRight = '';
 
-                      // Build the card HTML
+                      // 🟢 STEP D: Build and open the new card safely
                       document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
                       
-                      // Open the card modal fresh
                       const cardModalEl = document.getElementById('eventCardModal');
                       const modal = bootstrap.Modal.getOrCreateInstance(cardModalEl);
                       modal.show();
@@ -1881,10 +1881,10 @@ const messaging = firebase.messaging();
                           window.history.replaceState({}, '', newUrl);
                       }
 
-                      // Release the lock
+                      // Release the lock so other cards can be opened later
                       setTimeout(() => { isOpeningCard = false; }, 300);
 
-                  }, activeModalFound ? 350 : 50); // Wait 350ms ONLY if a modal was actually closing
+                  }, hadOpenModals ? 400 : 50); // Only wait 400ms if something was actually open
                   
               } else {
                   showToast(`Could not find Event #${formattedId} in the database.`, "warning");
@@ -1900,11 +1900,11 @@ const messaging = firebase.messaging();
       }, 8000);
   };
 
-  // Listen for Foreground Firebase Messages
+  // Listen for Foreground Firebase Messages (The Blue Toast)
   messaging.onMessage((payload) => {
       const eventId = payload.data.eventId;
-      const title = payload.notification.title || "New Event";
-      const body = payload.notification.body || "Tap to view.";
+      const title = payload.notification?.title || "Dashboard Update";
+      const body = payload.notification?.body || "Tap to view.";
 
       let container = document.getElementById('fgToastContainer');
       if (!container) {
