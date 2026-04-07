@@ -1848,29 +1848,48 @@ const messaging = firebase.messaging();
           formattedId = 'egm' + formattedId;
       }
 
-      // 4. Force close any modals that might be open (just in case)
+      // 4. Force close any modals that might be open
       document.querySelectorAll('.modal.show').forEach(mEl => {
           const inst = bootstrap.Modal.getInstance(mEl);
           if (inst) inst.hide();
       });
 
-      // 5. Switch to the Events tab
-      if (currentTab !== 'events') switchTab('events');
+      document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
 
-      // 6. Inject the ID into the search bar and trigger the filter!
-      document.getElementById('fName').value = formattedId;
-      applyFilters();
+      // 5. 🟢 THE FIX: Wait for Firebase to actually load the data before filtering!
+      let waitAttempts = 0;
+      const waitForData = setInterval(() => {
+          waitAttempts++;
+          const hasData = typeof rawEvents !== 'undefined' && rawEvents.length > 0;
+          const isFresh = window.isDataFromCache === false;
 
-      // 7. Show the floating "Go Back" button
-      document.getElementById('floatingBackBtn').style.display = 'flex';
+          // Proceed if we have fresh data (or if we've waited too long and need to use cache)
+          if (hasData && (isFresh || waitAttempts > 8)) {
+              clearInterval(waitForData);
+              document.getElementById('bgSyncIndicator').style.display = 'none';
 
-      // 8. Scrub the URL so refreshing doesn't re-trigger the deep link
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('openEvent')) {
-          urlParams.delete('openEvent');
-          const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-          window.history.replaceState({}, '', newUrl);
-      }
+              // Switch to the Events tab
+              if (currentTab !== 'events') switchTab('events');
+
+              // Inject the ID into the search bar and trigger the filter!
+              document.getElementById('fName').value = formattedId;
+              applyFilters();
+
+              // Show the floating "Go Back" button
+              document.getElementById('floatingBackBtn').style.display = 'flex';
+
+              // Scrub the URL so refreshing doesn't re-trigger the deep link
+              const urlParams = new URLSearchParams(window.location.search);
+              if (urlParams.has('openEvent')) {
+                  urlParams.delete('openEvent');
+                  const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                  window.history.replaceState({}, '', newUrl);
+              }
+          }
+      }, 300);
+      
+      // Safety net: Stop checking after 8 seconds so it doesn't loop forever
+      setTimeout(() => clearInterval(waitForData), 8000);
   };
 
   // Resets the view when they click the floating button
