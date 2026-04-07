@@ -3231,6 +3231,14 @@ function generateSingleEventCard(e) {
     });
     document.getElementById('events-list').innerHTML = html;
     setTimeout(checkStickyHeaders, 50); 
+    
+    // 🟢 ADD THIS BLOCK to force the CSS animation to restart on every render
+    const renderedCards = document.querySelectorAll('#events-list .card');
+    renderedCards.forEach(card => {
+        card.classList.remove('card-blink-emphasis');
+        void card.offsetWidth; // This line forces a DOM reflow!
+        card.classList.add('card-blink-emphasis');
+    });
   }
 
   function changeCalendarMonth(dir) {
