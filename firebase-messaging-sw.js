@@ -21,37 +21,50 @@ self.addEventListener('notificationclick', (event) => {
   event.stopImmediatePropagation(); 
   event.notification.close();
 
+  // Extract the event ID from Firebase's payload structures
   const notifData = event.notification.data || {};
   const fcmData = notifData.FCM_MSG ? notifData.FCM_MSG.data : notifData;
   const eventId = fcmData.eventId || notifData.eventId;
   
   if (!eventId) return;
 
-  // Store it in memory safely!
+  // Store it in memory for the 'checkPendingClick' fallback
   pendingEventId = eventId; 
 
   const targetUrl = self.location.origin + '/?openEvent=' + eventId;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // 1. Look for an already open tab (WARM START)
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-          return client.focus(); // Wake up the app!
+          
+          // Wake the tab up!
+          client.focus();
+          
+          // 🟢 THE FIX: Aggressively force-feed the ID to the open tab immediately!
+          client.postMessage({ action: 'openEventCard', eventId: eventId });
+          
+          return; 
         }
       }
-      if (clients.openWindow) return clients.openWindow(targetUrl); // Cold start
+      
+      // 2. No open tabs found? Open a new one! (COLD START)
+      if (clients.openWindow) {
+          return clients.openWindow(targetUrl); 
+      }
     })
   );
 });
 
-// 🟢 NEW: When the app wakes up, it will ask us if we have an ID waiting!
+// 🟢 FALLBACK: When the app wakes up, it asks if we have an ID waiting
 self.addEventListener('message', (event) => {
   if (event.data && event.data.action === 'checkPendingClick') {
     if (pendingEventId) {
       // Send it back to the app!
-      event.source.postMessage({ action: 'openCard', eventId: pendingEventId });
-      pendingEventId = null; // Clear it so it only opens once
+      event.source.postMessage({ action: 'openEventCard', eventId: pendingEventId });
+      pendingEventId = null; // Clear it to prevent looping
     }
   }
 });
