@@ -4719,40 +4719,52 @@ for (const personName of peopleToNotify){
               if (cachedOldEditor !== newEditorString && newStatus === "Confirmed") {
                   if (newEditorString) {
                       // Assigned
-                      sendTargetedPush([newEditorString], `New Assignment: ${obj.eventName}`, `You have been assigned as the editor for #${obj.eventId}.`, obj.eventId);
+                      sendTargetedPush([newEditorString], `New Assignment: ${obj.eventName}`, `You have been assigned to edit #${obj.eventId}.`, obj.eventId);
                   } else if (cachedOldEditor) {
                       // Removed
-                      sendTargetedPush([cachedOldEditor], `Assignment Update: ${obj.eventName}`, `You are no longer assigned to #${obj.eventId}.`, obj.eventId);
+                      sendTargetedPush([cachedOldEditor], `Assignment Update: ${obj.eventName}`, `You are no longer assigned to edit #${obj.eventId}.`, obj.eventId);
                   }
               }
 
-              // --- LANE 2: CREW NOTIFICATIONS (Additions & General Changes) ---
+              // --- LANE 2: CREW NOTIFICATIONS (Additions, Removals & General Changes) ---
               const isStatusChanged = cachedOldStatus !== newStatus;
               const isScheduleChanged = cachedOldDate !== newDate || cachedOldCall !== newCall;
               
-              // 🟢 ISOLATE EXACTLY WHO WAS ADDED
+              // 🟢 ISOLATE EXACTLY WHO WAS ADDED OR REMOVED
               const addedCrew = newCrewArray.filter(name => !oldCrewArray.includes(name));
+              const removedCrew = oldCrewArray.filter(name => !newCrewArray.includes(name));
+              
               const isCrewAdded = addedCrew.length > 0;
+              const isCrewRemoved = removedCrew.length > 0;
 
-              if (newStatus === "Confirmed" && (isStatusChanged || isScheduleChanged || isCrewAdded)) {
+              if (newStatus === "Confirmed" && (isStatusChanged || isScheduleChanged || isCrewAdded || isCrewRemoved)) {
                   let crewTitle = `Event Updated: ${obj.eventName}`;
                   let crewBody = `The schedule/details for #${obj.eventId} have been updated.`;
+                  
+                  // 🟢 Target BOTH the new crew and the old crew so removed members get the alert!
+                  let targetCrew = [...new Set([...newCrewArray, ...oldCrewArray])];
 
                   if (isStatusChanged && cachedOldStatus !== "Confirmed") {
                       crewTitle = `Event Confirmed: ${obj.eventName}`;
                       crewBody = `The event is now CONFIRMED for ${newDate}. Call time: ${formatAMPM(obj.callTime)}.`;
-                  } else if (isCrewAdded && !isScheduleChanged) {
-                      // 🟢 DYNAMIC NOTIFICATION TEXT
-                      const addedNames = addedCrew.join(' and ');
-                      const verb = addedCrew.length > 1 ? 'have' : 'has';
-                      
+                  } else if ((isCrewAdded || isCrewRemoved) && !isScheduleChanged) {
                       crewTitle = `Crew Update: ${obj.eventName}`;
-                      crewBody = `${addedNames} ${verb} been added to this event. Call time: ${formatAMPM(obj.callTime)}.`;
+                      
+                      // 🟢 DYNAMIC NOTIFICATION TEXT FOR ADD/REMOVE
+                      let bodyText = "";
+                      if (isCrewAdded && !isCrewRemoved) {
+                          bodyText = `${addedCrew.join(' and ')} ${addedCrew.length > 1 ? 'have' : 'has'} been added to this event.`;
+                      } else if (isCrewRemoved && !isCrewAdded) {
+                          bodyText = `${removedCrew.join(' and ')} ${removedCrew.length > 1 ? 'have' : 'has'} been removed from this event.`;
+                      } else {
+                          bodyText = `${addedCrew.join(' and ')} added, and ${removedCrew.join(' and ')} removed.`;
+                      }
+                      
+                      crewBody = `${bodyText} Call time: ${formatAMPM(obj.callTime)}.`;
                   }
 
-                  // Notify everyone currently in the Crew List (Lane 2 excludes the Editor automatically)
-                  if (newCrewArray.length > 0) {
-                      sendTargetedPush(newCrewArray, crewTitle, crewBody, obj.eventId);
+                  if (targetCrew.length > 0) {
+                      sendTargetedPush(targetCrew, crewTitle, crewBody, obj.eventId);
                   }
               } 
               // Handle Cancellation for Crew
