@@ -4506,45 +4506,6 @@ function generateSingleEventCard(e) {
           if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
       }
 
-      document.getElementById('overlayText').innerText = "Updating Database...";
-      btn.disabled = true; ov.style.display = 'flex';
-
-    try {
-          // THE FIX: We use obj.firestoreDocId so it updates the exact day you are looking at!
-          await db.collection("dashboard_events").doc(obj.firestoreDocId).update({
-              eventName: obj.eventName || "",
-              eventDate: obj.eventDate || "",
-              eventVenue: obj.eventVenue || "",
-              venueLink: obj.venueLink || "",
-              eventStatus: obj.eventStatus || "Pencil Booked",
-              avpRequired: obj.avp === "true",
-              services: (obj.services || []).join(", "),
-              startTime: obj.startTime || "",
-              endTime: obj.endTime || "",
-              halfDay: document.getElementById('editHalfDayCheck') ? document.getElementById('editHalfDayCheck').checked : false,
-              callTime: obj.callTime || "",
-              manpower: (obj.manpower || []).join(", "),
-              contactPerson: obj.contactPerson || "",
-              contactNumber: obj.contactNumber || "",
-              notes: obj.notes || "",
-              editorAssigned: obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || ""),
-              sentToClient: document.getElementById('editSentToClient') ? document.getElementById('editSentToClient').checked : false,
-              rawLink: obj.rawLink || "",
-              editedLink: obj.editedLink || "",
-              rawTimestamp: (obj.rawLink && !obj.rawTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (obj.rawLink ? obj.rawTimestamp : ""),
-              editedTimestamp: (obj.editedLink && !obj.editedTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (obj.editedLink ? obj.editedTimestamp : ""),
-              sentTimestamp: (document.getElementById('editSentToClient') && document.getElementById('editSentToClient').checked && !obj.sentTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (document.getElementById('editSentToClient') && document.getElementById('editSentToClient').checked ? obj.sentTimestamp : ""),
-              paymentType: obj.paymentType || "",
-              emailThread: obj.emailThread || "",
-              billingStatus: obj.billingStatus || "",
-              billingStatusDate: obj.billingStatusDate || "",
-              grNumber: obj.grNumber || "",
-              invoiceNumber: obj.invoiceNumber || "",
-              amount: obj.amount || "0",
-              paymentNotes: obj.paymentNotes || "",
-              invoiceUrl: obj.invoiceUrl || "",
-              checkUrl: obj.checkUrl || ""
-          });
       // 🟢 CAPTURE OLD STATE BEFORE FIREBASE OVERWRITES IT! 🟢
       const oldEvent = rawEvents.find(ev => ev['Doc ID'] === obj.firestoreDocId);
       let oldStatus = "", oldDate = "", oldCall = "", oldStart = "", oldEnd = "";
@@ -4559,7 +4520,7 @@ function generateSingleEventCard(e) {
       document.getElementById('overlayText').innerText = "Updating Database...";
       btn.disabled = true; ov.style.display = 'flex';
 
-    try {
+      try {
           await db.collection("dashboard_events").doc(obj.firestoreDocId).update({
               eventName: obj.eventName || "",
               eventDate: obj.eventDate || "",
@@ -4654,6 +4615,7 @@ function generateSingleEventCard(e) {
                   }
 
                   if (tokens.length > 0) {
+                      // Hand off to the backend to blast the notification!
                       callApi({
                           action: 'sendPush',
                           tokens: tokens,
