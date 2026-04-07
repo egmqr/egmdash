@@ -41,15 +41,15 @@
     }
     /* 🟢 SUCCESS PULSE ANIMATION */
     @keyframes blinkEmphasis {
-        0%   { background-color: var(--bs-card-bg, #ffffff); }
-        15%  { background-color: #d1e7dd; } /* Bootstrap soft green */
-        30%  { background-color: var(--bs-card-bg, #ffffff); }
-        45%  { background-color: #d1e7dd; }
-        100% { background-color: var(--bs-card-bg, #ffffff); }
+        0%   { background-color: var(--bs-card-bg, #ffffff) !important; }
+        15%  { background-color: #d1e7dd !important; } /* Bootstrap soft green */
+        30%  { background-color: var(--bs-card-bg, #ffffff) !important; }
+        45%  { background-color: #d1e7dd !important; }
+        100% { background-color: var(--bs-card-bg, #ffffff) !important; }
     }
     
     .card-blink-emphasis {
-        animation: blinkEmphasis 2s ease-in-out;
+        animation: blinkEmphasis 2s ease-in-out forwards !important;
     }
     .text-primary { color: #0d9488 !important; }
     .bg-primary { background-color: #0d9488 !important; }
@@ -1887,16 +1887,15 @@ const messaging = firebase.messaging();
               document.getElementById('fName').value = formattedId;
               applyFilters();
 
-              // 🟢 NEW: Apply the blink animation to the newly filtered card
+              // 🟢 THE FIX: Wait 300ms so the DOM has time to actually draw the filtered cards!
               setTimeout(() => {
-                  // Grab the cards currently sitting in the events list
                   const visibleCards = document.querySelectorAll('#events-list .card');
                   visibleCards.forEach(card => {
                       card.classList.remove('card-blink-emphasis');
-                      void card.offsetWidth; // This "magic trick" forces the browser to restart the animation if clicked twice
+                      void card.offsetWidth; // The magic trick to restart animations
                       card.classList.add('card-blink-emphasis');
                   });
-              }, 50); // A tiny 50ms delay ensures the DOM has finished rendering the cards first
+              }, 300);
 
               // Show the floating "Go Back" button
               document.getElementById('floatingBackBtn').style.display = 'flex';
