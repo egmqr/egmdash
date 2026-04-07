@@ -4545,55 +4545,85 @@ function generateSingleEventCard(e) {
               invoiceUrl: obj.invoiceUrl || "",
               checkUrl: obj.checkUrl || ""
           });
-      // 🟢 SMART EDIT NOTIFIER: PINGS CREW ON STATUS CHANGES 🟢
+      // 🟢 SMART EDIT NOTIFIER: PINGS CREW ON STATUS CHANGES & UPDATES 🟢
           try {
               // Look up the old event data before we overwrote it
               const oldEvent = rawEvents.find(ev => ev['Doc ID'] === obj.firestoreDocId);
-              const oldStatus = oldEvent ? oldEvent['Event Status'] : "";
               
-              let shouldNotify = false;
-              let pushTitle = "";
-              let pushBody = "";
-
-              // Rule 1: It changed from Pencil Booked to Confirmed!
-              if (oldStatus === "Pencil Booked" && obj.eventStatus === "Confirmed") {
-                  shouldNotify = true;
-                  pushTitle = `Event Confirmed: ${obj.eventName}`;
-                  pushBody = `The event on ${obj.eventDate} is now CONFIRMED. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
-              } 
-              // Rule 2: It changed to Cancelled!
-              else if (oldStatus !== "Cancelled" && obj.eventStatus === "Cancelled") {
-                  shouldNotify = true;
-                  pushTitle = `Event Cancelled: ${obj.eventName}`;
-                  pushBody = `The event on ${obj.eventDate} has been CANCELLED.`;
-              }
-
-              if (shouldNotify) {
-                  const tokens = [];
-                  const peopleToNotify = [...obj.manpower];
+              if (oldEvent) {
+                  const oldStatus = oldEvent['Event Status'] || "";
+                  const oldDate = oldEvent['Event Date'] || "";
                   
-                  const assignedEditor = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "");
-                  if (assignedEditor && !peopleToNotify.includes(assignedEditor)) {
-                      peopleToNotify.push(assignedEditor);
-                  }
+                  // Convert old times to 24-hour format so they perfectly match the input values (obj.callTime, etc.)
+                  const oldCall = to24Hour(oldEvent['Call Time']) || "";
+                  const oldStart = to24Hour(oldEvent['Event Start Time']) || "";
+                  const oldEnd = to24Hour(oldEvent['Event End Time']) || "";
+                  
+                  let shouldNotify = false;
+                  let pushTitle = "";
+                  let pushBody = "";
+                  let changes = [];
 
-                  for (const personName of peopleToNotify) {
-                      const tokenDoc = await db.collection("crew_tokens").doc(personName).get();
-                      if (tokenDoc.exists) {
-                          const data = tokenDoc.data();
-                          if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
-                          else if (data.token) tokens.push(data.token);
+                  // Rule 1: Major Status Changes
+                  if (oldStatus === "Pencil Booked" && obj.eventStatus === "Confirmed") {
+                      shouldNotify = true;
+                      pushTitle = `Event Confirmed: ${obj.eventName}`;
+                      pushBody = `The event on ${obj.eventDate} is now CONFIRMED. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
+                  } 
+                  else if (oldStatus !== "Cancelled" && obj.eventStatus === "Cancelled") {
+                      shouldNotify = true;
+                      pushTitle = `Event Cancelled: ${obj.eventName}`;
+                      pushBody = `The event on ${obj.eventDate} has been CANCELLED.`;
+                  }
+                  // 🟢 NEW: Confirmed -> Pencil Booked
+                  else if (oldStatus === "Confirmed" && obj.eventStatus === "Pencil Booked") {
+                      shouldNotify = true;
+                      pushTitle = `Status Reverted: ${obj.eventName}`;
+                      pushBody = `The event on ${obj.eventDate} has been changed back to PENCIL BOOKED.`;
+                  }
+                  // Rule 2: Detail Changes (Date or Time)
+                  else if (obj.eventStatus !== "Cancelled") {
+                      if (oldDate !== obj.eventDate) changes.push(`Date moved to ${obj.eventDate}`);
+                      if (oldCall !== obj.callTime) changes.push(`Call time changed to ${formatAMPM(obj.callTime) || 'TBA'}`);
+                      if (oldStart !== obj.startTime || oldEnd !== obj.endTime) {
+                          changes.push(`Shoot time updated to ${formatAMPM(obj.startTime) || '--:--'} - ${formatAMPM(obj.endTime) || '--:--'}`);
+                      }
+
+                      // If we detected any time/date shifts, build a custom message!
+                      if (changes.length > 0) {
+                          shouldNotify = true;
+                          pushTitle = `Schedule Updated: ${obj.eventName}`;
+                          pushBody = `Updates for #${obj.eventId}: ` + changes.join(', ') + ".";
                       }
                   }
 
-                  if (tokens.length > 0) {
-                      callApi({
-                          action: 'sendPush',
-                          tokens: tokens,
-                          title: pushTitle,
-                          body: pushBody,
-                          eventId: obj.eventId
-                      }, 'POST', true);
+                  if (shouldNotify) {
+                      const tokens = [];
+                      const peopleToNotify = [...obj.manpower];
+                      
+                      const assignedEditor = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "");
+                      if (assignedEditor && !peopleToNotify.includes(assignedEditor)) {
+                          peopleToNotify.push(assignedEditor);
+                      }
+
+                      for (const personName of peopleToNotify) {
+                          const tokenDoc = await db.collection("crew_tokens").doc(personName).get();
+                          if (tokenDoc.exists) {
+                              const data = tokenDoc.data();
+                              if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
+                              else if (data.token) tokens.push(data.token);
+                          }
+                      }
+
+                      if (tokens.length > 0) {
+                          callApi({
+                              action: 'sendPush',
+                              tokens: tokens,
+                              title: pushTitle,
+                              body: pushBody,
+                              eventId: obj.eventId
+                          }, 'POST', true);
+                      }
                   }
               }
           } catch (pushErr) {
