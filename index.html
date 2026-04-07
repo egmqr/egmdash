@@ -1803,17 +1803,29 @@ if (!isStandalone) {
 const messaging = firebase.messaging();
 
   // 🟢 IN-APP FOREGROUND TOASTS & UNIFIED CARD OPENER 🟢
+  let isOpeningCard = false; // Prevents double-taps from stacking dark backgrounds!
+
   window.forceOpenCard = function(eventId, toastId = null) {
+      if (isOpeningCard) return; // If already opening, ignore extra clicks
+      isOpeningCard = true;
+
       // 1. Hide the toast notification if it was clicked
       if (toastId) {
           const toastEl = document.getElementById(toastId);
-          if (toastEl) bootstrap.Toast.getOrCreateInstance(toastEl).hide();
+          if (toastEl) {
+              bootstrap.Toast.getOrCreateInstance(toastEl).hide();
+              // Shred the toast so it can't be clicked again during the fade-out
+              setTimeout(() => toastEl.remove(), 300); 
+          }
       }
       
       // 2. Validate the ID
-      if (!eventId || String(eventId).trim() === "undefined" || String(eventId).trim() === "null") return;
+      if (!eventId || String(eventId).trim() === "undefined" || String(eventId).trim() === "null") {
+          isOpeningCard = false;
+          return;
+      }
       
-      // 3. Format ID: Automatically add 'egm' if the notification payload forgot it
+      // 3. Format ID: Automatically add 'egm' if missing
       let formattedId = String(eventId).trim().toLowerCase();
       if (!formattedId.startsWith('egm')) {
           formattedId = 'egm' + formattedId;
@@ -1830,16 +1842,29 @@ const messaging = firebase.messaging();
               const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId);
 
               if (targetEvent) {
+                  // Close any currently open form modals so they don't overlap the card
+                  ['addEventModal', 'editEventModal', 'addDayModal', 'payrollModal'].forEach(mId => {
+                      const mEl = document.getElementById(mId);
+                      if (mEl && mEl.classList.contains('show')) {
+                          bootstrap.Modal.getInstance(mEl).hide();
+                      }
+                  });
+
                   // Switch to the Events tab so the backdrop looks correct
                   if (currentTab !== 'events') switchTab('events');
                   
-                  // Build and show the modal
+                  // 🟢 THE FIX: Forcefully shred any stuck ghost backgrounds
+                  document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                  document.body.classList.remove('modal-open');
+                  document.body.style.paddingRight = '';
+                  
+                  // Build and show the modal safely
                   document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
                   const cardModalEl = document.getElementById('eventCardModal');
-                  const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
+                  const modal = bootstrap.Modal.getOrCreateInstance(cardModalEl);
                   modal.show();
                   
-                  // Scrub the URL so refreshing the page doesn't loop the pop-up
+                  // Scrub the URL so refreshing doesn't loop the pop-up
                   const urlParams = new URLSearchParams(window.location.search);
                   if (urlParams.has('openEvent')) {
                       urlParams.delete('openEvent');
@@ -1849,11 +1874,17 @@ const messaging = firebase.messaging();
               } else {
                   showToast(`Could not find Event #${formattedId} in the database.`, "warning");
               }
+
+              // Release the lock so other cards can be opened later
+              setTimeout(() => { isOpeningCard = false; }, 500);
           }
       }, 300);
       
-      // Safety net: Stop checking after 8 seconds
-      setTimeout(() => clearInterval(waitForData), 8000);
+      // Safety net: Stop checking after 8 seconds and release the lock
+      setTimeout(() => {
+          clearInterval(waitForData);
+          isOpeningCard = false;
+      }, 8000);
   };
 
   // Listen for Foreground Firebase Messages
