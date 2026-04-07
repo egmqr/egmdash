@@ -4558,27 +4558,31 @@ function generateSingleEventCard(e) {
 
           // 🟢 SMART EDIT NOTIFIER: PINGS CREW ON STATUS CHANGES & UPDATES 🟢
           try {
+              // Ensure we are working with clean, trimmed strings to prevent ghost mismatches
+              const oldStatus = oldEvent ? String(oldEvent['Event Status'] || "").trim() : "";
+              const newStatus = String(obj.eventStatus || "Pencil Booked").trim();
+              
               let shouldNotify = false;
               let pushTitle = "";
               let pushBody = "";
               let changes = [];
 
               // Rule 1: ANY change in Status
-              if (oldStatus !== obj.eventStatus) {
+              if (oldStatus !== newStatus) {
                   shouldNotify = true;
-                  if (obj.eventStatus === "Confirmed") {
+                  if (newStatus === "Confirmed") {
                       pushTitle = `Event Confirmed: ${obj.eventName}`;
                       pushBody = `The event on ${obj.eventDate} is now CONFIRMED. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
-                  } else if (obj.eventStatus === "Cancelled") {
+                  } else if (newStatus === "Cancelled") {
                       pushTitle = `Event Cancelled: ${obj.eventName}`;
-                      pushBody = `The event on ${oldDate} has been CANCELLED.`;
-                  } else if (obj.eventStatus === "Pencil Booked") {
+                      pushBody = `The event on ${oldDate || obj.eventDate} has been CANCELLED.`;
+                  } else if (newStatus === "Pencil Booked") {
                       pushTitle = `Status Reverted: ${obj.eventName}`;
                       pushBody = `The event on ${obj.eventDate} is now PENCIL BOOKED.`;
                   }
               }
               // Rule 2: Status stayed the same, but Schedule changed (ONLY if Confirmed)
-              else if (obj.eventStatus === "Confirmed") {
+              else if (newStatus === "Confirmed") {
                   if (oldDate !== obj.eventDate) changes.push(`Date moved to ${obj.eventDate}`);
                   if (oldCall !== obj.callTime) changes.push(`Call time changed to ${formatAMPM(obj.callTime) || 'TBA'}`);
                   if (oldStart !== obj.startTime || oldEnd !== obj.endTime) {
@@ -4596,30 +4600,32 @@ function generateSingleEventCard(e) {
               // Fire the notification if any rule was triggered
               if (shouldNotify) {
                   const tokens = [];
-                  const peopleToNotify = [...obj.manpower];
+                  const peopleToNotify = [...(obj.manpower || [])];
                   
-                  const assignedEditor = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "");
+                  const assignedEditor = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "").trim();
                   if (assignedEditor && !peopleToNotify.includes(assignedEditor)) {
                       peopleToNotify.push(assignedEditor);
                   }
 
-                  for (const personName of peopleToNotify) {
-                      const tokenDoc = await db.collection("crew_tokens").doc(personName).get();
-                      if (tokenDoc.exists) {
-                          const data = tokenDoc.data();
-                          if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
-                          else if (data.token) tokens.push(data.token);
+                  if (peopleToNotify.length > 0) {
+                      for (const personName of peopleToNotify) {
+                          const tokenDoc = await db.collection("crew_tokens").doc(personName).get();
+                          if (tokenDoc.exists) {
+                              const data = tokenDoc.data();
+                              if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
+                              else if (data.token) tokens.push(data.token);
+                          }
                       }
-                  }
 
-                  if (tokens.length > 0) {
-                      callApi({
-                          action: 'sendPush',
-                          tokens: tokens,
-                          title: pushTitle,
-                          body: pushBody,
-                          eventId: obj.eventId
-                      }, 'POST', true);
+                      if (tokens.length > 0) {
+                          callApi({
+                              action: 'sendPush',
+                              tokens: tokens,
+                              title: pushTitle,
+                              body: pushBody,
+                              eventId: obj.eventId
+                          }, 'POST', true);
+                      }
                   }
               }
           } catch (pushErr) {
