@@ -1833,9 +1833,16 @@ const messaging = firebase.messaging();
 
       document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
 
-      // 4. Wait for Firebase data to load
+      // 4. Wait for Firebase data to load (and wait for the fresh server sync!)
+      let waitAttempts = 0;
       const waitForData = setInterval(() => {
-          if (typeof rawEvents !== 'undefined' && rawEvents.length > 0) {
+          waitAttempts++;
+          const hasData = typeof rawEvents !== 'undefined' && rawEvents.length > 0;
+          const isFresh = window.isDataFromCache === false; // Did the server finish syncing?
+
+          // 🟢 THE FIX: Wait for fresh server data! 
+          // (Fallback: If 2.5 seconds pass and it's still caching, they might be offline, so show it anyway).
+          if (hasData && (isFresh || waitAttempts > 8)) {
               clearInterval(waitForData);
               document.getElementById('bgSyncIndicator').style.display = 'none';
 
@@ -1845,19 +1852,22 @@ const messaging = firebase.messaging();
                   // Switch to the Events tab so the background content looks correct
                   if (currentTab !== 'events') switchTab('events');
                   
-                  // 🟢 STEP A: Find all currently open modals
-                  const openModals = document.querySelectorAll('.modal.show');
-                  let needsDelay = openModals.length > 0;
-
-                  // Politely ask them to hide
-                  openModals.forEach(mEl => {
-                      const inst = bootstrap.Modal.getInstance(mEl);
-                      if (inst) inst.hide();
+                  // Ask Bootstrap to gracefully close EVERY open modal
+                  const allModals = ['addEventModal', 'editEventModal', 'addDayModal', 'payrollModal', 'uploadFileModal', 'uploadPaymentDocModal', 'ratesModal', 'payrollHistoryModal', 'loadSessionModal', 'eventCardModal', 'authModal', 'expenseApprovalModal'];
+                  
+                  let hadOpenModals = false;
+                  allModals.forEach(mId => {
+                      const mEl = document.getElementById(mId);
+                      if (mEl && mEl.classList.contains('show')) {
+                          const inst = bootstrap.Modal.getInstance(mEl);
+                          if (inst) inst.hide();
+                          hadOpenModals = true;
+                      }
                   });
 
-                  // 🟢 STEP B: Wait for the hide animation to finish (if there was one)
+                  // Wait for the hide animation to finish (if there was one)
                   setTimeout(() => {
-                      // 🟢 STEP C: Nuclear Cleanup! Shred any stuck HTML backdrops
+                      // Nuclear Cleanup! Shred any stuck HTML backdrops
                       document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
                       document.body.classList.remove('modal-open');
                       document.body.style.removeProperty('overflow');
@@ -1865,12 +1875,12 @@ const messaging = firebase.messaging();
                       
                       const cardModalEl = document.getElementById('eventCardModal');
                       
-                      // 🟢 STEP D: MEMORY WIPE! Destroy Bootstrap's corrupted internal state
+                      // MEMORY WIPE! Destroy Bootstrap's corrupted internal state
                       const oldInst = bootstrap.Modal.getInstance(cardModalEl);
                       if (oldInst) oldInst.dispose();
 
-                      // 🟢 STEP E: Build the HTML and spawn a fresh, clean modal
-                      window.currentOpenModalEventId = targetEvent['Event ID']; // <-- ADD THIS LINE
+                      // Build the HTML and spawn a fresh, clean modal
+                      window.currentOpenModalEventId = targetEvent['Event ID'];
                       document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
                       const freshModal = new bootstrap.Modal(cardModalEl);
                       freshModal.show();
@@ -1886,7 +1896,7 @@ const messaging = firebase.messaging();
                       // Release the lock so other cards can be opened later
                       setTimeout(() => { isOpeningCard = false; }, 300);
 
-                  }, needsDelay ? 400 : 10); 
+                  }, hadOpenModals ? 400 : 10); 
                   
               } else {
                   showToast(`Could not find Event #${formattedId} in the database.`, "warning");
@@ -5402,10 +5412,15 @@ db.collection("settings").doc("rates").onSnapshot((doc) => {
         dbCrewRates = {};
     }
 });
-// THE MAGIC REAL-TIME LISTENER
-db.collection("dashboard_events").onSnapshot((snapshot) => {
-    document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+// THE MAGIC REAL-TIME LISTENER (Now with Cache Detection!)
+db.collection("dashboard_events").onSnapshot({ includeMetadataChanges: true }, (snapshot) => {
+    // 🟢 Track if this data is old local memory or fresh server data!
+    window.isDataFromCache = snapshot.metadata.fromCache;
     
+    if (window.isDataFromCache) {
+        document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+    }
+
     const mappedEvents = [];
     
     snapshot.forEach((doc) => {
