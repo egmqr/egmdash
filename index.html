@@ -4563,24 +4563,21 @@ function generateSingleEventCard(e) {
               let pushBody = "";
               let changes = [];
 
-              // Rule 1: Major Status Changes
-              if (oldStatus === "Pencil Booked" && obj.eventStatus === "Confirmed") {
+              // Rule 1: ANY change in Status
+              if (oldStatus !== obj.eventStatus) {
                   shouldNotify = true;
-                  pushTitle = `Event Confirmed: ${obj.eventName}`;
-                  pushBody = `The event on ${obj.eventDate} is now CONFIRMED. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
-              } 
-              else if (oldStatus !== "Cancelled" && obj.eventStatus === "Cancelled") {
-                  shouldNotify = true;
-                  pushTitle = `Event Cancelled: ${obj.eventName}`;
-                  pushBody = `The event on ${obj.eventDate} has been CANCELLED.`;
+                  if (obj.eventStatus === "Confirmed") {
+                      pushTitle = `Event Confirmed: ${obj.eventName}`;
+                      pushBody = `The event on ${obj.eventDate} is now CONFIRMED. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
+                  } else if (obj.eventStatus === "Cancelled") {
+                      pushTitle = `Event Cancelled: ${obj.eventName}`;
+                      pushBody = `The event on ${oldDate} has been CANCELLED.`;
+                  } else if (obj.eventStatus === "Pencil Booked") {
+                      pushTitle = `Status Reverted: ${obj.eventName}`;
+                      pushBody = `The event on ${obj.eventDate} is now PENCIL BOOKED.`;
+                  }
               }
-              // Confirmed -> Pencil Booked
-              else if (oldStatus === "Confirmed" && obj.eventStatus === "Pencil Booked") {
-                  shouldNotify = true;
-                  pushTitle = `Status Reverted: ${obj.eventName}`;
-                  pushBody = `The event on ${obj.eventDate} has been changed back to PENCIL BOOKED.`;
-              }
-              // Rule 2: Detail Changes (ONLY if currently Confirmed)
+              // Rule 2: Status stayed the same, but Schedule changed (ONLY if Confirmed)
               else if (obj.eventStatus === "Confirmed") {
                   if (oldDate !== obj.eventDate) changes.push(`Date moved to ${obj.eventDate}`);
                   if (oldCall !== obj.callTime) changes.push(`Call time changed to ${formatAMPM(obj.callTime) || 'TBA'}`);
@@ -4596,6 +4593,7 @@ function generateSingleEventCard(e) {
                   }
               }
 
+              // Fire the notification if any rule was triggered
               if (shouldNotify) {
                   const tokens = [];
                   const peopleToNotify = [...obj.manpower];
@@ -4615,7 +4613,6 @@ function generateSingleEventCard(e) {
                   }
 
                   if (tokens.length > 0) {
-                      // Hand off to the backend to blast the notification!
                       callApi({
                           action: 'sendPush',
                           tokens: tokens,
