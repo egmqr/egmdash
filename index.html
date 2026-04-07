@@ -1932,24 +1932,26 @@ const messaging = firebase.messaging();
 
   // 🟢 DEEP LINKING CONTROLLER 🟢
   
-  // Trigger 1: Cold Start (URL Parameter)
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('openEvent')) {
-      handleNotificationClick(urlParams.get('openEvent'));
-  }
+  // Helper to check the URL without needing a page refresh
+  window.checkUrlForDeepLink = function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventId = urlParams.get('openEvent');
+      if (eventId) {
+          handleNotificationClick(eventId);
+      }
+  };
 
-  // Trigger 2: Listen for Service Worker clicks (Background tap)
-  if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && (event.data.action === 'openCard' || event.data.action === 'openEventCard')) {
-              handleNotificationClick(event.data.eventId);
-          }
-      });
-  }
+  // Trigger 1: Cold Start (Page loads natively)
+  checkUrlForDeepLink();
 
-  // Trigger 3: App comes to foreground, ask the Service Worker if a notification was tapped
+  // Trigger 2: Warm Start (App comes to the foreground)
+  // When Firebase focuses a warm tab, it changes the URL but DOES NOT refresh the page!
   document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
+          // Check if the URL miraculously changed while we were backgrounded
+          checkUrlForDeepLink();
+          
+          // Also ask the Service Worker just in case
           if (navigator.serviceWorker.controller) {
               navigator.serviceWorker.controller.postMessage({ action: 'checkPendingClick' });
               setTimeout(() => {
@@ -1960,6 +1962,20 @@ const messaging = firebase.messaging();
           }
       }
   });
+
+  // Trigger 3: App gains active focus (Alt+Tab, clicking the window, etc.)
+  window.addEventListener('focus', () => {
+      checkUrlForDeepLink();
+  });
+
+  // Trigger 4: Listen for Service Worker direct messages
+  if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && (event.data.action === 'openCard' || event.data.action === 'openEventCard')) {
+              handleNotificationClick(event.data.eventId);
+          }
+      });
+  }
 
   // 🔥 THE MAGIC FIX: Enable Local Caching so data loads in milliseconds
   db.enablePersistence({ synchronizeTabs: true })
