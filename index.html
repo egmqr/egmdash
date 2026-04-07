@@ -1870,6 +1870,7 @@ const messaging = firebase.messaging();
                       if (oldInst) oldInst.dispose();
 
                       // 🟢 STEP E: Build the HTML and spawn a fresh, clean modal
+                      window.currentOpenModalEventId = targetEvent['Event ID']; // <-- ADD THIS LINE
                       document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
                       const freshModal = new bootstrap.Modal(cardModalEl);
                       freshModal.show();
@@ -2994,6 +2995,7 @@ function handleCalendarPillClick(docId) {
         const e = rawEvents.find(ev => String(ev['Doc ID']) === String(docId));
         if (!e) return;
         
+        window.currentOpenModalEventId = e['Event ID']; // <-- ADD THIS LINE
         document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(e);
         new bootstrap.Modal(document.getElementById('eventCardModal')).show();
     }
@@ -5456,11 +5458,21 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
         updateCrewFilterDropdown(rawEvents);
         populateExpenseEventsDropdown();
         applyFilters();
+        
+        // 🟢 THE FIX: LIVE-UPDATING EVENT CARDS 🟢
+        // If the card modal is currently open, refresh it with the newest data instantly!
+        const cardModalEl = document.getElementById('eventCardModal');
+        if (cardModalEl && cardModalEl.classList.contains('show') && window.currentOpenModalEventId) {
+            const updatedEvent = rawEvents.find(e => String(e['Event ID']) === String(window.currentOpenModalEventId));
+            if (updatedEvent) {
+                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(updatedEvent);
+            }
+        }
+
     } catch(err) {
         console.error("UI Render Error:", err);
         alert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
     }
-    
     // Hide the initial full-page loader
     const mainLoader = document.getElementById('loader');
     if (mainLoader) mainLoader.style.display = 'none';
