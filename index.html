@@ -5781,7 +5781,11 @@ async function getNextEventId() {
 
               // If a timestamp exists, use it!
               if (timeStr) {
-                  let parsed = new Date(timeStr).getTime();
+                  // 🟢 SAFARI/APPLE FIX: Remove "at" and commas, and append the current year for perfect math!
+                  let cleanTime = timeStr.replace(/\s*at\s*/i, ' ').replace(/,/g, '').trim();
+                  let currentYear = new Date().getFullYear();
+                  let parsed = new Date(`${cleanTime} ${currentYear}`).getTime();
+                  
                   if (!isNaN(parsed)) return parsed;
               }
               // Fallback: If no links exist yet, sort by the original Event Date
