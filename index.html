@@ -3185,7 +3185,10 @@ function generateSingleEventCard(e) {
     const listData = data.filter(e => e['AVP Required'] !== 'TRUE');
     let dates = isDefault ? Array.from({length:14}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(listData.map(e=>e['Event Date']))].sort();
     
-    if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No events found matching your criteria.</div></div>'; return; }
+    if(!dates.length) { 
+        document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No events found matching your criteria.</div></div>'; 
+        return; 
+    }
 
     dates.sort((a,b) => { if(!a) return 1; if(!b) return -1; return a.localeCompare(b); });
 
@@ -3222,6 +3225,7 @@ function generateSingleEventCard(e) {
             });
 
             evs.forEach(e => {
+                // 🟢 We add the class directly into the generation string here
                 html += `<div class="col-12 col-md-6 col-lg-4">
                             ${generateSingleEventCard(e)}
                          </div>`;
@@ -3229,17 +3233,25 @@ function generateSingleEventCard(e) {
         }
       }
     });
+
+    // Inject the HTML
     document.getElementById('events-list').innerHTML = html;
     setTimeout(checkStickyHeaders, 50); 
-    
-    // 🟢 ADD THIS BLOCK to force the CSS animation to restart on every render
-    const renderedCards = document.querySelectorAll('#events-list .card');
-    renderedCards.forEach(card => {
-        card.classList.remove('card-blink-emphasis');
-        void card.offsetWidth; // This line forces a DOM reflow!
-        card.classList.add('card-blink-emphasis');
-    });
-  }
+
+    // 🟢 WEB TEST TRIGGER: If the user is actively filtering, trigger the blink
+    const isFiltering = document.getElementById('fName').value.length > 0 || 
+                        document.getElementById('fCrew').value !== "" || 
+                        document.getElementById('fStatus').value !== "";
+
+    if (isFiltering) {
+        const visibleCards = document.querySelectorAll('#events-list .card');
+        visibleCards.forEach(card => {
+            card.classList.remove('card-blink-emphasis');
+            void card.offsetWidth; // Force Reflow
+            card.classList.add('card-blink-emphasis');
+        });
+    }
+}
 
   function changeCalendarMonth(dir) {
       currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir);
