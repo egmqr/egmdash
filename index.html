@@ -21,7 +21,24 @@
     :root { --sticky-top: 110px; }
     body { background-color: #f8fafc; padding: 10px; padding-bottom: 120px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #334155; transition: background-color 0.3s ease, color 0.3s ease; }
     @media (min-width: 768px) { body { padding: 20px; padding-bottom: 120px; font-size: 0.95rem; } }
-
+    .floating-back-btn {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1050;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border-radius: 50px;
+        padding: 12px 24px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        display: none; /* Hidden by default */
+        transition: all 0.3s ease;
+    }
+    .floating-back-btn:hover {
+        transform: translateX(-50%) scale(1.05);
+    }
     .text-primary { color: #0d9488 !important; }
     .bg-primary { background-color: #0d9488 !important; }
     .btn-primary { background-color: #0d9488; border-color: #0d9488; }
@@ -581,6 +598,11 @@
       </div>
       <div id="events-view" style="display:none;">
           <h4 class="fw-bold mb-4 mt-2" id="upcomingEventsHeader">Upcoming Events</h4>
+          
+          <button id="floatingBackBtn" class="btn btn-dark text-white floating-back-btn" onclick="resetFromNotification()">
+              <i class="bi bi-arrow-left-circle me-2"></i>Go back to upcoming events
+          </button>
+          
           <div id="events-list" class="row g-3"></div>
       </div>
 
@@ -1805,25 +1827,20 @@ const messaging = firebase.messaging();
   // 🟢 IN-APP FOREGROUND TOASTS & UNIFIED CARD OPENER 🟢
   let isOpeningCard = false; // Locks the function to prevent double-taps!
 
-  window.forceOpenCard = function(eventId, toastId = null) {
-      if (isOpeningCard) return; 
-      isOpeningCard = true;
-
-      // 1. Hide the toast notification cleanly
+  // 🟢 NOTIFICATION ROUTER & FILTERING 🟢
+  window.handleNotificationClick = function(eventId, toastId = null) {
+      // 1. Hide and destroy the toast notification cleanly
       if (toastId) {
           const toastEl = document.getElementById(toastId);
           if (toastEl) {
               const toastInst = bootstrap.Toast.getInstance(toastEl) || new bootstrap.Toast(toastEl);
               toastInst.hide();
-              setTimeout(() => toastEl.remove(), 400); 
+              setTimeout(() => toastEl.remove(), 300); 
           }
       }
       
       // 2. Validate the ID
-      if (!eventId || String(eventId).trim() === "undefined" || String(eventId).trim() === "null") {
-          isOpeningCard = false;
-          return;
-      }
+      if (!eventId || String(eventId).trim() === "undefined" || String(eventId).trim() === "null") return;
       
       // 3. Format ID: Automatically add 'egm' if missing
       let formattedId = String(eventId).trim().toLowerCase();
@@ -1831,76 +1848,36 @@ const messaging = firebase.messaging();
           formattedId = 'egm' + formattedId;
       }
 
-      document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+      // 4. Force close any modals that might be open (just in case)
+      document.querySelectorAll('.modal.show').forEach(mEl => {
+          const inst = bootstrap.Modal.getInstance(mEl);
+          if (inst) inst.hide();
+      });
 
-      // 4. Wait for Firebase data to load (and wait for fresh server sync!)
-      let waitAttempts = 0;
-      const waitForData = setInterval(() => {
-          waitAttempts++;
-          const hasData = typeof rawEvents !== 'undefined' && rawEvents.length > 0;
-          const isFresh = window.isDataFromCache === false;
+      // 5. Switch to the Events tab
+      if (currentTab !== 'events') switchTab('events');
 
-          if (hasData && (isFresh || waitAttempts > 8)) {
-              clearInterval(waitForData);
-              document.getElementById('bgSyncIndicator').style.display = 'none';
+      // 6. Inject the ID into the search bar and trigger the filter!
+      document.getElementById('fName').value = formattedId;
+      applyFilters();
 
-              const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId);
+      // 7. Show the floating "Go Back" button
+      document.getElementById('floatingBackBtn').style.display = 'flex';
 
-              if (targetEvent) {
-                  if (currentTab !== 'events') switchTab('events');
-                  window.currentOpenModalEventId = targetEvent['Event ID'];
-                  const cardModalEl = document.getElementById('eventCardModal');
-                  
-                  // 🟢 THE FIX: Find any open modal EXCEPT the card we want to show
-                  const otherOpenModals = Array.from(document.querySelectorAll('.modal.show')).filter(m => m.id !== 'eventCardModal');
+      // 8. Scrub the URL so refreshing doesn't re-trigger the deep link
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('openEvent')) {
+          urlParams.delete('openEvent');
+          const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+          window.history.replaceState({}, '', newUrl);
+      }
+  };
 
-                  // Helper function to safely render the card
-                  const showFreshCard = () => {
-                      document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                      bootstrap.Modal.getOrCreateInstance(cardModalEl).show();
-                      
-                      const urlParams = new URLSearchParams(window.location.search);
-                      if (urlParams.has('openEvent')) {
-                          urlParams.delete('openEvent');
-                          const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                          window.history.replaceState({}, '', newUrl);
-                      }
-                      
-                      // Release the lock so they can click notifications again later
-                      setTimeout(() => { isOpeningCard = false; }, 300);
-                  };
-
-                  if (otherOpenModals.length > 0) {
-                      // 🟢 NATIVE BOOTSTRAP LISTENER: Wait for the exact moment the CSS animation finishes
-                      const firstToClose = otherOpenModals[0];
-                      const onModalHidden = () => {
-                          firstToClose.removeEventListener('hidden.bs.modal', onModalHidden);
-                          showFreshCard(); // Only open the new card AFTER Bootstrap cleans up the background natively
-                      };
-                      firstToClose.addEventListener('hidden.bs.modal', onModalHidden);
-                      
-                      // Command them to close
-                      otherOpenModals.forEach(mEl => {
-                          const inst = bootstrap.Modal.getInstance(mEl);
-                          if (inst) inst.hide();
-                      });
-                  } else {
-                      // No conflicting modals are open! Just update the HTML and show it.
-                      showFreshCard();
-                  }
-                  
-              } else {
-                  showToast(`Could not find Event #${formattedId} in the database.`, "warning");
-                  isOpeningCard = false;
-              }
-          }
-      }, 300);
-      
-      // Safety net: Stop checking after 8 seconds and release the lock
-      setTimeout(() => {
-          clearInterval(waitForData);
-          isOpeningCard = false;
-      }, 8000);
+  // Resets the view when they click the floating button
+  window.resetFromNotification = function() {
+      clearFilters();
+      document.getElementById('floatingBackBtn').style.display = 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Listen for Foreground Firebase Messages (The Blue Toast)
@@ -1920,7 +1897,7 @@ const messaging = firebase.messaging();
 
       const toastId = 'toast-' + Date.now();
       const toastHtml = `
-          <div id="${toastId}" class="toast align-items-center text-bg-primary border-0 shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true" style="cursor:pointer;" onclick="forceOpenCard('${eventId}', '${toastId}')">
+          <div id="${toastId}" class="toast align-items-center text-bg-primary border-0 shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true" style="cursor:pointer;" onclick="handleNotificationClick('${eventId}', '${toastId}')">
               <div class="d-flex">
                   <div class="toast-body fw-bold">
                       <div><i class="bi bi-bell-fill me-2"></i>${title}</div>
@@ -1939,14 +1916,14 @@ const messaging = firebase.messaging();
   // Trigger 1: Cold Start (URL Parameter)
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('openEvent')) {
-      forceOpenCard(urlParams.get('openEvent'));
+      handleNotificationClick(urlParams.get('openEvent'));
   }
 
   // Trigger 2: Listen for Service Worker clicks (Background tap)
   if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (event) => {
           if (event.data && (event.data.action === 'openCard' || event.data.action === 'openEventCard')) {
-              forceOpenCard(event.data.eventId);
+              handleNotificationClick(event.data.eventId);
           }
       });
   }
@@ -2776,15 +2753,19 @@ function handleEqSearch() {
 
 
   function clearFilters() {
-    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType','fEqSearch'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
-    if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
-    if(document.getElementById('fEqStatus')) document.getElementById('fEqStatus').value = 'RAW Uploaded';
-    updateFilterStatuses();
-    
-    currentCalendarDate = new Date(); 
-    
-    applyFilters();
-    renderEditingQueue(rawEvents);
+      ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType','fEqSearch'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
+      if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
+      if(document.getElementById('fEqStatus')) document.getElementById('fEqStatus').value = 'RAW Uploaded';
+      updateFilterStatuses();
+      
+      currentCalendarDate = new Date(); 
+      
+      // 🟢 NEW: Hide the floating button if they manually clear filters
+      const floatBtn = document.getElementById('floatingBackBtn');
+      if (floatBtn) floatBtn.style.display = 'none';
+      
+      applyFilters();
+      renderEditingQueue(rawEvents);
   }
 
   function applyFilters() {
