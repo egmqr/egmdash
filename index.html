@@ -2229,7 +2229,7 @@ async function subscribeToNotifications() {
   }
 
   async function submitAuth() {
-      const pass = document.getElementById('authPassword').value;
+      const pass = document.getElementById('authPassword').value.trim();
       if (!pass) return;
 
       const btn = document.getElementById('authSubmitBtn');
@@ -2237,26 +2237,30 @@ async function subscribeToNotifications() {
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>VERIFYING...';
       btn.disabled = true;
 
-      // 🟢 THE FIX: Send the password to the secure backend to be checked
       try {
-          const res = await callApi({ action: 'verifyPassword', password: pass }, 'POST', true);
-          
-          if (res && res.success) {
-              // The backend said yes, and told us which role they get!
-              localStorage.setItem('egm_auth_role', res.role);
+          // 🟢 THE FAST FIREBASE METHOD: 
+          // We ask Firebase to look for a document whose ID exactly matches what they typed.
+          const docRef = await db.collection("access_codes").doc(pass).get();
+
+          if (docRef.exists) {
+              // The password matched a document! Grab the role (admin or editor)
+              const data = docRef.data();
+              
+              localStorage.setItem('egm_auth_role', data.role);
               localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000)); // 12 hours
               
               document.getElementById('authError').style.display = 'none';
               document.getElementById('authPassword').value = '';
               finalizeAuth(btn, originalText);
           } else {
-              // The backend said no
+              // The document didn't exist, meaning the password was wrong
               document.getElementById('authError').innerText = "Incorrect Password!";
               document.getElementById('authError').style.display = 'block';
               btn.innerHTML = originalText;
               btn.disabled = false;
           }
       } catch (err) {
+          console.error("Auth Error:", err);
           document.getElementById('authError').innerText = "Network Error. Try again.";
           document.getElementById('authError').style.display = 'block';
           btn.innerHTML = originalText;
