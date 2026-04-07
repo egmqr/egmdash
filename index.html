@@ -1803,19 +1803,19 @@ if (!isStandalone) {
 const messaging = firebase.messaging();
 
   // 🟢 IN-APP FOREGROUND TOASTS & UNIFIED CARD OPENER 🟢
-  let isOpeningCard = false; // Prevents double-taps from stacking dark backgrounds!
+  let isOpeningCard = false; // Prevents double-taps from stacking backgrounds!
 
   window.forceOpenCard = function(eventId, toastId = null) {
-      if (isOpeningCard) return; // If already opening, ignore extra clicks
+      if (isOpeningCard) return; 
       isOpeningCard = true;
 
-      // 1. Hide the toast notification if it was clicked
+      // 1. Hide the toast notification cleanly
       if (toastId) {
           const toastEl = document.getElementById(toastId);
           if (toastEl) {
-              bootstrap.Toast.getOrCreateInstance(toastEl).hide();
-              // Shred the toast so it can't be clicked again during the fade-out
-              setTimeout(() => toastEl.remove(), 300); 
+              const toastInst = bootstrap.Toast.getInstance(toastEl);
+              if (toastInst) toastInst.hide();
+              setTimeout(() => toastEl.remove(), 400); 
           }
       }
       
@@ -1842,41 +1842,54 @@ const messaging = firebase.messaging();
               const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId);
 
               if (targetEvent) {
-                  // Close any currently open form modals so they don't overlap the card
-                  ['addEventModal', 'editEventModal', 'addDayModal', 'payrollModal'].forEach(mId => {
-                      const mEl = document.getElementById(mId);
-                      if (mEl && mEl.classList.contains('show')) {
-                          bootstrap.Modal.getInstance(mEl).hide();
-                      }
-                  });
-
                   // Switch to the Events tab so the backdrop looks correct
                   if (currentTab !== 'events') switchTab('events');
                   
-                  // 🟢 THE FIX: Forcefully shred any stuck ghost backgrounds
-                  document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-                  document.body.classList.remove('modal-open');
-                  document.body.style.paddingRight = '';
+                  // 🟢 THE FIX: Safely ask Bootstrap to close any open modals first
+                  let activeModalFound = false;
+                  ['addEventModal', 'editEventModal', 'addDayModal', 'payrollModal', 'eventCardModal'].forEach(mId => {
+                      const mEl = document.getElementById(mId);
+                      if (mEl && mEl.classList.contains('show')) {
+                          const inst = bootstrap.Modal.getInstance(mEl);
+                          if (inst) inst.hide();
+                          activeModalFound = true;
+                      }
+                  });
+
+                  // 🟢 THE TIMING LOCK: We MUST wait for Bootstrap's fade animation to finish (350ms)
+                  // before we attempt to open the new card, otherwise the backdrop gets permanently stuck!
+                  setTimeout(() => {
+                      // Nuclear cleanup: Shred any ghost backdrops that Bootstrap left behind
+                      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                      document.body.classList.remove('modal-open');
+                      document.body.style.overflow = '';
+                      document.body.style.paddingRight = '';
+
+                      // Build the card HTML
+                      document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
+                      
+                      // Open the card modal fresh
+                      const cardModalEl = document.getElementById('eventCardModal');
+                      const modal = bootstrap.Modal.getOrCreateInstance(cardModalEl);
+                      modal.show();
+                      
+                      // Scrub the URL so refreshing doesn't loop the pop-up
+                      const urlParams = new URLSearchParams(window.location.search);
+                      if (urlParams.has('openEvent')) {
+                          urlParams.delete('openEvent');
+                          const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                          window.history.replaceState({}, '', newUrl);
+                      }
+
+                      // Release the lock
+                      setTimeout(() => { isOpeningCard = false; }, 300);
+
+                  }, activeModalFound ? 350 : 50); // Wait 350ms ONLY if a modal was actually closing
                   
-                  // Build and show the modal safely
-                  document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                  const cardModalEl = document.getElementById('eventCardModal');
-                  const modal = bootstrap.Modal.getOrCreateInstance(cardModalEl);
-                  modal.show();
-                  
-                  // Scrub the URL so refreshing doesn't loop the pop-up
-                  const urlParams = new URLSearchParams(window.location.search);
-                  if (urlParams.has('openEvent')) {
-                      urlParams.delete('openEvent');
-                      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                      window.history.replaceState({}, '', newUrl);
-                  }
               } else {
                   showToast(`Could not find Event #${formattedId} in the database.`, "warning");
+                  isOpeningCard = false;
               }
-
-              // Release the lock so other cards can be opened later
-              setTimeout(() => { isOpeningCard = false; }, 500);
           }
       }, 300);
       
