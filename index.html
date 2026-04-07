@@ -5769,6 +5769,28 @@ async function getNextEventId() {
           eqData = eqData.filter(e => e['Sent to Client']);
       }
 
+      // 🟢 THE FIX: Smart Timestamp Sorting (Newest to Oldest)
+      eqData.sort((a, b) => {
+          function getSortTime(ev) {
+              let timeStr = "";
+              // Look at the specific timestamp based on the active filter
+              if (filterStatus === 'RAW Uploaded') timeStr = ev['RAW Timestamp'];
+              else if (filterStatus === 'Completed') timeStr = ev['Edited Timestamp'];
+              else if (filterStatus === 'Sent to Client') timeStr = ev['Sent Timestamp'];
+              else timeStr = ev['Sent Timestamp'] || ev['Edited Timestamp'] || ev['RAW Timestamp']; // 'All' view
+
+              // If a timestamp exists, use it!
+              if (timeStr) {
+                  let parsed = new Date(timeStr).getTime();
+                  if (!isNaN(parsed)) return parsed;
+              }
+              // Fallback: If no links exist yet, sort by the original Event Date
+              return new Date(ev['Event Date'] || "1970-01-01").getTime();
+          }
+          // Sort descending (b - a = newest on top)
+          return getSortTime(b) - getSortTime(a);
+      });
+
       if (eqData.length === 0) {
           document.getElementById('eq-body').innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No events match the queue criteria.</td></tr>';
           return;
@@ -5778,7 +5800,6 @@ async function getNextEventId() {
           // --- 48 HOUR MATH ---
           let deadlineHtml = '<span class="text-muted small">No Date</span>';
           if (e['Event Date']) {
-              // Parse Event Date. The deadline starts the *next day* at 6:00 AM
               const dParts = e['Event Date'].split('-');
               let eventDateObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
               
