@@ -4379,8 +4379,8 @@ function generateSingleEventCard(e) {
               eventId: obj.eventId, // <-- Keeps it attached to egm0015
               eventName: obj.eventName || baseData.eventName || "",
               eventDate: obj.eventDate || "",
-              eventVenue: obj.eventVenue || baseData.eventVenue || "", // Now captures unique venue
-              venueLink: obj.venueLink || baseData.venueLink || "", // Now captures unique map link
+              eventVenue: obj.eventVenue || baseData.eventVenue || "", 
+              venueLink: obj.venueLink || baseData.venueLink || "", 
               eventStatus: obj.eventStatus || "Pencil Booked",
               avpRequired: baseData.avpRequired || false,
               services: obj.services.length > 0 ? obj.services.join(", ") : (baseData.services || ""),
@@ -4395,8 +4395,37 @@ function generateSingleEventCard(e) {
               grNumber: "", invoiceNumber: "", amount: "0", paymentNotes: "", invoiceUrl: "", checkUrl: ""
           });
 
+          // 🟢 NEW: SEND PUSH NOTIFICATION FOR ADDED DAY 🟢
+          try {
+              const tokens = [];
+              // Only notify the people specifically checked for THIS added day
+              if (obj.manpower && obj.manpower.length > 0) {
+                  for (const crewName of obj.manpower) {
+                      const tokenDoc = await db.collection("crew_tokens").doc(crewName).get();
+                      if (tokenDoc.exists) {
+                          const data = tokenDoc.data();
+                          if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
+                          else if (data.token) tokens.push(data.token);
+                      }
+                  }
+
+                  if (tokens.length > 0) {
+                      callApi({
+                          action: 'sendPush',
+                          tokens: tokens,
+                          title: `New Shoot Day: ${obj.eventName}`,
+                          body: `You were tagged in an additional day for #${obj.eventId} on ${obj.eventDate}. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`,
+                          eventId: obj.eventId
+                      }, 'POST', true);
+                  }
+              }
+          } catch (pushErr) {
+              console.error("Failed to trigger push for added day:", pushErr);
+          }
+          // 🔴 END PUSH LOGIC 🔴
+
           bootstrap.Modal.getInstance(document.getElementById('addDayModal')).hide(); 
-          e.target.reset(); 
+          e.target.reset();
       } catch (err) {
           alert("Error adding day: " + err.message);
       }
