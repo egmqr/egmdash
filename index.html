@@ -4657,10 +4657,11 @@ for (const personName of peopleToNotify){
       }
 
       // 🟢 CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
+      // 🟢 CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
       const oldEvent = rawEvents.find(ev => ev['Doc ID'] === obj.firestoreDocId);
       const cachedOldStatus = oldEvent ? String(oldEvent['Event Status'] || "").trim() : "";
-// 🟢 ADD THESE TWO LINES:
       const cachedOldCrew = oldEvent ? String(oldEvent['Manpower'] || "").trim() : "";
+      const oldCrewArray = cachedOldCrew.split(',').map(c => c.trim()).filter(Boolean);
       const cachedOldEditor = oldEvent ? String(oldEvent['Editor Assigned'] || "").trim() : "";
       const cachedOldDate = oldEvent ? String(oldEvent['Event Date'] || "").trim() : "";
       const cachedOldCall = oldEvent ? String(to24Hour(oldEvent['Call Time']) || "").trim() : "";
@@ -4706,92 +4707,74 @@ for (const personName of peopleToNotify){
               checkUrl: obj.checkUrl || ""
           });
 
-          // 🟢 SMART EDIT NOTIFIER: PINGS CREW ON STATUS CHANGES & UPDATES 🟢
+          // 🟢 SMART DUAL-LANE NOTIFIER 🟢
           try {
               const newStatus = String(obj.eventStatus || "Pencil Booked").trim();
-// 🟢 ADD THESE TWO LINES:
-const newCrewString = (obj.manpower || []).join(", ").trim();
-const newEditorString = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "").trim();
               const newDate = String(obj.eventDate || "").trim();
               const newCall = String(to24Hour(obj.callTime) || "").trim();
-              const newStart = String(to24Hour(obj.startTime) || "").trim();
-              const newEnd = String(to24Hour(obj.endTime) || "").trim();
+              const newCrewArray = obj.manpower || []; 
+              const newEditorString = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "").trim();
 
-              let shouldNotify = false;
-              let pushTitle = "";
-              let pushBody = "";
-              let changes = [];
-
-              // Rule 1: ANY change in Status
-              if (cachedOldStatus !== newStatus) {
-                  shouldNotify = true;
-                  if (newStatus === "Confirmed") {
-                      pushTitle = `Event Confirmed: ${obj.eventName}`;
-                      pushBody = `The event on ${newDate} is now CONFIRMED. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
-                  } else if (newStatus === "Cancelled") {
-                      pushTitle = `Event Cancelled: ${obj.eventName}`;
-                      pushBody = `The event on ${cachedOldDate || newDate} has been CANCELLED.`;
-                  } else if (newStatus === "Pencil Booked") {
-                      pushTitle = `Status Reverted: ${obj.eventName}`;
-                      pushBody = `The event on ${newDate} is now PENCIL BOOKED.`;
+              // --- LANE 1: EDITOR NOTIFICATIONS (Assignment/Removal Only) ---
+              if (cachedOldEditor !== newEditorString && newStatus === "Confirmed") {
+                  if (newEditorString) {
+                      // Assigned
+                      sendTargetedPush([newEditorString], `New Assignment: ${obj.eventName}`, `You have been assigned as the editor for #${obj.eventId}.`, obj.eventId);
+                  } else if (cachedOldEditor) {
+                      // Removed
+                      sendTargetedPush([cachedOldEditor], `Assignment Update: ${obj.eventName}`, `You are no longer assigned to #${obj.eventId}.`, obj.eventId);
                   }
               }
-              // Rule 2: Status stayed the same, but Schedule changed (ONLY if Confirmed)
-              else if (newStatus === "Confirmed") {
-                  if (cachedOldDate !== newDate) changes.push(`Date moved to ${newDate}`);
-                  if (cachedOldCall !== newCall) changes.push(`Call time changed to ${formatAMPM(obj.callTime) || 'TBA'}`);
-                  if (cachedOldStart !== newStart || cachedOldEnd !== newEnd) {
-                      changes.push(`Shoot time updated to ${formatAMPM(obj.startTime) || '--:--'} - ${formatAMPM(obj.endTime) || '--:--'}`);
+
+              // --- LANE 2: CREW NOTIFICATIONS (Additions & General Changes) ---
+              const isStatusChanged = cachedOldStatus !== newStatus;
+              const isScheduleChanged = cachedOldDate !== newDate || cachedOldCall !== newCall;
+              const isCrewAdded = newCrewArray.some(name => !oldCrewArray.includes(name));
+
+              if (newStatus === "Confirmed" && (isStatusChanged || isScheduleChanged || isCrewAdded)) {
+                  let crewTitle = `Event Updated: ${obj.eventName}`;
+                  let crewBody = `The schedule/details for #${obj.eventId} have been updated.`;
+
+                  if (isStatusChanged && cachedOldStatus !== "Confirmed") {
+                      crewTitle = `Event Confirmed: ${obj.eventName}`;
+                      crewBody = `The event is now CONFIRMED for ${newDate}. Call time: ${formatAMPM(obj.callTime)}.`;
+                  } else if (isCrewAdded && !isScheduleChanged) {
+                      crewTitle = `New Assignment: ${obj.eventName}`;
+                      crewBody = `You (or a new member) have been added to #${obj.eventId}. Call time: ${formatAMPM(obj.callTime)}.`;
                   }
 
-                  // If we detected any time/date shifts, build a custom message!
-                  if (changes.length > 0) {
-                      shouldNotify = true;
-                      pushTitle = `Schedule Updated: ${obj.eventName}`;
-                      pushBody = `Updates for #${obj.eventId}: ` + changes.join(', ') + ".";
+                  // Notify everyone currently in the Crew List (Lane 2 excludes the Editor automatically)
+                  if (newCrewArray.length > 0) {
+                      sendTargetedPush(newCrewArray, crewTitle, crewBody, obj.eventId);
+                  }
+              } 
+              // Handle Cancellation for Crew
+              else if (newStatus === "Cancelled" && isStatusChanged) {
+                  if (newCrewArray.length > 0) {
+                      sendTargetedPush(newCrewArray, `Event Cancelled: ${obj.eventName}`, `The event on ${cachedOldDate || newDate} has been cancelled.`, obj.eventId);
                   }
               }
-              // 🟢 ADD THIS RULE (Rule 3):
-else if (newStatus === "Confirmed" && (cachedOldCrew !== newCrewString || cachedOldEditor !== newEditorString)) {
-    shouldNotify = true;
-    pushTitle = `Assignment Update: ${obj.eventName}`;
-    pushBody = `The staff/editor list for #${obj.eventId} on ${newDate} has been updated. Check your dashboard.`;
-}
-              // Fire the notification if any rule was triggered
-              if (shouldNotify) {
+
+              // 🛠️ INTERNAL HELPER: Fetch tokens and send push
+              async function sendTargetedPush(namesArray, title, body, eventId) {
                   const tokens = [];
-                  const peopleToNotify = [...(obj.manpower || [])];
-                  
-                  const assignedEditor = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "").trim();
-                  if (assignedEditor && !peopleToNotify.includes(assignedEditor)) {
-                      peopleToNotify.push(assignedEditor);
+                  for (const name of namesArray) {
+                      const tokenDoc = await db.collection("crew_tokens").doc(name).get();
+                      if (tokenDoc.exists) {
+                          const data = tokenDoc.data();
+                          if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens);
+                          else if (data.token) tokens.push(data.token);
+                      }
                   }
-
-                  if (peopleToNotify.length > 0) {
-                      for (const personName of peopleToNotify) {
-                          const tokenDoc = await db.collection("crew_tokens").doc(personName).get();
-                          if (tokenDoc.exists) {
-                              const data = tokenDoc.data();
-                              if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
-                              else if (data.token) tokens.push(data.token);
-                          }
-                      }
-
-                      if (tokens.length > 0) {
-                          callApi({
-                              action: 'sendPush',
-                              tokens: tokens,
-                              title: pushTitle,
-                              body: pushBody,
-                              eventId: obj.eventId
-                          }, 'POST', true);
-                      }
+                  if (tokens.length > 0) {
+                      callApi({ action: 'sendPush', tokens: tokens, title: title, body: body, eventId: eventId }, 'POST', true);
                   }
               }
+
           } catch (pushErr) {
-              console.error("Failed to trigger edit push:", pushErr);
+              console.error("Failed to trigger targeted push:", pushErr);
           }
-          // 🔴 END SMART EDIT NOTIFIER 🔴
+          // 🔴 END SMART DUAL-LANE NOTIFIER 🔴
 
           bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
       } catch (err) {
