@@ -4720,10 +4720,10 @@ for (const personName of peopleToNotify){
               if (cachedOldEditor !== newEditorString && newStatus === "Confirmed") {
                   if (newEditorString) {
                       // Assigned
-                      sendTargetedPush([newEditorString], `New Assignment: ${obj.eventName}`, `You have been assigned to edit #${obj.eventId}.`, obj.eventId);
+                      sendTargetedPush([newEditorString], `New Assignment: ${obj.eventName}`, `You have been assigned as the editor for #${obj.eventId}.`, obj.eventId);
                   } else if (cachedOldEditor) {
                       // Removed
-                      sendTargetedPush([cachedOldEditor], `Assignment Update: ${obj.eventName}`, `You are no longer assigned to edit #${obj.eventId}.`, obj.eventId);
+                      sendTargetedPush([cachedOldEditor], `Assignment Update: ${obj.eventName}`, `You are no longer assigned to #${obj.eventId}.`, obj.eventId);
                   }
               }
 
@@ -4738,6 +4738,14 @@ for (const personName of peopleToNotify){
               const isCrewAdded = addedCrew.length > 0;
               const isCrewRemoved = removedCrew.length > 0;
 
+              // Helper for clean grammar (e.g., "A, B, and C" instead of "A and B and C")
+              const formatNames = (arr) => {
+                  if (arr.length === 0) return "";
+                  if (arr.length === 1) return arr[0];
+                  if (arr.length === 2) return arr.join(" and ");
+                  return arr.slice(0, -1).join(", ") + " and " + arr[arr.length - 1];
+              };
+
               if (newStatus === "Confirmed" && (isStatusChanged || isScheduleChanged || isCrewAdded || isCrewRemoved)) {
                   let crewTitle = `Event Updated: ${obj.eventName}`;
                   let crewBody = `The schedule/details for #${obj.eventId} have been updated.`;
@@ -4751,14 +4759,17 @@ for (const personName of peopleToNotify){
                   } else if ((isCrewAdded || isCrewRemoved) && !isScheduleChanged) {
                       crewTitle = `Crew Update: ${obj.eventName}`;
                       
-                      // 🟢 DYNAMIC NOTIFICATION TEXT FOR ADD/REMOVE
+                      let addedStr = formatNames(addedCrew);
+                      let removedStr = formatNames(removedCrew);
+                      
+                      // 🟢 DYNAMIC NOTIFICATION TEXT FOR MULTIPLE ADD/REMOVE
                       let bodyText = "";
                       if (isCrewAdded && !isCrewRemoved) {
-                          bodyText = `${addedCrew.join(' and ')} ${addedCrew.length > 1 ? 'have' : 'has'} been added to this event.`;
+                          bodyText = `${addedStr} ${addedCrew.length > 1 ? 'have' : 'has'} been added to this event.`;
                       } else if (isCrewRemoved && !isCrewAdded) {
-                          bodyText = `${removedCrew.join(' and ')} ${removedCrew.length > 1 ? 'have' : 'has'} been removed from this event.`;
+                          bodyText = `${removedStr} ${removedCrew.length > 1 ? 'have' : 'has'} been removed from this event.`;
                       } else {
-                          bodyText = `${addedCrew.join(' and ')} added, and ${removedCrew.join(' and ')} removed.`;
+                          bodyText = `${addedStr} added, and ${removedStr} removed.`;
                       }
                       
                       crewBody = `${bodyText} Call time: ${formatAMPM(obj.callTime)}.`;
