@@ -4659,6 +4659,9 @@ for (const personName of peopleToNotify){
       // 🟢 CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
       const oldEvent = rawEvents.find(ev => ev['Doc ID'] === obj.firestoreDocId);
       const cachedOldStatus = oldEvent ? String(oldEvent['Event Status'] || "").trim() : "";
+// 🟢 ADD THESE TWO LINES:
+      const cachedOldCrew = oldEvent ? String(oldEvent['Manpower'] || "").trim() : "";
+      const cachedOldEditor = oldEvent ? String(oldEvent['Editor Assigned'] || "").trim() : "";
       const cachedOldDate = oldEvent ? String(oldEvent['Event Date'] || "").trim() : "";
       const cachedOldCall = oldEvent ? String(to24Hour(oldEvent['Call Time']) || "").trim() : "";
       const cachedOldStart = oldEvent ? String(to24Hour(oldEvent['Event Start Time']) || "").trim() : "";
@@ -4706,6 +4709,9 @@ for (const personName of peopleToNotify){
           // 🟢 SMART EDIT NOTIFIER: PINGS CREW ON STATUS CHANGES & UPDATES 🟢
           try {
               const newStatus = String(obj.eventStatus || "Pencil Booked").trim();
+// 🟢 ADD THESE TWO LINES:
+const newCrewString = (obj.manpower || []).join(", ").trim();
+const newEditorString = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "").trim();
               const newDate = String(obj.eventDate || "").trim();
               const newCall = String(to24Hour(obj.callTime) || "").trim();
               const newStart = String(to24Hour(obj.startTime) || "").trim();
@@ -4745,7 +4751,12 @@ for (const personName of peopleToNotify){
                       pushBody = `Updates for #${obj.eventId}: ` + changes.join(', ') + ".";
                   }
               }
-
+              // 🟢 ADD THIS RULE (Rule 3):
+else if (newStatus === "Confirmed" && (cachedOldCrew !== newCrewString || cachedOldEditor !== newEditorString)) {
+    shouldNotify = true;
+    pushTitle = `Assignment Update: ${obj.eventName}`;
+    pushBody = `The staff/editor list for #${obj.eventId} on ${newDate} has been updated. Check your dashboard.`;
+}
               // Fire the notification if any rule was triggered
               if (shouldNotify) {
                   const tokens = [];
