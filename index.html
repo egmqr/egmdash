@@ -4282,38 +4282,45 @@ function generateSingleEventCard(e) {
 
           await batch.commit(); // Execute the bulk upload
           
-          // 🟢 NEW: SEND PUSH NOTIFICATIONS 🟢
-          try {
-              const tokens = [];
-              for (const crewName of obj.manpower) {
-                  // Look up each assigned crew member in the database
-                  const tokenDoc = await db.collection("crew_tokens").doc(crewName).get();
+          // 🟢 NEW: SEND PUSH NOTIFICATIONS (Status Aware) 🟢
+          // Only send notifications if the event is NOT Pencil Booked
+          if (obj.eventStatus === 'Confirmed' || obj.eventStatus === 'Cancelled') {
+              try {
+                  const tokens = [];
+                  const peopleToNotify = [...obj.manpower];
                   
-                  if (tokenDoc.exists) {
-                      const data = tokenDoc.data();
-                      // Support the new Array format (multiple devices)
-                      if (data.tokens && Array.isArray(data.tokens)) {
-                          tokens.push(...data.tokens); 
-                      } 
-                      // Support the old single string format just in case
-                      else if (data.token) {
-                          tokens.push(data.token);
+                  const assignedEditor = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "");
+                  if (assignedEditor && !peopleToNotify.includes(assignedEditor)) {
+                      peopleToNotify.push(assignedEditor);
+                  }
+
+                  for (const personName of peopleToNotify) {
+                      const tokenDoc = await db.collection("crew_tokens").doc(personName).get();
+                      if (tokenDoc.exists) {
+                          const data = tokenDoc.data();
+                          if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
+                          else if (data.token) tokens.push(data.token);
                       }
                   }
-              }
 
-              if (tokens.length > 0) {
-                  // Tell Apps Script to fire the push notifications!
-                  callApi({
-                      action: 'sendPush',
-                      tokens: tokens,
-                      title: `New Shoot: ${obj.eventName}`,
-                      body: `You are booked for ${obj.eventDate}. Call time is ${formatAMPM(obj.callTime)}.`,
-                      eventId: newId
-                  }, 'POST', true);
+                  if (tokens.length > 0) {
+                      let dateString = obj.eventDate;
+                      if (eventDatesArray.length > 1) dateString = `${eventDatesArray[0]} to ${eventDatesArray[eventDatesArray.length - 1]}`;
+
+                      let pushTitle = obj.eventStatus === 'Cancelled' ? `Cancelled: ${obj.eventName}` : `New Assignment: ${obj.eventName}`;
+                      let pushBody = obj.eventStatus === 'Cancelled' ? `The event on ${dateString} has been cancelled.` : `You have been assigned to ${obj.eventName} on ${dateString}. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
+
+                      callApi({
+                          action: 'sendPush',
+                          tokens: tokens,
+                          title: pushTitle,
+                          body: pushBody,
+                          eventId: newId
+                      }, 'POST', true);
+                  }
+              } catch (pushErr) {
+                  console.error("Failed to trigger push:", pushErr);
               }
-          } catch (pushErr) {
-              console.error("Failed to trigger push:", pushErr);
           }
           // 🔴 END NEW PUSH LOGIC 🔴
 
@@ -4395,32 +4402,37 @@ function generateSingleEventCard(e) {
               grNumber: "", invoiceNumber: "", amount: "0", paymentNotes: "", invoiceUrl: "", checkUrl: ""
           });
 
-          // 🟢 NEW: SEND PUSH NOTIFICATION FOR ADDED DAY 🟢
-          try {
-              const tokens = [];
-              // Only notify the people specifically checked for THIS added day
-              if (obj.manpower && obj.manpower.length > 0) {
-                  for (const crewName of obj.manpower) {
-                      const tokenDoc = await db.collection("crew_tokens").doc(crewName).get();
-                      if (tokenDoc.exists) {
-                          const data = tokenDoc.data();
-                          if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
-                          else if (data.token) tokens.push(data.token);
+          // 🟢 NEW: SEND PUSH NOTIFICATION FOR ADDED DAY (Status Aware) 🟢
+          // Only send notifications if the event is NOT Pencil Booked
+          if (obj.eventStatus === 'Confirmed' || obj.eventStatus === 'Cancelled') {
+              try {
+                  const tokens = [];
+                  if (obj.manpower && obj.manpower.length > 0) {
+                      for (const crewName of obj.manpower) {
+                          const tokenDoc = await db.collection("crew_tokens").doc(crewName).get();
+                          if (tokenDoc.exists) {
+                              const data = tokenDoc.data();
+                              if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
+                              else if (data.token) tokens.push(data.token);
+                          }
+                      }
+
+                      if (tokens.length > 0) {
+                          let pushTitle = obj.eventStatus === 'Cancelled' ? `Cancelled Day: ${obj.eventName}` : `New Shoot Day: ${obj.eventName}`;
+                          let pushBody = obj.eventStatus === 'Cancelled' ? `The shoot day on ${obj.eventDate} has been cancelled.` : `You were tagged in an additional day for #${obj.eventId} on ${obj.eventDate}. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
+
+                          callApi({
+                              action: 'sendPush',
+                              tokens: tokens,
+                              title: pushTitle,
+                              body: pushBody,
+                              eventId: obj.eventId
+                          }, 'POST', true);
                       }
                   }
-
-                  if (tokens.length > 0) {
-                      callApi({
-                          action: 'sendPush',
-                          tokens: tokens,
-                          title: `New Shoot Day: ${obj.eventName}`,
-                          body: `You were tagged in an additional day for #${obj.eventId} on ${obj.eventDate}. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`,
-                          eventId: obj.eventId
-                      }, 'POST', true);
-                  }
+              } catch (pushErr) {
+                  console.error("Failed to trigger push for added day:", pushErr);
               }
-          } catch (pushErr) {
-              console.error("Failed to trigger push for added day:", pushErr);
           }
           // 🔴 END PUSH LOGIC 🔴
 
@@ -4533,6 +4545,61 @@ function generateSingleEventCard(e) {
               invoiceUrl: obj.invoiceUrl || "",
               checkUrl: obj.checkUrl || ""
           });
+      // 🟢 SMART EDIT NOTIFIER: PINGS CREW ON STATUS CHANGES 🟢
+          try {
+              // Look up the old event data before we overwrote it
+              const oldEvent = rawEvents.find(ev => ev['Doc ID'] === obj.firestoreDocId);
+              const oldStatus = oldEvent ? oldEvent['Event Status'] : "";
+              
+              let shouldNotify = false;
+              let pushTitle = "";
+              let pushBody = "";
+
+              // Rule 1: It changed from Pencil Booked to Confirmed!
+              if (oldStatus === "Pencil Booked" && obj.eventStatus === "Confirmed") {
+                  shouldNotify = true;
+                  pushTitle = `Event Confirmed: ${obj.eventName}`;
+                  pushBody = `The event on ${obj.eventDate} is now CONFIRMED. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
+              } 
+              // Rule 2: It changed to Cancelled!
+              else if (oldStatus !== "Cancelled" && obj.eventStatus === "Cancelled") {
+                  shouldNotify = true;
+                  pushTitle = `Event Cancelled: ${obj.eventName}`;
+                  pushBody = `The event on ${obj.eventDate} has been CANCELLED.`;
+              }
+
+              if (shouldNotify) {
+                  const tokens = [];
+                  const peopleToNotify = [...obj.manpower];
+                  
+                  const assignedEditor = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "");
+                  if (assignedEditor && !peopleToNotify.includes(assignedEditor)) {
+                      peopleToNotify.push(assignedEditor);
+                  }
+
+                  for (const personName of peopleToNotify) {
+                      const tokenDoc = await db.collection("crew_tokens").doc(personName).get();
+                      if (tokenDoc.exists) {
+                          const data = tokenDoc.data();
+                          if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
+                          else if (data.token) tokens.push(data.token);
+                      }
+                  }
+
+                  if (tokens.length > 0) {
+                      callApi({
+                          action: 'sendPush',
+                          tokens: tokens,
+                          title: pushTitle,
+                          body: pushBody,
+                          eventId: obj.eventId
+                      }, 'POST', true);
+                  }
+              }
+          } catch (pushErr) {
+              console.error("Failed to trigger edit push:", pushErr);
+          }
+          // 🔴 END SMART EDIT NOTIFIER 🔴
           bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
       } catch (err) {
           alert("Error updating: " + err.message);
