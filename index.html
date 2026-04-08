@@ -18,6 +18,34 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
   
   <style>
+    /* --- MULTI-DAY TAB SCROLLING FIX --- */
+    #editMultiDayNav {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin; /* Firefox */
+        padding-bottom: 10px !important; /* Give the scrollbar room to breathe */
+    }
+    #editMultiDayNav::-webkit-scrollbar {
+        display: block; /* Restores the scrollbar for desktop users */
+        height: 6px;
+    }
+    #editMultiDayNav::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    #editMultiDayNav::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 10px;
+    }
+    .dark-mode #editMultiDayNav::-webkit-scrollbar-thumb {
+        background-color: #475569;
+    }
+    #editMultiDayNav .nav-item {
+        flex: 0 0 auto; /* Forces tabs to hold their width and slide off-screen */
+    }
+    /* ----------------------------------- */
     :root { --sticky-top: 110px; }
     body { background-color: #f8fafc; padding: 10px; padding-bottom: 120px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #334155; transition: background-color 0.3s ease, color 0.3s ease; }
     @media (min-width: 768px) { body { padding: 20px; padding-bottom: 120px; font-size: 0.95rem; } }
