@@ -392,7 +392,40 @@
   </style>
 </head>
 <body>
+<div class="modal fade" id="globalAlertModal" tabindex="-1" aria-hidden="true" style="z-index: 10900;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="fw-bold mb-0" id="globalAlertTitle">Notice</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <p class="mb-0 text-secondary" id="globalAlertMessage" style="font-size: 0.9rem; line-height: 1.5;"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-primary w-100 fw-bold shadow-sm rounded-3" data-bs-dismiss="modal">GOT IT</button>
+            </div>
+        </div>
+    </div>
+</div>
 
+<div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 10900;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="fw-bold mb-0" id="globalConfirmTitle">Confirm Action</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <p class="mb-0 text-secondary" id="globalConfirmMessage" style="font-size: 0.9rem; line-height: 1.5;"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0 d-flex gap-2 flex-nowrap">
+                <button type="button" class="btn btn-light border-secondary-subtle fw-bold w-50 rounded-3" data-bs-dismiss="modal" id="globalConfirmCancelBtn">Cancel</button>
+                <button type="button" class="btn btn-danger fw-bold shadow-sm w-50 rounded-3" id="globalConfirmOkBtn">Proceed</button>
+            </div>
+        </div>
+    </div>
+</div>
 <div id="submitOverlay" class="submit-overlay">
   <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
   <h5 class="mt-3 fw-bold text-secondary" id="overlayText">Processing...</h5>
@@ -1831,7 +1864,7 @@ if (!isStandalone) {
         // APPLE: Show button, but it triggers a manual instruction modal
         installBtn.style.setProperty('display', 'flex', 'important');
         installBtn.onclick = () => {
-            alert('To install on iPhone:\n1. Tap the "Share" icon at the bottom of Safari.\n2. Scroll down and tap "Add to Home Screen".');
+            egmAlert('To install on iPhone:\n1. Tap the "Share" icon at the bottom of Safari.\n2. Scroll down and tap "Add to Home Screen".');
         };
     } else {
         // ANDROID/CHROME: Wait for the browser to fire the install event
@@ -2094,7 +2127,7 @@ const messaging = firebase.messaging();
       
       if (result.status === "error" || result.success === false) {
           console.error("Backend error:", result.error || result.message);
-          alert("Server Error: " + (result.error || result.message)); 
+          egmAlert("Server Error: " + (result.error || result.message)); 
           return null;
       }
       return result;
@@ -2115,13 +2148,13 @@ const messaging = firebase.messaging();
 async function subscribeToNotifications() {
     // 🟢 NEW: iOS / Unsupported Browser Check 🟢
     if (!('Notification' in window)) {
-        alert("Push notifications are not supported in this browser.\n\nIf you are on an iPhone, you MUST open this site in Safari, tap 'Share', and select 'Add to Home Screen' to enable notifications.");
+        egmAlert("Push notifications are not supported in this browser.\n\nIf you are on an iPhone, you MUST open this site in Safari, tap 'Share', and select 'Add to Home Screen' to enable notifications.");
         return;
     }
 
     const crewName = document.getElementById('pushCrewName').value;
     if (!crewName) {
-        alert("Please select your name first!");
+        egmAlert("Please select your name first!");
         return;
     }
 
@@ -2157,15 +2190,15 @@ async function subscribeToNotifications() {
                 showToast(`Success! Notifications enabled for ${crewName} on this device.`, 'success');
             } else {
                 ov.style.display = 'none';
-                alert("Could not generate a token. Check console.");
+                egmAlert("Could not generate a token. Check console.");
             }
         } else {
-            alert("You denied notification permissions. You will need to allow them in your browser/phone settings.");
+            egmAlert("You denied notification permissions. You will need to allow them in your browser/phone settings.");
         }
     } catch (error) {
         document.getElementById('submitOverlay').style.display = 'none';
         console.error("Error getting token:", error);
-        alert("Failed to enable notifications. Error: " + error.message);
+        egmAlert("Failed to enable notifications. Error: " + error.message);
     }
 }
   //
@@ -2281,7 +2314,7 @@ async function subscribeToNotifications() {
             showToast("Rates saved to Cloud successfully!", "success");
         }
     } catch (err) {
-        alert("Error saving rates: " + err.message);
+        egmAlert("Error saving rates: " + err.message);
     }
     
     ov.style.display = 'none';
@@ -2319,7 +2352,7 @@ async function subscribeToNotifications() {
       if (role && !isExpired) {
           if (requiresAdmin && role !== 'admin') {
               // Smart Upgrade Prompt
-              if (confirm("Admin access is required for this action. Would you like to sign out of your Editor account to switch to Admin?")) {
+              if (await egmConfirm("Admin access is required for this action. Would you like to sign out of your Editor account to switch to Admin?")) {
                   signOut();
               }
               return;
@@ -3596,10 +3629,10 @@ function generateSingleEventCard(e) {
 
   async function submitPaymentDocUpload() {
       const fileInput = document.getElementById('upPayFileInput');
-      if (!fileInput.files[0]) return alert("Select a file first.");
+      if (!fileInput.files[0]) return egmAlert("Select a file first.");
       
       if (document.getElementById('upPayIsOverwrite').value === 'true') {
-          if (!confirm("WARNING: This will overwrite the existing file link on the dashboard. Continue?")) return;
+          if (!await egmConfirm("WARNING: This will overwrite the existing file link on the dashboard. Continue?")) return;
       }
       
       const eventId = document.getElementById('upPayEventId').value;
@@ -3614,7 +3647,7 @@ function generateSingleEventCard(e) {
       const res = await callApi({ action: 'uploadPaymentDoc', base64Data: b64Data.base64, filename: b64Data.filename, eventId: eventId, docType: docType }, 'POST');
       
       ov.style.display = 'none';
-      if (res.success) {  } else { alert("Error: " + res.error); }
+      if (res.success) {  } else { egmAlert("Error: " + res.error); }
   }
   function openNewEventWithDate(dateStr) {
       openNewEventModal(); // This opens and resets the modal normally
@@ -4193,7 +4226,7 @@ function generateSingleEventCard(e) {
 
   function submitFileUpload() {
     const fileInput = document.getElementById('uploadFileInput');
-    if (!fileInput.files[0]) return alert("Please select a file first.");
+    if (!fileInput.files[0]) return egmAlert("Please select a file first.");
     
     const eventId = document.getElementById('uploadEventId').value;
     const label = document.getElementById('uploadLabel').value;
@@ -4216,21 +4249,21 @@ function generateSingleEventCard(e) {
       if (res && res.success) { 
           showToast("File uploaded successfully.");
       } else { 
-          alert("Error: " + (res ? res.error : "Unknown error")); 
+          egmAlert("Error: " + (res ? res.error : "Unknown error")); 
       }
     };
     reader.readAsDataURL(file);
   }
 
   async function deleteFile(eventId, fileId) {
-    if(!confirm("Are you sure you want to permanently delete this file? This cannot be undone.")) return;
+    if(!await egmConfirm("Are you sure you want to permanently delete this file? This cannot be undone.")) return;
     const ov = document.getElementById('submitOverlay');
     document.getElementById('overlayText').innerText = "Deleting File...";
     ov.style.display = 'flex';
 
     const res = await callApi({ action: 'deleteFile', eventId: eventId, fileId: fileId }, 'POST');
     ov.style.display = 'none';
-    if (res.success) {  } else { alert("Error: " + res.error); }
+    if (res.success) {  } else { egmAlert("Error: " + res.error); }
   }
   
   async function deleteFullEvent(isMain) {
@@ -4240,7 +4273,7 @@ function generateSingleEventCard(e) {
       if (!eventId || !docId) return;
       
       if (isMain) {
-          if(!confirm(`WARNING: Permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) return;
+          if(!await egmConfirm(`WARNING: Permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) return;
           
           document.getElementById('submitOverlay').style.display = 'flex';
           try {
@@ -4250,17 +4283,17 @@ function generateSingleEventCard(e) {
               snapshot.forEach(doc => batch.delete(doc.ref));
               await batch.commit();
           } catch (err) {
-              alert("Error deleting project: " + err.message);
+              egmAlert("Error deleting project: " + err.message);
           }
       } else {
-          if(!confirm(`Delete this specific shooting day?\n\nThe rest of project #${eventId} will remain intact.`)) return;
+          if(!await egmConfirm(`Delete this specific shooting day?\n\nThe rest of project #${eventId} will remain intact.`)) return;
           
           document.getElementById('submitOverlay').style.display = 'flex';
           try {
               // Single delete: Only targets this specific added day
               await db.collection("dashboard_events").doc(docId).delete();
           } catch (err) {
-              alert("Error deleting day: " + err.message);
+              egmAlert("Error deleting day: " + err.message);
           }
       }
       
@@ -4354,7 +4387,7 @@ function generateSingleEventCard(e) {
       let eventDatesArray = [];
 
       if (isLeave) {
-          if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+          if (obj.manpower.length === 0) { egmAlert("Please select at least one crew member for this leave."); return; }
           obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
           
           // --- CALCULATE DATE RANGE ---
@@ -4370,7 +4403,7 @@ function generateSingleEventCard(e) {
               current.setDate(current.getDate() + 1); // Move to next day
           }
       } else {
-          if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+          if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
           eventDatesArray.push(obj.eventDate); // Standard events just get 1 date here
       }
       
@@ -4475,7 +4508,7 @@ function generateSingleEventCard(e) {
           document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
           toggleAvpFields(false, 'new'); togglePaymentUI('new');
       } catch (err) {
-          alert("Error saving: " + err.message);
+          egmAlert("Error saving: " + err.message);
       }
       ov.style.display = 'none'; btn.disabled = false;
   };
@@ -4590,7 +4623,7 @@ for (const personName of peopleToNotify){
           bootstrap.Modal.getInstance(document.getElementById('addDayModal')).hide(); 
           e.target.reset();
       } catch (err) {
-          alert("Error adding day: " + err.message);
+          egmAlert("Error adding day: " + err.message);
       }
       ov.style.display='none'; btn.disabled=false;
   };
@@ -4651,10 +4684,10 @@ for (const personName of peopleToNotify){
       
       const isLeave = document.getElementById('editTypeLeave').checked;
       if (isLeave) {
-          if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+          if (obj.manpower.length === 0) { egmAlert("Please select at least one crew member for this leave."); return; }
           obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
       } else {
-          if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+          if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
       }
 
       // 🟢 CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
@@ -4809,7 +4842,7 @@ for (const personName of peopleToNotify){
 
           bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
       } catch (err) {
-          alert("Error updating: " + err.message);
+          egmAlert("Error updating: " + err.message);
       }
       ov.style.display = 'none'; btn.disabled = false;
   };
@@ -5380,7 +5413,7 @@ async function fetchExistingLogos(forceRefresh = false) {
       const boothCount = document.getElementById('boothCountInput').value;
       
       if (!eventId || !folderName || !eventName || !boothCount) {
-          alert("Required fields missing! Ensure an Event ID and Folder Name are set.");
+          egmAlert("Required fields missing! Ensure an Event ID and Folder Name are set.");
           return;
       }
 
@@ -5417,7 +5450,7 @@ async function fetchExistingLogos(forceRefresh = false) {
               }, 100);
           }
       } else {
-          alert("Error: " + (res ? res.error || res.message : "Failed to process booth."));
+          egmAlert("Error: " + (res ? res.error || res.message : "Failed to process booth."));
       }
   }
 
@@ -5426,7 +5459,7 @@ async function fetchExistingLogos(forceRefresh = false) {
   
   async function runBoothDelete() {
       const selectedId = document.getElementById('boothEventSelect').value;
-      if (!selectedId || !confirm("WARNING: Are you sure you want to permanently delete this Photobooth setup? This will remove the Cloud storage, URLs, and QR codes.")) return;
+      if (!selectedId || !await egmConfirm("WARNING: Are you sure you want to permanently delete this Photobooth setup? This will remove the Cloud storage, URLs, and QR codes.")) return;
       
       const ov = document.getElementById('submitOverlay');
       document.getElementById('overlayText').innerText = "Deleting Booth Setup...";
@@ -5440,7 +5473,7 @@ async function fetchExistingLogos(forceRefresh = false) {
           fetchBoothEvents(true); // Force the dropdown to remove the deleted project!
           setBoothMode('edit');
       } else {
-          alert("Error: " + (res ? res.error || res.message : "Failed to delete."));
+          egmAlert("Error: " + (res ? res.error || res.message : "Failed to delete."));
       }
   }
 
@@ -5666,7 +5699,7 @@ db.collection("dashboard_events").onSnapshot({ includeMetadataChanges: true }, (
 
     } catch(err) {
         console.error("UI Render Error:", err);
-        alert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
+        egmAlert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
     }
     // Hide the initial full-page loader
     const mainLoader = document.getElementById('loader');
@@ -5677,7 +5710,7 @@ db.collection("dashboard_events").onSnapshot({ includeMetadataChanges: true }, (
 }, (error) => {
     // If Firebase blocks the connection, it will scream at us here!
     console.error("Firestore Security Error:", error);
-    alert("Firebase Connection Blocked! Check Firestore Rules. Error: " + error.message);
+    egmAlert("Firebase Connection Blocked! Check Firestore Rules. Error: " + error.message);
 });
 
 // THE MAGIC REAL-TIME LISTENER FOR EXPENSES
@@ -5742,10 +5775,10 @@ async function getNextEventId() {
       btn.disabled = false;
       
       if (res && res.success) {
-          alert("Expense logged successfully!");
+          egmAlert("Expense logged successfully!");
           e.target.reset();
       } else {
-          alert("Error submitting expense: " + (res ? res.error || res.message : "Unknown error"));
+          egmAlert("Error submitting expense: " + (res ? res.error || res.message : "Unknown error"));
       }
   };
   function renderEditingQueue(data) {
@@ -5902,7 +5935,7 @@ async function getNextEventId() {
           });
           showToast(`Cloud Session for ${start} to ${end} saved successfully!`, "success");
       } catch (err) {
-          alert("Error saving to Cloud: " + err.message);
+          egmAlert("Error saving to Cloud: " + err.message);
       }
       
       btn.innerHTML = originalHtml;
@@ -5964,13 +5997,14 @@ async function getNextEventId() {
 
   // Engine: Delete a saved session
   async function deleteSavedSession(docId) {
-      if(!confirm("Permanently delete this saved payroll session?")) return;
+      const isConfirmed = await egmConfirm("Permanently delete this saved payroll session?", "Delete Session", "Delete", "danger");
+if (!isConfirmed) return;
       try {
           await db.collection("payroll_sessions").doc(docId).delete();
           showToast("Session deleted successfully.", "success");
           openLoadSessionModal(); // Refresh the list instantly
       } catch(e) { 
-          alert("Error deleting session: " + e.message); 
+          egmAlert("Error deleting session: " + e.message); 
       }
   }
 
@@ -5979,7 +6013,7 @@ async function getNextEventId() {
       const data = savedSessionsCache[index];
       if (!data) return;
 
-      if (confirm(`Load the saved session for ${data.startDate} to ${data.endDate}?\n\nThis will instantly restore your manual edits, custom pays, and added expenses!`)) {
+      if (await egmConfirm(`Load the saved session for ${data.startDate} to ${data.endDate}?\n\nThis will instantly restore your manual edits, custom pays, and added expenses!`)) {
           document.getElementById('prStartDate').value = data.startDate;
           document.getElementById('prEndDate').value = data.endDate;
           
@@ -5996,7 +6030,7 @@ async function getNextEventId() {
               
               markPayrollEdited(); 
           } catch (e) {
-              alert("Error parsing saved session data.");
+              egmAlert("Error parsing saved session data.");
           }
       }
   }
@@ -6014,11 +6048,11 @@ async function getNextEventId() {
       // Find anyone who currently has the tentative checkbox checked
       const tentativeCrew = names.filter(name => currentPayrollData[name].isTentative);
       if (tentativeCrew.length > 0) {
-          alert(`EXPORT BLOCKED:\n\nThe following crew members have a TENTATIVE status:\n- ${tentativeCrew.join('\n- ')}\n\nPlease click 'VIEW DETAILS' to review and uncheck their tentative status before proceeding with the PDF export.`);
+          egmAlert(`EXPORT BLOCKED:\n\nThe following crew members have a TENTATIVE status:\n- ${tentativeCrew.join('\n- ')}\n\nPlease click 'VIEW DETAILS' to review and uncheck their tentative status before proceeding with the PDF export.`);
           return; // Stop the export dead in its tracks
       }
 
-      if (!confirm(`Generate a printable PDF summary report for ${start} to ${end}?`)) return;
+      if (!await egmConfirm(`Generate a printable PDF summary report for ${start} to ${end}?`)) return;
 
       let totalPayout = 0;
       let grandBreakdown = { 'Edgar(EGM)': 0, 'Francis': 0, 'Tina': 0, 'Grace': 0 };
@@ -6131,7 +6165,7 @@ async function runPayrollEngine(forceNewRates = false) {
     const start = document.getElementById('prStartDate').value;
     const end = document.getElementById('prEndDate').value;
     
-    if (!start || !end) return alert("Please select a Start and End date for the cutoff.");
+    if (!start || !end) return egmAlert("Please select a Start and End date for the cutoff.");
     
     const currentRange = `${start}_${end}`;
 
@@ -6156,14 +6190,14 @@ async function runPayrollEngine(forceNewRates = false) {
 
             if (overlapFound) {
                 ov.style.display = 'none';
-                const loadIt = confirm(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session to prevent duplicate accounting.\n\nClick OK to open the Load Menu and view the existing session.`);
+                const loadIt = await egmConfirm(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session to prevent duplicate accounting.\n\nClick OK to open the Load Menu and view the existing session.`);
                 
                 if (loadIt) openLoadSessionModal();
                 return;
             }
         } catch (e) {
             ov.style.display = 'none';
-            alert("Error checking for overlapping sessions: " + e.message);
+            egmAlert("Error checking for overlapping sessions: " + e.message);
             return;
         }
         ov.style.display = 'none';
@@ -6403,15 +6437,96 @@ function initPayrollPerson(name) {
     }
 }
 
-function showToast(message, type = 'success') {
-    const toastEl = document.getElementById('appToast');
-    const toastBody = document.getElementById('appToastBody');
-    toastEl.className = `toast align-items-center text-bg-${type} border-0 shadow-lg`;
-    toastBody.innerText = message;
-    const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+// ==============================================================================
+// 🟢 UNIVERSAL DIALOG ENGINE (Toasts, Alerts, Confirms) 🟢
+// ==============================================================================
+
+// 1. Upgraded Stacking Toasts
+window.showToast = function(message, type = 'success') {
+    let container = document.getElementById('globalToastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'globalToastContainer';
+        container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        container.style.zIndex = '10950'; // Sits above absolutely everything
+        document.body.appendChild(container);
+    }
+
+    const toastId = 'tst-' + Date.now();
+    const iconClass = type === 'success' ? 'bi-check-circle-fill' : (type === 'danger' ? 'bi-exclamation-octagon-fill' : (type === 'warning' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill'));
+    
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0 shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body fw-bold d-flex align-items-center">
+                    <i class="bi ${iconClass} fs-5 me-2 opacity-75"></i> 
+                    <div style="line-height: 1.3;">${message.replace(/\n/g, '<br>')}</div>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', toastHtml);
+    const toastEl = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastEl, { delay: 4500 });
+    
+    toastEl.addEventListener('hidden.bs.toast', () => { toastEl.remove(); });
     toast.show();
-}
-  // UI: Draw the Main Table
+};
+
+// 2. Modern Asynchronous Alert Box
+window.egmAlert = function(message, title = "Notice", titleColor = "primary") {
+    return new Promise((resolve) => {
+        document.getElementById('globalAlertTitle').innerHTML = `<i class="bi bi-info-circle me-1"></i> ${title}`;
+        document.getElementById('globalAlertTitle').className = `fw-bold mb-0 text-${titleColor}`;
+        document.getElementById('globalAlertMessage').innerHTML = message.replace(/\n/g, '<br>');
+        
+        const modalEl = document.getElementById('globalAlertModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        
+        const hiddenHandler = () => {
+            modalEl.removeEventListener('hidden.bs.modal', hiddenHandler);
+            resolve();
+        };
+        modalEl.addEventListener('hidden.bs.modal', hiddenHandler);
+        modal.show();
+    });
+};
+
+// 3. Modern Asynchronous Confirmation Box
+window.egmConfirm = function(message, title = "Confirm Action", confirmBtnText = "Yes, Proceed", confirmBtnColor = "danger") {
+    return new Promise((resolve) => {
+        document.getElementById('globalConfirmTitle').innerHTML = `<i class="bi bi-question-circle me-1"></i> ${title}`;
+        document.getElementById('globalConfirmMessage').innerHTML = message.replace(/\n/g, '<br>');
+        
+        const okBtn = document.getElementById('globalConfirmOkBtn');
+        okBtn.className = `btn btn-${confirmBtnColor} fw-bold shadow-sm w-50 rounded-3`;
+        okBtn.innerText = confirmBtnText;
+
+        const modalEl = document.getElementById('globalConfirmModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        
+        let isResolved = false;
+
+        const handleOk = () => {
+            isResolved = true;
+            resolve(true);
+            modal.hide();
+        };
+
+        const hiddenHandler = () => {
+            okBtn.removeEventListener('click', handleOk);
+            modalEl.removeEventListener('hidden.bs.modal', hiddenHandler);
+            if (!isResolved) resolve(false);
+        };
+
+        okBtn.addEventListener('click', handleOk);
+        modalEl.addEventListener('hidden.bs.modal', hiddenHandler);
+        
+        modal.show();
+    });
+};
+
 // UI: Draw the Main Table
 function renderPayrollTable() {
     const tbody = document.getElementById('pr-body');
@@ -6518,7 +6633,7 @@ function openExpenseModal() {
 }
 
 async function processExpenseAction(docId, newStatus) {
-    if (!confirm(`Are you sure you want to mark this expense as ${newStatus.toUpperCase()}?`)) return;
+    if (!await egmConfirm(`Are you sure you want to mark this expense as ${newStatus.toUpperCase()}?`)) return;
 
     const ov = document.getElementById('submitOverlay');
     document.getElementById('overlayText').innerText = `Marking as ${newStatus}...`;
@@ -6537,7 +6652,7 @@ async function processExpenseAction(docId, newStatus) {
         showToast(`Expense ${newStatus}!`, newStatus === 'Approved' ? 'success' : 'danger');
         // The Firebase real-time listener will automatically remove it from the screen!
     } else {
-        alert("Error updating expense: " + (res ? res.error || res.message : "Unknown error"));
+        egmAlert("Error updating expense: " + (res ? res.error || res.message : "Unknown error"));
     }
 }
 
@@ -7085,13 +7200,13 @@ window.savePayrollModalChanges = function() {
 
   // Engine: Delete a payslip record from the Vault
   async function deleteHistoricalPayslip(docId) {
-      if(!confirm("WARNING: Permanently delete this finalized payslip record from the History Vault?")) return;
+      if(!await egmConfirm("WARNING: Permanently delete this finalized payslip record from the History Vault?")) return;
       try {
           await db.collection("payroll_history").doc(docId).delete();
           showToast("Payslip record deleted from Vault.", "success");
           openPayrollHistory(); // Refresh the list instantly
       } catch(e) { 
-          alert("Error deleting record: " + e.message); 
+          egmAlert("Error deleting record: " + e.message); 
       }
   }
 
