@@ -5812,7 +5812,7 @@ async function getNextEventId() {
               deadlineStart.setHours(6, 0, 0, 0); // 6:00 AM
               
               let deadlineEnd = new Date(deadlineStart);
-              deadlineEnd.setHours(deadlineEnd.getHours() + 48); // +48 Hours
+              deadlineEnd.setHours(deadlineEnd.getHours() + 24); // +48 Hours
               
               if (now < deadlineStart) {
                   deadlineHtml = `<span class="badge bg-light text-dark border">Starts ${deadlineStart.toLocaleDateString('en-US', {month:'short', day:'numeric'})} 6AM</span>`;
