@@ -2345,7 +2345,7 @@ async function subscribeToNotifications() {
       return localStorage.getItem('egm_auth_role') || null;
   }
 
-  function requireAuth(actionFunction, requiresAdmin = false) {
+  async function requireAuth(actionFunction, requiresAdmin = false) {
       const role = getUserRole();
       const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
       
@@ -6009,7 +6009,7 @@ if (!isConfirmed) return;
   }
 
   // Engine: Triggered when you click a specific session in the visual list
-  function applyLoadedSession(index) {
+  async function applyLoadedSession(index) {
       const data = savedSessionsCache[index];
       if (!data) return;
 
@@ -6036,7 +6036,7 @@ if (!isConfirmed) return;
   }
 
 // Engine: Export current session summary to PDF
-  function exportSessionPDF() {
+  async function exportSessionPDF() {
       const start = document.getElementById('prStartDate').value;
       const end = document.getElementById('prEndDate').value;
       if (!start || !end) return showToast("Set a cutoff period first.", "warning");
