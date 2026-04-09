@@ -480,20 +480,6 @@
         </div>
     </div>
 </div>
-<div class="events-filter-section">
-  
-  <div class="search-container">
-    <input type="text" placeholder="Search events..." id="eventSearch" />
-    
-    <button id="mobileFilterToggle" class="mobile-filter-btn">
-      Filters <span>▼</span>
-    </button>
-  </div>
-
-  <div class="advanced-filters" id="advancedFilters">
-    </div>
-  
-</div>
 <div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 10900;">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow-lg rounded-4">
@@ -768,7 +754,20 @@
       </div>
       <div id="events-view" style="display:none;">
           <h4 class="fw-bold mb-4 mt-2" id="upcomingEventsHeader">Upcoming Events</h4>
-          
+          <div class="events-filter-section">
+  
+  <div class="search-container">
+    <input type="text" placeholder="Search events..." id="eventSearch" />
+    
+    <button id="mobileFilterToggle" class="mobile-filter-btn">
+      Filters <span>▼</span>
+    </button>
+  </div>
+
+  <div class="advanced-filters" id="advancedFilters">
+    </div>
+  
+</div>
           <button id="floatingBackBtn" class="btn btn-dark text-white floating-back-btn" onclick="resetFromNotification()">
               <i class="bi bi-arrow-left-circle me-2"></i>Go back to upcoming events
           </button>
