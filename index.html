@@ -592,17 +592,34 @@
       </div>
     </div>
 
-    <div class="collapse mt-2 mb-2" id="filterCollapse">
+    <div class="collapse show mt-2 mb-2" id="filterCollapse">
       <div class="filter-panel" id="eventFilters">
-        <div class="row g-2 align-items-end">
-          <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
-          <div class="col-6 col-md-2"><span class="form-label-sm">From Date</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
-          <div class="col-6 col-md-2"><span class="form-label-sm">To Date</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
+  <div class="row g-2 align-items-end">
+    
+    <div class="col-12 col-md-3 d-flex align-items-end gap-2">
+      <div class="flex-grow-1">
+        <span class="form-label-sm">ID/Event Name</span>
+        <input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()">
+      </div>
+      <button class="btn btn-primary btn-sm d-md-none fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#advancedEventFilters" style="height: 31px; padding: 0 12px;">
+        <i class="bi bi-sliders"></i>
+      </button>
+    </div>
+    
+    <div class="col-12 col-md-9 p-0 m-0">
+      <div class="collapse d-md-block" id="advancedEventFilters">
+        <div class="row g-2 align-items-end m-0 pt-2 pt-md-0">
+          <div class="col-6 col-md-3"><span class="form-label-sm">From Date</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
+          <div class="col-6 col-md-3"><span class="form-label-sm">To Date</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">Crew Member</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Crew</option></select></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">Event Status</span><select id="fStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Statuses</option><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
-          <div class="col-12 col-md-1 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
+          <div class="col-12 col-md-2 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
         </div>
       </div>
+    </div>
+    
+  </div>
+</div>
 <div class="filter-panel" id="editQueueFilters" style="display:none;">
         <div class="row g-2 align-items-end">
           <div class="col-12 col-md-5"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fEqSearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="handleEqSearch()"></div>
@@ -754,20 +771,7 @@
       </div>
       <div id="events-view" style="display:none;">
           <h4 class="fw-bold mb-4 mt-2" id="upcomingEventsHeader">Upcoming Events</h4>
-          <div class="events-filter-section">
-  
-  <div class="search-container">
-    <input type="text" placeholder="Search events..." id="eventSearch" />
-    
-    <button id="mobileFilterToggle" class="mobile-filter-btn">
-      Filters <span>▼</span>
-    </button>
-  </div>
-
-  <div class="advanced-filters" id="advancedFilters">
-    </div>
-  
-</div>
+         
           <button id="floatingBackBtn" class="btn btn-dark text-white floating-back-btn" onclick="resetFromNotification()">
               <i class="bi bi-arrow-left-circle me-2"></i>Go back to upcoming events
           </button>
