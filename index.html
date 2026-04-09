@@ -595,8 +595,17 @@
     <div class="col-12 col-md-3 d-flex align-items-end gap-2">
       <div class="flex-grow-1">
         <span class="form-label-sm">ID/Event Name</span>
-        <input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()">
+        
+        <div class="input-group input-group-sm">
+          <input type="text" id="fName" class="form-control" placeholder="Search..." onkeyup="applyFilters()">
+          
+          <button class="btn btn-light border border-secondary-subtle d-md-none text-danger px-2" type="button" onclick="clearFilters()" title="Clear">
+            <i class="bi bi-x-lg" style="font-size: 0.75rem;"></i>
+          </button>
+        </div>
+        
       </div>
+      
       <button class="btn btn-primary btn-sm d-md-none fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#advancedEventFilters" style="height: 31px; padding: 0 12px;">
         <i class="bi bi-sliders"></i>
       </button>
