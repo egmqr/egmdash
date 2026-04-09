@@ -157,7 +157,6 @@
     .sticky-date-header-container.is-pinned .sticky-date-header { background-color: #0d9488; border-bottom-color: transparent; box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3); }
     .sticky-date-header-container.is-pinned .sticky-date-header h5, .sticky-date-header-container.is-pinned .sticky-date-header i { color: #ffffff !important; }
 
-    #upcomingEventsHeader { color: #1e293b; letter-spacing: -0.5px; transition: color 0.3s ease; }
     .btn { border-radius: 8px; font-weight: 600; letter-spacing: 0.3px; }
     .form-control:disabled, .form-select:disabled { background-color: #f1f5f9; opacity: 0.8; }
     .filter-panel { background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.3s ease; }
@@ -312,7 +311,7 @@
     .dark-mode .sticky-date-header { color: #f3f4f6 !important; border-bottom-color: #333333; }
     .dark-mode .sticky-date-header h5 { color: #f3f4f6 !important; }
     .dark-mode .sticky-date-header-container.is-pinned .sticky-date-header { background-color: #0d9488; color: #fff !important; }
-    .dark-mode #upcomingEventsHeader { color: #ffffff !important; }
+
     .dark-mode .nav-pills .nav-link { background: #2b2b2b; border-color: #333333; color: #9ca3af; }
     .dark-mode .nav-pills .nav-link.active { background: #0d9488; color: white; border-color: #0d9488; box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3); }
     .dark-mode .btn-light { background-color: #2b2b2b; border-color: #444444 !important; color: #d1d5db; }
@@ -419,10 +418,7 @@
    Global Styles
    ========================================= */
 
-/* Requirement #2: Make the header more compact */
-#upcomingEventsHeader {
-  margin-bottom: 0 !important;
-}
+
 
 /* Hide the mobile toggle button on desktop */
 .mobile-filter-btn {
@@ -770,7 +766,6 @@
           </div>
       </div>
       <div id="events-view" style="display:none;">
-          <h4 class="fw-bold mb-4 mt-2" id="upcomingEventsHeader">Upcoming Events</h4>
          
           <button id="floatingBackBtn" class="btn btn-dark text-white floating-back-btn" onclick="resetFromNotification()">
               <i class="bi bi-arrow-left-circle me-2"></i>Go back to upcoming events
