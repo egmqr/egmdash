@@ -415,7 +415,52 @@
     .modal-backdrop:nth-of-type(even) {
         z-index: 1070 !important;
     }
+    /* =========================================
+   Global Styles
+   ========================================= */
+
+/* Requirement #2: Make the header more compact */
+#upcomingEventsHeader {
+  margin-bottom: 0 !important;
+}
+
+/* Hide the mobile toggle button on desktop */
+.mobile-filter-btn {
+  display: none;
+}
+
+/* =========================================
+   Mobile View Only (max-width: 768px)
+   ========================================= */
+@media screen and (max-width: 768px) {
   
+  /* Ensure the toggle button is visible next to the search bar */
+  .mobile-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 10px;
+  }
+
+  .search-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    /* Keeps the search bar on top */
+    margin-bottom: 15px; 
+  }
+
+  /* Hide the rest of the filters by default on mobile */
+  .advanced-filters {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  /* Class toggled by JavaScript to show the filters */
+  .advanced-filters.is-expanded {
+    display: flex; 
+  }
+}
   </style>
 </head>
 <body>
@@ -435,7 +480,20 @@
         </div>
     </div>
 </div>
+<div class="events-filter-section">
+  
+  <div class="search-container">
+    <input type="text" placeholder="Search events..." id="eventSearch" />
+    
+    <button id="mobileFilterToggle" class="mobile-filter-btn">
+      Filters <span>▼</span>
+    </button>
+  </div>
 
+  <div class="advanced-filters" id="advancedFilters">
+    </div>
+  
+</div>
 <div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 10900;">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow-lg rounded-4">
@@ -7276,6 +7334,21 @@ window.savePayrollModalChanges = function() {
       document.getElementById('prModalCutoffDates').innerText = `${row.cutoffStart} to ${row.cutoffEnd}`;
       openPayrollModal(row.crewName, true, histData);
   }
+  document.addEventListener("DOMContentLoaded", function() {
+  const toggleBtn = document.getElementById("mobileFilterToggle");
+  const advancedFilters = document.getElementById("advancedFilters");
+
+  if (toggleBtn && advancedFilters) {
+    toggleBtn.addEventListener("click", function() {
+      // Toggle the visibility class
+      advancedFilters.classList.toggle("is-expanded");
+      
+      // Optional: Change the arrow direction based on state
+      const isExpanded = advancedFilters.classList.contains("is-expanded");
+      toggleBtn.innerHTML = isExpanded ? 'Filters <span>▲</span>' : 'Filters <span>▼</span>';
+    });
+  }
+});
 </script>
 </body>
 </html>
