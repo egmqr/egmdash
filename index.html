@@ -3147,21 +3147,12 @@ function handleEditClick(docId) {
 
 // Smart router for Calendar Pills
 function handleCalendarPillClick(docId) {
-    const role = getUserRole();
-    const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+    const e = rawEvents.find(ev => String(ev['Doc ID']) === String(docId));
+    if (!e) return;
     
-    if (role === 'admin' && !isExpired) {
-        // Admin: Open full edit modal immediately
-        openEditModal(docId);
-    } else {
-        // Editor or Non-Admin: Show the card in a Lightbox
-        const e = rawEvents.find(ev => String(ev['Doc ID']) === String(docId));
-        if (!e) return;
-        
-        window.currentOpenModalEventId = e['Event ID']; // <-- ADD THIS LINE
-        document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(e);
-        new bootstrap.Modal(document.getElementById('eventCardModal')).show();
-    }
+    window.currentOpenModalEventId = e['Event ID']; 
+    document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(e);
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('eventCardModal')).show();
 }
 
 // Extracted Card Builder (Shared by Events Tab & Calendar Lightbox)
@@ -3182,8 +3173,8 @@ function generateSingleEventCard(e) {
                 </div>
             </div>
             <div class="text-danger fw-bold mb-2 small"><i class="bi bi-calendar2-event opacity-75 me-1"></i> ${leaveDateString}</div>
-            <div class="mb-1"><div style="line-height: 1.6;">${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-2 fw-bold px-2 py-1 text-wrap" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}</div></div>
-            ${e['Event Notes'] ? `<div class="small text-secondary mt-2 border-top pt-2 border-danger border-opacity-25"><p class="mb-0 fst-italic" style="font-size: 0.7rem;"><i class="bi bi-journal-text opacity-50 text-danger me-1"></i> ${e['Event Notes']}</p></div>` : ''}
+            <div class="mb-1 d-flex flex-wrap gap-1">${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger fw-bold px-2 py-1 shadow-sm" style="font-size: 0.75rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}</div>
+            ${e['Event Notes'] ? `<div class="small text-secondary mt-2 border-top pt-2 border-danger border-opacity-25"><p class="mb-0 fst-italic" style="font-size: 0.7rem; line-height: 1.3;"><i class="bi bi-journal-text opacity-50 text-danger me-1"></i> ${e['Event Notes']}</p></div>` : ''}
         </div>`;
     }
 
@@ -3194,7 +3185,7 @@ function generateSingleEventCard(e) {
             if(key.toLowerCase().startsWith('file0') && row[key]) {
                 if(!fileSet.has(row[key])) {
                     fileSet.add(row[key]); const parts = row[key].split('|');
-                    if(parts.length === 3) filesHtml += `<span class="file-badge mb-2 me-2"><i class="bi bi-file-earmark-text text-secondary"></i> ${parts[0]} <a href="${parts[1]}" target="_blank" class="ms-1">View</a> <span class="file-delete-btn ms-1" title="Delete File" onclick="requireAuth(() => deleteFile('${e['Event ID']}', '${parts[2]}'))"><i class="bi bi-x"></i></span></span>`;
+                    if(parts.length === 3) filesHtml += `<span class="file-badge"><i class="bi bi-file-earmark-text text-secondary"></i> ${parts[0]} <a href="${parts[1]}" target="_blank" class="ms-1">View</a> <span class="file-delete-btn ms-1" title="Delete File" onclick="requireAuth(() => deleteFile('${e['Event ID']}', '${parts[2]}'))"><i class="bi bi-x"></i></span></span>`;
                 }
             }
         });
@@ -3206,74 +3197,105 @@ function generateSingleEventCard(e) {
     else if (e['Event Status'] === 'Pencil Booked') { cardCustomClass = 'card-pencil'; stampHtml = `<div class="stamp-container"><div class="status-stamp stamp-pencil">PENCIL BOOKED</div></div>`; } 
     else { statusPillHtml = `<span class="badge badge-soft-dark px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>`; }
 
-    let venueDisplay = `<span class="fw-medium text-dark">${e['Event Venue'] || 'No Venue Set'}</span>`;
-    if (e['Event Venue Link']) venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
+    let venueDisplay = `<span class="fw-medium text-dark text-truncate">${e['Event Venue'] || 'No Venue Set'}</span>`;
+    if (e['Event Venue Link']) venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold text-truncate">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
     
     let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
         let sTrim = s.trim();
         if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only') || sTrim.startsWith('Photo souvenir')) {
             let match = sTrim.match(/\[(\d+)\s+booth/); let booths = match ? match[1] : 1; let cleanName = e['Event Name'].replace(/'/g, "\\'");
-            return `<span class="badge badge-teal opacity-100 border me-1 mb-2 fw-bold px-2 py-1 text-wrap text-start shadow-sm" style="font-size: 0.8rem; line-height: 1.4; cursor: pointer;" onclick="goToBoothQR('${e['Event ID']}', '${booths}', '${cleanName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
-        } else { return `<span class="badge bg-secondary opacity-75 border me-1 mb-2 fw-medium px-2 py-1 text-wrap text-start" style="font-size: 0.8rem; line-height: 1.4;">${sTrim}</span>`; }
+            return `<span class="badge badge-teal opacity-100 border fw-bold px-2 py-1 text-start shadow-sm" style="font-size: 0.75rem; cursor: pointer;" onclick="goToBoothQR('${e['Event ID']}', '${booths}', '${cleanName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
+        } else { return `<span class="badge bg-secondary opacity-75 border fw-medium px-2 py-1 text-start" style="font-size: 0.75rem;">${sTrim}</span>`; }
     }).join('') : '-';
 
     let displayDateString = e['Event Date'];
     if (displayDateString && displayDateString.includes('-')) {
         const dParts = displayDateString.split('-');
-        displayDateString = new Date(dParts[0], dParts[1]-1, dParts[2]).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        displayDateString = new Date(dParts[0], dParts[1]-1, dParts[2]).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
     }
 
-    // --- NEW LOGIC: FIND PAYMENT AMOUNT ---
-    // Search the entire project to find the document holding the payment info
     let paymentDoc = projectRows.find(r => r['Payment Type']) || e;
     let pType = paymentDoc['Payment Type'];
     let pAmount = paymentDoc['Amount'] || 0;
     let amountHtml = '';
 
-    // If it matches any of the specified cash/check types, build a bright green alert block
     if (['Cash AR', 'Cash ORCR', 'Check AR', 'Check ORCR'].includes(pType)) {
         amountHtml = `
-        <div class="bg-success bg-opacity-10 p-2 rounded-3 border border-success border-opacity-25 mb-3 shadow-sm d-flex align-items-center justify-content-between">
+        <div class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between">
             <div>
-                <i class="bi bi-cash-stack text-success fs-5 me-1 align-middle"></i> 
-                <span class="text-dark small fw-bold text-uppercase" style="letter-spacing: 0.5px;">To Collect (${pType})</span>
+                <i class="bi bi-cash-stack text-success fs-6 me-1 align-middle"></i> 
+                <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect (${pType})</span>
             </div>
-            <strong class="text-success fs-5">₱${Number(pAmount).toLocaleString()}</strong>
+            <strong class="text-success" style="font-size: 0.9rem;">₱${Number(pAmount).toLocaleString()}</strong>
         </div>`;
     }
-    // ---------------------------------------
 
-    return `<div class="card p-3 p-md-4 w-100 ${cardCustomClass}" style="position: relative; overflow: hidden; height: 100%;">
+    // 🟢 EXTRACT EDITOR DATA
+    let editorBadge = e['Editor Assigned'] 
+        ? `<span class="badge bg-white text-dark border border-secondary-subtle fw-bold px-2 py-1 shadow-sm" style="font-size: 0.7rem;">${e['Editor Assigned']}</span>` 
+        : `<span class="badge bg-light text-muted border border-secondary-subtle fw-normal px-2 py-1 shadow-sm" style="font-size: 0.7rem;">Unassigned</span>`;
+
+    return `<div class="card p-3 w-100 ${cardCustomClass}" style="position: relative; overflow: hidden; height: 100%;">
         ${stampHtml}
-        <div class="d-flex justify-content-between mb-3 align-items-center">
+        
+        <div class="d-flex justify-content-between mb-2 align-items-center">
             <div style="z-index: 30;"> <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
                 <span onclick="handleEditClick('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
                 <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
             </div>
             ${statusPillHtml}
         </div>
-        <h5 class="fw-bold mb-1 lh-sm text-dark">${e['Event Name']}</h5>
-        <p class="small text-muted mb-3"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> ${venueDisplay}</p>
-        <div class="bg-light p-3 rounded-3 border mb-3">
-            <div class="d-flex align-items-center mb-2 pb-2 border-bottom border-secondary-subtle">
-                <i class="bi bi-calendar2-event-fill text-primary fs-5 me-2"></i>
-                <span class="fw-bold text-dark" style="font-size: 0.95rem; letter-spacing: 0.3px;">${displayDateString}</span>
+        
+        <h6 class="fw-bold mb-2 lh-sm text-dark" style="font-size: 1.05rem;">${e['Event Name']}</h6>
+        
+        <div class="bg-light p-2 rounded-3 border mb-2">
+            <div class="d-flex align-items-center mb-1 pb-1 border-bottom border-secondary-subtle">
+                <i class="bi bi-calendar2-event-fill text-primary me-2" style="font-size: 0.9rem;"></i>
+                <span class="fw-bold text-dark" style="font-size: 0.85rem; letter-spacing: 0.3px;">${displayDateString}</span>
             </div>
-            <div class="row g-2 small">
-                <div class="col-6"><span class="text-muted d-block mb-1" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Call Time</span><span class="text-danger fw-bold"><i class="bi bi-alarm text-danger opacity-75 me-1"></i>${formatAMPM(e['Call Time'])}</span></div>
-                <div class="col-6 border-start border-secondary-subtle"><span class="text-muted d-block mb-1 ms-2" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Shoot Time</span><span class="text-dark fw-bold ms-2"><i class="bi bi-camera-video-fill text-primary opacity-75 me-1"></i>${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</span></div>
+            <div class="d-flex align-items-start mb-2 mt-1">
+                <i class="bi bi-geo-alt-fill text-danger opacity-75 me-2" style="font-size: 0.9rem;"></i>
+                <span class="small" style="line-height: 1.2;">${venueDisplay}</span>
+            </div>
+            <div class="row g-1 small">
+                <div class="col-5"><span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Call Time</span><span class="text-danger fw-bold"><i class="bi bi-alarm text-danger opacity-75 me-1"></i>${formatAMPM(e['Call Time'])}</span></div>
+                <div class="col-7 border-start border-secondary-subtle"><span class="text-muted d-block ms-2" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Shoot Time</span><span class="text-dark fw-bold ms-2"><i class="bi bi-camera-video-fill text-primary opacity-75 me-1"></i>${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</span></div>
             </div>
         </div>
+        
         <div class="small text-secondary">
-            <div class="d-flex mb-2 align-items-start"><i class="card-icon bi bi-list-check text-secondary opacity-75 mt-1"></i><div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Services:</strong><br>${servicesBadges}</div></div>
-            <div class="d-flex mb-3 align-items-start"><i class="card-icon bi bi-people-fill text-info opacity-75 mt-1"></i> <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-dark border border-secondary-subtle me-1 mb-2 fw-bold px-2 py-1 text-wrap shadow-sm" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '-'}</div></div>
-            <div class="bg-white p-2 rounded-3 border mb-3 shadow-sm"><p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2 text-dark fw-medium">${e['Contact Number']}</span></p></div>
+            <div class="mb-2">
+                <strong class="text-dark d-block mb-1" style="font-size: 0.75rem;"><i class="bi bi-list-check text-secondary opacity-75 me-1"></i>Services:</strong>
+                <div class="d-flex flex-wrap gap-1">${servicesBadges}</div>
+            </div>
+            
+            <div class="row g-2 mb-2">
+                <div class="col-12 col-sm-7">
+                    <strong class="text-dark d-block mb-1" style="font-size: 0.75rem;"><i class="bi bi-people-fill text-info opacity-75 me-1"></i>Crew:</strong>
+                    <div class="d-flex flex-wrap gap-1">${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-dark border border-secondary-subtle fw-bold px-1 py-1 shadow-sm" style="font-size: 0.7rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic" style="font-size: 0.7rem;">No crew</span>'}</div>
+                </div>
+                <div class="col-12 col-sm-5 border-start-sm border-secondary-subtle">
+                    <strong class="text-dark d-block mb-1" style="font-size: 0.75rem;"><i class="bi bi-film text-primary opacity-75 me-1"></i>Editor:</strong>
+                    ${editorBadge}
+                </div>
+            </div>
+            
+            <div class="bg-white p-2 rounded-3 border mb-2 shadow-sm d-flex align-items-center">
+                <i class="bi bi-person-badge-fill text-success opacity-75 fs-5 me-2"></i>
+                <div style="line-height: 1.2;">
+                    <strong class="text-dark" style="font-size: 0.75rem;">Contact:</strong> <span style="font-size: 0.8rem;">${e['Contact Person']}</span><br>
+                    <span class="text-dark fw-medium" style="font-size: 0.75rem;">${e['Contact Number']}</span>
+                </div>
+            </div>
             
             ${amountHtml}
-            
-            <p class="mb-0 text-muted fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
+            ${e['Event Notes'] ? `<p class="mb-0 text-muted fst-italic" style="font-size: 0.75rem; line-height: 1.3;"><i class="bi bi-journal-text opacity-50 me-1"></i>${e['Event Notes']}</p>` : ''}
         </div>
-        <div class="mt-auto pt-4"><div class="d-flex flex-wrap">${filesHtml}</div><label class="card-upload-btn w-100" onclick="openUploadModal('${e['Event ID']}')"><i class="bi bi-cloud-arrow-up me-1"></i> Add Document</label></div>
+        
+        <div class="mt-auto pt-3 border-top border-secondary-subtle mt-2">
+            <div class="d-flex flex-wrap gap-1 mb-2">${filesHtml}</div>
+            <label class="card-upload-btn w-100 mt-0 py-1" onclick="openUploadModal('${e['Event ID']}')"><i class="bi bi-cloud-arrow-up me-1"></i> Add Document</label>
+        </div>
     </div>`;
 }
   function renderEvents(data, isDefault) {
