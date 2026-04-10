@@ -3804,7 +3804,7 @@ function generateSingleEventCard(e) {
                   el.disabled = true;
               }
           } else {
-              el.disabled = false; // Admin: All enabled
+              el.disabled = false; // Admin AND Superadmin: All enabled
           }
       });
 
@@ -3812,9 +3812,9 @@ function generateSingleEventCard(e) {
       if (document.getElementById('editCrewAddBtn')) document.getElementById('editCrewAddBtn').disabled = (isReadOnly || role === 'editor');
       if (document.getElementById('editServiceAddBtn')) document.getElementById('editServiceAddBtn').disabled = (isReadOnly || role === 'editor');
       
-      // Force hide the REMOVE spans for Editors and Unauthenticated users
+      // 🟢 THE FIX: Force show the REMOVE spans for both Admin AND Superadmin
       document.querySelectorAll('.admin-remove-btn').forEach(btn => {
-          btn.style.display = (role === 'admin' && !isReadOnly) ? 'inline-block' : 'none';
+          btn.style.display = ((role === 'admin' || role === 'superadmin') && !isReadOnly) ? 'inline-block' : 'none';
       });
       
       if (isReadOnly) {
@@ -3826,9 +3826,9 @@ function generateSingleEventCard(e) {
           document.getElementById('editSubmitBtn').style.display = 'block';
           document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
           
-          // Editors cannot delete projects or add days
-          document.getElementById('editDeleteBtn').style.display = role === 'admin' ? 'block' : 'none';
-          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = role === 'admin' ? 'inline-block' : 'none';
+          // 🟢 THE FIX: Allow both Admin AND Superadmin to delete projects or add days
+          document.getElementById('editDeleteBtn').style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none';
+          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
       }
   }
 
@@ -6818,7 +6818,8 @@ function renderExpenseQueue() {
     if (!banner || !tbody) return;
 
     const role = getUserRole();
-    if (role !== 'admin') {
+    // 🟢 THE FIX: Allow both 'admin' AND 'superadmin' to see the pending expenses
+    if (role !== 'admin' && role !== 'superadmin') {
         banner.style.setProperty('display', 'none', 'important');
         return;
     }
