@@ -577,6 +577,7 @@
         <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
         <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), true)"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
         <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), true)"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
+       <li class="nav-item"><a class="nav-link" id="bs-tab" onclick="requireAuth(() => handleTabClick('billingsales'), 'superadmin')"><i class="bi bi-graph-up-arrow me-1"></i> Billing Sales <i class="bi bi-shield-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
       </ul>
       <div class="d-flex gap-2">
         <button id="copyFilterLinkBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" onclick="copyCurrentUrl()" title="Copy link with active filters">
@@ -1010,6 +1011,14 @@
               </form>
           </div>
       </div>
+      <div id="billingsales-view" style="display:none;">
+        <h4 class="fw-bold mb-4 mt-2 text-primary"><i class="bi bi-graph-up-arrow me-2"></i>Billing Sales Dashboard</h4>
+        <div class="card p-5 text-center text-muted border-dashed border-2 shadow-sm bg-light">
+            <i class="bi bi-bar-chart-steps fs-1 mb-3 opacity-50"></i>
+            <h5 class="fw-bold text-dark">Superadmin Access Verified</h5>
+            <p class="mb-0">The Billing Sales UI and metrics will be constructed here.</p>
+        </div>
+      </div>
   </div>
 </div>
 
@@ -1077,77 +1086,95 @@
       
       <div class="mb-4 p-3 bg-light rounded border shadow-sm">
           <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
-          <div class="row px-2 g-2" id="newServicesContainer">
-              
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo" id="newSrvPhoto" onchange="document.getElementById('newSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="newSrvPhoto" class="fw-bold text-dark">Photo</label>
-                  <div id="newSrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="newSrvPhotoCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">photographer(s)</span>
-                      </div>
-                  </div>
-              </div>
-              
-              <div class="col-12 col-md-12 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="newSrvPhotoQR" onchange="document.getElementById('newSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="newSrvPhotoQR" class="fw-bold text-dark">Photo Souvenir QR</label>
-                  <div id="newSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
-                      
-                      <div class="d-flex gap-3 mb-2">
-                          <div class="form-check">
-                              <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('new')" checked>
-                              <label class="form-check-label fw-bold text-dark" for="newTypeWithPrints">With Prints</label>
-                          </div>
-                          <div class="form-check">
-                              <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('new')">
-                              <label class="form-check-label fw-bold text-dark" for="newTypeWithoutPrints">Without Prints</label>
-                          </div>
-                      </div>
-                      
-                      <div id="newDetailsWithPrints">
-                          <div class="input-group input-group-sm mb-1">
-                              <input type="number" id="newSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
-                          </div>
-                          <div class="input-group input-group-sm">
-                              <input type="number" id="newSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
-                              <select id="newSrvPrintsSize" class="form-select border-secondary-subtle">
-                                  <option value="4R">4R</option>
-                                  <option value="Wallet size">Wallet size</option>
-                                  <option value="5R">5R</option>
-                              </select>
-                          </div>
-                      </div>
-                      
-                      <div id="newDetailsWithoutPrints" style="display: none;">
-                          <div class="input-group input-group-sm">
-                              <input type="number" id="newSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-              
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="newSrvFrame" onchange="document.getElementById('newSrvFrameDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="newSrvFrame" class="fw-bold text-dark">Frame Token</label>
-                  <div id="newSrvFrameDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="newSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
-                      </div><div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
-                  </div>
-              </div>
+          <div id="newServicesContainer">
+    
+    <div class="row px-2 g-2" id="newStandardServices">
+        
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo" id="newSrvPhoto" onchange="document.getElementById('newSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'">
+            <label for="newSrvPhoto" class="fw-bold text-dark">Photo</label></div>
+            <input type="number" name="amt_Photo" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            <div id="newSrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
+                <div class="input-group input-group-sm">
+                    <input type="number" id="newSrvPhotoCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                    <span class="input-group-text bg-light text-muted border-secondary-subtle">photographer(s)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-12 small mb-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="newSrvPhotoQR" onchange="document.getElementById('newSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'">
+            <label for="newSrvPhotoQR" class="fw-bold text-dark">Photo Souvenir QR</label></div>
+            <input type="number" name="amt_PhotoQR" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            
+            <div id="newSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
+                <div class="d-flex gap-3 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('new')" checked>
+                        <label class="form-check-label fw-bold text-dark" for="newTypeWithPrints">With Prints</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('new')">
+                        <label class="form-check-label fw-bold text-dark" for="newTypeWithoutPrints">Without Prints</label>
+                    </div>
+                </div>
+                
+                <div id="newDetailsWithPrints">
+                    <div class="input-group input-group-sm mb-1">
+                        <input type="number" id="newSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <input type="number" id="newSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
+                        <select id="newSrvPrintsSize" class="form-select border-secondary-subtle">
+                            <option value="4R">4R</option>
+                            <option value="Wallet size">Wallet size</option>
+                            <option value="5R">5R</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="newDetailsWithoutPrints" style="display: none;">
+                    <div class="input-group input-group-sm">
+                        <input type="number" id="newSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="newSrvFrame" onchange="document.getElementById('newSrvFrameDetails').style.display = this.checked ? 'block' : 'none'">
+            <label for="newSrvFrame" class="fw-bold text-dark">Frame Token</label></div>
+            <input type="number" name="amt_FrameToken" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            <div id="newSrvFrameDetails" class="mt-1 pe-2" style="display:none;">
+                <div class="input-group input-group-sm">
+                    <input type="number" id="newSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                    <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
+                </div>
+            </div>
+        </div>
 
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
-          </div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> <label>Photo studio</label></div><input type="number" name="amt_PhotoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> <label>Video doc</label></div><input type="number" name="amt_VideoDoc" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> <label>Video SDE</label></div><input type="number" name="amt_VideoSDE" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> <label>Video highlights</label></div><input type="number" name="amt_VideoHigh" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> <label>Video studio</label></div><input type="number" name="amt_VideoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Transpo"> <label class="fw-bold text-primary">Transpo</label></div><input type="number" name="amt_Transpo" class="form-control form-control-sm mt-1 superadmin-billing-amt border-primary" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+    </div>
+    
+    <div class="row px-2 g-2" id="newAvpServices" style="display:none;">
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check p-3 bg-white rounded border shadow-sm">
+                <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="newSrvPreProd" checked>
+                <label for="newSrvPreProd" class="fw-bold text-primary ms-1">Pre-Prod</label>
+                <input type="number" name="amt_PreProd" class="form-control form-control-sm mt-2 superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 180px;">
+            </div>
+        </div>
+    </div>
+
+</div>
           
           <div class="input-group input-group-sm mt-3">
               <span class="input-group-text bg-white"><i class="bi bi-plus-circle text-muted"></i></span>
@@ -1530,77 +1557,95 @@
       
       <div class="mb-4 p-3 bg-light rounded border shadow-sm">
           <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
-          <div class="row px-2 g-2" id="editServicesContainer">
-              
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo" id="editSrvPhoto" onchange="document.getElementById('editSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="editSrvPhoto" class="fw-bold text-dark">Photo</label>
-                  <div id="editSrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="editSrvPhotoCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">photographer(s)</span>
-                      </div>
-                  </div>
-              </div>
-              
-              <div class="col-12 col-md-12 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="editSrvPhotoQR" onchange="document.getElementById('editSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="editSrvPhotoQR" class="fw-bold text-dark">Photo Souvenir QR</label>
-                  <div id="editSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
-                      
-                      <div class="d-flex gap-3 mb-2">
-                          <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('edit')" checked>
-                              <label class="form-check-label fw-bold text-dark" for="editTypeWithPrints">With Prints</label>
-                          </div>
-                          <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('edit')">
-                              <label class="form-check-label fw-bold text-dark" for="editTypeWithoutPrints">Without Prints</label>
-                          </div>
-                      </div>
-                      
-                      <div id="editDetailsWithPrints">
-                          <div class="input-group input-group-sm mb-1">
-                              <input type="number" id="editSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
-                          </div>
-                          <div class="input-group input-group-sm">
-                              <input type="number" id="editSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
-                              <select id="editSrvPrintsSize" class="form-select border-secondary-subtle">
-                                  <option value="4R">4R</option>
-                                  <option value="Wallet size">Wallet size</option>
-                                  <option value="5R">5R</option>
-                              </select>
-                          </div>
-                      </div>
-                      
-                      <div id="editDetailsWithoutPrints" style="display: none;">
-                          <div class="input-group input-group-sm">
-                              <input type="number" id="editSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-              
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="editSrvFrame" onchange="document.getElementById('editSrvFrameDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="editSrvFrame" class="fw-bold text-dark">Frame Token</label>
-                  <div id="editSrvFrameDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="editSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
-                      </div>
-                  </div>
-              </div>
+          <div id="editServicesContainer">
+    
+    <div class="row px-2 g-2" id="newStandardServices">
+        
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo" id="newSrvPhoto" onchange="document.getElementById('newSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'">
+            <label for="newSrvPhoto" class="fw-bold text-dark">Photo</label></div>
+            <input type="number" name="amt_Photo" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            <div id="newSrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
+                <div class="input-group input-group-sm">
+                    <input type="number" id="newSrvPhotoCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                    <span class="input-group-text bg-light text-muted border-secondary-subtle">photographer(s)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-12 small mb-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="newSrvPhotoQR" onchange="document.getElementById('newSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'">
+            <label for="newSrvPhotoQR" class="fw-bold text-dark">Photo Souvenir QR</label></div>
+            <input type="number" name="amt_PhotoQR" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            
+            <div id="newSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
+                <div class="d-flex gap-3 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('new')" checked>
+                        <label class="form-check-label fw-bold text-dark" for="newTypeWithPrints">With Prints</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('new')">
+                        <label class="form-check-label fw-bold text-dark" for="newTypeWithoutPrints">Without Prints</label>
+                    </div>
+                </div>
+                
+                <div id="newDetailsWithPrints">
+                    <div class="input-group input-group-sm mb-1">
+                        <input type="number" id="newSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <input type="number" id="newSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
+                        <select id="newSrvPrintsSize" class="form-select border-secondary-subtle">
+                            <option value="4R">4R</option>
+                            <option value="Wallet size">Wallet size</option>
+                            <option value="5R">5R</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="newDetailsWithoutPrints" style="display: none;">
+                    <div class="input-group input-group-sm">
+                        <input type="number" id="newSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="newSrvFrame" onchange="document.getElementById('newSrvFrameDetails').style.display = this.checked ? 'block' : 'none'">
+            <label for="newSrvFrame" class="fw-bold text-dark">Frame Token</label></div>
+            <input type="number" name="amt_FrameToken" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            <div id="newSrvFrameDetails" class="mt-1 pe-2" style="display:none;">
+                <div class="input-group input-group-sm">
+                    <input type="number" id="newSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                    <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
+                </div>
+            </div>
+        </div>
 
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
-          </div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> <label>Photo studio</label></div><input type="number" name="amt_PhotoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> <label>Video doc</label></div><input type="number" name="amt_VideoDoc" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> <label>Video SDE</label></div><input type="number" name="amt_VideoSDE" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> <label>Video highlights</label></div><input type="number" name="amt_VideoHigh" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> <label>Video studio</label></div><input type="number" name="amt_VideoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Transpo"> <label class="fw-bold text-primary">Transpo</label></div><input type="number" name="amt_Transpo" class="form-control form-control-sm mt-1 superadmin-billing-amt border-primary" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+    </div>
+    
+    <div class="row px-2 g-2" id="newAvpServices" style="display:none;">
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check p-3 bg-white rounded border shadow-sm">
+                <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="newSrvPreProd" checked>
+                <label for="newSrvPreProd" class="fw-bold text-primary ms-1">Pre-Prod</label>
+                <input type="number" name="amt_PreProd" class="form-control form-control-sm mt-2 superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 180px;">
+            </div>
+        </div>
+    </div>
+
+</div>
 
           <div class="input-group input-group-sm mt-3">
               <span class="input-group-text bg-white"><i class="bi bi-plus-circle text-muted"></i></span>
@@ -2437,30 +2482,32 @@ async function subscribeToNotifications() {
       return localStorage.getItem('egm_auth_role') || null;
   }
 
-  async function requireAuth(actionFunction, requiresAdmin = false) {
-      const role = getUserRole();
-      const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
-      
-      if (role && !isExpired) {
-          if (requiresAdmin && role !== 'admin') {
-              // Smart Upgrade Prompt
-              if (await egmConfirm("Admin access is required for this action. Would you like to sign out of your Editor account to switch to Admin?")) {
-                  signOut();
-              }
-              return;
-          }
-          actionFunction();
-      } else {
-          // THE FIX: We wrap the action so the gatekeeper re-evaluates the role AFTER the login succeeds!
-          pendingAuthAction = () => requireAuth(actionFunction, requiresAdmin);
-          
-          document.getElementById('authPassword').value = '';
-          document.getElementById('authError').style.display = 'none';
-          const authModal = bootstrap.Modal.getInstance(document.getElementById('authModal')) || new bootstrap.Modal(document.getElementById('authModal'));
-          authModal.show();
-          setTimeout(() => document.getElementById('authPassword').focus(), 500);
-      }
-  }
+  async function requireAuth(actionFunction, roleLevel = null) {
+    // If original code passed 'true', map it to 'admin' to preserve functionality
+    if (roleLevel === true) roleLevel = 'admin';
+
+    const role = getUserRole();
+    const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+
+    if (role && !isExpired) {
+        if (roleLevel === 'superadmin' && role !== 'superadmin') {
+            if (await egmConfirm("Superadmin access is required. Would you like to sign out to switch accounts?")) signOut();
+            return;
+        }
+        if (roleLevel === 'admin' && role !== 'admin' && role !== 'superadmin') {
+            if (await egmConfirm("Admin access is required. Would you like to sign out to switch accounts?")) signOut();
+            return;
+        }
+        actionFunction();
+    } else {
+        pendingAuthAction = () => requireAuth(actionFunction, roleLevel);
+        document.getElementById('authPassword').value = '';
+        document.getElementById('authError').style.display = 'none';
+        const authModal = bootstrap.Modal.getInstance(document.getElementById('authModal')) || new bootstrap.Modal(document.getElementById('authModal'));
+        authModal.show();
+        setTimeout(() => document.getElementById('authPassword').focus(), 500);
+    }
+}
 
   async function submitAuth() {
       const pass = document.getElementById('authPassword').value.trim();
@@ -2666,20 +2713,26 @@ function handleAddCustomService(inputId, containerId) {
   }
   
   function addCustomServiceCheckbox(name, containerId, checkDefault = true) {
-      if(!name || name.trim() === '') return;
-      name = name.trim();
-      const container = document.getElementById(containerId);
-      const existing = Array.from(container.querySelectorAll('input[name="services"]')).map(el => el.value.toLowerCase());
-      if(existing.includes(name.toLowerCase())) {
-         const cb = container.querySelector(`input[name="services"][value="${name}"]`);
-         if(cb && checkDefault) cb.checked = true;
-         return;
-      }
-      const div = document.createElement('div');
-      div.className = 'col-6 col-md-4 form-check small custom-service-cb text-primary fw-bold';
-      div.innerHTML = `<input class="form-check-input" type="checkbox" name="services" value="${name}" ${checkDefault ? 'checked' : ''}> ${name}`;
-      container.appendChild(div);
-  }
+    if(!name || name.trim() === '') return;
+    name = name.trim();
+    // (Existing duplicate checks...)
+    
+    const div = document.createElement('div');
+    div.className = 'col-6 col-md-4 small mb-2';
+    // Give it the checkbox AND the hidden amount input
+    div.innerHTML = `
+        <div class="form-check custom-service-cb text-primary fw-bold">
+            <input class="form-check-input" type="checkbox" name="services" value="${name}" ${checkDefault ? 'checked' : ''}>
+            <label>${name}</label>
+        </div>
+        <input type="number" name="amt_${name.replace(/\s+/g, '')}" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;">
+    `;
+    document.getElementById(containerId).appendChild(div);
+    
+    // Re-run the toggle to see if the new input should be shown right away
+    const prefix = containerId.includes('new') ? 'new' : 'edit';
+    toggleServiceAmounts(prefix);
+}
 
   function updateCrewFilterDropdown(events) {
       const select = document.getElementById('fCrew');
@@ -2735,7 +2788,23 @@ function handleAddCustomService(inputId, containerId) {
       }
   // ... existing togglePaymentUI logic ...
       checkInvoiceRequired(prefix);
+    toggleServiceAmounts(prefix);
   }
+  function toggleServiceAmounts(prefix) {
+    const role = getUserRole();
+    const pType = document.getElementById(prefix + 'PaymentType').value;
+    const amtInputs = document.querySelectorAll(`#${prefix}ServicesContactFields .superadmin-billing-amt`);
+
+    // Only show amounts if Superadmin AND Payment Type is Billing
+    if (role === 'superadmin' && pType === 'Billing') {
+        amtInputs.forEach(el => el.style.setProperty('display', 'block', 'important'));
+    } else {
+        amtInputs.forEach(el => el.style.setProperty('display', 'none', 'important'));
+    }
+}
+
+// Inside your existing togglePaymentUI(prefix) function, add this to the very bottom:
+// toggleServiceAmounts(prefix);
   // Forces the Invoice URL to be required based on Billing Status
   function checkInvoiceRequired(prefix) {
       const status = document.getElementById(prefix + 'BillingStatus').value;
@@ -2828,23 +2897,30 @@ function handleAddCustomService(inputId, containerId) {
   }
 
   function toggleAvpFields(isAvp, prefix) { 
-      const avpFields = document.getElementById(prefix + 'AvpHiddenFields');
-      const services = document.getElementById(prefix + 'ServicesContactFields');
-      const dateTime = document.getElementById(prefix + 'DateTimeBlock');
-      const crew = document.getElementById(prefix + 'CrewBlock');
-      
-      if(avpFields) avpFields.style.display = isAvp ? 'none' : 'flex'; 
-      if(services) services.style.display = isAvp ? 'none' : 'block'; 
-      if(dateTime) dateTime.style.display = isAvp ? 'none' : 'block'; 
-      if(crew) crew.style.display = isAvp ? 'none' : 'block'; 
-      
-      const formId = prefix === 'new' ? 'eventForm' : 'editForm';
-      const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
-      if (dateInput) {
-          if (isAvp) { dateInput.removeAttribute('required'); } 
-          else { dateInput.setAttribute('required', 'required'); }
-      }
-  }
+    const avpFields = document.getElementById(prefix + 'AvpHiddenFields');
+    const servicesBlock = document.getElementById(prefix + 'ServicesContactFields');
+    const standardSrv = document.getElementById(prefix + 'StandardServices');
+    const avpSrv = document.getElementById(prefix + 'AvpServices');
+    const dateTime = document.getElementById(prefix + 'DateTimeBlock');
+    const crew = document.getElementById(prefix + 'CrewBlock');
+    
+    if(avpFields) avpFields.style.display = isAvp ? 'none' : 'flex'; 
+    
+    // Services block STAYS VISIBLE, but we swap the contents!
+    if(servicesBlock) servicesBlock.style.display = 'block'; 
+    if(standardSrv) standardSrv.style.display = isAvp ? 'none' : 'flex';
+    if(avpSrv) avpSrv.style.display = isAvp ? 'flex' : 'none';
+
+    if(dateTime) dateTime.style.display = isAvp ? 'none' : 'block'; 
+    if(crew) crew.style.display = isAvp ? 'none' : 'block'; 
+    
+    const formId = prefix === 'new' ? 'eventForm' : 'editForm';
+    const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
+    if (dateInput) {
+        if (isAvp) { dateInput.removeAttribute('required'); } 
+        else { dateInput.setAttribute('required', 'required'); }
+    }
+}
 
   function togglePhotoQRDetails(prefix) {
       const type = document.querySelector(`input[name="${prefix}PhotoQRType"]:checked`).value;
@@ -3129,7 +3205,8 @@ function handleEqSearch() {
     document.getElementById('payroll-view').style.display = t==='payroll'?'block':'none';
     document.getElementById('booth-view').style.display = t==='booth'?'block':'none';
     document.getElementById('expenses-view').style.display = t==='expenses'?'block':'none';
-    
+    document.getElementById('billingsales-view').style.display = t==='billingsales'?'block':'none';
+    document.getElementById('bs-tab').classList.toggle('active', t==='billingsales');
     document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar') ? 'block' : 'none';
     document.getElementById('editQueueFilters').style.display = t==='editqueue' ? 'block' : 'none';
     document.getElementById('paymentFilters').style.display = t==='payments' ? 'block' : 'none';
@@ -3657,18 +3734,11 @@ function generateSingleEventCard(e) {
   }
 
   function handleTabClick(tabName) {
-    if (tabName === 'payments') { 
-        requireAuth(() => switchTab('payments'), true); 
-    } 
-    else if (tabName === 'payroll') { 
-        requireAuth(() => switchTab('payroll'), true); 
-    } 
-    else if (tabName === 'booth') { 
-        switchTab('booth'); 
-    } 
-    else { 
-        switchTab(tabName); 
-    }
+    if (tabName === 'payments') requireAuth(() => switchTab('payments'), 'admin'); 
+    else if (tabName === 'payroll') requireAuth(() => switchTab('payroll'), 'admin'); 
+    else if (tabName === 'billingsales') requireAuth(() => switchTab('billingsales'), 'superadmin'); // NEW
+    else if (tabName === 'booth') switchTab('booth'); 
+    else switchTab(tabName); 
 }
 
   
