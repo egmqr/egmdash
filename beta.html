@@ -1009,12 +1009,41 @@
           </div>
       </div>
       <div id="billingsales-view" style="display:none;">
-        <h4 class="fw-bold mb-4 mt-2 text-primary"><i class="bi bi-graph-up-arrow me-2"></i>Billing Sales Dashboard</h4>
-        <div class="card p-5 text-center text-muted border-dashed border-2 shadow-sm bg-light">
-            <i class="bi bi-bar-chart-steps fs-1 mb-3 opacity-50"></i>
-            <h5 class="fw-bold text-dark">Superadmin Access Verified</h5>
-            <p class="mb-0">The Billing Sales UI and metrics will be constructed here.</p>
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 mt-2 gap-3">
+            <div>
+                <h4 class="fw-bold mb-0 text-primary d-flex align-items-center"><i class="bi bi-graph-up-arrow me-2"></i> Billing Sales Reports</h4>
+                <span class="text-muted small fw-bold d-block mt-1">Configure splits and select a processing date to generate tables.</span>
+            </div>
         </div>
+
+        <div class="card p-3 p-md-4 mb-4 shadow-sm bg-light border-secondary-subtle">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label class="form-label-sm text-secondary">Date Processed (GR Processed)</label>
+                    <input type="date" id="bsProcessDate" class="form-control form-control-sm fw-bold border-primary">
+                </div>
+                <div class="col-12 col-md-7">
+                    <label class="form-label-sm text-secondary">"Rest of Services" Distribution %</label>
+                    <div class="input-group input-group-sm shadow-sm">
+                        <span class="input-group-text bg-white fw-bold" style="font-size:0.75rem;">Edgar</span>
+                        <input type="number" id="bsPctEdgar" class="form-control text-center fw-bold" value="40">
+                        <span class="input-group-text bg-white fw-bold" style="font-size:0.75rem;">JiniCis</span>
+                        <input type="number" id="bsPctJini" class="form-control text-center fw-bold" value="30">
+                        <span class="input-group-text bg-white fw-bold" style="font-size:0.75rem;">TinaLex</span>
+                        <input type="number" id="bsPctTina" class="form-control text-center fw-bold" value="20">
+                        <span class="input-group-text bg-white fw-bold" style="font-size:0.75rem;">JG</span>
+                        <input type="number" id="bsPctJG" class="form-control text-center fw-bold" value="10">
+                        <span class="input-group-text bg-light text-muted fw-bold">%</span>
+                    </div>
+                </div>
+                <div class="col-12 col-md-2">
+                    <button class="btn btn-primary btn-sm w-100 fw-bold shadow-sm" onclick="computeBillingSales()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="bsReportsContainer">
+            </div>
       </div>
   </div>
 </div>
@@ -4620,6 +4649,18 @@ function generateSingleEventCard(e) {
       const ov = document.getElementById('submitOverlay');
       const fd = new FormData(e.target);
       const obj = Object.fromEntries(fd.entries());
+
+      // Put them immediately back to sleep so the Editor UI doesn't visually break
+      disabledElements.forEach(el => el.disabled = true);
+      // -----------------------------------------------------------------------------------------------
+      
+      // 🟢 NEW: Capture all service amounts
+      let serviceAmounts = {};
+      for (let key in obj) {
+          if (key.startsWith('amt_') && obj[key]) {
+              serviceAmounts[key] = parseFloat(obj[key]) || 0;
+          }
+      }
       
       obj.manpower = fd.getAll('manpower');
       let rawServices = fd.getAll('services');
@@ -4724,7 +4765,8 @@ function generateSingleEventCard(e) {
                   paymentNotes: obj.paymentNotes || "",
                   invoiceUrl: obj.invoiceUrl || "",
                   checkUrl: obj.checkUrl || "",
-                  noWithheld: document.getElementById('newNoWithheld') ? document.getElementById('newNoWithheld').checked : false
+                  noWithheld: document.getElementById('newNoWithheld') ? document.getElementById('newNoWithheld').checked : false,
+                  serviceAmountsJson: JSON.stringify(serviceAmounts)
               });
           });
 
@@ -4921,6 +4963,14 @@ for (const personName of peopleToNotify){
       disabledElements.forEach(el => el.disabled = true);
       // -----------------------------------------------------------------------------------------------
       
+      // 🟢 NEW: Capture all service amounts
+      let serviceAmounts = {};
+      for (let key in obj) {
+          if (key.startsWith('amt_') && obj[key]) {
+              serviceAmounts[key] = parseFloat(obj[key]) || 0;
+          }
+      }
+      
       obj.manpower = fd.getAll('manpower');
       let rawServices = fd.getAll('services');
       let finalServices = [];
@@ -5009,7 +5059,8 @@ for (const personName of peopleToNotify){
               paymentNotes: obj.paymentNotes || "",
               invoiceUrl: obj.invoiceUrl || "",
               checkUrl: obj.checkUrl || "",
-              noWithheld: document.getElementById('editNoWithheld') ? document.getElementById('editNoWithheld').checked : false
+              noWithheld: document.getElementById('editNoWithheld') ? document.getElementById('editNoWithheld').checked : false,
+              serviceAmountsJson: JSON.stringify(serviceAmounts)
           });
 
           // 🟢 SMART DUAL-LANE NOTIFIER 🟢
@@ -5947,7 +5998,8 @@ db.collection("dashboard_events").onSnapshot({ includeMetadataChanges: true }, (
             'Payment Notes': String(d.paymentNotes || ""),
             'Invoice URL': String(d.invoiceUrl || ""),
             'Check URL': String(d.checkUrl || ""),
-            'No Withheld': d.noWithheld === true || String(d.noWithheld) === "true"
+            'No Withheld': d.noWithheld === true || String(d.noWithheld) === "true",
+            'Service Amounts JSON': d.serviceAmountsJson || "{}"
         });
     });
 
@@ -7588,6 +7640,195 @@ document.addEventListener('hidden.bs.modal', function () {
         document.body.classList.add('modal-open');
     }
 });
+  // ==============================================================================
+// 🟢 BILLING SALES COMPUTATION ENGINE 🟢
+// ==============================================================================
+function computeBillingSales() {
+    const procDate = document.getElementById('bsProcessDate').value;
+    if (!procDate) return egmAlert("Please select a Date Processed.");
+
+    const pE = parseFloat(document.getElementById('bsPctEdgar').value) / 100 || 0;
+    const pJi = parseFloat(document.getElementById('bsPctJini').value) / 100 || 0;
+    const pT = parseFloat(document.getElementById('bsPctTina').value) / 100 || 0;
+    const pJG = parseFloat(document.getElementById('bsPctJG').value) / 100 || 0;
+
+    if (Math.abs((pE + pJi + pT + pJG) - 1.0) > 0.01) {
+        return egmAlert("The percentages must add up to 100%.");
+    }
+
+    // 1. Get events with GR Processed matching the Date
+    const events = rawEvents.filter(e => e['Billing Status'] === 'GR Processed' && e['Billing Status Date'] === procDate);
+    if (events.length === 0) return egmAlert(`No events found with 'GR Processed' status on ${procDate}.`);
+
+    // 2. Initialize accumulators
+    let t1_net = 0, t1_due = 0, t1_totalDue = 0;
+    let t2_E = 0, t2_Ji = 0, t2_T = 0, t2_JG = 0, t2_RestSum = 0;
+    let t3_JiniSum = 0, t4_TinaSum = 0, t5_JGSum = 0, t6_TranspoSum = 0;
+
+    let htmlT1 = '', htmlT2 = '', htmlT3 = '', htmlT4 = '', htmlT5 = '', htmlT6 = '';
+
+    events.forEach(e => {
+        let amts = {};
+        try { amts = JSON.parse(e['Service Amounts JSON'] || "{}"); } catch(ex){}
+        
+        // Parse Specific Services
+        const sde = parseFloat(amts['amt_VideoSDE']) || 0;
+        const doc = parseFloat(amts['amt_VideoDoc']) || 0;
+        const preprod = parseFloat(amts['amt_PreProd']) || 0;
+        const high = parseFloat(amts['amt_VideoHigh']) || 0;
+        const vstudio = parseFloat(amts['amt_VideoStudio']) || 0;
+        const transpo = parseFloat(amts['amt_Transpo']) || 0;
+
+        // The Rest (Any field that isn't the specific ones above)
+        let restTotal = 0;
+        for (let key in amts) {
+            if (!['amt_VideoSDE', 'amt_VideoDoc', 'amt_PreProd', 'amt_VideoHigh', 'amt_VideoStudio', 'amt_Transpo'].includes(key)) {
+                restTotal += parseFloat(amts[key]) || 0;
+            }
+        }
+
+        // 🟢 TABLE 1 MATH (With "No Withheld" Bypass Logic)
+        const netVat = sde + doc + preprod + high + vstudio + transpo + restTotal;
+        const noWithheld = e['No Withheld'] === true;
+        
+        const lessVat = noWithheld ? 0 : (netVat * 0.12);
+        const gross = netVat + lessVat;
+        const wh = noWithheld ? 0 : (netVat * 0.02);
+        
+        // If No Withheld is toggled, Amount Due simply becomes the Net Amount
+        const amtDue = noWithheld ? netVat : (gross - wh);
+        const totalAmtDue = noWithheld ? netVat : (wh + netVat); // Column 5 + Column 2
+
+        t1_net += netVat;
+        t1_due += amtDue;
+        t1_totalDue += totalAmtDue;
+
+        htmlT1 += `<tr>
+            <td class="text-start fw-bold">${e['Event Name']}</td>
+            <td>₱${netVat.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td>₱${lessVat.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td>₱${gross.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td>₱${wh.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td>₱${amtDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td class="fw-bold text-success">₱${totalAmtDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+        </tr>`;
+
+        // 🟢 TABLE 2 MATH (Rest Split)
+        const e_rest = restTotal * pE;
+        const ji_rest = restTotal * pJi;
+        const t_rest = restTotal * pT;
+        const jg_rest = restTotal * pJG;
+
+        t2_E += e_rest; t2_Ji += ji_rest; t2_T += t_rest; t2_JG += jg_rest; t2_RestSum += restTotal;
+
+        htmlT2 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td>₱${e_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td>₱${ji_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td>₱${t_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td>₱${jg_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="fw-bold">₱${restTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+
+        // Tables 3, 4, 5, 6 Row Generation
+        const sdeThird = sde / 3;
+        
+        const jiniTotal = ji_rest + sdeThird;
+        t3_JiniSum += jiniTotal;
+        htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${jiniTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+
+        const tinaTotal = t_rest + sdeThird;
+        t4_TinaSum += tinaTotal;
+        htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${tinaTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+
+        const jgTotal = jg_rest + sdeThird + doc + preprod + high + vstudio;
+        t5_JGSum += jgTotal;
+        htmlT5 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${jgTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+
+        t6_TranspoSum += transpo;
+        htmlT6 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${transpo.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+    });
+
+    // 🟢 FINAL TOTALS MATH
+    const taxIncome = t1_totalDue - t1_net;
+    
+    // 10% deductions from Table 2 splits
+    const cex_E = t2_E * 0.10;
+    const cex_Ji = t2_Ji * 0.10;
+    const cex_T = t2_T * 0.10;
+    const cex_JG = t2_JG * 0.10;
+    const cexTotalFromRest = cex_E + cex_Ji + cex_T + cex_JG;
+
+    // Wrap the HTML with Bootstrap table formatting
+    const tblClass = "table table-bordered table-sm text-end align-middle bg-white shadow-sm mb-5";
+    const headClass = "bg-light text-secondary text-uppercase";
+
+    document.getElementById('bsReportsContainer').innerHTML = `
+        <h5 class="fw-bold text-dark mt-4 mb-3">1. Computation Table</h5>
+        <div class="table-responsive"><table class="${tblClass}">
+            <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>Amount Net of VAT</th><th>Less VAT</th><th>Total Sales (VAT Inc)</th><th>Less Withholding</th><th>Amount Due</th><th>Total Amount Due</th></tr></thead>
+            <tbody>
+                ${htmlT1}
+                <tr class="bg-light fw-bold"><td class="text-start">TOTAL</td><td>₱${t1_net.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td colspan="4"></td><td class="text-success">₱${t1_totalDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                <tr class="bg-warning bg-opacity-10 fw-bold"><td class="text-start" colspan="6">TAX INCOME</td><td class="text-danger">₱${taxIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+            </tbody>
+        </table></div>
+
+        <h5 class="fw-bold text-dark mt-4 mb-3">2. "Rest of Services" Distribution</h5>
+        <div class="table-responsive"><table class="${tblClass}">
+            <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>Edgar (${(pE*100).toFixed(0)}%)</th><th>JiniCis (${(pJi*100).toFixed(0)}%)</th><th>TinaLex (${(pT*100).toFixed(0)}%)</th><th>JG (${(pJG*100).toFixed(0)}%)</th><th>Total</th></tr></thead>
+            <tbody>
+                ${htmlT2}
+                <tr class="bg-light fw-bold"><td class="text-start text-danger">Created Ex 10%</td><td class="text-danger">₱${cex_E.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-danger">₱${cex_Ji.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-danger">₱${cex_T.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-danger">₱${cex_JG.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-danger">CEX: ₱${cexTotalFromRest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">90% Share</td><td class="text-success">₱${(t2_E - cex_E).toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-success">₱${(t2_Ji - cex_Ji).toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-success">₱${(t2_T - cex_T).toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-success">₱${(t2_JG - cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-success">₱${(t2_RestSum - cexTotalFromRest).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+            </tbody>
+        </table></div>
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-6">
+                <h5 class="fw-bold text-dark mb-3">3. JiniCis Only</h5>
+                <table class="${tblClass}">
+                    <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>JiniCis Share</th></tr></thead>
+                    <tbody>
+                        ${htmlT3}
+                        <tr class="bg-light fw-bold"><td class="text-start text-danger">10% Share</td><td class="text-danger">₱${(t3_JiniSum * 0.10).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total (90%)</td><td class="text-success">₱${(t3_JiniSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <h5 class="fw-bold text-dark mb-3">4. TinaLex Only</h5>
+                <table class="${tblClass}">
+                    <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>TinaLex Share</th></tr></thead>
+                    <tbody>
+                        ${htmlT4}
+                        <tr class="bg-light fw-bold"><td class="text-start text-danger">10% Share</td><td class="text-danger">₱${(t4_TinaSum * 0.10).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total (90%)</td><td class="text-success">₱${(t4_TinaSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <h5 class="fw-bold text-dark mb-3">5. JG Only</h5>
+                <table class="${tblClass}">
+                    <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>JG Share</th></tr></thead>
+                    <tbody>
+                        ${htmlT5}
+                        <tr class="bg-light fw-bold"><td class="text-start text-danger">10% Share</td><td class="text-danger">₱${(t5_JGSum * 0.10).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total (90%)</td><td class="text-success">₱${(t5_JGSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <h5 class="fw-bold text-dark mb-3">6. Created Ex Only</h5>
+                <table class="${tblClass}">
+                    <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>Transpo</th></tr></thead>
+                    <tbody>
+                        ${htmlT6}
+                        <tr class="bg-light fw-bold"><td class="text-start text-primary">Tax Income</td><td class="text-primary">₱${taxIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-light fw-bold"><td class="text-start text-info">10% Share (From T2)</td><td class="text-info">₱${cexTotalFromRest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${(t6_TranspoSum + taxIncome + cexTotalFromRest).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
 </script>
 </body>
 </html>
