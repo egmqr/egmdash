@@ -7780,24 +7780,25 @@ function computeBillingSales() {
     const cex_JG = t2_JG * 0.10;
     const cexTotalFromRest = cex_E + cex_Ji + cex_T + cex_JG;
 
-    // Wrap the HTML with Bootstrap table formatting
-    const tblClass = "table table-bordered table-sm text-end align-middle bg-white shadow-sm mb-5";
-    const headClass = "bg-light text-secondary text-uppercase";
+    // Wrap the HTML with modern Bootstrap table formatting
+    const wrapperClass = "table-responsive border rounded-4 shadow-sm mb-5 bg-white overflow-hidden";
+    const tblClass = "table table-hover text-end align-middle mb-0";
+    const headClass = "bg-light text-secondary align-middle"; // Removed text-uppercase
 
     document.getElementById('bsReportsContainer').innerHTML = `
         <h5 class="fw-bold text-dark mt-4 mb-3">1. Computation Table</h5>
-        <div class="table-responsive"><table class="${tblClass}">
-            <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>Amount Net of VAT</th><th>Less VAT</th><th>Total Sales (VAT Inc)</th><th>Less Withholding</th><th>Amount Due</th><th>Total Amount Due</th></tr></thead>
+        <div class="${wrapperClass}"><table class="${tblClass}">
+            <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Amount Net of VAT</th><th class="border-0">Less VAT</th><th class="border-0">Total Sales (VAT Inc)</th><th class="border-0">Less Withholding</th><th class="border-0">Amount Due</th><th class="border-0">Total Amount Due</th></tr></thead>
             <tbody>
                 ${htmlT1}
-                <tr class="bg-light fw-bold"><td class="text-start">TOTAL</td><td>₱${t1_net.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td colspan="4"></td><td class="text-success">₱${t1_totalDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                <tr class="bg-warning bg-opacity-10 fw-bold"><td class="text-start" colspan="6">TAX INCOME</td><td class="text-danger">₱${taxIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                <tr class="bg-light fw-bold"><td class="text-start">Total</td><td>₱${t1_net.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td colspan="4"></td><td class="text-success">₱${t1_totalDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                <tr class="bg-warning bg-opacity-10 fw-bold"><td class="text-start" colspan="6">Tax Share</td><td class="text-danger">₱${taxIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
             </tbody>
         </table></div>
 
         <h5 class="fw-bold text-dark mt-4 mb-3">2. "Rest of Services" Distribution</h5>
-        <div class="table-responsive"><table class="${tblClass}">
-            <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>Edgar (${(pE*100).toFixed(0)}%)</th><th>JiniCis (${(pJi*100).toFixed(0)}%)</th><th>TinaLex (${(pT*100).toFixed(0)}%)</th><th>JG (${(pJG*100).toFixed(0)}%)</th><th>Total</th></tr></thead>
+        <div class="${wrapperClass}"><table class="${tblClass}">
+            <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Edgar (${(pE*100).toFixed(0)}%)</th><th class="border-0">JiniCis (${(pJi*100).toFixed(0)}%)</th><th class="border-0">TinaLex (${(pT*100).toFixed(0)}%)</th><th class="border-0">JG (${(pJG*100).toFixed(0)}%)</th><th class="border-0">Total</th></tr></thead>
             <tbody>
                 ${htmlT2}
                 <tr class="bg-light fw-bold"><td class="text-start text-danger">Created Ex 10%</td><td class="text-danger">₱${cex_E.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-danger">₱${cex_Ji.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-danger">₱${cex_T.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-danger">₱${cex_JG.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-danger">CEX: ₱${cexTotalFromRest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
@@ -7808,52 +7809,52 @@ function computeBillingSales() {
         <div class="row g-4">
             <div class="col-12 col-lg-6">
                 <h5 class="fw-bold text-dark mb-3">3. JiniCis Only</h5>
-                <table class="${tblClass}">
-                    <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>JiniCis Share</th></tr></thead>
+                <div class="${wrapperClass}"><table class="${tblClass}">
+                    <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">JiniCis Share</th></tr></thead>
                     <tbody>
                         ${htmlT3}
                         <tr class="bg-light fw-bold"><td class="text-start text-danger">10% Share</td><td class="text-danger">₱${(t3_JiniSum * 0.10).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                         <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total (90%)</td><td class="text-success">₱${(t3_JiniSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
-                </table>
+                </table></div>
             </div>
 
             <div class="col-12 col-lg-6">
                 <h5 class="fw-bold text-dark mb-3">4. TinaLex Only</h5>
-                <table class="${tblClass}">
-                    <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>TinaLex Share</th></tr></thead>
+                <div class="${wrapperClass}"><table class="${tblClass}">
+                    <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">TinaLex Share</th></tr></thead>
                     <tbody>
                         ${htmlT4}
                         <tr class="bg-light fw-bold"><td class="text-start text-danger">10% Share</td><td class="text-danger">₱${(t4_TinaSum * 0.10).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                         <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total (90%)</td><td class="text-success">₱${(t4_TinaSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
-                </table>
+                </table></div>
             </div>
 
             <div class="col-12 col-lg-6">
                 <h5 class="fw-bold text-dark mb-3">5. JG Only</h5>
-                <table class="${tblClass}">
-                    <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>JG Share</th></tr></thead>
+                <div class="${wrapperClass}"><table class="${tblClass}">
+                    <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">JG Share</th></tr></thead>
                     <tbody>
                         ${htmlT5}
                         <tr class="bg-light fw-bold"><td class="text-start text-danger">10% Share</td><td class="text-danger">₱${(t5_JGSum * 0.10).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                         <tr class="bg-light fw-bold"><td class="text-start text-info">90% Share (From Table 2)</td><td class="text-info">₱${(t2_JG - cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                         <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${((t5_JGSum * 0.90) + (t2_JG - cex_JG)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
-                </table>
+                </table></div>
             </div>
 
             <div class="col-12 col-lg-6">
                 <h5 class="fw-bold text-dark mb-3">6. Created Ex Only</h5>
-                <table class="${tblClass}">
-                    <thead class="${headClass}"><tr><th class="text-start">Event Name</th><th>Transpo</th></tr></thead>
+                <div class="${wrapperClass}"><table class="${tblClass}">
+                    <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Created Expenses Share</th></tr></thead>
                     <tbody>
                         ${htmlT6}
-                        <tr class="bg-light fw-bold"><td class="text-start text-primary">Tax Income</td><td class="text-primary">₱${taxIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-light fw-bold"><td class="text-start text-primary">Tax Share</td><td class="text-primary">₱${taxIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                         <tr class="bg-light fw-bold"><td class="text-start text-info">10% Share (All Services)</td><td class="text-info">₱${(cex_E + (t3_JiniSum * 0.10) + (t4_TinaSum * 0.10) + (t5_JGSum * 0.10) + cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                         <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${(t6_TranspoSum + taxIncome + cex_E + (t3_JiniSum * 0.10) + (t4_TinaSum * 0.10) + (t5_JGSum * 0.10) + cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
-                </table>
+                </table></div>
             </div>
         </div>
     `;
