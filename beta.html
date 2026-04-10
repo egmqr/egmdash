@@ -7751,9 +7751,10 @@ function computeBillingSales() {
         t4_TinaSum += tinaTotal;
         htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${tinaTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
 
-        const jgTotal = jg_rest + sdeThird + doc + preprod + high + vstudio;
-        t5_JGSum += jgTotal;
-        htmlT5 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${jgTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        // 🟢 FIX: Isolate JG's specific services, removing jg_rest so we can show it explicitly in the summary below!
+        const jgSpecific = sdeThird + doc + preprod + high + vstudio;
+        t5_JGSum += jgSpecific;
+        htmlT5 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${jgSpecific.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
 
         t6_TranspoSum += transpo;
         htmlT6 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${transpo.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
@@ -7826,7 +7827,8 @@ function computeBillingSales() {
                     <tbody>
                         ${htmlT5}
                         <tr class="bg-light fw-bold"><td class="text-start text-danger">10% Share</td><td class="text-danger">₱${(t5_JGSum * 0.10).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total (90%)</td><td class="text-success">₱${(t5_JGSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-light fw-bold"><td class="text-start text-info">90% Share (From Table 2)</td><td class="text-info">₱${(t2_JG - cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${((t5_JGSum * 0.90) + (t2_JG - cex_JG)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
                 </table>
             </div>
