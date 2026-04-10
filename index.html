@@ -2797,51 +2797,62 @@ function handleAddCustomService(inputId, containerId) {
 
   
 
+function togglePaymentUI(prefix) {
+    const typeEl = document.getElementById(prefix + 'PaymentType');
+    const type = typeEl ? typeEl.value : '';
+    const box = document.getElementById(prefix + 'DynamicPayBox');
+    
+    const amtGrp = document.getElementById(prefix + 'PayAmountGroup');
+    const statGrp = document.getElementById(prefix + 'PayStatusGroup');
+    const billGrp = document.getElementById(prefix + 'PayBillingGroup');
+    const invUpGrp = document.getElementById(prefix + 'PayInvUploadGroup');
+    const chkUpGrp = document.getElementById(prefix + 'PayCheckUploadGroup');
+    const statusSel = document.getElementById(prefix + 'BillingStatus');
+    const noWithheldWrapper = document.getElementById(prefix + 'NoWithheldWrapper');
 
+    // 🟢 THE FIX: Safely hide elements. If one is missing, it skips it instead of crashing!
+    [amtGrp, statGrp, billGrp, invUpGrp, chkUpGrp].forEach(el => {
+        if (el) el.style.display = 'none';
+    });
+    
+    if (statusSel) {
+        statusSel.innerHTML = '';
+        statusSel.disabled = false;
+    }
+    
+    if (noWithheldWrapper) noWithheldWrapper.style.display = 'none';
+    
+    if (!type) { 
+        if (box) box.style.display = 'none'; 
+        return; 
+    }
+    
+    if (box) box.style.display = 'block';
 
-  function togglePaymentUI(prefix) {
-      const type = document.getElementById(prefix + 'PaymentType').value;
-      const box = document.getElementById(prefix + 'DynamicPayBox');
-      
-      const amtGrp = document.getElementById(prefix + 'PayAmountGroup');
-      const statGrp = document.getElementById(prefix + 'PayStatusGroup');
-      const billGrp = document.getElementById(prefix + 'PayBillingGroup');
-      const invUpGrp = document.getElementById(prefix + 'PayInvUploadGroup');
-      const chkUpGrp = document.getElementById(prefix + 'PayCheckUploadGroup');
-      const statusSel = document.getElementById(prefix + 'BillingStatus');
-      
-      // Grab the new No Withheld wrapper next to the heading
-      const noWithheldWrapper = document.getElementById(prefix + 'NoWithheldWrapper');
-
-      [amtGrp, statGrp, billGrp, invUpGrp, chkUpGrp].forEach(el => el.style.display = 'none');
-      statusSel.innerHTML = '';
-      statusSel.disabled = false;
-      
-      // Hide the toggle by default
-      if (noWithheldWrapper) noWithheldWrapper.style.display = 'none';
-      
-      if (!type) { box.style.display = 'none'; return; }
-      box.style.display = 'block';
-
-      if (['Cash AR', 'Online Transfer AR', 'Check AR'].includes(type)) {
-          amtGrp.style.display = 'block'; statGrp.style.display = 'block';
-          if (type === 'Check AR') chkUpGrp.style.display = 'block';
-          statusSel.innerHTML = '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
-      } else if (['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR'].includes(type)) {
-          amtGrp.style.display = 'block'; statGrp.style.display = 'block'; invUpGrp.style.display = 'block';
-          if (type === 'Check ORCR') chkUpGrp.style.display = 'block';
-          statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
-      } else if (type === 'Billing') {
-          statGrp.style.display = 'block'; billGrp.style.display = 'block'; invUpGrp.style.display = 'block';
-          statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
-          
-          // SHOW the No Withheld toggle ONLY for Billing
-          if (noWithheldWrapper) noWithheldWrapper.style.display = 'block';
-      }
-      
-      checkInvoiceRequired(prefix);
-      toggleServiceAmounts(prefix);
-  }
+    if (['Cash AR', 'Online Transfer AR', 'Check AR'].includes(type)) {
+        if (amtGrp) amtGrp.style.display = 'block'; 
+        if (statGrp) statGrp.style.display = 'block';
+        if (type === 'Check AR' && chkUpGrp) chkUpGrp.style.display = 'block';
+        if (statusSel) statusSel.innerHTML = '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
+    } else if (['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR'].includes(type)) {
+        if (amtGrp) amtGrp.style.display = 'block'; 
+        if (statGrp) statGrp.style.display = 'block'; 
+        if (invUpGrp) invUpGrp.style.display = 'block';
+        if (type === 'Check ORCR' && chkUpGrp) chkUpGrp.style.display = 'block';
+        if (statusSel) statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
+    } else if (type === 'Billing') {
+        if (statGrp) statGrp.style.display = 'block'; 
+        if (billGrp) billGrp.style.display = 'block'; 
+        if (invUpGrp) invUpGrp.style.display = 'block';
+        if (statusSel) statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
+        
+        if (noWithheldWrapper) noWithheldWrapper.style.display = 'block';
+    }
+    
+    // Safely trigger the remaining logic
+    if (typeof checkInvoiceRequired === 'function') checkInvoiceRequired(prefix);
+    if (typeof toggleServiceAmounts === 'function') toggleServiceAmounts(prefix);
+}
   function toggleServiceAmounts(prefix) {
     const role = getUserRole();
     
@@ -3931,20 +3942,34 @@ function generateSingleEventCard(e) {
       }, 50);
   }
   function openNewEventModal() {
-      document.getElementById('eventForm').reset();
-      ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
-         const el = document.getElementById('newSrv' + id + 'Details');
-         if(el) el.style.display = 'none';
-      });
-      document.getElementById('newTypeWithPrints').checked = true;
-      togglePhotoQRDetails('new');
-      document.getElementById('newTypeEvent').checked = true;
-      toggleEntryMode('new');
-      togglePaymentUI('new');
-      document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
-      document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
-      new bootstrap.Modal(document.getElementById('addEventModal')).show();
-  }
+    const form = document.getElementById('eventForm');
+    if (form) form.reset();
+    
+    ['Photo', 'PhotoQR', 'Frame'].forEach(id => {
+       const el = document.getElementById('newSrv' + id + 'Details');
+       if(el) el.style.display = 'none';
+    });
+    
+    const typePrints = document.getElementById('newTypeWithPrints');
+    if (typePrints) typePrints.checked = true;
+    
+    if (typeof togglePhotoQRDetails === 'function') togglePhotoQRDetails('new');
+    
+    const typeEvent = document.getElementById('newTypeEvent');
+    if (typeEvent) typeEvent.checked = true;
+    
+    if (typeof toggleEntryMode === 'function') toggleEntryMode('new');
+    togglePaymentUI('new'); // Now completely crash-proof
+    
+    document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
+    document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
+    
+    const modalEl = document.getElementById('addEventModal');
+    if (modalEl) {
+        // 🟢 THE FIX: Use getOrCreateInstance instead of calling "new" every time to prevent Bootstrap freezing
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+}
 
   function openAddDayModal(id) {
     // --- PREVENT MODAL OVERLAP FREEZE ---
