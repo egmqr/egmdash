@@ -6818,7 +6818,6 @@ function renderExpenseQueue() {
     if (!banner || !tbody) return;
 
     const role = getUserRole();
-    // 🟢 THE FIX: Allow both 'admin' AND 'superadmin' to see the pending expenses
     if (role !== 'admin' && role !== 'superadmin') {
         banner.style.setProperty('display', 'none', 'important');
         return;
@@ -6836,7 +6835,12 @@ function renderExpenseQueue() {
 
     // RULE 2: Filter for Pending AND strictly within the chosen date range
     const pendingExpenses = rawExpenses.filter(e => {
-        return e.status === 'Pending' && e.expenseDate >= start && e.expenseDate <= end;
+        // Strip out the event name so we strictly compare the YYYY-MM-DD date 
+        // (This prevents a bug where expenses on the exact end-date cutoff are hidden)
+        let exactDate = e.expenseDate || "";
+        if (exactDate.includes(' - ')) exactDate = exactDate.split(' - ')[0];
+        
+        return e.status === 'Pending' && exactDate >= start && exactDate <= end;
     });
 
     if (pendingExpenses.length === 0) {
@@ -6853,16 +6857,29 @@ function renderExpenseQueue() {
 
     let html = '';
     pendingExpenses.forEach(exp => {
+        
+        // 🟢 THE FIX: Split the Date and the Event Name into two variables
+        let datePart = exp.expenseDate;
+        let eventPart = '';
+        if (exp.expenseDate && exp.expenseDate.includes(' - ')) {
+            const parts = exp.expenseDate.split(' - ');
+            datePart = parts[0]; // Gets the YYYY-MM-DD
+            eventPart = parts.slice(1).join(' - '); // Gets the rest of the text
+        }
+
         html += `
         <tr>
-            <td class="text-nowrap px-3 text-muted">${exp.expenseDate}</td>
-            <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-1 opacity-50"></i>${exp.submittedBy}</td>
-            <td style="min-width: 180px;">
+            <td class="px-3" style="max-width: 240px;">
+                <div class="text-nowrap text-muted mb-1" style="font-size: 0.8rem;">${datePart}</div>
+                <div class="text-dark fw-medium text-wrap text-break" style="font-size: 0.9rem; line-height: 1.3;">${eventPart}</div>
+            </td>
+            <td class="fw-bold text-dark align-middle">${exp.submittedBy}</td>
+            <td class="align-middle" style="min-width: 180px;">
                 <span class="badge bg-light text-dark border mb-1">${exp.category}</span><br>
                 <span class="text-muted fst-italic text-wrap" style="font-size: 0.75rem; display:inline-block; line-height:1.2;">"${exp.description}"</span>
             </td>
-            <td class="text-end fw-bold text-success text-nowrap">₱${Number(exp.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-            <td class="text-end px-3 text-nowrap">
+            <td class="text-end fw-bold text-success text-nowrap align-middle">₱${Number(exp.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td class="text-end px-3 text-nowrap align-middle">
                 <button class="btn btn-sm btn-outline-secondary py-1 me-1 shadow-sm" onclick="window.open('${exp.receiptUrl}', '_blank')" title="View Receipt"><i class="bi bi-receipt"></i></button>
                 <button class="btn btn-sm btn-outline-danger py-1 me-1 shadow-sm" onclick="processExpenseAction('${exp.docId}', 'Rejected')" title="Reject"><i class="bi bi-x-lg"></i></button>
                 <button class="btn btn-sm btn-success py-1 shadow-sm" onclick="processExpenseAction('${exp.docId}', 'Approved')" title="Approve"><i class="bi bi-check-lg"></i></button>
