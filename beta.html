@@ -7705,16 +7705,15 @@ function computeBillingSales() {
         }
 
         // 🟢 TABLE 1 MATH (With "No Withheld" Bypass Logic)
-        const netVat = sde + doc + preprod + high + vstudio + transpo + restTotal;
+        const netVat = sde + doc + preprod + high + vstudio + transpo + restTotal; // Column 2
         const noWithheld = e['No Withheld'] === true;
         
-        const lessVat = noWithheld ? 0 : (netVat * 0.12);
-        const gross = netVat + lessVat;
-        const wh = noWithheld ? 0 : (netVat * 0.02);
+        const lessVat = noWithheld ? 0 : (netVat * 0.12); // Column 3: 12% of Col 2
+        const gross = netVat + lessVat;                   // Column 4: Col 2 + Col 3
+        const wh = noWithheld ? 0 : (netVat * 0.02);      // Column 5: 2% of Col 2
         
-        // If No Withheld is toggled, Amount Due simply becomes the Net Amount
-        const amtDue = noWithheld ? netVat : (gross - wh);
-        const totalAmtDue = noWithheld ? netVat : (wh + netVat); // Column 5 + Column 2
+        const amtDue = netVat - wh;                       // Column 6: Col 2 - Col 5
+        const totalAmtDue = amtDue + lessVat;             // Column 7: Col 6 + Col 3
 
         t1_net += netVat;
         t1_due += amtDue;
