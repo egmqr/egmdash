@@ -18,10 +18,106 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
   
   <style>
+    #editMultiDayNav {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin; /* Firefox */
+        padding-bottom: 10px !important; /* Give the scrollbar room to breathe */
+    }
+    #editMultiDayNav::-webkit-scrollbar {
+        display: block; /* Restores the scrollbar for desktop users */
+        height: 6px;
+    }
+    #editMultiDayNav::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    #editMultiDayNav::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 10px;
+    }
+    .dark-mode #editMultiDayNav::-webkit-scrollbar-thumb {
+        background-color: #475569;
+    }
+    #editMultiDayNav .nav-item {
+        flex: 0 0 auto; /* Forces tabs to hold their width and slide off-screen */
+    }
+    /* ----------------------------------- */
     :root { --sticky-top: 110px; }
     body { background-color: #f8fafc; padding: 10px; padding-bottom: 120px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #334155; transition: background-color 0.3s ease, color 0.3s ease; }
     @media (min-width: 768px) { body { padding: 20px; padding-bottom: 120px; font-size: 0.95rem; } }
+    .floating-back-btn {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1050;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border-radius: 50px;
+        padding: 12px 24px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        display: none; /* Hidden by default */
+        transition: all 0.3s ease;
+    }
+    .floating-back-btn:hover {
+        transform: translateX(-50%) scale(1.05);
+    }
+   /* 🚀 HIGH-IMPACT BLINK ANIMATION */
+@keyframes megaPop {
+    0% { 
+        transform: scale(1);
+        background-color: var(--bs-card-bg, #ffffff);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-color: #e2e8f0;
+    }
+    15% { 
+        transform: scale(1.03); /* Subtle grow */
+        background-color: #ccfbf1 !important; /* Bright Teal tint */
+        box-shadow: 0 0 25px rgba(13, 148, 136, 0.4); /* Neon Glow */
+        border-color: #0d9488 !important; /* Thick border color */
+    }
+    100% { 
+        transform: scale(1);
+        background-color: var(--bs-card-bg, #ffffff);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-color: #e2e8f0;
+    }
+}
 
+/* Dark Mode Specific Pop */
+@keyframes megaPopDark {
+    0% { 
+        transform: scale(1);
+        background-color: #1e1e1e;
+        border-color: #333333;
+    }
+    15% { 
+        transform: scale(1.03);
+        background-color: #064e3b !important;
+        box-shadow: 0 0 30px rgba(13, 148, 136, 0.6);
+        border-color: #5eead4 !important;
+    }
+    100% { 
+        transform: scale(1);
+        background-color: #1e1e1e;
+        border-color: #333333;
+    }
+}
+
+.card-blink-emphasis {
+    animation: megaPop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    z-index: 50; /* Ensure it stays above other cards during scale */
+    position: relative;
+    border-width: 2px !important;
+}
+
+.dark-mode .card-blink-emphasis {
+    animation: megaPopDark 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
     .text-primary { color: #0d9488 !important; }
     .bg-primary { background-color: #0d9488 !important; }
     .btn-primary { background-color: #0d9488; border-color: #0d9488; }
@@ -61,7 +157,6 @@
     .sticky-date-header-container.is-pinned .sticky-date-header { background-color: #0d9488; border-bottom-color: transparent; box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3); }
     .sticky-date-header-container.is-pinned .sticky-date-header h5, .sticky-date-header-container.is-pinned .sticky-date-header i { color: #ffffff !important; }
 
-    #upcomingEventsHeader { color: #1e293b; letter-spacing: -0.5px; transition: color 0.3s ease; }
     .btn { border-radius: 8px; font-weight: 600; letter-spacing: 0.3px; }
     .form-control:disabled, .form-select:disabled { background-color: #f1f5f9; opacity: 0.8; }
     .filter-panel { background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.3s ease; }
@@ -216,7 +311,7 @@
     .dark-mode .sticky-date-header { color: #f3f4f6 !important; border-bottom-color: #333333; }
     .dark-mode .sticky-date-header h5 { color: #f3f4f6 !important; }
     .dark-mode .sticky-date-header-container.is-pinned .sticky-date-header { background-color: #0d9488; color: #fff !important; }
-    .dark-mode #upcomingEventsHeader { color: #ffffff !important; }
+
     .dark-mode .nav-pills .nav-link { background: #2b2b2b; border-color: #333333; color: #9ca3af; }
     .dark-mode .nav-pills .nav-link.active { background: #0d9488; color: white; border-color: #0d9488; box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3); }
     .dark-mode .btn-light { background-color: #2b2b2b; border-color: #444444 !important; color: #d1d5db; }
@@ -315,15 +410,86 @@
         z-index: 1080 !important; 
     }
     
-    /* Ensure the dark overlay backdrop for the Auth Modal also sits above the Lightbox */
-    .modal-backdrop:nth-of-type(even) {
-        z-index: 1070 !important;
-    }
+
+    /* =========================================
+   Global Styles
+   ========================================= */
+
+
+
+/* Hide the mobile toggle button on desktop */
+.mobile-filter-btn {
+  display: none;
+}
+
+/* =========================================
+   Mobile View Only (max-width: 768px)
+   ========================================= */
+@media screen and (max-width: 768px) {
   
+  /* Ensure the toggle button is visible next to the search bar */
+  .mobile-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 10px;
+  }
+
+  .search-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    /* Keeps the search bar on top */
+    margin-bottom: 15px; 
+  }
+
+  /* Hide the rest of the filters by default on mobile */
+  .advanced-filters {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  /* Class toggled by JavaScript to show the filters */
+  .advanced-filters.is-expanded {
+    display: flex; 
+  }
+}
   </style>
 </head>
 <body>
-
+<div class="modal fade" id="globalAlertModal" tabindex="-1" aria-hidden="true" style="z-index: 10900;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="fw-bold mb-0" id="globalAlertTitle">Notice</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <p class="mb-0 text-secondary" id="globalAlertMessage" style="font-size: 0.9rem; line-height: 1.5;"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-primary w-100 fw-bold shadow-sm rounded-3" data-bs-dismiss="modal">GOT IT</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 10900;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="fw-bold mb-0" id="globalConfirmTitle">Confirm Action</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <p class="mb-0 text-secondary" id="globalConfirmMessage" style="font-size: 0.9rem; line-height: 1.5;"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0 d-flex gap-2 flex-nowrap">
+                <button type="button" class="btn btn-light border-secondary-subtle fw-bold w-50 rounded-3" data-bs-dismiss="modal" id="globalConfirmCancelBtn">Cancel</button>
+                <button type="button" class="btn btn-danger fw-bold shadow-sm w-50 rounded-3" id="globalConfirmOkBtn">Proceed</button>
+            </div>
+        </div>
+    </div>
+</div>
 <div id="submitOverlay" class="submit-overlay">
   <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
   <h5 class="mt-3 fw-bold text-secondary" id="overlayText">Processing...</h5>
@@ -408,6 +574,7 @@
         <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
         <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), true)"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
         <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), true)"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
+       <li class="nav-item"><a class="nav-link" id="bs-tab" onclick="requireAuth(() => handleTabClick('billingsales'), 'superadmin')"><i class="bi bi-graph-up-arrow me-1"></i> Billing Sales <i class="bi bi-shield-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
       </ul>
       <div class="d-flex gap-2">
         <button id="copyFilterLinkBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" onclick="copyCurrentUrl()" title="Copy link with active filters">
@@ -419,17 +586,43 @@
       </div>
     </div>
 
-    <div class="collapse mt-2 mb-2" id="filterCollapse">
+    <div class="collapse show mt-2 mb-2" id="filterCollapse">
       <div class="filter-panel" id="eventFilters">
-        <div class="row g-2 align-items-end">
-          <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fName" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
-          <div class="col-6 col-md-2"><span class="form-label-sm">From Date</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
-          <div class="col-6 col-md-2"><span class="form-label-sm">To Date</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
+  <div class="row g-2 align-items-end">
+    
+    <div class="col-12 col-md-3 d-flex align-items-end gap-2">
+      <div class="flex-grow-1">
+        <span class="form-label-sm">ID/Event Name</span>
+        
+        <div class="input-group input-group-sm">
+          <input type="text" id="fName" class="form-control" placeholder="Search..." onkeyup="applyFilters()">
+          
+          <button class="btn btn-light border border-secondary-subtle d-md-none text-danger px-2" type="button" onclick="clearFilters()" title="Clear">
+            <i class="bi bi-x-lg" style="font-size: 0.75rem;"></i>
+          </button>
+        </div>
+        
+      </div>
+      
+      <button class="btn btn-primary btn-sm d-md-none fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#advancedEventFilters" style="height: 31px; padding: 0 12px;">
+        <i class="bi bi-sliders"></i>
+      </button>
+    </div>
+    
+    <div class="col-12 col-md-9 p-0 m-0">
+      <div class="collapse d-md-block" id="advancedEventFilters">
+        <div class="row g-2 align-items-end m-0 pt-2 pt-md-0">
+          <div class="col-6 col-md-3"><span class="form-label-sm">From Date</span><input type="date" id="fDateFrom" class="form-control form-control-sm" onchange="applyFilters()"></div>
+          <div class="col-6 col-md-3"><span class="form-label-sm">To Date</span><input type="date" id="fDateTo" class="form-control form-control-sm" onchange="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">Crew Member</span><select id="fCrew" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Crew</option></select></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">Event Status</span><select id="fStatus" class="form-select form-select-sm" onchange="applyFilters()"><option value="">All Statuses</option><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
-          <div class="col-12 col-md-1 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
+          <div class="col-12 col-md-2 mt-3 mt-md-0"><button class="btn btn-light border btn-sm w-100 fw-bold" onclick="clearFilters()">Clear</button></div>
         </div>
       </div>
+    </div>
+    
+  </div>
+</div>
 <div class="filter-panel" id="editQueueFilters" style="display:none;">
         <div class="row g-2 align-items-end">
           <div class="col-12 col-md-5"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fEqSearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="handleEqSearch()"></div>
@@ -580,7 +773,11 @@
           </div>
       </div>
       <div id="events-view" style="display:none;">
-          <h4 class="fw-bold mb-4 mt-2" id="upcomingEventsHeader">Upcoming Events</h4>
+         
+          <button id="floatingBackBtn" class="btn btn-dark text-white floating-back-btn" onclick="resetFromNotification()">
+              <i class="bi bi-arrow-left-circle me-2"></i>Go back to upcoming events
+          </button>
+          
           <div id="events-list" class="row g-3"></div>
       </div>
 
@@ -811,6 +1008,14 @@
               </form>
           </div>
       </div>
+      <div id="billingsales-view" style="display:none;">
+        <h4 class="fw-bold mb-4 mt-2 text-primary"><i class="bi bi-graph-up-arrow me-2"></i>Billing Sales Dashboard</h4>
+        <div class="card p-5 text-center text-muted border-dashed border-2 shadow-sm bg-light">
+            <i class="bi bi-bar-chart-steps fs-1 mb-3 opacity-50"></i>
+            <h5 class="fw-bold text-dark">Superadmin Access Verified</h5>
+            <p class="mb-0">The Billing Sales UI and metrics will be constructed here.</p>
+        </div>
+      </div>
   </div>
 </div>
 
@@ -838,8 +1043,8 @@
             <input type="text" name="eventName" class="form-control fw-bold">
         </div>
         <div class="col-4 col-md-2 mt-4 pt-1">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="avp" id="newAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'new')">
+            <div class="form-check form-switch ms-1">
+                <input class="form-check-input" type="checkbox" role="switch" name="avp" id="newAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'new')">
                 <label class="form-check-label fw-bold text-primary small" for="newAvpCheck">AVP</label>
             </div>
         </div>
@@ -878,77 +1083,101 @@
       
       <div class="mb-4 p-3 bg-light rounded border shadow-sm">
           <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
-          <div class="row px-2 g-2" id="newServicesContainer">
-              
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo" id="newSrvPhoto" onchange="document.getElementById('newSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="newSrvPhoto" class="fw-bold text-dark">Photo</label>
-                  <div id="newSrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="newSrvPhotoCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">photographer(s)</span>
-                      </div>
-                  </div>
-              </div>
-              
-              <div class="col-12 col-md-12 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="newSrvPhotoQR" onchange="document.getElementById('newSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="newSrvPhotoQR" class="fw-bold text-dark">Photo Souvenir QR</label>
-                  <div id="newSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
-                      
-                      <div class="d-flex gap-3 mb-2">
-                          <div class="form-check">
-                              <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('new')" checked>
-                              <label class="form-check-label fw-bold text-dark" for="newTypeWithPrints">With Prints</label>
-                          </div>
-                          <div class="form-check">
-                              <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('new')">
-                              <label class="form-check-label fw-bold text-dark" for="newTypeWithoutPrints">Without Prints</label>
-                          </div>
-                      </div>
-                      
-                      <div id="newDetailsWithPrints">
-                          <div class="input-group input-group-sm mb-1">
-                              <input type="number" id="newSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
-                          </div>
-                          <div class="input-group input-group-sm">
-                              <input type="number" id="newSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
-                              <select id="newSrvPrintsSize" class="form-select border-secondary-subtle">
-                                  <option value="4R">4R</option>
-                                  <option value="Wallet size">Wallet size</option>
-                                  <option value="5R">5R</option>
-                              </select>
-                          </div>
-                      </div>
-                      
-                      <div id="newDetailsWithoutPrints" style="display: none;">
-                          <div class="input-group input-group-sm">
-                              <input type="number" id="newSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-              
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="newSrvFrame" onchange="document.getElementById('newSrvFrameDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="newSrvFrame" class="fw-bold text-dark">Frame Token</label>
-                  <div id="newSrvFrameDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="newSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
-                      </div><div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
-                  </div>
-              </div>
+          <div id="newServicesContainer">
+    <div class="row px-2 g-2 m-0 p-0" id="newStandardServices">
+        
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Photo" id="newSrvPhoto" onchange="document.getElementById('newSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('new');">
+                <label class="form-check-label fw-bold text-dark" for="newSrvPhoto">Photo</label>
+            </div>
+            <input type="number" name="amt_Photo" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            <div id="newSrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
+                <div class="input-group input-group-sm">
+                    <input type="number" id="newSrvPhotoCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                    <span class="input-group-text bg-light text-muted border-secondary-subtle">photographer(s)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-12 small mb-2">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="newSrvPhotoQR" onchange="document.getElementById('newSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('new');">
+                <label class="form-check-label fw-bold text-dark" for="newSrvPhotoQR">Photo Souvenir QR</label>
+            </div>
+            <input type="number" name="amt_PhotoQR" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            
+            <div id="newSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
+                <div class="d-flex gap-3 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('new')" checked>
+                        <label class="form-check-label fw-bold text-dark" for="newTypeWithPrints">With Prints</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="newPhotoQRType" id="newTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('new')">
+                        <label class="form-check-label fw-bold text-dark" for="newTypeWithoutPrints">Without Prints</label>
+                    </div>
+                </div>
+                
+                <div id="newDetailsWithPrints">
+                    <div class="input-group input-group-sm mb-1">
+                        <input type="number" id="newSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <input type="number" id="newSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
+                        <select id="newSrvPrintsSize" class="form-select border-secondary-subtle">
+                            <option value="4R">4R</option>
+                            <option value="Wallet size">Wallet size</option>
+                            <option value="5R">5R</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="newDetailsWithoutPrints" style="display: none;">
+                    <div class="input-group input-group-sm">
+                        <input type="number" id="newSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="newSrvFrame" onchange="document.getElementById('newSrvFrameDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('new');">
+                <label class="form-check-label fw-bold text-dark" for="newSrvFrame">Frame Token</label>
+            </div>
+            <input type="number" name="amt_FrameToken" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            <div id="newSrvFrameDetails" class="mt-1 pe-2" style="display:none;">
+                <div class="input-group input-group-sm">
+                    <input type="number" id="newSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                    <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
+                </div>
+            </div>
+        </div>
 
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
-          </div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo studio" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Photo studio</label></div><input type="number" name="amt_PhotoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video documentation" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Video doc</label></div><input type="number" name="amt_VideoDoc" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video SDE" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Video SDE</label></div><input type="number" name="amt_VideoSDE" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video highlights" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Video highlights</label></div><input type="number" name="amt_VideoHigh" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video studio" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Video studio</label></div><input type="number" name="amt_VideoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Transpo" onchange="toggleServiceAmounts('new')"> <label class="form-check-label fw-bold text-primary">Transpo</label></div><input type="number" name="amt_Transpo" class="form-control form-control-sm mt-1 superadmin-billing-amt border-primary" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+    </div>
+    
+    <div class="row px-2 g-2 m-0 p-0" id="newAvpServices" style="display:none;">
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="p-3 bg-white rounded border shadow-sm">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="newSrvPreProd" checked onchange="toggleServiceAmounts('new')">
+                    <label class="form-check-label fw-bold text-primary" for="newSrvPreProd">Pre-Prod</label>
+                </div>
+                <input type="number" name="amt_PreProd" class="form-control form-control-sm superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 200px;">
+            </div>
+        </div>
+    </div>
+</div>
           
           <div class="input-group input-group-sm mt-3">
               <span class="input-group-text bg-white"><i class="bi bi-plus-circle text-muted"></i></span>
@@ -1025,17 +1254,25 @@
   </div>
 
   <div id="newPaymentFields">
-      <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
-      <select name="paymentType" id="newPaymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('new')">
-          <option value="">-- Choose Payment Method --</option>
-          <option>Cash AR</option>
-          <option>Cash ORCR</option>
-          <option>Online Transfer AR</option>
-          <option>Online Transfer ORCR</option>
-          <option>Billing</option>
-          <option>Check AR</option>
-          <option>Check ORCR</option>
-      </select>
+      <div class="section-title text-secondary mb-2"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
+      
+      <div class="d-flex align-items-center gap-3 mb-3">
+          <select name="paymentType" id="newPaymentType" class="form-select form-select-sm fw-bold w-100" onchange="togglePaymentUI('new')">
+              <option value="">-- Choose Payment Method --</option>
+              <option>Cash AR</option>
+              <option>Cash ORCR</option>
+              <option>Online Transfer AR</option>
+              <option>Online Transfer ORCR</option>
+              <option>Billing</option>
+              <option>Check AR</option>
+              <option>Check ORCR</option>
+          </select>
+          
+          <div class="form-check form-switch mb-0 flex-shrink-0" id="newNoWithheldWrapper" style="display: none;">
+              <input class="form-check-input" type="checkbox" role="switch" name="noWithheld" id="newNoWithheld">
+              <label class="form-check-label small fw-bold text-dark" for="newNoWithheld">No Withheld</label>
+          </div>
+      </div>
       
       <div id="newDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
           <div class="row g-3 mb-3" id="newPayAmountGroup">
@@ -1291,8 +1528,8 @@
             <input type="text" name="eventName" class="form-control fw-bold">
         </div>
         <div class="col-4 col-md-2 mt-4 pt-1">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="avp" id="editAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'edit')">
+            <div class="form-check form-switch ms-1">
+                <input class="form-check-input" type="checkbox" role="switch" name="avp" id="editAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'edit')">
                 <label class="form-check-label fw-bold text-primary small" for="editAvpCheck">AVP</label>
             </div>
         </div>
@@ -1332,77 +1569,101 @@
       <div class="mb-4 p-3 bg-light rounded border shadow-sm">
           <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
           <div class="row px-2 g-2" id="editServicesContainer">
-              
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo" id="editSrvPhoto" onchange="document.getElementById('editSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="editSrvPhoto" class="fw-bold text-dark">Photo</label>
-                  <div id="editSrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="editSrvPhotoCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">photographer(s)</span>
-                      </div>
-                  </div>
-              </div>
-              
-              <div class="col-12 col-md-12 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="editSrvPhotoQR" onchange="document.getElementById('editSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="editSrvPhotoQR" class="fw-bold text-dark">Photo Souvenir QR</label>
-                  <div id="editSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
-                      
-                      <div class="d-flex gap-3 mb-2">
-                          <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('edit')" checked>
-                              <label class="form-check-label fw-bold text-dark" for="editTypeWithPrints">With Prints</label>
-                          </div>
-                          <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('edit')">
-                              <label class="form-check-label fw-bold text-dark" for="editTypeWithoutPrints">Without Prints</label>
-                          </div>
-                      </div>
-                      
-                      <div id="editDetailsWithPrints">
-                          <div class="input-group input-group-sm mb-1">
-                              <input type="number" id="editSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
-                          </div>
-                          <div class="input-group input-group-sm">
-                              <input type="number" id="editSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
-                              <select id="editSrvPrintsSize" class="form-select border-secondary-subtle">
-                                  <option value="4R">4R</option>
-                                  <option value="Wallet size">Wallet size</option>
-                                  <option value="5R">5R</option>
-                              </select>
-                          </div>
-                      </div>
-                      
-                      <div id="editDetailsWithoutPrints" style="display: none;">
-                          <div class="input-group input-group-sm">
-                              <input type="number" id="editSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-              
-              <div class="col-12 col-md-6 form-check small mb-2">
-                  <input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="editSrvFrame" onchange="document.getElementById('editSrvFrameDetails').style.display = this.checked ? 'block' : 'none'">
-                  <label for="editSrvFrame" class="fw-bold text-dark">Frame Token</label>
-                  <div id="editSrvFrameDetails" class="mt-1 pe-2" style="display:none;">
-                      <div class="input-group input-group-sm">
-                          <input type="number" id="editSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                          <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
-                      </div>
-                  </div>
-              </div>
+    <div class="row px-2 g-2 m-0 p-0" id="editStandardServices">
+        
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Photo" id="editSrvPhoto" onchange="document.getElementById('editSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('edit');">
+                <label class="form-check-label fw-bold text-dark" for="editSrvPhoto">Photo</label>
+            </div>
+            <input type="number" name="amt_Photo" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            <div id="editSrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
+                <div class="input-group input-group-sm">
+                    <input type="number" id="editSrvPhotoCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                    <span class="input-group-text bg-light text-muted border-secondary-subtle">photographer(s)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-12 small mb-2">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="editSrvPhotoQR" onchange="document.getElementById('editSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('edit');">
+                <label class="form-check-label fw-bold text-dark" for="editSrvPhotoQR">Photo Souvenir QR</label>
+            </div>
+            <input type="number" name="amt_PhotoQR" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            
+            <div id="editSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
+                <div class="d-flex gap-3 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('edit')" checked>
+                        <label class="form-check-label fw-bold text-dark" for="editTypeWithPrints">With Prints</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('edit')">
+                        <label class="form-check-label fw-bold text-dark" for="editTypeWithoutPrints">Without Prints</label>
+                    </div>
+                </div>
+                
+                <div id="editDetailsWithPrints">
+                    <div class="input-group input-group-sm mb-1">
+                        <input type="number" id="editSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <input type="number" id="editSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
+                        <select id="editSrvPrintsSize" class="form-select border-secondary-subtle">
+                            <option value="4R">4R</option>
+                            <option value="Wallet size">Wallet size</option>
+                            <option value="5R">5R</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="editDetailsWithoutPrints" style="display: none;">
+                    <div class="input-group input-group-sm">
+                        <input type="number" id="editSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="editSrvFrame" onchange="document.getElementById('editSrvFrameDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('edit');">
+                <label class="form-check-label fw-bold text-dark" for="editSrvFrame">Frame Token</label>
+            </div>
+            <input type="number" name="amt_FrameToken" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            <div id="editSrvFrameDetails" class="mt-1 pe-2" style="display:none;">
+                <div class="input-group input-group-sm">
+                    <input type="number" id="editSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                    <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
+                </div>
+            </div>
+        </div>
 
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> Photo studio</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> Video documentation</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> Video SDE</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> Video highlights</div>
-              <div class="col-6 col-md-4 form-check small mb-2"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> Video studio</div>
-          </div>
-
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo studio" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Photo studio</label></div><input type="number" name="amt_PhotoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video documentation" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Video doc</label></div><input type="number" name="amt_VideoDoc" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video SDE" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Video SDE</label></div><input type="number" name="amt_VideoSDE" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video highlights" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Video highlights</label></div><input type="number" name="amt_VideoHigh" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video studio" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Video studio</label></div><input type="number" name="amt_VideoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Transpo" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label fw-bold text-primary">Transpo</label></div><input type="number" name="amt_Transpo" class="form-control form-control-sm mt-1 superadmin-billing-amt border-primary" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+    </div>
+    
+    <div class="row px-2 g-2 m-0 p-0" id="editAvpServices" style="display:none;">
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="p-3 bg-white rounded border shadow-sm">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="editSrvPreProd" checked onchange="toggleServiceAmounts('edit')">
+                    <label class="form-check-label fw-bold text-primary" for="editSrvPreProd">Pre-Prod</label>
+                </div>
+                <input type="number" name="amt_PreProd" class="form-control form-control-sm superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 200px;">
+            </div>
+        </div>
+    </div>
+</div>
+          
           <div class="input-group input-group-sm mt-3">
               <span class="input-group-text bg-white"><i class="bi bi-plus-circle text-muted"></i></span>
               <input type="text" id="editCustomServiceInput" class="form-control border-start-0" placeholder="Add custom service...">
@@ -1444,7 +1705,8 @@
       <label class="form-label-sm"><i class="bi bi-journal-text me-1"></i> Additional Notes</label>
       <textarea name="notes" class="form-control form-control-sm" rows="2"></textarea>
   </div>
-<div id="editEditingSection" class="p-3 mb-4 rounded border border-info border-opacity-25" style="background-color: rgba(13, 202, 240, 0.05);">
+  
+  <div id="editEditingSection" class="p-3 mb-4 rounded border border-info border-opacity-25" style="background-color: rgba(13, 202, 240, 0.05);">
       <div class="section-title text-info mb-3"><i class="bi bi-film me-1"></i> Editing Workflow</div>
       
       <div class="row g-3 mb-3">
@@ -1485,18 +1747,27 @@
       <input type="hidden" name="editedTimestamp" id="editEditedTimestamp">
       <input type="hidden" name="sentTimestamp" id="editSentTimestamp">
   </div>
+  
   <div id="editPaymentFields">
-      <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
-      <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('edit')">
-          <option value="">-- Choose Payment Method --</option>
-          <option>Cash AR</option>
-          <option>Cash ORCR</option>
-          <option>Online Transfer AR</option>
-          <option>Online Transfer ORCR</option>
-          <option>Billing</option>
-          <option>Check AR</option>
-          <option>Check ORCR</option>
-      </select>
+      <div class="section-title text-secondary mb-2"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
+      
+      <div class="d-flex align-items-center gap-3 mb-3">
+          <select id="editPaymentType" name="paymentType" class="form-select form-select-sm fw-bold w-100" onchange="togglePaymentUI('edit')">
+              <option value="">-- Choose Payment Method --</option>
+              <option>Cash AR</option>
+              <option>Cash ORCR</option>
+              <option>Online Transfer AR</option>
+              <option>Online Transfer ORCR</option>
+              <option>Billing</option>
+              <option>Check AR</option>
+              <option>Check ORCR</option>
+          </select>
+          
+          <div class="form-check form-switch mb-0 flex-shrink-0" id="editNoWithheldWrapper" style="display: none;">
+              <input class="form-check-input" type="checkbox" role="switch" name="noWithheld" id="editNoWithheld">
+              <label class="form-check-label small fw-bold text-dark" for="editNoWithheld">No Withheld</label>
+          </div>
+      </div>
       
       <div id="editDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
           <div class="row g-3 mb-3" id="editPayAmountGroup">
@@ -1757,7 +2028,7 @@ if (!isStandalone) {
         // APPLE: Show button, but it triggers a manual instruction modal
         installBtn.style.setProperty('display', 'flex', 'important');
         installBtn.onclick = () => {
-            alert('To install on iPhone:\n1. Tap the "Share" icon at the bottom of Safari.\n2. Scroll down and tap "Add to Home Screen".');
+            egmAlert('To install on iPhone:\n1. Tap the "Share" icon at the bottom of Safari.\n2. Scroll down and tap "Add to Home Screen".');
         };
     } else {
         // ANDROID/CHROME: Wait for the browser to fire the install event
@@ -1802,41 +2073,97 @@ if (!isStandalone) {
 
 const messaging = firebase.messaging();
 
-  // 🟢 IN-APP FOREGROUND TOASTS & CARD OPENER 🟢
-  window.forceOpenCard = function(eventId, toastId) {
+  // 🟢 IN-APP FOREGROUND TOASTS & UNIFIED CARD OPENER 🟢
+  let isOpeningCard = false; // Locks the function to prevent double-taps!
+
+  // 🟢 NOTIFICATION ROUTER & FILTERING 🟢
+  window.handleNotificationClick = function(eventId, toastId = null) {
+      // 1. Hide and destroy the toast notification cleanly
       if (toastId) {
           const toastEl = document.getElementById(toastId);
-          if (toastEl) bootstrap.Toast.getOrCreateInstance(toastEl).hide();
+          if (toastEl) {
+              const toastInst = bootstrap.Toast.getInstance(toastEl) || new bootstrap.Toast(toastEl);
+              toastInst.hide();
+              setTimeout(() => toastEl.remove(), 300); 
+          }
       }
       
-      if (!eventId) return;
-      const formattedId = eventId.toLowerCase().startsWith('egm') ? eventId : 'egm' + eventId;
+      // 2. Validate the ID
+      if (!eventId || String(eventId).trim() === "undefined" || String(eventId).trim() === "null") return;
       
+      // 3. Format ID: Automatically add 'egm' if missing
+      let formattedId = String(eventId).trim().toLowerCase();
+      if (!formattedId.startsWith('egm')) {
+          formattedId = 'egm' + formattedId;
+      }
+
+      // 4. Force close any modals that might be open
+      document.querySelectorAll('.modal.show').forEach(mEl => {
+          const inst = bootstrap.Modal.getInstance(mEl);
+          if (inst) inst.hide();
+      });
+
+      document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+
+      // 5. 🟢 THE FIX: Wait for Firebase to actually load the data before filtering!
+      let waitAttempts = 0;
       const waitForData = setInterval(() => {
-          if (typeof rawEvents !== 'undefined' && rawEvents.length > 0) {
+          waitAttempts++;
+          const hasData = typeof rawEvents !== 'undefined' && rawEvents.length > 0;
+          const isFresh = window.isDataFromCache === false;
+
+          // Proceed if we have fresh data (or if we've waited too long and need to use cache)
+          if (hasData && (isFresh || waitAttempts > 8)) {
               clearInterval(waitForData);
-              const targetEvent = rawEvents.find(e => String(e['Event ID']).toLowerCase() === formattedId.toLowerCase());
-              if (targetEvent) {
-                  if (currentTab !== 'events') switchTab('events');
-                  document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                  bootstrap.Modal.getOrCreateInstance(document.getElementById('eventCardModal')).show();
-                  
-                  const urlParams = new URLSearchParams(window.location.search);
-                  if (urlParams.has('openEvent')) {
-                      urlParams.delete('openEvent');
-                      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                      window.history.replaceState({}, '', newUrl);
-                  }
+              document.getElementById('bgSyncIndicator').style.display = 'none';
+
+              // Switch to the Events tab
+              if (currentTab !== 'events') switchTab('events');
+
+              // Inject the ID into the search bar and trigger the filter!
+              document.getElementById('fName').value = formattedId;
+              applyFilters();
+
+              // 🟢 THE FIX: Wait 300ms so the DOM has time to actually draw the filtered cards!
+              setTimeout(() => {
+                  const visibleCards = document.querySelectorAll('#events-list .card');
+                  visibleCards.forEach(card => {
+                      card.classList.remove('card-blink-emphasis');
+                      void card.offsetWidth; // The magic trick to restart animations
+                      card.classList.add('card-blink-emphasis');
+                  });
+              }, 300);
+
+              // Show the floating "Go Back" button
+              document.getElementById('floatingBackBtn').style.display = 'flex';
+
+              // Scrub the URL so refreshing doesn't re-trigger the deep link
+              const urlParams = new URLSearchParams(window.location.search);
+              if (urlParams.has('openEvent')) {
+                  urlParams.delete('openEvent');
+                  const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                  window.history.replaceState({}, '', newUrl);
               }
           }
       }, 300);
-      setTimeout(() => clearInterval(waitForData), 10000);
+      
+      // Safety net: Stop checking after 8 seconds so it doesn't loop forever
+      setTimeout(() => clearInterval(waitForData), 8000);
   };
 
+  // Resets the view when they click the floating button
+  window.resetFromNotification = function() {
+      clearFilters();
+      lastOpenedEventId = null; // 🟢 Clear the memory so they can click it again later!
+      document.getElementById('floatingBackBtn').style.display = 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Listen for Foreground Firebase Messages (The Blue Toast)
   messaging.onMessage((payload) => {
       const eventId = payload.data.eventId;
-      const title = payload.notification.title || "New Event";
-      const body = payload.notification.body || "Tap to view.";
+      const title = payload.notification?.title || "Dashboard Update";
+      const body = payload.notification?.body || "Tap to view.";
 
       let container = document.getElementById('fgToastContainer');
       if (!container) {
@@ -1849,7 +2176,7 @@ const messaging = firebase.messaging();
 
       const toastId = 'toast-' + Date.now();
       const toastHtml = `
-          <div id="${toastId}" class="toast align-items-center text-bg-primary border-0 shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true" style="cursor:pointer;" onclick="forceOpenCard('${eventId}', '${toastId}')">
+          <div id="${toastId}" class="toast align-items-center text-bg-primary border-0 shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true" style="cursor:pointer;" onclick="handleNotificationClick('${eventId}', '${toastId}')">
               <div class="d-flex">
                   <div class="toast-body fw-bold">
                       <div><i class="bi bi-bell-fill me-2"></i>${title}</div>
@@ -1863,94 +2190,73 @@ const messaging = firebase.messaging();
       new bootstrap.Toast(document.getElementById(toastId), { delay: 8000 }).show();
   });
 
-  // 🟢 COLD & WARM START "PULL" CONTROLLER 🟢
+  // 🟢 DEEP LINKING CONTROLLER 🟢
   
-  // Trigger 1: Cold Start 
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('openEvent')) {
-      forceOpenCard(urlParams.get('openEvent'));
-  }
+  let lastOpenedEventId = null; // Prevents the app from looping the same click
 
-  // Trigger 2: Listen for the Service Worker's reply
-  if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.action === 'openCard') {
-              forceOpenCard(event.data.eventId);
-          }
-      });
-  }
+  // Helper to check the URL without needing a page refresh
+  window.checkUrlForDeepLink = function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventId = urlParams.get('openEvent');
+      
+      if (eventId && eventId !== lastOpenedEventId) {
+          lastOpenedEventId = eventId;
+          handleNotificationClick(eventId);
+      }
+  };
 
-  // Trigger 3: Every time the app comes to the screen, ASK the Service Worker!
+  // Trigger 1: Cold Start (Page loads natively)
+  checkUrlForDeepLink();
+
+  // Trigger 2: Warm Start (Aggressive Polling)
+  // When the OS wakes up a background tab, it often delays updating the URL.
   document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
+          // Check immediately
+          checkUrlForDeepLink();
+          
+          // 🟢 THE FIX: Poll the URL every 250ms for 2 seconds. 
+          // This catches the delayed URL injection from iOS and Android!
+          let pollCount = 0;
+          const urlPoller = setInterval(() => {
+              checkUrlForDeepLink();
+              pollCount++;
+              if (pollCount > 8) clearInterval(urlPoller); // Stop checking after 2 seconds
+          }, 250);
+          
+          // Also ask the Service Worker just in case it's holding onto a click
           if (navigator.serviceWorker.controller) {
-              // The app is fully awake. Safe to ask for the data!
               navigator.serviceWorker.controller.postMessage({ action: 'checkPendingClick' });
-              
-              // Failsafe: Ask again 1 second later just in case iOS was being slow
-              setTimeout(() => {
-                  if (navigator.serviceWorker.controller) {
-                      navigator.serviceWorker.controller.postMessage({ action: 'checkPendingClick' });
-                  }
-              }, 1000);
           }
       }
   });
-  // 🔴 END DEEP LINKING CONTROLLER 🔴
 
+  // Trigger 3: App gains active focus (Alt+Tab on Desktop)
+  window.addEventListener('focus', () => {
+      checkUrlForDeepLink();
+  });
 
-  //---------------------------
-  // 🟢 NEW: LISTEN FOR DIRECT SERVICE WORKER MESSAGES 🟢
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.action === 'openEventCard') {
-            console.log("Received direct message from Service Worker to open:", event.data.eventId);
-            triggerCardWhenReady(event.data.eventId);
-        }
-    });
-}
-
-// Helper function to safely wait for data before drawing the card
-function triggerCardWhenReady(eventId, rawPayload = "") {
-    // 🟢 MOBILE DIAGNOSTICS: If the ID is missing, show us exactly what the phone received!
-    if (!eventId || eventId === "undefined" || eventId === "null") {
-        showToast("Missing ID. Payload received: " + rawPayload, "warning");
-        return; 
-    }
-
-    const checkData = setInterval(() => {
-        if (rawEvents && rawEvents.length > 0) {
-            clearInterval(checkData); // Stop checking
-            
-            const targetEvent = rawEvents.find(e => String(e['Event ID']) === String(eventId));
-            
-            if (targetEvent) {
-                // ONLY jump to the events tab if we actually found the card!
-                if (currentTab !== 'events') switchTab('events');
-                
-                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(targetEvent);
-                const cardModalEl = document.getElementById('eventCardModal');
-                const modal = bootstrap.Modal.getInstance(cardModalEl) || new bootstrap.Modal(cardModalEl);
-                modal.show();
-            } else {
-                showToast(`Could not find Event #${eventId} in the database.`, "danger");
-            }
-        }
-    }, 300);
-    
-    // Safety net: Stop checking after 5 seconds so it doesn't loop forever
-    setTimeout(() => clearInterval(checkData), 5000);
-}
-
-// And update the listener right above it to pass the raw payload for debugging:
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.action === 'openEventCard') {
-            // Pass the ID, and a stringified version of the raw data so we can see it on mobile
-            triggerCardWhenReady(event.data.eventId, event.data.debugPayload);
-        }
-    });
-}
+  // Trigger 4: Ultimate Service Worker Catch-All
+  // Sometimes Firebase doesn't update the URL at all and just fires a raw message.
+  if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+          let extractedId = null;
+          
+          // Indiscriminately dig through the payload to find the eventId
+          if (event.data) {
+              if (event.data.eventId) extractedId = event.data.eventId;
+              else if (event.data.data && event.data.data.eventId) extractedId = event.data.data.eventId;
+              else if (event.data.firebaseMessaging && event.data.firebaseMessaging.payload && event.data.firebaseMessaging.payload.data) {
+                  extractedId = event.data.firebaseMessaging.payload.data.eventId;
+              }
+          }
+          
+          if (extractedId && extractedId !== lastOpenedEventId) {
+              lastOpenedEventId = extractedId;
+              handleNotificationClick(extractedId);
+          }
+      });
+  }
 
   // 🔥 THE MAGIC FIX: Enable Local Caching so data loads in milliseconds
   db.enablePersistence({ synchronizeTabs: true })
@@ -1985,7 +2291,7 @@ if ('serviceWorker' in navigator) {
       
       if (result.status === "error" || result.success === false) {
           console.error("Backend error:", result.error || result.message);
-          alert("Server Error: " + (result.error || result.message)); 
+          egmAlert("Server Error: " + (result.error || result.message)); 
           return null;
       }
       return result;
@@ -1998,21 +2304,17 @@ if ('serviceWorker' in navigator) {
       return { error: error.message };
     }
   }
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-
-<script>
 
 async function subscribeToNotifications() {
     // 🟢 NEW: iOS / Unsupported Browser Check 🟢
     if (!('Notification' in window)) {
-        alert("Push notifications are not supported in this browser.\n\nIf you are on an iPhone, you MUST open this site in Safari, tap 'Share', and select 'Add to Home Screen' to enable notifications.");
+        egmAlert("Push notifications are not supported in this browser.\n\nIf you are on an iPhone, you MUST open this site in Safari, tap 'Share', and select 'Add to Home Screen' to enable notifications.");
         return;
     }
 
     const crewName = document.getElementById('pushCrewName').value;
     if (!crewName) {
-        alert("Please select your name first!");
+        egmAlert("Please select your name first!");
         return;
     }
 
@@ -2048,15 +2350,15 @@ async function subscribeToNotifications() {
                 showToast(`Success! Notifications enabled for ${crewName} on this device.`, 'success');
             } else {
                 ov.style.display = 'none';
-                alert("Could not generate a token. Check console.");
+                egmAlert("Could not generate a token. Check console.");
             }
         } else {
-            alert("You denied notification permissions. You will need to allow them in your browser/phone settings.");
+            egmAlert("You denied notification permissions. You will need to allow them in your browser/phone settings.");
         }
     } catch (error) {
         document.getElementById('submitOverlay').style.display = 'none';
         console.error("Error getting token:", error);
-        alert("Failed to enable notifications. Error: " + error.message);
+        egmAlert("Failed to enable notifications. Error: " + error.message);
     }
 }
   //
@@ -2077,7 +2379,7 @@ async function subscribeToNotifications() {
   // --- NEW: CLOUD RATE MEMORY ---
   let dbCrewRates = {};
   let dbEditingRate = 1000;
-  
+  let activePayrollSnapshot = null; // <-- NEW
   let currentPayrollData = {}; 
   let lastComputedRange = "";
   let activePayrollPerson = null;
@@ -2172,7 +2474,7 @@ async function subscribeToNotifications() {
             showToast("Rates saved to Cloud successfully!", "success");
         }
     } catch (err) {
-        alert("Error saving rates: " + err.message);
+        egmAlert("Error saving rates: " + err.message);
     }
     
     ov.style.display = 'none';
@@ -2203,33 +2505,35 @@ async function subscribeToNotifications() {
       return localStorage.getItem('egm_auth_role') || null;
   }
 
-  function requireAuth(actionFunction, requiresAdmin = false) {
-      const role = getUserRole();
-      const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
-      
-      if (role && !isExpired) {
-          if (requiresAdmin && role !== 'admin') {
-              // Smart Upgrade Prompt
-              if (confirm("Admin access is required for this action. Would you like to sign out of your Editor account to switch to Admin?")) {
-                  signOut();
-              }
-              return;
-          }
-          actionFunction();
-      } else {
-          // THE FIX: We wrap the action so the gatekeeper re-evaluates the role AFTER the login succeeds!
-          pendingAuthAction = () => requireAuth(actionFunction, requiresAdmin);
-          
-          document.getElementById('authPassword').value = '';
-          document.getElementById('authError').style.display = 'none';
-          const authModal = bootstrap.Modal.getInstance(document.getElementById('authModal')) || new bootstrap.Modal(document.getElementById('authModal'));
-          authModal.show();
-          setTimeout(() => document.getElementById('authPassword').focus(), 500);
-      }
-  }
+  async function requireAuth(actionFunction, roleLevel = null) {
+    // If original code passed 'true', map it to 'admin' to preserve functionality
+    if (roleLevel === true) roleLevel = 'admin';
+
+    const role = getUserRole();
+    const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+
+    if (role && !isExpired) {
+        if (roleLevel === 'superadmin' && role !== 'superadmin') {
+            if (await egmConfirm("Superadmin access is required. Would you like to sign out to switch accounts?")) signOut();
+            return;
+        }
+        if (roleLevel === 'admin' && role !== 'admin' && role !== 'superadmin') {
+            if (await egmConfirm("Admin access is required. Would you like to sign out to switch accounts?")) signOut();
+            return;
+        }
+        actionFunction();
+    } else {
+        pendingAuthAction = () => requireAuth(actionFunction, roleLevel);
+        document.getElementById('authPassword').value = '';
+        document.getElementById('authError').style.display = 'none';
+        const authModal = bootstrap.Modal.getInstance(document.getElementById('authModal')) || new bootstrap.Modal(document.getElementById('authModal'));
+        authModal.show();
+        setTimeout(() => document.getElementById('authPassword').focus(), 500);
+    }
+}
 
   async function submitAuth() {
-      const pass = document.getElementById('authPassword').value;
+      const pass = document.getElementById('authPassword').value.trim();
       if (!pass) return;
 
       const btn = document.getElementById('authSubmitBtn');
@@ -2237,17 +2541,31 @@ async function subscribeToNotifications() {
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>VERIFYING...';
       btn.disabled = true;
 
-      // Custom Role Checking
-      if (pass === "egmadmin") {
-          localStorage.setItem('egm_auth_role', 'admin');
-          localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000)); // 12 hours
-          finalizeAuth(btn, originalText);
-      } else if (pass === "editors1") {
-          localStorage.setItem('egm_auth_role', 'editor');
-          localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000));
-          finalizeAuth(btn, originalText);
-      } else {
-          document.getElementById('authError').innerText = "Incorrect Password!";
+      try {
+          // 🟢 THE FAST FIREBASE METHOD: 
+          // We ask Firebase to look for a document whose ID exactly matches what they typed.
+          const docRef = await db.collection("access_codes").doc(pass).get();
+
+          if (docRef.exists) {
+              // The password matched a document! Grab the role (admin or editor)
+              const data = docRef.data();
+              
+              localStorage.setItem('egm_auth_role', data.role);
+              localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000)); // 12 hours
+              
+              document.getElementById('authError').style.display = 'none';
+              document.getElementById('authPassword').value = '';
+              finalizeAuth(btn, originalText);
+          } else {
+              // The document didn't exist, meaning the password was wrong
+              document.getElementById('authError').innerText = "Incorrect Password!";
+              document.getElementById('authError').style.display = 'block';
+              btn.innerHTML = originalText;
+              btn.disabled = false;
+          }
+      } catch (err) {
+          console.error("Auth Error:", err);
+          document.getElementById('authError').innerText = "Network Error. Try again.";
           document.getElementById('authError').style.display = 'block';
           btn.innerHTML = originalText;
           btn.disabled = false;
@@ -2418,20 +2736,32 @@ function handleAddCustomService(inputId, containerId) {
   }
   
   function addCustomServiceCheckbox(name, containerId, checkDefault = true) {
-      if(!name || name.trim() === '') return;
-      name = name.trim();
-      const container = document.getElementById(containerId);
-      const existing = Array.from(container.querySelectorAll('input[name="services"]')).map(el => el.value.toLowerCase());
-      if(existing.includes(name.toLowerCase())) {
-         const cb = container.querySelector(`input[name="services"][value="${name}"]`);
-         if(cb && checkDefault) cb.checked = true;
-         return;
-      }
-      const div = document.createElement('div');
-      div.className = 'col-6 col-md-4 form-check small custom-service-cb text-primary fw-bold';
-      div.innerHTML = `<input class="form-check-input" type="checkbox" name="services" value="${name}" ${checkDefault ? 'checked' : ''}> ${name}`;
-      container.appendChild(div);
-  }
+    if(!name || name.trim() === '') return;
+    name = name.trim();
+    const container = document.getElementById(containerId);
+    const existing = Array.from(container.querySelectorAll('input[name="services"]')).map(el => el.value.toLowerCase());
+    if(existing.includes(name.toLowerCase())) {
+       const cb = container.querySelector(`input[name="services"][value="${name}"]`);
+       if(cb && checkDefault) { cb.checked = true; cb.onchange(); }
+       return;
+    }
+    
+    const prefix = containerId.includes('new') ? 'new' : 'edit';
+    const div = document.createElement('div');
+    div.className = 'col-6 col-md-4 small mb-2';
+    
+    // Generates the checkbox and matching amount input
+    div.innerHTML = `
+        <div class="form-check custom-service-cb text-primary fw-bold">
+            <input class="form-check-input" type="checkbox" name="services" value="${name}" ${checkDefault ? 'checked' : ''} onchange="toggleServiceAmounts('${prefix}')">
+            <label class="form-check-label">${name}</label>
+        </div>
+        <input type="number" name="amt_${name.replace(/\s+/g, '')}" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;">
+    `;
+    container.appendChild(div);
+    
+    toggleServiceAmounts(prefix);
+}
 
   function updateCrewFilterDropdown(events) {
       const select = document.getElementById('fCrew');
@@ -2455,39 +2785,104 @@ function handleAddCustomService(inputId, containerId) {
 
 
 
-  function togglePaymentUI(prefix) {
-      const type = document.getElementById(prefix + 'PaymentType').value;
-      const box = document.getElementById(prefix + 'DynamicPayBox');
-      
-      const amtGrp = document.getElementById(prefix + 'PayAmountGroup');
-      const statGrp = document.getElementById(prefix + 'PayStatusGroup');
-      const billGrp = document.getElementById(prefix + 'PayBillingGroup');
-      const invUpGrp = document.getElementById(prefix + 'PayInvUploadGroup');
-      const chkUpGrp = document.getElementById(prefix + 'PayCheckUploadGroup');
-      const statusSel = document.getElementById(prefix + 'BillingStatus');
+ function togglePaymentUI(prefix) {
+    const role = getUserRole(); // 🟢 Added role check
+    const typeEl = document.getElementById(prefix + 'PaymentType');
+    const type = typeEl ? typeEl.value : '';
+    const box = document.getElementById(prefix + 'DynamicPayBox');
+    
+    const amtGrp = document.getElementById(prefix + 'PayAmountGroup');
+    const statGrp = document.getElementById(prefix + 'PayStatusGroup');
+    const billGrp = document.getElementById(prefix + 'PayBillingGroup');
+    const invUpGrp = document.getElementById(prefix + 'PayInvUploadGroup');
+    const chkUpGrp = document.getElementById(prefix + 'PayCheckUploadGroup');
+    const statusSel = document.getElementById(prefix + 'BillingStatus');
+    const noWithheldWrapper = document.getElementById(prefix + 'NoWithheldWrapper');
 
-      [amtGrp, statGrp, billGrp, invUpGrp, chkUpGrp].forEach(el => el.style.display = 'none');
-      statusSel.innerHTML = '';
-      statusSel.disabled = false;
-      
-      if (!type) { box.style.display = 'none'; return; }
-      box.style.display = 'block';
+    [amtGrp, statGrp, billGrp, invUpGrp, chkUpGrp].forEach(el => {
+        if (el) el.style.display = 'none';
+    });
+    
+    if (statusSel) {
+        statusSel.innerHTML = '';
+        statusSel.disabled = false;
+    }
+    
+    if (noWithheldWrapper) noWithheldWrapper.style.display = 'none';
+    
+    if (!type) { 
+        if (box) box.style.display = 'none'; 
+        return; 
+    }
+    
+    if (box) box.style.display = 'block';
 
-      if (['Cash AR', 'Online Transfer AR', 'Check AR'].includes(type)) {
-          amtGrp.style.display = 'block'; statGrp.style.display = 'block';
-          if (type === 'Check AR') chkUpGrp.style.display = 'block';
-          statusSel.innerHTML = '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
-      } else if (['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR'].includes(type)) {
-          amtGrp.style.display = 'block'; statGrp.style.display = 'block'; invUpGrp.style.display = 'block';
-          if (type === 'Check ORCR') chkUpGrp.style.display = 'block';
-          statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
-      } else if (type === 'Billing') {
-          statGrp.style.display = 'block'; billGrp.style.display = 'block'; invUpGrp.style.display = 'block';
-          statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
-      }
-  // ... existing togglePaymentUI logic ...
-      checkInvoiceRequired(prefix);
-  }
+    if (['Cash AR', 'Online Transfer AR', 'Check AR'].includes(type)) {
+        if (amtGrp) amtGrp.style.display = 'block'; 
+        if (statGrp) statGrp.style.display = 'block';
+        if (type === 'Check AR' && chkUpGrp) chkUpGrp.style.display = 'block';
+        if (statusSel) statusSel.innerHTML = '<option value="Pending">Pending</option><option value="Paid">Paid</option>';
+    } else if (['Cash ORCR', 'Online Transfer ORCR', 'Check ORCR'].includes(type)) {
+        if (amtGrp) amtGrp.style.display = 'block'; 
+        if (statGrp) statGrp.style.display = 'block'; 
+        if (invUpGrp) invUpGrp.style.display = 'block';
+        if (type === 'Check ORCR' && chkUpGrp) chkUpGrp.style.display = 'block';
+        if (statusSel) statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
+    } else if (type === 'Billing') {
+        if (statGrp) statGrp.style.display = 'block'; 
+        if (billGrp) billGrp.style.display = 'block'; 
+        if (invUpGrp) invUpGrp.style.display = 'block';
+        if (statusSel) statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
+        
+        // 🟢 THE FIX: Only show "No Withheld" if the user is an Admin or Superadmin
+        if (noWithheldWrapper && (role === 'admin' || role === 'superadmin')) {
+            noWithheldWrapper.style.display = 'block';
+        }
+    }
+    
+    if (typeof checkInvoiceRequired === 'function') checkInvoiceRequired(prefix);
+    if (typeof toggleServiceAmounts === 'function') toggleServiceAmounts(prefix);
+}
+  function toggleServiceAmounts(prefix) {
+    const role = getUserRole();
+    
+    // Grab the current Payment Type
+    const pTypeEl = document.getElementById(prefix + 'PaymentType');
+    const pType = pTypeEl ? pTypeEl.value : '';
+    
+    const container = document.getElementById(prefix + 'ServicesContactFields');
+    if (!container) return;
+
+    // Get all service checkboxes within this modal
+    const checkboxes = container.querySelectorAll('input[name="services"]');
+    
+    checkboxes.forEach(cb => {
+        // Map the checkbox value to its hidden HTML amount input name
+        let amtName = 'amt_' + cb.value.replace(/\s+/g, '');
+        
+        // Exact overrides to match your HTML names
+        if (cb.value === 'Photo Souvenir Master') amtName = 'amt_PhotoQR';
+        else if (cb.value === 'Photo studio') amtName = 'amt_PhotoStudio';
+        else if (cb.value === 'Video documentation') amtName = 'amt_VideoDoc';
+        else if (cb.value === 'Video SDE') amtName = 'amt_VideoSDE';
+        else if (cb.value === 'Video highlights') amtName = 'amt_VideoHigh';
+        else if (cb.value === 'Video studio') amtName = 'amt_VideoStudio';
+        else if (cb.value === 'Frame Token') amtName = 'amt_FrameToken';
+        else if (cb.value === 'Pre-Prod') amtName = 'amt_PreProd';
+        else if (cb.value === 'Transpo') amtName = 'amt_Transpo';
+        
+        const amtInput = container.querySelector(`input[name="${amtName}"]`);
+        
+        if (amtInput) {
+            // Rule: Must be Superadmin + Payment is 'Billing' + Checkbox is checked!
+            if (role === 'superadmin' && pType === 'Billing' && cb.checked) {
+                amtInput.style.setProperty('display', 'block', 'important');
+            } else {
+                amtInput.style.setProperty('display', 'none', 'important');
+            }
+        }
+    });
+}
   // Forces the Invoice URL to be required based on Billing Status
   function checkInvoiceRequired(prefix) {
       const status = document.getElementById(prefix + 'BillingStatus').value;
@@ -2580,23 +2975,30 @@ function handleAddCustomService(inputId, containerId) {
   }
 
   function toggleAvpFields(isAvp, prefix) { 
-      const avpFields = document.getElementById(prefix + 'AvpHiddenFields');
-      const services = document.getElementById(prefix + 'ServicesContactFields');
-      const dateTime = document.getElementById(prefix + 'DateTimeBlock');
-      const crew = document.getElementById(prefix + 'CrewBlock');
-      
-      if(avpFields) avpFields.style.display = isAvp ? 'none' : 'flex'; 
-      if(services) services.style.display = isAvp ? 'none' : 'block'; 
-      if(dateTime) dateTime.style.display = isAvp ? 'none' : 'block'; 
-      if(crew) crew.style.display = isAvp ? 'none' : 'block'; 
-      
-      const formId = prefix === 'new' ? 'eventForm' : 'editForm';
-      const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
-      if (dateInput) {
-          if (isAvp) { dateInput.removeAttribute('required'); } 
-          else { dateInput.setAttribute('required', 'required'); }
-      }
-  }
+    const avpFields = document.getElementById(prefix + 'AvpHiddenFields');
+    const servicesBlock = document.getElementById(prefix + 'ServicesContactFields');
+    const standardSrv = document.getElementById(prefix + 'StandardServices');
+    const avpSrv = document.getElementById(prefix + 'AvpServices');
+    const dateTime = document.getElementById(prefix + 'DateTimeBlock');
+    const crew = document.getElementById(prefix + 'CrewBlock');
+    
+    if(avpFields) avpFields.style.display = isAvp ? 'none' : 'flex'; 
+    
+    // Services block STAYS VISIBLE, but we swap the contents!
+    if(servicesBlock) servicesBlock.style.display = 'block'; 
+    if(standardSrv) standardSrv.style.display = isAvp ? 'none' : 'flex';
+    if(avpSrv) avpSrv.style.display = isAvp ? 'flex' : 'none';
+
+    if(dateTime) dateTime.style.display = isAvp ? 'none' : 'block'; 
+    if(crew) crew.style.display = isAvp ? 'none' : 'block'; 
+    
+    const formId = prefix === 'new' ? 'eventForm' : 'editForm';
+    const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
+    if (dateInput) {
+        if (isAvp) { dateInput.removeAttribute('required'); } 
+        else { dateInput.setAttribute('required', 'required'); }
+    }
+}
 
   function togglePhotoQRDetails(prefix) {
       const type = document.querySelector(`input[name="${prefix}PhotoQRType"]:checked`).value;
@@ -2749,15 +3151,19 @@ function handleEqSearch() {
 
 
   function clearFilters() {
-    ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType','fEqSearch'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
-    if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
-    if(document.getElementById('fEqStatus')) document.getElementById('fEqStatus').value = 'RAW Uploaded';
-    updateFilterStatuses();
-    
-    currentCalendarDate = new Date(); 
-    
-    applyFilters();
-    renderEditingQueue(rawEvents);
+      ['fName','fDateFrom','fDateTo','fCrew','fStatus','fPaySearch','fGrInv','fPayType','fEqSearch'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
+      if(document.getElementById('fBillStatus')) document.getElementById('fBillStatus').value = 'Unpaid';
+      if(document.getElementById('fEqStatus')) document.getElementById('fEqStatus').value = 'RAW Uploaded';
+      updateFilterStatuses();
+      
+      currentCalendarDate = new Date(); 
+      
+      // 🟢 NEW: Hide the floating button if they manually clear filters
+      const floatBtn = document.getElementById('floatingBackBtn');
+      if (floatBtn) floatBtn.style.display = 'none';
+      
+      applyFilters();
+      renderEditingQueue(rawEvents);
   }
 
   function applyFilters() {
@@ -2827,7 +3233,8 @@ function handleEqSearch() {
       else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
 
       if (!q && !grInv) {
-          filtered = filtered.filter(e => e['Event Status'] !== 'Pencil Booked' && e['Event Status'] !== 'Cancelled');
+          // 🟢 THE FIX: Exempt AVPs from the 'Pencil Booked' purge
+          filtered = filtered.filter(e => e['Event Status'] !== 'Cancelled' && (e['Event Status'] !== 'Pencil Booked' || e['AVP Required'] === 'TRUE'));
       }
       
       renderPayments(filtered);
@@ -2876,7 +3283,8 @@ function handleEqSearch() {
     document.getElementById('payroll-view').style.display = t==='payroll'?'block':'none';
     document.getElementById('booth-view').style.display = t==='booth'?'block':'none';
     document.getElementById('expenses-view').style.display = t==='expenses'?'block':'none';
-    
+    document.getElementById('billingsales-view').style.display = t==='billingsales'?'block':'none';
+    document.getElementById('bs-tab').classList.toggle('active', t==='billingsales');
     document.getElementById('eventFilters').style.display = (t==='events' || t==='calendar') ? 'block' : 'none';
     document.getElementById('editQueueFilters').style.display = t==='editqueue' ? 'block' : 'none';
     document.getElementById('paymentFilters').style.display = t==='payments' ? 'block' : 'none';
@@ -2958,20 +3366,12 @@ function handleEditClick(docId) {
 
 // Smart router for Calendar Pills
 function handleCalendarPillClick(docId) {
-    const role = getUserRole();
-    const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+    const e = rawEvents.find(ev => String(ev['Doc ID']) === String(docId));
+    if (!e) return;
     
-    if (role === 'admin' && !isExpired) {
-        // Admin: Open full edit modal immediately
-        openEditModal(docId);
-    } else {
-        // Editor or Non-Admin: Show the card in a Lightbox
-        const e = rawEvents.find(ev => String(ev['Doc ID']) === String(docId));
-        if (!e) return;
-        
-        document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(e);
-        new bootstrap.Modal(document.getElementById('eventCardModal')).show();
-    }
+    window.currentOpenModalEventId = e['Event ID']; 
+    document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(e);
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('eventCardModal')).show();
 }
 
 // Extracted Card Builder (Shared by Events Tab & Calendar Lightbox)
@@ -2992,8 +3392,8 @@ function generateSingleEventCard(e) {
                 </div>
             </div>
             <div class="text-danger fw-bold mb-2 small"><i class="bi bi-calendar2-event opacity-75 me-1"></i> ${leaveDateString}</div>
-            <div class="mb-1"><div style="line-height: 1.6;">${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger me-1 mb-2 fw-bold px-2 py-1 text-wrap" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}</div></div>
-            ${e['Event Notes'] ? `<div class="small text-secondary mt-2 border-top pt-2 border-danger border-opacity-25"><p class="mb-0 fst-italic" style="font-size: 0.7rem;"><i class="bi bi-journal-text opacity-50 text-danger me-1"></i> ${e['Event Notes']}</p></div>` : ''}
+            <div class="mb-1 d-flex flex-wrap gap-1">${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-danger border border-danger fw-bold px-2 py-1 shadow-sm" style="font-size: 0.75rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic small">No crew selected</span>'}</div>
+            ${e['Event Notes'] ? `<div class="small text-secondary mt-2 border-top pt-2 border-danger border-opacity-25"><p class="mb-0 fst-italic text-break" style="font-size: 0.7rem; line-height: 1.3;"><i class="bi bi-journal-text opacity-50 text-danger me-1"></i> ${e['Event Notes']}</p></div>` : ''}
         </div>`;
     }
 
@@ -3004,7 +3404,7 @@ function generateSingleEventCard(e) {
             if(key.toLowerCase().startsWith('file0') && row[key]) {
                 if(!fileSet.has(row[key])) {
                     fileSet.add(row[key]); const parts = row[key].split('|');
-                    if(parts.length === 3) filesHtml += `<span class="file-badge mb-2 me-2"><i class="bi bi-file-earmark-text text-secondary"></i> ${parts[0]} <a href="${parts[1]}" target="_blank" class="ms-1">View</a> <span class="file-delete-btn ms-1" title="Delete File" onclick="requireAuth(() => deleteFile('${e['Event ID']}', '${parts[2]}'))"><i class="bi bi-x"></i></span></span>`;
+                    if(parts.length === 3) filesHtml += `<span class="file-badge"><i class="bi bi-file-earmark-text text-secondary"></i> ${parts[0]} <a href="${parts[1]}" target="_blank" class="ms-1">View</a> <span class="file-delete-btn ms-1" title="Delete File" onclick="requireAuth(() => deleteFile('${e['Event ID']}', '${parts[2]}'))"><i class="bi bi-x"></i></span></span>`;
                 }
             }
         });
@@ -3016,74 +3416,105 @@ function generateSingleEventCard(e) {
     else if (e['Event Status'] === 'Pencil Booked') { cardCustomClass = 'card-pencil'; stampHtml = `<div class="stamp-container"><div class="status-stamp stamp-pencil">PENCIL BOOKED</div></div>`; } 
     else { statusPillHtml = `<span class="badge badge-soft-dark px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>`; }
 
-    let venueDisplay = `<span class="fw-medium text-dark">${e['Event Venue'] || 'No Venue Set'}</span>`;
-    if (e['Event Venue Link']) venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
+    // 🟢 FIX 1: Swapped text-truncate for text-break so long addresses wrap perfectly
+    let venueDisplay = `<span class="fw-medium text-dark text-break">${e['Event Venue'] || 'No Venue Set'}</span>`;
+    if (e['Event Venue Link']) venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold text-break">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
     
     let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
         let sTrim = s.trim();
         if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only') || sTrim.startsWith('Photo souvenir')) {
             let match = sTrim.match(/\[(\d+)\s+booth/); let booths = match ? match[1] : 1; let cleanName = e['Event Name'].replace(/'/g, "\\'");
-            return `<span class="badge badge-teal opacity-100 border me-1 mb-2 fw-bold px-2 py-1 text-wrap text-start shadow-sm" style="font-size: 0.8rem; line-height: 1.4; cursor: pointer;" onclick="goToBoothQR('${e['Event ID']}', '${booths}', '${cleanName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
-        } else { return `<span class="badge bg-secondary opacity-75 border me-1 mb-2 fw-medium px-2 py-1 text-wrap text-start" style="font-size: 0.8rem; line-height: 1.4;">${sTrim}</span>`; }
+            return `<span class="badge badge-teal opacity-100 border fw-bold px-2 py-1 text-start shadow-sm text-wrap" style="font-size: 0.75rem; cursor: pointer;" onclick="goToBoothQR('${e['Event ID']}', '${booths}', '${cleanName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
+        } else { return `<span class="badge bg-secondary opacity-75 border fw-medium px-2 py-1 text-start text-wrap" style="font-size: 0.75rem;">${sTrim}</span>`; }
     }).join('') : '-';
 
     let displayDateString = e['Event Date'];
     if (displayDateString && displayDateString.includes('-')) {
         const dParts = displayDateString.split('-');
-        displayDateString = new Date(dParts[0], dParts[1]-1, dParts[2]).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        displayDateString = new Date(dParts[0], dParts[1]-1, dParts[2]).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
     }
 
-    // --- NEW LOGIC: FIND PAYMENT AMOUNT ---
-    // Search the entire project to find the document holding the payment info
     let paymentDoc = projectRows.find(r => r['Payment Type']) || e;
     let pType = paymentDoc['Payment Type'];
     let pAmount = paymentDoc['Amount'] || 0;
     let amountHtml = '';
 
-    // If it matches any of the specified cash/check types, build a bright green alert block
     if (['Cash AR', 'Cash ORCR', 'Check AR', 'Check ORCR'].includes(pType)) {
         amountHtml = `
-        <div class="bg-success bg-opacity-10 p-2 rounded-3 border border-success border-opacity-25 mb-3 shadow-sm d-flex align-items-center justify-content-between">
+        <div class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between">
             <div>
-                <i class="bi bi-cash-stack text-success fs-5 me-1 align-middle"></i> 
-                <span class="text-dark small fw-bold text-uppercase" style="letter-spacing: 0.5px;">To Collect (${pType})</span>
+                <i class="bi bi-cash-stack text-success fs-6 me-1 align-middle"></i> 
+                <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect (${pType})</span>
             </div>
-            <strong class="text-success fs-5">₱${Number(pAmount).toLocaleString()}</strong>
+            <strong class="text-success" style="font-size: 0.9rem;">₱${Number(pAmount).toLocaleString()}</strong>
         </div>`;
     }
-    // ---------------------------------------
 
-    return `<div class="card p-3 p-md-4 w-100 ${cardCustomClass}" style="position: relative; overflow: hidden; height: 100%;">
+    let editorBadge = e['Editor Assigned'] 
+        ? `<span class="badge bg-white text-dark border border-secondary-subtle fw-bold px-2 py-1 shadow-sm text-wrap text-break" style="font-size: 0.7rem;">${e['Editor Assigned']}</span>` 
+        : `<span class="badge bg-light text-muted border border-secondary-subtle fw-normal px-2 py-1 shadow-sm" style="font-size: 0.7rem;">Unassigned</span>`;
+
+    return `<div class="card p-3 w-100 ${cardCustomClass}" style="position: relative; overflow: hidden; height: 100%;">
         ${stampHtml}
-        <div class="d-flex justify-content-between mb-3 align-items-center">
+        
+        <div class="d-flex justify-content-between mb-2 align-items-center flex-wrap gap-1">
             <div style="z-index: 30;"> <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
                 <span onclick="handleEditClick('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
                 <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
             </div>
             ${statusPillHtml}
         </div>
-        <h5 class="fw-bold mb-1 lh-sm text-dark">${e['Event Name']}</h5>
-        <p class="small text-muted mb-3"><i class="card-icon bi bi-geo-alt-fill text-danger opacity-75"></i> ${venueDisplay}</p>
-        <div class="bg-light p-3 rounded-3 border mb-3">
-            <div class="d-flex align-items-center mb-2 pb-2 border-bottom border-secondary-subtle">
-                <i class="bi bi-calendar2-event-fill text-primary fs-5 me-2"></i>
-                <span class="fw-bold text-dark" style="font-size: 0.95rem; letter-spacing: 0.3px;">${displayDateString}</span>
+        
+        <h6 class="fw-bold mb-2 lh-sm text-dark text-break" style="font-size: 1.05rem;">${e['Event Name']}</h6>
+        
+        <div class="bg-light p-2 rounded-3 border mb-2">
+            <div class="d-flex align-items-center mb-1 pb-1 border-bottom border-secondary-subtle">
+                <i class="bi bi-calendar2-event-fill text-primary me-2" style="font-size: 0.9rem;"></i>
+                <span class="fw-bold text-dark" style="font-size: 0.85rem; letter-spacing: 0.3px;">${displayDateString}</span>
             </div>
-            <div class="row g-2 small">
-                <div class="col-6"><span class="text-muted d-block mb-1" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Call Time</span><span class="text-danger fw-bold"><i class="bi bi-alarm text-danger opacity-75 me-1"></i>${formatAMPM(e['Call Time'])}</span></div>
-                <div class="col-6 border-start border-secondary-subtle"><span class="text-muted d-block mb-1 ms-2" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700;">Shoot Time</span><span class="text-dark fw-bold ms-2"><i class="bi bi-camera-video-fill text-primary opacity-75 me-1"></i>${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</span></div>
+            <div class="d-flex align-items-start mb-2 mt-1">
+                <i class="bi bi-geo-alt-fill text-danger opacity-75 me-2" style="font-size: 0.9rem; line-height: 1.3; padding-top: 1px;"></i>
+                <span class="small text-break" style="line-height: 1.3;">${venueDisplay}</span>
+            </div>
+            <div class="row g-1 small">
+                <div class="col-5"><span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Call Time</span><span class="text-danger fw-bold text-break"><i class="bi bi-alarm text-danger opacity-75 me-1"></i>${formatAMPM(e['Call Time'])}</span></div>
+                <div class="col-7 border-start border-secondary-subtle"><span class="text-muted d-block ms-2" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Shoot Time</span><span class="text-dark fw-bold ms-2 text-break"><i class="bi bi-camera-video-fill text-primary opacity-75 me-1"></i>${formatAMPM(e['Event Start Time'])} - ${formatAMPM(e['Event End Time'])}</span></div>
             </div>
         </div>
+        
         <div class="small text-secondary">
-            <div class="d-flex mb-2 align-items-start"><i class="card-icon bi bi-list-check text-secondary opacity-75 mt-1"></i><div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Services:</strong><br>${servicesBadges}</div></div>
-            <div class="d-flex mb-3 align-items-start"><i class="card-icon bi bi-people-fill text-info opacity-75 mt-1"></i> <div style="line-height: 1.6;"><strong class="text-dark mb-1 d-inline-block">Crew:</strong><br>${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-dark border border-secondary-subtle me-1 mb-2 fw-bold px-2 py-1 text-wrap shadow-sm" style="font-size: 0.8rem;">${c.trim()}</span>`).join('') : '-'}</div></div>
-            <div class="bg-white p-2 rounded-3 border mb-3 shadow-sm"><p class="mb-1"><i class="card-icon bi bi-person-badge-fill text-success opacity-75"></i> <strong class="text-dark">Contact:</strong> ${e['Contact Person']} <br><span class="ms-4 ps-2 text-dark fw-medium">${e['Contact Number']}</span></p></div>
+            <div class="mb-2">
+                <strong class="text-dark d-block mb-1" style="font-size: 0.75rem;"><i class="bi bi-list-check text-secondary opacity-75 me-1"></i>Services:</strong>
+                <div class="d-flex flex-wrap gap-1">${servicesBadges}</div>
+            </div>
+            
+            <div class="row g-2 mb-2">
+                <div class="col-12 col-sm-7">
+                    <strong class="text-dark d-block mb-1" style="font-size: 0.75rem;"><i class="bi bi-people-fill text-info opacity-75 me-1"></i>Crew:</strong>
+                    <div class="d-flex flex-wrap gap-1">${e['Manpower'] ? e['Manpower'].split(',').map(c => `<span class="badge bg-white text-dark border border-secondary-subtle fw-bold px-1 py-1 shadow-sm text-wrap" style="font-size: 0.7rem;">${c.trim()}</span>`).join('') : '<span class="text-muted fst-italic" style="font-size: 0.7rem;">No crew</span>'}</div>
+                </div>
+                <div class="col-12 col-sm-5 border-start-sm border-secondary-subtle">
+                    <strong class="text-dark d-block mb-1" style="font-size: 0.75rem;"><i class="bi bi-film text-primary opacity-75 me-1"></i>Editor:</strong>
+                    ${editorBadge}
+                </div>
+            </div>
+            
+            <div class="bg-white p-2 rounded-3 border mb-2 shadow-sm d-flex align-items-center">
+                <i class="bi bi-person-badge-fill text-success opacity-75 fs-5 me-2"></i>
+                <div style="line-height: 1.2; min-width: 0;">
+                    <strong class="text-dark" style="font-size: 0.75rem;">Contact:</strong> <span class="text-break" style="font-size: 0.8rem;">${e['Contact Person']}</span><br>
+                    <span class="text-dark fw-medium text-break" style="font-size: 0.75rem;">${e['Contact Number']}</span>
+                </div>
+            </div>
             
             ${amountHtml}
-            
-            <p class="mb-0 text-muted fst-italic" style="font-size: 0.8rem;"><i class="card-icon bi bi-journal-text opacity-50"></i> ${e['Event Notes'] || 'No additional notes.'}</p>
+            ${e['Event Notes'] ? `<p class="mb-0 text-muted fst-italic text-break" style="font-size: 0.75rem; line-height: 1.3;"><i class="bi bi-journal-text opacity-50 me-1"></i>${e['Event Notes']}</p>` : ''}
         </div>
-        <div class="mt-auto pt-4"><div class="d-flex flex-wrap">${filesHtml}</div><label class="card-upload-btn w-100" onclick="openUploadModal('${e['Event ID']}')"><i class="bi bi-cloud-arrow-up me-1"></i> Add Document</label></div>
+        
+        <div class="mt-auto pt-3 border-top border-secondary-subtle mt-2">
+            <div class="d-flex flex-wrap gap-1 mb-2">${filesHtml}</div>
+            <label class="card-upload-btn w-100 mt-0 py-1" onclick="openUploadModal('${e['Event ID']}')"><i class="bi bi-cloud-arrow-up me-1"></i> Add Document</label>
+        </div>
     </div>`;
 }
   function renderEvents(data, isDefault) {
@@ -3097,7 +3528,10 @@ function generateSingleEventCard(e) {
     const listData = data.filter(e => e['AVP Required'] !== 'TRUE');
     let dates = isDefault ? Array.from({length:14}, (_,i)=>{let d=new Date(); d.setDate(d.getDate()+i); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');}) : [...new Set(listData.map(e=>e['Event Date']))].sort();
     
-    if(!dates.length) { document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No events found matching your criteria.</div></div>'; return; }
+    if(!dates.length) { 
+        document.getElementById('events-list').innerHTML='<div class="col-12"><div class="p-5 bg-white rounded-4 border text-center text-muted shadow-sm"><i class="bi bi-calendar-x fs-1 d-block mb-3 opacity-50"></i>No events found matching your criteria.</div></div>'; 
+        return; 
+    }
 
     dates.sort((a,b) => { if(!a) return 1; if(!b) return -1; return a.localeCompare(b); });
 
@@ -3108,10 +3542,15 @@ function generateSingleEventCard(e) {
         if(ds && ds.includes('-')) {
             const dParts = ds.split('-');
             const dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
+            
+            // Full format for normal days: "Sunday, Apr 12, 2026"
             const formattedDate = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
             
-            if (ds === todayStr) displayHeader = "Today, " + formattedDate;
-            else if (ds === tomorrowStr) displayHeader = "Tomorrow, " + formattedDate;
+            // Short format for Today/Tomorrow: "Apr 11, 2026"
+            const shortFormattedDate = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            if (ds === todayStr) displayHeader = "Today, " + shortFormattedDate;
+            else if (ds === tomorrowStr) displayHeader = "Tomorrow, " + shortFormattedDate;
             else displayHeader = formattedDate;
         }
         
@@ -3134,6 +3573,7 @@ function generateSingleEventCard(e) {
             });
 
             evs.forEach(e => {
+                // 🟢 We add the class directly into the generation string here
                 html += `<div class="col-12 col-md-6 col-lg-4">
                             ${generateSingleEventCard(e)}
                          </div>`;
@@ -3141,9 +3581,34 @@ function generateSingleEventCard(e) {
         }
       }
     });
+
+    // ... (rest of renderEvents code above) ...
+
+    // Inject the HTML
     document.getElementById('events-list').innerHTML = html;
     setTimeout(checkStickyHeaders, 50); 
-  }
+
+    // 🟢 BULLETPROOF BLINK TRIGGER
+    const searchVal = document.getElementById('fName').value;
+    const crewVal = document.getElementById('fCrew').value;
+
+    // Inside renderEvents...
+    if (searchVal.length > 0 || crewVal !== "") {
+        requestAnimationFrame(() => {
+            const cards = document.querySelectorAll('#events-list .card');
+            cards.forEach(card => {
+                // Ensure we strip any existing animation state
+                card.style.animation = 'none';
+                void card.offsetWidth; // Force Reflow
+                card.style.animation = null; // Re-enable CSS animation
+                
+                card.classList.remove('card-blink-emphasis');
+                void card.offsetWidth; 
+                card.classList.add('card-blink-emphasis');
+            });
+        });
+    }
+}
 
   function changeCalendarMonth(dir) {
       currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir);
@@ -3267,8 +3732,8 @@ function generateSingleEventCard(e) {
         // Text search WITHOUT specific payment filters: Show Main Days and Added Days
         displayData = data.filter(item => item['Event Name'] !== 'Crew Leave');
     } else {
-        // Default view OR Explicit Payment Filter: ONLY show the true Main Day
-        displayData = data.filter(item => item['Doc ID'] === projectMainDays[item['Event ID']] && item['Event Name'] !== 'Crew Leave');
+        // 🟢 THE FIX: ALWAYS show the true Main Day AND any AVPs, bypassing the group-hide
+        displayData = data.filter(item => (item['Doc ID'] === projectMainDays[item['Event ID']] || item['AVP Required'] === 'TRUE') && item['Event Name'] !== 'Crew Leave');
     }
 
     // Sort the final display rows
@@ -3347,18 +3812,11 @@ function generateSingleEventCard(e) {
   }
 
   function handleTabClick(tabName) {
-    if (tabName === 'payments') { 
-        requireAuth(() => switchTab('payments'), true); 
-    } 
-    else if (tabName === 'payroll') { 
-        requireAuth(() => switchTab('payroll'), true); 
-    } 
-    else if (tabName === 'booth') { 
-        switchTab('booth'); 
-    } 
-    else { 
-        switchTab(tabName); 
-    }
+    if (tabName === 'payments') requireAuth(() => switchTab('payments'), 'admin'); 
+    else if (tabName === 'payroll') requireAuth(() => switchTab('payroll'), 'admin'); 
+    else if (tabName === 'billingsales') requireAuth(() => switchTab('billingsales'), 'superadmin'); // NEW
+    else if (tabName === 'booth') switchTab('booth'); 
+    else switchTab(tabName); 
 }
 
   
@@ -3382,7 +3840,7 @@ function generateSingleEventCard(e) {
                   el.disabled = true;
               }
           } else {
-              el.disabled = false; // Admin: All enabled
+              el.disabled = false; // Admin AND Superadmin: All enabled
           }
       });
 
@@ -3390,9 +3848,9 @@ function generateSingleEventCard(e) {
       if (document.getElementById('editCrewAddBtn')) document.getElementById('editCrewAddBtn').disabled = (isReadOnly || role === 'editor');
       if (document.getElementById('editServiceAddBtn')) document.getElementById('editServiceAddBtn').disabled = (isReadOnly || role === 'editor');
       
-      // Force hide the REMOVE spans for Editors and Unauthenticated users
+      // 🟢 THE FIX: Force show the REMOVE spans for both Admin AND Superadmin
       document.querySelectorAll('.admin-remove-btn').forEach(btn => {
-          btn.style.display = (role === 'admin' && !isReadOnly) ? 'inline-block' : 'none';
+          btn.style.display = ((role === 'admin' || role === 'superadmin') && !isReadOnly) ? 'inline-block' : 'none';
       });
       
       if (isReadOnly) {
@@ -3404,9 +3862,9 @@ function generateSingleEventCard(e) {
           document.getElementById('editSubmitBtn').style.display = 'block';
           document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
           
-          // Editors cannot delete projects or add days
-          document.getElementById('editDeleteBtn').style.display = role === 'admin' ? 'block' : 'none';
-          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = role === 'admin' ? 'inline-block' : 'none';
+          // 🟢 THE FIX: Allow both Admin AND Superadmin to delete projects or add days
+          document.getElementById('editDeleteBtn').style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none';
+          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
       }
   }
 
@@ -3438,10 +3896,10 @@ function generateSingleEventCard(e) {
 
   async function submitPaymentDocUpload() {
       const fileInput = document.getElementById('upPayFileInput');
-      if (!fileInput.files[0]) return alert("Select a file first.");
+      if (!fileInput.files[0]) return egmAlert("Select a file first.");
       
       if (document.getElementById('upPayIsOverwrite').value === 'true') {
-          if (!confirm("WARNING: This will overwrite the existing file link on the dashboard. Continue?")) return;
+          if (!await egmConfirm("WARNING: This will overwrite the existing file link on the dashboard. Continue?")) return;
       }
       
       const eventId = document.getElementById('upPayEventId').value;
@@ -3456,7 +3914,7 @@ function generateSingleEventCard(e) {
       const res = await callApi({ action: 'uploadPaymentDoc', base64Data: b64Data.base64, filename: b64Data.filename, eventId: eventId, docType: docType }, 'POST');
       
       ov.style.display = 'none';
-      if (res.success) {  } else { alert("Error: " + res.error); }
+      if (res.success) {  } else { egmAlert("Error: " + res.error); }
   }
   function openNewEventWithDate(dateStr) {
       openNewEventModal(); // This opens and resets the modal normally
@@ -3892,6 +4350,9 @@ function generateSingleEventCard(e) {
         form.elements['grNumber'].value = paymentSourceEvent['GR Number'] || '';
         form.elements['invoiceNumber'].value = paymentSourceEvent['Invoice Number'] || '';
         form.elements['amount'].value = paymentSourceEvent['Amount'] || '0';
+        if (document.getElementById('editNoWithheld')) {
+            document.getElementById('editNoWithheld').checked = paymentSourceEvent['No Withheld'] === true;
+        }
         form.elements['paymentNotes'].value = paymentSourceEvent['Payment Notes'] || '';
         
         // --- POPULATE EDITING SECTION ---
@@ -4035,7 +4496,7 @@ function generateSingleEventCard(e) {
 
   function submitFileUpload() {
     const fileInput = document.getElementById('uploadFileInput');
-    if (!fileInput.files[0]) return alert("Please select a file first.");
+    if (!fileInput.files[0]) return egmAlert("Please select a file first.");
     
     const eventId = document.getElementById('uploadEventId').value;
     const label = document.getElementById('uploadLabel').value;
@@ -4058,21 +4519,21 @@ function generateSingleEventCard(e) {
       if (res && res.success) { 
           showToast("File uploaded successfully.");
       } else { 
-          alert("Error: " + (res ? res.error : "Unknown error")); 
+          egmAlert("Error: " + (res ? res.error : "Unknown error")); 
       }
     };
     reader.readAsDataURL(file);
   }
 
   async function deleteFile(eventId, fileId) {
-    if(!confirm("Are you sure you want to permanently delete this file? This cannot be undone.")) return;
+    if(!await egmConfirm("Are you sure you want to permanently delete this file? This cannot be undone.")) return;
     const ov = document.getElementById('submitOverlay');
     document.getElementById('overlayText').innerText = "Deleting File...";
     ov.style.display = 'flex';
 
     const res = await callApi({ action: 'deleteFile', eventId: eventId, fileId: fileId }, 'POST');
     ov.style.display = 'none';
-    if (res.success) {  } else { alert("Error: " + res.error); }
+    if (res.success) {  } else { egmAlert("Error: " + res.error); }
   }
   
   async function deleteFullEvent(isMain) {
@@ -4082,7 +4543,7 @@ function generateSingleEventCard(e) {
       if (!eventId || !docId) return;
       
       if (isMain) {
-          if(!confirm(`WARNING: Permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) return;
+          if(!await egmConfirm(`WARNING: Permanently delete project #${eventId}?\n\nThis will remove ALL shooting days and payment records for this event. This cannot be undone.`)) return;
           
           document.getElementById('submitOverlay').style.display = 'flex';
           try {
@@ -4092,17 +4553,17 @@ function generateSingleEventCard(e) {
               snapshot.forEach(doc => batch.delete(doc.ref));
               await batch.commit();
           } catch (err) {
-              alert("Error deleting project: " + err.message);
+              egmAlert("Error deleting project: " + err.message);
           }
       } else {
-          if(!confirm(`Delete this specific shooting day?\n\nThe rest of project #${eventId} will remain intact.`)) return;
+          if(!await egmConfirm(`Delete this specific shooting day?\n\nThe rest of project #${eventId} will remain intact.`)) return;
           
           document.getElementById('submitOverlay').style.display = 'flex';
           try {
               // Single delete: Only targets this specific added day
               await db.collection("dashboard_events").doc(docId).delete();
           } catch (err) {
-              alert("Error deleting day: " + err.message);
+              egmAlert("Error deleting day: " + err.message);
           }
       }
       
@@ -4196,7 +4657,7 @@ function generateSingleEventCard(e) {
       let eventDatesArray = [];
 
       if (isLeave) {
-          if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+          if (obj.manpower.length === 0) { egmAlert("Please select at least one crew member for this leave."); return; }
           obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
           
           // --- CALCULATE DATE RANGE ---
@@ -4212,7 +4673,7 @@ function generateSingleEventCard(e) {
               current.setDate(current.getDate() + 1); // Move to next day
           }
       } else {
-          if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+          if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
           eventDatesArray.push(obj.eventDate); // Standard events just get 1 date here
       }
       
@@ -4262,45 +4723,52 @@ function generateSingleEventCard(e) {
                   amount: obj.amount || "0",
                   paymentNotes: obj.paymentNotes || "",
                   invoiceUrl: obj.invoiceUrl || "",
-                  checkUrl: obj.checkUrl || ""
+                  checkUrl: obj.checkUrl || "",
+                  noWithheld: document.getElementById('newNoWithheld') ? document.getElementById('newNoWithheld').checked : false
               });
           });
 
           await batch.commit(); // Execute the bulk upload
-          await batch.commit(); // Execute the bulk upload
           
-          // 🟢 NEW: SEND PUSH NOTIFICATIONS 🟢
-          try {
-              const tokens = [];
-              for (const crewName of obj.manpower) {
-                  // Look up each assigned crew member in the database
-                  const tokenDoc = await db.collection("crew_tokens").doc(crewName).get();
+          // 🟢 NEW: SEND PUSH NOTIFICATIONS (Status Aware) 🟢
+          // Only send notifications if the event is NOT Pencil Booked
+          if (obj.eventStatus === 'Confirmed' || obj.eventStatus === 'Cancelled') {
+              try {
+                  const tokens = [];
+                  const peopleToNotify = [...obj.manpower];
                   
-                  if (tokenDoc.exists) {
-                      const data = tokenDoc.data();
-                      // Support the new Array format (multiple devices)
-                      if (data.tokens && Array.isArray(data.tokens)) {
-                          tokens.push(...data.tokens); 
-                      } 
-                      // Support the old single string format just in case
-                      else if (data.token) {
-                          tokens.push(data.token);
+                  const assignedEditor = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "");
+                  if (assignedEditor && !peopleToNotify.includes(assignedEditor)) {
+                      peopleToNotify.push(assignedEditor);
+                  }
+
+                  for (const personName of peopleToNotify) {
+                      const tokenDoc = await db.collection("crew_tokens").doc(personName).get();
+                      if (tokenDoc.exists) {
+                          const data = tokenDoc.data();
+                          if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
+                          else if (data.token) tokens.push(data.token);
                       }
                   }
-              }
 
-              if (tokens.length > 0) {
-                  // Tell Apps Script to fire the push notifications!
-                  callApi({
-                      action: 'sendPush',
-                      tokens: tokens,
-                      title: `New Shoot: ${obj.eventName}`,
-                      body: `You are booked for ${obj.eventDate}. Call time is ${formatAMPM(obj.callTime)}.`,
-                      eventId: newId
-                  }, 'POST', true);
+                  if (tokens.length > 0) {
+                      let dateString = obj.eventDate;
+                      if (eventDatesArray.length > 1) dateString = `${eventDatesArray[0]} to ${eventDatesArray[eventDatesArray.length - 1]}`;
+
+                      let pushTitle = obj.eventStatus === 'Cancelled' ? `Cancelled: ${obj.eventName}` : `New Assignment: ${obj.eventName}`;
+                      let pushBody = obj.eventStatus === 'Cancelled' ? `The event on ${dateString} has been cancelled.` : `You have been assigned to ${obj.eventName} on ${dateString}. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
+
+                      callApi({
+                          action: 'sendPush',
+                          tokens: tokens,
+                          title: pushTitle,
+                          body: pushBody,
+                          eventId: newId
+                      }, 'POST', true);
+                  }
+              } catch (pushErr) {
+                  console.error("Failed to trigger push:", pushErr);
               }
-          } catch (pushErr) {
-              console.error("Failed to trigger push:", pushErr);
           }
           // 🔴 END NEW PUSH LOGIC 🔴
 
@@ -4311,7 +4779,7 @@ function generateSingleEventCard(e) {
           document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
           toggleAvpFields(false, 'new'); togglePaymentUI('new');
       } catch (err) {
-          alert("Error saving: " + err.message);
+          egmAlert("Error saving: " + err.message);
       }
       ov.style.display = 'none'; btn.disabled = false;
   };
@@ -4366,8 +4834,8 @@ function generateSingleEventCard(e) {
               eventId: obj.eventId, // <-- Keeps it attached to egm0015
               eventName: obj.eventName || baseData.eventName || "",
               eventDate: obj.eventDate || "",
-              eventVenue: obj.eventVenue || baseData.eventVenue || "", // Now captures unique venue
-              venueLink: obj.venueLink || baseData.venueLink || "", // Now captures unique map link
+              eventVenue: obj.eventVenue || baseData.eventVenue || "", 
+              venueLink: obj.venueLink || baseData.venueLink || "", 
               eventStatus: obj.eventStatus || "Pencil Booked",
               avpRequired: baseData.avpRequired || false,
               services: obj.services.length > 0 ? obj.services.join(", ") : (baseData.services || ""),
@@ -4381,11 +4849,52 @@ function generateSingleEventCard(e) {
               paymentType: "", emailThread: "", billingStatus: "", billingStatusDate: "",
               grNumber: "", invoiceNumber: "", amount: "0", paymentNotes: "", invoiceUrl: "", checkUrl: ""
           });
+          
+          // 🟢 NEW: SEND PUSH NOTIFICATION FOR ADDED DAY (Status Aware) 🟢
+          // Only send notifications if the event is NOT Pencil Booked
+          if (obj.eventStatus === 'Confirmed' || obj.eventStatus === 'Cancelled') {
+              try {
+                  const tokens = [];
+                  if (obj.manpower && obj.manpower.length > 0) {
+                    let peopleToNotify = [...(obj.manpower || [])];
+// We pull the editor from the base project data we fetched earlier in the function
+if (baseData.editorAssigned && !peopleToNotify.includes(baseData.editorAssigned)) {
+    peopleToNotify.push(baseData.editorAssigned);
+}
+
+// Then change your loop to:
+for (const personName of peopleToNotify){
+                          const tokenDoc = await db.collection("crew_tokens").doc(crewName).get();
+                          if (tokenDoc.exists) {
+                              const data = tokenDoc.data();
+                              if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
+                              else if (data.token) tokens.push(data.token);
+                          }
+                      }
+
+                      if (tokens.length > 0) {
+                          let pushTitle = obj.eventStatus === 'Cancelled' ? `Cancelled Day: ${obj.eventName}` : `New Shoot Day: ${obj.eventName}`;
+                          let pushBody = obj.eventStatus === 'Cancelled' ? `The shoot day on ${obj.eventDate} has been cancelled.` : `You were tagged in an additional day for #${obj.eventId} on ${obj.eventDate}. Call time: ${formatAMPM(obj.callTime) || 'TBA'}.`;
+
+                          callApi({
+                              action: 'sendPush',
+                              tokens: tokens,
+                              title: pushTitle,
+                              body: pushBody,
+                              eventId: obj.eventId
+                          }, 'POST', true);
+                      }
+                  }
+              } catch (pushErr) {
+                  console.error("Failed to trigger push for added day:", pushErr);
+              }
+          }
+          // 🔴 END PUSH LOGIC 🔴
 
           bootstrap.Modal.getInstance(document.getElementById('addDayModal')).hide(); 
-          e.target.reset(); 
+          e.target.reset();
       } catch (err) {
-          alert("Error adding day: " + err.message);
+          egmAlert("Error adding day: " + err.message);
       }
       ov.style.display='none'; btn.disabled=false;
   };
@@ -4446,17 +4955,27 @@ function generateSingleEventCard(e) {
       
       const isLeave = document.getElementById('editTypeLeave').checked;
       if (isLeave) {
-          if (obj.manpower.length === 0) { alert("Please select at least one crew member for this leave."); return; }
+          if (obj.manpower.length === 0) { egmAlert("Please select at least one crew member for this leave."); return; }
           obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
       } else {
-          if (!obj.eventName || obj.eventName.trim() === '') { alert("Please enter an Event Name."); return; }
+          if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
       }
+
+      // 🟢 CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
+      const oldEvent = rawEvents.find(ev => ev['Doc ID'] === obj.firestoreDocId);
+      const cachedOldStatus = oldEvent ? String(oldEvent['Event Status'] || "").trim() : "";
+      const cachedOldCrew = oldEvent ? String(oldEvent['Manpower'] || "").trim() : "";
+      const oldCrewArray = cachedOldCrew.split(',').map(c => c.trim()).filter(Boolean);
+      const cachedOldEditor = oldEvent ? String(oldEvent['Editor Assigned'] || "").trim() : "";
+      const cachedOldDate = oldEvent ? String(oldEvent['Event Date'] || "").trim() : "";
+      const cachedOldCall = oldEvent ? String(to24Hour(oldEvent['Call Time']) || "").trim() : "";
+      const cachedOldStart = oldEvent ? String(to24Hour(oldEvent['Event Start Time']) || "").trim() : "";
+      const cachedOldEnd = oldEvent ? String(to24Hour(oldEvent['Event End Time']) || "").trim() : "";
 
       document.getElementById('overlayText').innerText = "Updating Database...";
       btn.disabled = true; ov.style.display = 'flex';
 
-    try {
-          // THE FIX: We use obj.firestoreDocId so it updates the exact day you are looking at!
+      try {
           await db.collection("dashboard_events").doc(obj.firestoreDocId).update({
               eventName: obj.eventName || "",
               eventDate: obj.eventDate || "",
@@ -4489,11 +5008,112 @@ function generateSingleEventCard(e) {
               amount: obj.amount || "0",
               paymentNotes: obj.paymentNotes || "",
               invoiceUrl: obj.invoiceUrl || "",
-              checkUrl: obj.checkUrl || ""
+              checkUrl: obj.checkUrl || "",
+              noWithheld: document.getElementById('editNoWithheld') ? document.getElementById('editNoWithheld').checked : false
           });
+
+          // 🟢 SMART DUAL-LANE NOTIFIER 🟢
+          try {
+              const newStatus = String(obj.eventStatus || "Pencil Booked").trim();
+              const newDate = String(obj.eventDate || "").trim();
+              const newCall = String(to24Hour(obj.callTime) || "").trim();
+              const newCrewArray = obj.manpower || []; 
+              const newEditorString = obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || "").trim();
+
+              // --- LANE 1: EDITOR NOTIFICATIONS (Assignment/Removal Only) ---
+              if (cachedOldEditor !== newEditorString && newStatus === "Confirmed") {
+                  if (newEditorString) {
+                      // Assigned
+                      sendTargetedPush([newEditorString], `New Assignment: ${obj.eventName}`, `You have been assigned as the editor for #${obj.eventId}.`, obj.eventId);
+                  } else if (cachedOldEditor) {
+                      // Removed
+                      sendTargetedPush([cachedOldEditor], `Assignment Update: ${obj.eventName}`, `You are no longer assigned to #${obj.eventId}.`, obj.eventId);
+                  }
+              }
+
+              // --- LANE 2: CREW NOTIFICATIONS (Additions, Removals & General Changes) ---
+              const isStatusChanged = cachedOldStatus !== newStatus;
+              const isScheduleChanged = cachedOldDate !== newDate || cachedOldCall !== newCall;
+              
+              // 🟢 ISOLATE EXACTLY WHO WAS ADDED OR REMOVED
+              const addedCrew = newCrewArray.filter(name => !oldCrewArray.includes(name));
+              const removedCrew = oldCrewArray.filter(name => !newCrewArray.includes(name));
+              
+              const isCrewAdded = addedCrew.length > 0;
+              const isCrewRemoved = removedCrew.length > 0;
+
+              // Helper for clean grammar (e.g., "A, B, and C" instead of "A and B and C")
+              const formatNames = (arr) => {
+                  if (arr.length === 0) return "";
+                  if (arr.length === 1) return arr[0];
+                  if (arr.length === 2) return arr.join(" and ");
+                  return arr.slice(0, -1).join(", ") + " and " + arr[arr.length - 1];
+              };
+
+              if (newStatus === "Confirmed" && (isStatusChanged || isScheduleChanged || isCrewAdded || isCrewRemoved)) {
+                  let crewTitle = `Event Updated: ${obj.eventName}`;
+                  let crewBody = `The schedule/details for #${obj.eventId} have been updated.`;
+                  
+                  // 🟢 Target BOTH the new crew and the old crew so removed members get the alert!
+                  let targetCrew = [...new Set([...newCrewArray, ...oldCrewArray])];
+
+                  if (isStatusChanged && cachedOldStatus !== "Confirmed") {
+                      crewTitle = `Event Confirmed: ${obj.eventName}`;
+                      crewBody = `The event is now CONFIRMED for ${newDate}. Call time: ${formatAMPM(obj.callTime)}.`;
+                  } else if ((isCrewAdded || isCrewRemoved) && !isScheduleChanged) {
+                      crewTitle = `Crew Update: ${obj.eventName}`;
+                      
+                      let addedStr = formatNames(addedCrew);
+                      let removedStr = formatNames(removedCrew);
+                      
+                      // 🟢 DYNAMIC NOTIFICATION TEXT FOR MULTIPLE ADD/REMOVE
+                      let bodyText = "";
+                      if (isCrewAdded && !isCrewRemoved) {
+                          bodyText = `${addedStr} ${addedCrew.length > 1 ? 'have' : 'has'} been added to this event.`;
+                      } else if (isCrewRemoved && !isCrewAdded) {
+                          bodyText = `${removedStr} ${removedCrew.length > 1 ? 'have' : 'has'} been removed from this event.`;
+                      } else {
+                          bodyText = `${addedStr} added, and ${removedStr} removed.`;
+                      }
+                      
+                      crewBody = `${bodyText} Call time: ${formatAMPM(obj.callTime)}.`;
+                  }
+
+                  if (targetCrew.length > 0) {
+                      sendTargetedPush(targetCrew, crewTitle, crewBody, obj.eventId);
+                  }
+              } 
+              // Handle Cancellation for Crew
+              else if (newStatus === "Cancelled" && isStatusChanged) {
+                  if (newCrewArray.length > 0) {
+                      sendTargetedPush(newCrewArray, `Event Cancelled: ${obj.eventName}`, `The event on ${cachedOldDate || newDate} has been cancelled.`, obj.eventId);
+                  }
+              }
+
+              // 🛠️ INTERNAL HELPER: Fetch tokens and send push
+              async function sendTargetedPush(namesArray, title, body, eventId) {
+                  const tokens = [];
+                  for (const name of namesArray) {
+                      const tokenDoc = await db.collection("crew_tokens").doc(name).get();
+                      if (tokenDoc.exists) {
+                          const data = tokenDoc.data();
+                          if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens);
+                          else if (data.token) tokens.push(data.token);
+                      }
+                  }
+                  if (tokens.length > 0) {
+                      callApi({ action: 'sendPush', tokens: tokens, title: title, body: body, eventId: eventId }, 'POST', true);
+                  }
+              }
+
+          } catch (pushErr) {
+              console.error("Failed to trigger targeted push:", pushErr);
+          }
+          // 🔴 END SMART DUAL-LANE NOTIFIER 🔴
+
           bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide(); 
       } catch (err) {
-          alert("Error updating: " + err.message);
+          egmAlert("Error updating: " + err.message);
       }
       ov.style.display = 'none'; btn.disabled = false;
   };
@@ -4529,16 +5149,44 @@ function generateSingleEventCard(e) {
   // ==============================================================================
 
   function goToBoothQR(eventId, booths, eventName) {
+      // Instantly close the Event Card modal if it's open
+      const cardModalEl = document.getElementById('eventCardModal');
+      if (cardModalEl) {
+          const modalInstance = bootstrap.Modal.getInstance(cardModalEl);
+          if (modalInstance) modalInstance.hide();
+      }
+
       switchTab('booth');
-      document.getElementById('btnModeNew').style.display = 'block';
-      setBoothMode('new');
-      
-      document.getElementById('boothEventId').value = eventId;
-      document.getElementById('boothEventName').value = eventName;
-      document.getElementById('boothCountInput').value = booths;
-      
-      const shortName = eventName.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
-      document.getElementById('boothFolderName').value = shortName;
+
+      // 🟢 THE SMART ROUTER: Check if this booth already exists in our memory!
+      const existingBooth = allFetchedBoothEvents.find(b => String(b.id) === String(eventId));
+
+      if (existingBooth) {
+          // SCENARIO A: Booth already exists! Jump straight to View QR.
+          setBoothMode('view');
+          
+          // Force the dropdown to select this event and load its details
+          setTimeout(() => {
+              const selectEl = document.getElementById('boothEventSelect');
+              if (selectEl) {
+                  selectEl.value = eventId;
+                  loadBoothEventDetails();
+                  showToast("Existing booth setup found and loaded.", "info");
+              }
+          }, 100);
+
+      } else {
+          // SCENARIO B: No booth exists yet. Jump to New Setup.
+          document.getElementById('btnModeNew').style.display = 'block';
+          setBoothMode('new');
+          
+          document.getElementById('boothEventId').value = eventId;
+          document.getElementById('boothEventName').value = eventName;
+          document.getElementById('boothCountInput').value = booths;
+          
+          const shortName = eventName.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
+          document.getElementById('boothFolderName').value = shortName;
+      }
   }
 
   function setBoothMode(mode) {
@@ -4792,10 +5440,11 @@ function generateSingleEventCard(e) {
                   const folderId = match ? match[1] : '';
                   
                   const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${boothNum}`;
-                  const pgDashUrl = `${MASTER_QR_URL}?folderId=${folderId}&booth=${boothNum}`;
                   const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${boothNum}`;
-                  const backupPgDashUrl = `${BACKUP_MASTER_QR_URL}?folderId=${folderId}&booth=${boothNum}`;
                   const driveUrl = `https://drive.google.com/drive/folders/${folderId}`;
+                  
+                  // 🟢 NEW: BOOTH CLOUD LINK (With Hardcoded Backend) 🟢
+                  const boothCloudUrl = `https://webqr.createdbyegm.com/gallery?folderId=${folderId}&backend=https://script.google.com/macros/s/AKfycbwjQbyGEoK5HkmIOmVmGsYbYntYiA9Jg5YRuQAOpJ35m98BIN8EJtKC3lEAsmqVIFuQ/exec`;
                   
                   const qrFileId = qrIdsArr[i] || "";
                   let qrCodeActionHtml = '';
@@ -4832,11 +5481,10 @@ function generateSingleEventCard(e) {
                         </div>
                      </div>
                      <div class="booth-link-row">
-                        <span>PG Dash</span>
+                        <span>Booth Cloud Link</span>
                         <div class="booth-link-actions">
-                           <button class="booth-mini-btn" onclick="copyBoothLink(this, '${pgDashUrl}')">Copy link</button>
-                           <button class="booth-mini-btn backup" title="Fallback link" onclick="copyBoothLink(this, '${backupPgDashUrl}')">Backup</button>
-                           <button class="booth-mini-btn" onclick="window.open('${pgDashUrl}', '_blank')">Go</button>
+                           <button class="booth-mini-btn" onclick="copyBoothLink(this, '${boothCloudUrl}')">Copy link</button>
+                           <button class="booth-mini-btn" onclick="window.open('${boothCloudUrl}', '_blank')">Go</button>
                         </div>
                      </div>
                      <div class="booth-link-row">
@@ -5025,8 +5673,9 @@ async function fetchExistingLogos(forceRefresh = false) {
   async function executeBoothAction(actionName) {
       let eventId = actionName === 'generateBoothSetup' ? document.getElementById('boothEventId').value : document.getElementById('boothEventSelect').value;
       
+      // 🟢 THE FIX: Generate an egm ID instead of EVT!
       if (actionName === 'generateBoothSetup' && (!eventId || eventId.trim() === '')) {
-          eventId = "EVT" + Math.floor(10000 + Math.random() * 90000);
+          eventId = "egm" + Math.floor(10000 + Math.random() * 90000);
           document.getElementById('boothEventId').value = eventId;
       }
 
@@ -5035,7 +5684,7 @@ async function fetchExistingLogos(forceRefresh = false) {
       const boothCount = document.getElementById('boothCountInput').value;
       
       if (!eventId || !folderName || !eventName || !boothCount) {
-          alert("Required fields missing! Ensure an Event ID and Folder Name are set.");
+          egmAlert("Required fields missing! Ensure an Event ID and Folder Name are set.");
           return;
       }
 
@@ -5072,7 +5721,7 @@ async function fetchExistingLogos(forceRefresh = false) {
               }, 100);
           }
       } else {
-          alert("Error: " + (res ? res.error || res.message : "Failed to process booth."));
+          egmAlert("Error: " + (res ? res.error || res.message : "Failed to process booth."));
       }
   }
 
@@ -5081,7 +5730,7 @@ async function fetchExistingLogos(forceRefresh = false) {
   
   async function runBoothDelete() {
       const selectedId = document.getElementById('boothEventSelect').value;
-      if (!selectedId || !confirm("WARNING: Are you sure you want to permanently delete this Photobooth setup? This will remove the Cloud storage, URLs, and QR codes.")) return;
+      if (!selectedId || !await egmConfirm("WARNING: Are you sure you want to permanently delete this Photobooth setup? This will remove the Cloud storage, URLs, and QR codes.")) return;
       
       const ov = document.getElementById('submitOverlay');
       document.getElementById('overlayText').innerText = "Deleting Booth Setup...";
@@ -5095,7 +5744,7 @@ async function fetchExistingLogos(forceRefresh = false) {
           fetchBoothEvents(true); // Force the dropdown to remove the deleted project!
           setBoothMode('edit');
       } else {
-          alert("Error: " + (res ? res.error || res.message : "Failed to delete."));
+          egmAlert("Error: " + (res ? res.error || res.message : "Failed to delete."));
       }
   }
 
@@ -5134,13 +5783,17 @@ window.onload = () => {
       }
       // ------------------------------
       
-      // Listen for the Payroll Modal to close, and auto-update the main table!
+      // Listen for the Payroll Modal to close!
       const prModalEl = document.getElementById('payrollModal');
       if (prModalEl) {
           prModalEl.addEventListener('hidden.bs.modal', function () {
               if (!isHistoricalView && activePayrollPerson) {
-                  renderPayrollTable();
-                  showToast("Changes applied to active session.", "success");
+                  // 🟢 THE REVERT TRIGGER: If snapshot exists, they clicked 'X' without saving!
+                  if (activePayrollSnapshot) {
+                      currentPayrollData[activePayrollPerson] = JSON.parse(activePayrollSnapshot);
+                      activePayrollSnapshot = null; // Clear it
+                      renderPayrollTable(); // Re-render to wipe the cancelled changes
+                  }
               } else if (isHistoricalView) {
                   // Re-open the history vault when closing a historical payslip
                   const histModalEl = document.getElementById('payrollHistoryModal');
@@ -5243,10 +5896,15 @@ db.collection("settings").doc("rates").onSnapshot((doc) => {
         dbCrewRates = {};
     }
 });
-// THE MAGIC REAL-TIME LISTENER
-db.collection("dashboard_events").onSnapshot((snapshot) => {
-    document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+// THE MAGIC REAL-TIME LISTENER (Now with Cache Detection!)
+db.collection("dashboard_events").onSnapshot({ includeMetadataChanges: true }, (snapshot) => {
+    // 🟢 Track if this data is old local memory or fresh server data!
+    window.isDataFromCache = snapshot.metadata.fromCache;
     
+    if (window.isDataFromCache) {
+        document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
+    }
+
     const mappedEvents = [];
     
     snapshot.forEach((doc) => {
@@ -5288,7 +5946,8 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
             'Amount': String(d.amount || "0"),
             'Payment Notes': String(d.paymentNotes || ""),
             'Invoice URL': String(d.invoiceUrl || ""),
-            'Check URL': String(d.checkUrl || "")
+            'Check URL': String(d.checkUrl || ""),
+            'No Withheld': d.noWithheld === true || String(d.noWithheld) === "true"
         });
     });
 
@@ -5299,11 +5958,21 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
         updateCrewFilterDropdown(rawEvents);
         populateExpenseEventsDropdown();
         applyFilters();
+        
+        // 🟢 THE FIX: LIVE-UPDATING EVENT CARDS 🟢
+        // If the card modal is currently open, refresh it with the newest data instantly!
+        const cardModalEl = document.getElementById('eventCardModal');
+        if (cardModalEl && cardModalEl.classList.contains('show') && window.currentOpenModalEventId) {
+            const updatedEvent = rawEvents.find(e => String(e['Event ID']) === String(window.currentOpenModalEventId));
+            if (updatedEvent) {
+                document.getElementById('eventCardModalBody').innerHTML = generateSingleEventCard(updatedEvent);
+            }
+        }
+
     } catch(err) {
         console.error("UI Render Error:", err);
-        alert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
+        egmAlert("Data loaded, but UI failed to render. Check console. Error: " + err.message);
     }
-    
     // Hide the initial full-page loader
     const mainLoader = document.getElementById('loader');
     if (mainLoader) mainLoader.style.display = 'none';
@@ -5313,7 +5982,7 @@ db.collection("dashboard_events").onSnapshot((snapshot) => {
 }, (error) => {
     // If Firebase blocks the connection, it will scream at us here!
     console.error("Firestore Security Error:", error);
-    alert("Firebase Connection Blocked! Check Firestore Rules. Error: " + error.message);
+    egmAlert("Firebase Connection Blocked! Check Firestore Rules. Error: " + error.message);
 });
 
 // THE MAGIC REAL-TIME LISTENER FOR EXPENSES
@@ -5378,10 +6047,10 @@ async function getNextEventId() {
       btn.disabled = false;
       
       if (res && res.success) {
-          alert("Expense logged successfully!");
+          egmAlert("Expense logged successfully!");
           e.target.reset();
       } else {
-          alert("Error submitting expense: " + (res ? res.error || res.message : "Unknown error"));
+          egmAlert("Error submitting expense: " + (res ? res.error || res.message : "Unknown error"));
       }
   };
   function renderEditingQueue(data) {
@@ -5405,6 +6074,32 @@ async function getNextEventId() {
           eqData = eqData.filter(e => e['Sent to Client']);
       }
 
+      // 🟢 THE FIX: Smart Timestamp Sorting (Newest to Oldest)
+      eqData.sort((a, b) => {
+          function getSortTime(ev) {
+              let timeStr = "";
+              // Look at the specific timestamp based on the active filter
+              if (filterStatus === 'RAW Uploaded') timeStr = ev['RAW Timestamp'];
+              else if (filterStatus === 'Completed') timeStr = ev['Edited Timestamp'];
+              else if (filterStatus === 'Sent to Client') timeStr = ev['Sent Timestamp'];
+              else timeStr = ev['Sent Timestamp'] || ev['Edited Timestamp'] || ev['RAW Timestamp']; // 'All' view
+
+              // If a timestamp exists, use it!
+              if (timeStr) {
+                  // 🟢 SAFARI/APPLE FIX: Remove "at" and commas, and append the current year for perfect math!
+                  let cleanTime = timeStr.replace(/\s*at\s*/i, ' ').replace(/,/g, '').trim();
+                  let currentYear = new Date().getFullYear();
+                  let parsed = new Date(`${cleanTime} ${currentYear}`).getTime();
+                  
+                  if (!isNaN(parsed)) return parsed;
+              }
+              // Fallback: If no links exist yet, sort by the original Event Date
+              return new Date(ev['Event Date'] || "1970-01-01").getTime();
+          }
+          // Sort descending (b - a = newest on top)
+          return getSortTime(b) - getSortTime(a);
+      });
+
       if (eqData.length === 0) {
           document.getElementById('eq-body').innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No events match the queue criteria.</td></tr>';
           return;
@@ -5414,7 +6109,6 @@ async function getNextEventId() {
           // --- 48 HOUR MATH ---
           let deadlineHtml = '<span class="text-muted small">No Date</span>';
           if (e['Event Date']) {
-              // Parse Event Date. The deadline starts the *next day* at 6:00 AM
               const dParts = e['Event Date'].split('-');
               let eventDateObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
               
@@ -5423,7 +6117,7 @@ async function getNextEventId() {
               deadlineStart.setHours(6, 0, 0, 0); // 6:00 AM
               
               let deadlineEnd = new Date(deadlineStart);
-              deadlineEnd.setHours(deadlineEnd.getHours() + 48); // +48 Hours
+              deadlineEnd.setHours(deadlineEnd.getHours() + 24); // +48 Hours
               
               if (now < deadlineStart) {
                   deadlineHtml = `<span class="badge bg-light text-dark border">Starts ${deadlineStart.toLocaleDateString('en-US', {month:'short', day:'numeric'})} 6AM</span>`;
@@ -5513,7 +6207,7 @@ async function getNextEventId() {
           });
           showToast(`Cloud Session for ${start} to ${end} saved successfully!`, "success");
       } catch (err) {
-          alert("Error saving to Cloud: " + err.message);
+          egmAlert("Error saving to Cloud: " + err.message);
       }
       
       btn.innerHTML = originalHtml;
@@ -5575,22 +6269,30 @@ async function getNextEventId() {
 
   // Engine: Delete a saved session
   async function deleteSavedSession(docId) {
-      if(!confirm("Permanently delete this saved payroll session?")) return;
+      const isConfirmed = await egmConfirm("Permanently delete this saved payroll session?", "Delete Session", "Delete", "danger");
+if (!isConfirmed) return;
       try {
           await db.collection("payroll_sessions").doc(docId).delete();
           showToast("Session deleted successfully.", "success");
           openLoadSessionModal(); // Refresh the list instantly
       } catch(e) { 
-          alert("Error deleting session: " + e.message); 
+          egmAlert("Error deleting session: " + e.message); 
       }
   }
 
   // Engine: Triggered when you click a specific session in the visual list
-  function applyLoadedSession(index) {
+  async function applyLoadedSession(index) {
       const data = savedSessionsCache[index];
       if (!data) return;
 
-      if (confirm(`Load the saved session for ${data.startDate} to ${data.endDate}?\n\nThis will instantly restore your manual edits, custom pays, and added expenses!`)) {
+      if (await egmConfirm(`Load the saved session for ${data.startDate} to ${data.endDate}?\n\nThis will instantly restore your manual edits, custom pays, and added expenses!`)) {
+          
+          // The confirm modal has fully faded away by the time we reach this line.
+          // Now it is completely safe to hide the Load Session modal.
+          const loadModalEl = document.getElementById('loadSessionModal');
+          const loadModal = bootstrap.Modal.getInstance(loadModalEl);
+          if (loadModal) loadModal.hide();
+
           document.getElementById('prStartDate').value = data.startDate;
           document.getElementById('prEndDate').value = data.endDate;
           
@@ -5598,22 +6300,28 @@ async function getNextEventId() {
           
           try {
               currentPayrollData = JSON.parse(data.sessionData);
-              // 🟢 CRITICAL FIX: Tell the engine's memory exactly what dates we just loaded!
               lastComputedRange = `${data.startDate}_${data.endDate}`; 
               
               renderPayrollTable();
-              bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
               showToast("Cloud Session loaded successfully!", "success");
               
               markPayrollEdited(); 
           } catch (e) {
-              alert("Error parsing saved session data.");
+              egmAlert("Error parsing saved session data.");
           }
+          
+          // 🟢 SAFETY SWEEPER: 400ms later, forcefully scrub the DOM of any stranded overlays
+          setTimeout(() => {
+              document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+              document.body.classList.remove('modal-open');
+              document.body.style.overflow = '';
+              document.body.style.paddingRight = '';
+          }, 400);
       }
   }
 
 // Engine: Export current session summary to PDF
-  function exportSessionPDF() {
+  async function exportSessionPDF() {
       const start = document.getElementById('prStartDate').value;
       const end = document.getElementById('prEndDate').value;
       if (!start || !end) return showToast("Set a cutoff period first.", "warning");
@@ -5621,7 +6329,15 @@ async function getNextEventId() {
       const names = Object.keys(currentPayrollData).sort();
       if (names.length === 0) return showToast("No payroll data to export.", "warning");
 
-      if (!confirm(`Generate a printable PDF summary report for ${start} to ${end}?`)) return;
+      // 🟢 NEW: TENTATIVE LOCKDOWN 🟢
+      // Find anyone who currently has the tentative checkbox checked
+      const tentativeCrew = names.filter(name => currentPayrollData[name].isTentative);
+      if (tentativeCrew.length > 0) {
+          egmAlert(`EXPORT BLOCKED:\n\nThe following crew members have a TENTATIVE status:\n- ${tentativeCrew.join('\n- ')}\n\nPlease click 'VIEW DETAILS' to review and uncheck their tentative status before proceeding with the PDF export.`);
+          return; // Stop the export dead in its tracks
+      }
+
+      if (!await egmConfirm(`Generate a printable PDF summary report for ${start} to ${end}?`)) return;
 
       let totalPayout = 0;
       let grandBreakdown = { 'Edgar(EGM)': 0, 'Francis': 0, 'Tina': 0, 'Grace': 0 };
@@ -5650,7 +6366,6 @@ async function getNextEventId() {
           th { background-color: #f8f9fa; text-transform: uppercase; font-size: 12px; color: #555;}
           .text-right { text-align: right; }
           .total-row { font-weight: bold; font-size: 1.1em; background-color: #f1f3f5; }
-          /* 🟢 The CSS to force the print break! */
           .page-break { page-break-before: always; display: block; margin-top: 50px; }
           .breakdown-box { padding: 15px; background-color: #f8f9fa; border: 1px solid #ddd; width: 50%; min-width: 300px; }
           .breakdown-box h4 { margin-top: 0; margin-bottom: 10px; font-size: 13px; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -5735,7 +6450,7 @@ async function runPayrollEngine(forceNewRates = false) {
     const start = document.getElementById('prStartDate').value;
     const end = document.getElementById('prEndDate').value;
     
-    if (!start || !end) return alert("Please select a Start and End date for the cutoff.");
+    if (!start || !end) return egmAlert("Please select a Start and End date for the cutoff.");
     
     const currentRange = `${start}_${end}`;
 
@@ -5760,14 +6475,14 @@ async function runPayrollEngine(forceNewRates = false) {
 
             if (overlapFound) {
                 ov.style.display = 'none';
-                const loadIt = confirm(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session to prevent duplicate accounting.\n\nClick OK to open the Load Menu and view the existing session.`);
+                const loadIt = await egmConfirm(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session to prevent duplicate accounting.\n\nClick OK to open the Load Menu and view the existing session.`);
                 
                 if (loadIt) openLoadSessionModal();
                 return;
             }
         } catch (e) {
             ov.style.display = 'none';
-            alert("Error checking for overlapping sessions: " + e.message);
+            egmAlert("Error checking for overlapping sessions: " + e.message);
             return;
         }
         ov.style.display = 'none';
@@ -6007,15 +6722,95 @@ function initPayrollPerson(name) {
     }
 }
 
-function showToast(message, type = 'success') {
-    const toastEl = document.getElementById('appToast');
-    const toastBody = document.getElementById('appToastBody');
-    toastEl.className = `toast align-items-center text-bg-${type} border-0 shadow-lg`;
-    toastBody.innerText = message;
-    const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+// ==============================================================================
+// 🟢 UNIVERSAL DIALOG ENGINE (Toasts, Alerts, Confirms) 🟢
+// ==============================================================================
+
+// 1. Upgraded Stacking Toasts
+window.showToast = function(message, type = 'success') {
+    let container = document.getElementById('globalToastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'globalToastContainer';
+        container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        container.style.zIndex = '10950'; // Sits above absolutely everything
+        document.body.appendChild(container);
+    }
+
+    const toastId = 'tst-' + Date.now();
+    const iconClass = type === 'success' ? 'bi-check-circle-fill' : (type === 'danger' ? 'bi-exclamation-octagon-fill' : (type === 'warning' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill'));
+    
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0 shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body fw-bold d-flex align-items-center">
+                    <i class="bi ${iconClass} fs-5 me-2 opacity-75"></i> 
+                    <div style="line-height: 1.3;">${message.replace(/\n/g, '<br>')}</div>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', toastHtml);
+    const toastEl = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastEl, { delay: 4500 });
+    
+    toastEl.addEventListener('hidden.bs.toast', () => { toastEl.remove(); });
     toast.show();
-}
-  // UI: Draw the Main Table
+};
+
+// 2. Modern Asynchronous Alert Box
+window.egmAlert = function(message, title = "Notice", titleColor = "primary") {
+    return new Promise((resolve) => {
+        document.getElementById('globalAlertTitle').innerHTML = `<i class="bi bi-info-circle me-1"></i> ${title}`;
+        document.getElementById('globalAlertTitle').className = `fw-bold mb-0 text-${titleColor}`;
+        document.getElementById('globalAlertMessage').innerHTML = message.replace(/\n/g, '<br>');
+        
+        const modalEl = document.getElementById('globalAlertModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        
+        const hiddenHandler = () => {
+            modalEl.removeEventListener('hidden.bs.modal', hiddenHandler);
+            resolve();
+        };
+        modalEl.addEventListener('hidden.bs.modal', hiddenHandler);
+        modal.show();
+    });
+};
+
+// 3. Modern Asynchronous Confirmation Box (Collision-Proof)
+window.egmConfirm = function(message, title = "Confirm Action", confirmBtnText = "Yes, Proceed", confirmBtnColor = "danger") {
+    return new Promise((resolve) => {
+        document.getElementById('globalConfirmTitle').innerHTML = `<i class="bi bi-question-circle me-1"></i> ${title}`;
+        document.getElementById('globalConfirmMessage').innerHTML = message.replace(/\n/g, '<br>');
+        
+        const okBtn = document.getElementById('globalConfirmOkBtn');
+        okBtn.className = `btn btn-${confirmBtnColor} fw-bold shadow-sm w-50 rounded-3`;
+        okBtn.innerText = confirmBtnText;
+
+        const modalEl = document.getElementById('globalConfirmModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        
+        let isResolved = false;
+
+        const handleOk = () => {
+            isResolved = true;
+            modal.hide(); // Hide the modal first
+        };
+
+        const hiddenHandler = () => {
+            okBtn.removeEventListener('click', handleOk);
+            modalEl.removeEventListener('hidden.bs.modal', hiddenHandler);
+            resolve(isResolved); // 🟢 THE FIX: Resolve ONLY after the modal has completely faded away!
+        };
+
+        okBtn.addEventListener('click', handleOk);
+        modalEl.addEventListener('hidden.bs.modal', hiddenHandler);
+        
+        modal.show();
+    });
+};
+
 // UI: Draw the Main Table
 function renderPayrollTable() {
     const tbody = document.getElementById('pr-body');
@@ -6064,7 +6859,7 @@ function renderExpenseQueue() {
     if (!banner || !tbody) return;
 
     const role = getUserRole();
-    if (role !== 'admin') {
+    if (role !== 'admin' && role !== 'superadmin') {
         banner.style.setProperty('display', 'none', 'important');
         return;
     }
@@ -6081,7 +6876,12 @@ function renderExpenseQueue() {
 
     // RULE 2: Filter for Pending AND strictly within the chosen date range
     const pendingExpenses = rawExpenses.filter(e => {
-        return e.status === 'Pending' && e.expenseDate >= start && e.expenseDate <= end;
+        // Strip out the event name so we strictly compare the YYYY-MM-DD date 
+        // (This prevents a bug where expenses on the exact end-date cutoff are hidden)
+        let exactDate = e.expenseDate || "";
+        if (exactDate.includes(' - ')) exactDate = exactDate.split(' - ')[0];
+        
+        return e.status === 'Pending' && exactDate >= start && exactDate <= end;
     });
 
     if (pendingExpenses.length === 0) {
@@ -6098,16 +6898,29 @@ function renderExpenseQueue() {
 
     let html = '';
     pendingExpenses.forEach(exp => {
+        
+        // 🟢 THE FIX: Split the Date and the Event Name into two variables
+        let datePart = exp.expenseDate;
+        let eventPart = '';
+        if (exp.expenseDate && exp.expenseDate.includes(' - ')) {
+            const parts = exp.expenseDate.split(' - ');
+            datePart = parts[0]; // Gets the YYYY-MM-DD
+            eventPart = parts.slice(1).join(' - '); // Gets the rest of the text
+        }
+
         html += `
         <tr>
-            <td class="text-nowrap px-3 text-muted">${exp.expenseDate}</td>
-            <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-1 opacity-50"></i>${exp.submittedBy}</td>
-            <td style="min-width: 180px;">
+            <td class="px-3" style="max-width: 240px;">
+                <div class="text-nowrap text-muted mb-1" style="font-size: 0.8rem;">${datePart}</div>
+                <div class="text-dark fw-medium text-wrap text-break" style="font-size: 0.9rem; line-height: 1.3;">${eventPart}</div>
+            </td>
+            <td class="fw-bold text-dark align-middle">${exp.submittedBy}</td>
+            <td class="align-middle" style="min-width: 180px;">
                 <span class="badge bg-light text-dark border mb-1">${exp.category}</span><br>
                 <span class="text-muted fst-italic text-wrap" style="font-size: 0.75rem; display:inline-block; line-height:1.2;">"${exp.description}"</span>
             </td>
-            <td class="text-end fw-bold text-success text-nowrap">₱${Number(exp.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-            <td class="text-end px-3 text-nowrap">
+            <td class="text-end fw-bold text-success text-nowrap align-middle">₱${Number(exp.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td class="text-end px-3 text-nowrap align-middle">
                 <button class="btn btn-sm btn-outline-secondary py-1 me-1 shadow-sm" onclick="window.open('${exp.receiptUrl}', '_blank')" title="View Receipt"><i class="bi bi-receipt"></i></button>
                 <button class="btn btn-sm btn-outline-danger py-1 me-1 shadow-sm" onclick="processExpenseAction('${exp.docId}', 'Rejected')" title="Reject"><i class="bi bi-x-lg"></i></button>
                 <button class="btn btn-sm btn-success py-1 shadow-sm" onclick="processExpenseAction('${exp.docId}', 'Approved')" title="Approve"><i class="bi bi-check-lg"></i></button>
@@ -6122,7 +6935,7 @@ function openExpenseModal() {
 }
 
 async function processExpenseAction(docId, newStatus) {
-    if (!confirm(`Are you sure you want to mark this expense as ${newStatus.toUpperCase()}?`)) return;
+    if (!await egmConfirm(`Are you sure you want to mark this expense as ${newStatus.toUpperCase()}?`)) return;
 
     const ov = document.getElementById('submitOverlay');
     document.getElementById('overlayText').innerText = `Marking as ${newStatus}...`;
@@ -6141,7 +6954,7 @@ async function processExpenseAction(docId, newStatus) {
         showToast(`Expense ${newStatus}!`, newStatus === 'Approved' ? 'success' : 'danger');
         // The Firebase real-time listener will automatically remove it from the screen!
     } else {
-        alert("Error updating expense: " + (res ? res.error || res.message : "Unknown error"));
+        egmAlert("Error updating expense: " + (res ? res.error || res.message : "Unknown error"));
     }
 }
 
@@ -6151,6 +6964,11 @@ async function processExpenseAction(docId, newStatus) {
       isHistoricalView = isHistorical;
       const data = isHistorical ? histData : currentPayrollData[name];
       
+      // 🟢 CREATE A SNAPSHOT TO REVERT IF THEY CANCEL 🟢
+      if (!isHistorical) {
+          activePayrollSnapshot = JSON.stringify(data);
+      }
+
       document.getElementById('prModalName').innerText = name + (isHistorical ? ' (Historical)' : '');
       const isFullyExempt = owners.includes(name) && !data.events.some(e => e.role === 'Editor');
       
@@ -6210,13 +7028,20 @@ async function processExpenseAction(docId, newStatus) {
                   </div>
                   <div id="prPayerBreakdown" class="small text-end fw-bold" style="color: #adb5bd; font-size: 0.75rem;"></div>
               </div>
+              
+              <button id="prSaveChangesBtn" type="button" class="btn btn-warning w-100 py-3 fw-bold shadow-sm mt-4" onclick="savePayrollModalChanges()"><i class="bi bi-save me-1"></i> SAVE CHANGES</button>
           `;
           
           document.getElementById('prGenerateBtn').style.display = isFullyExempt ? 'none' : 'block';
+          
+          // Tighten the margin so it looks grouped with the Save button
+          document.getElementById('prGenerateBtn').classList.remove('mt-4'); 
+          document.getElementById('prGenerateBtn').classList.add('mt-2'); 
+          
           document.getElementById('prGenerateBtn').disabled = data.isTentative;
           document.getElementById('prMathControls').style.display = isFullyExempt ? 'none' : 'block';
       } else {
-          // HISTORICAL VIEW - Read Only Display for Expenses and Misc
+          // HISTORICAL VIEW
           document.getElementById('prMathControls').innerHTML = `
               <div class="row g-3 mb-4 border-top pt-3">
                   <div class="col-12 col-md-6">
@@ -6278,13 +7103,17 @@ async function processExpenseAction(docId, newStatus) {
           if (item.isSubsequent && !isHistorical) badgesHtml += '<span class="badge bg-secondary opacity-75 text-white ms-1 shadow-sm">+Add Day</span>';
 
           eventsHtml += `
-          <div class="bg-white p-2 p-md-3 rounded-3 border shadow-sm mb-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-              <div>
+          <div class="bg-white p-2 p-md-3 rounded-3 border shadow-sm mb-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+              <div class="flex-grow-1" style="min-width: 0; padding-right: 10px;">
                   <span class="d-block small text-muted fw-bold mb-1"><i class="bi bi-calendar-event me-1"></i>${eventDate}</span>
-                  <strong class="text-dark" style="font-size: 0.9rem;">${eventId !== 'FIXED' ? '#'+eventId+' - ' : ''}${eventName}</strong>
-                  ${badgesHtml} <span class="badge ${roleBadge} ms-1 shadow-sm">${item.role}</span>
+                  <div style="line-height: 1.3; margin-bottom: 6px;">
+                      <strong class="text-dark text-wrap text-break" style="font-size: 0.9rem;">${eventId !== 'FIXED' ? '#'+eventId+' - ' : ''}${eventName}</strong>
+                  </div>
+                  <div>
+                      ${badgesHtml} <span class="badge ${roleBadge} shadow-sm">${item.role}</span>
+                  </div>
               </div>
-              <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 overflow-auto pb-1">
+              <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 overflow-auto pb-1 flex-shrink-0">
                   <div>${basePayUI}</div>
                   <div>${extraPayUI}</div>
                   <div>${payerUI}</div>
@@ -6295,11 +7124,19 @@ async function processExpenseAction(docId, newStatus) {
       document.getElementById('prModalEventsList').innerHTML = eventsHtml;
       
       if (!isHistorical) calculateLivePayslipTotals(); 
-      // The total is handled directly in the HTML block for historical views now
       
       bootstrap.Modal.getOrCreateInstance(document.getElementById('payrollModal')).show();
   }
-
+window.savePayrollModalChanges = function() {
+      if (!activePayrollPerson) return;
+      
+      // Clear the snapshot so the 'X' button doesn't overwrite your changes!
+      activePayrollSnapshot = null; 
+      
+      bootstrap.Modal.getInstance(document.getElementById('payrollModal')).hide();
+      renderPayrollTable();
+      showToast("Changes saved to active session.", "success");
+  };
   // Two tiny UI helper functions for the new inputs
   window.savePayslipNote = function() {
       if(activePayrollPerson) currentPayrollData[activePayrollPerson].payslipNote = document.getElementById('prModalNotes').value;
@@ -6515,9 +7352,10 @@ async function processExpenseAction(docId, newStatus) {
       link.click();
   }
 
-  // Combined Generator and Logger Function
   async function generateAndLogPayslip() {
       if(!activePayrollPerson) return;
+      
+      activePayrollSnapshot = null; // Clear snapshot so it doesn't revert after generating!
       
       const btn = document.getElementById('prGenerateBtn');
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> PROCESSING...';
@@ -6664,13 +7502,13 @@ async function processExpenseAction(docId, newStatus) {
 
   // Engine: Delete a payslip record from the Vault
   async function deleteHistoricalPayslip(docId) {
-      if(!confirm("WARNING: Permanently delete this finalized payslip record from the History Vault?")) return;
+      if(!await egmConfirm("WARNING: Permanently delete this finalized payslip record from the History Vault?")) return;
       try {
           await db.collection("payroll_history").doc(docId).delete();
           showToast("Payslip record deleted from Vault.", "success");
           openPayrollHistory(); // Refresh the list instantly
       } catch(e) { 
-          alert("Error deleting record: " + e.message); 
+          egmAlert("Error deleting record: " + e.message); 
       }
   }
 
@@ -6678,19 +7516,78 @@ async function processExpenseAction(docId, newStatus) {
       const row = payrollHistoryCache[index];
       bootstrap.Modal.getInstance(document.getElementById('payrollHistoryModal')).hide();
       
-      let items = [];
-      try { items = JSON.parse(row.itemizedEvents); } catch(e) {}
-      
-      const histData = {
-          events: items,
-          expenses: Number(row.totalExpenses) || 0,
-          misc: Number(row.totalMisc) || 0,
-          finalTotal: Number(row.finalNetPay) || 0
-      };
-      
-      document.getElementById('prModalCutoffDates').innerText = `${row.cutoffStart} to ${row.cutoffEnd}`;
-      openPayrollModal(row.crewName, true, histData);
+      // 🟢 THE FIX: Wait for the History Vault to close before popping open the Payslip
+      setTimeout(() => {
+          let items = [];
+          try { items = JSON.parse(row.itemizedEvents); } catch(e) {}
+          
+          const histData = {
+              events: items,
+              expenses: Number(row.totalExpenses) || 0,
+              misc: Number(row.totalMisc) || 0,
+              finalTotal: Number(row.finalNetPay) || 0
+          };
+          
+          document.getElementById('prModalCutoffDates').innerText = `${row.cutoffStart} to ${row.cutoffEnd}`;
+          openPayrollModal(row.crewName, true, histData);
+      }, 350);
   }
+  document.addEventListener("DOMContentLoaded", function() {
+  const toggleBtn = document.getElementById("mobileFilterToggle");
+  const advancedFilters = document.getElementById("advancedFilters");
+
+  if (toggleBtn && advancedFilters) {
+    toggleBtn.addEventListener("click", function() {
+      // Toggle the visibility class
+      advancedFilters.classList.toggle("is-expanded");
+      
+      // Optional: Change the arrow direction based on state
+      const isExpanded = advancedFilters.classList.contains("is-expanded");
+      toggleBtn.innerHTML = isExpanded ? 'Filters <span>▲</span>' : 'Filters <span>▼</span>';
+    });
+  }
+});
+  // ==============================================================================
+// 🟢 BOOTSTRAP 5 GLOBAL MODAL COLLISION & BACKDROP PATCH 🟢
+// ==============================================================================
+
+document.addEventListener('show.bs.modal', function (e) {
+    // 1. Prevent duplicate backdrops if the modal is already on the screen
+    if (e.target.classList.contains('show')) {
+        e.preventDefault();
+    }
+    
+    // 2. Dynamically fix the Auth Modal backdrop z-index (Replacing the dangerous CSS we deleted)
+    if (e.target.id === 'authModal') {
+        setTimeout(() => {
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 0) {
+                backdrops[backdrops.length - 1].style.setProperty('z-index', '1070', 'important');
+            }
+        }, 10);
+    }
+});
+
+document.addEventListener('hidden.bs.modal', function () {
+    const openModals = document.querySelectorAll('.modal.show');
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    
+    // 3. Scrub stranded backdrops: If there are more dark overlays than open modals, delete the extras
+    if (backdrops.length > openModals.length) {
+        for (let i = 0; i < backdrops.length - openModals.length; i++) {
+            backdrops[i].remove();
+        }
+    }
+    
+    // 4. Fix body scrolling if stacked modals close out of order
+    if (openModals.length === 0) {
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    } else {
+        document.body.classList.add('modal-open');
+    }
+});
 </script>
 </body>
 </html>
