@@ -6248,24 +6248,27 @@ if (!isConfirmed) return;
       if (!data) return;
 
       if (await egmConfirm(`Load the saved session for ${data.startDate} to ${data.endDate}?\n\nThis will instantly restore your manual edits, custom pays, and added expenses!`)) {
-          document.getElementById('prStartDate').value = data.startDate;
-          document.getElementById('prEndDate').value = data.endDate;
           
-          renderExpenseQueue();
-          
-          try {
-              currentPayrollData = JSON.parse(data.sessionData);
-              // 🟢 CRITICAL FIX: Tell the engine's memory exactly what dates we just loaded!
-              lastComputedRange = `${data.startDate}_${data.endDate}`; 
+          // 🟢 THE FIX: Wait 350ms for the Confirm box to fully fade out before hiding the Load box!
+          setTimeout(() => {
+              document.getElementById('prStartDate').value = data.startDate;
+              document.getElementById('prEndDate').value = data.endDate;
               
-              renderPayrollTable();
-              bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
-              showToast("Cloud Session loaded successfully!", "success");
+              renderExpenseQueue();
               
-              markPayrollEdited(); 
-          } catch (e) {
-              egmAlert("Error parsing saved session data.");
-          }
+              try {
+                  currentPayrollData = JSON.parse(data.sessionData);
+                  lastComputedRange = `${data.startDate}_${data.endDate}`; 
+                  
+                  renderPayrollTable();
+                  bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
+                  showToast("Cloud Session loaded successfully!", "success");
+                  
+                  markPayrollEdited(); 
+              } catch (e) {
+                  egmAlert("Error parsing saved session data.");
+              }
+          }, 350);
       }
   }
 
@@ -7448,18 +7451,21 @@ window.savePayrollModalChanges = function() {
       const row = payrollHistoryCache[index];
       bootstrap.Modal.getInstance(document.getElementById('payrollHistoryModal')).hide();
       
-      let items = [];
-      try { items = JSON.parse(row.itemizedEvents); } catch(e) {}
-      
-      const histData = {
-          events: items,
-          expenses: Number(row.totalExpenses) || 0,
-          misc: Number(row.totalMisc) || 0,
-          finalTotal: Number(row.finalNetPay) || 0
-      };
-      
-      document.getElementById('prModalCutoffDates').innerText = `${row.cutoffStart} to ${row.cutoffEnd}`;
-      openPayrollModal(row.crewName, true, histData);
+      // 🟢 THE FIX: Wait for the History Vault to close before popping open the Payslip
+      setTimeout(() => {
+          let items = [];
+          try { items = JSON.parse(row.itemizedEvents); } catch(e) {}
+          
+          const histData = {
+              events: items,
+              expenses: Number(row.totalExpenses) || 0,
+              misc: Number(row.totalMisc) || 0,
+              finalTotal: Number(row.finalNetPay) || 0
+          };
+          
+          document.getElementById('prModalCutoffDates').innerText = `${row.cutoffStart} to ${row.cutoffEnd}`;
+          openPayrollModal(row.crewName, true, histData);
+      }, 350);
   }
   document.addEventListener("DOMContentLoaded", function() {
   const toggleBtn = document.getElementById("mobileFilterToggle");
