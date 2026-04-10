@@ -4658,26 +4658,22 @@ function generateSingleEventCard(e) {
       });
   }
 
-  // --- EVENT FORM SUBMISSIONS ---
-  
   document.getElementById('eventForm').onsubmit = async (e) => {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
       const ov = document.getElementById('submitOverlay');
+      
       const fd = new FormData(e.target);
       const obj = Object.fromEntries(fd.entries());
-
-      // Put them immediately back to sleep so the Editor UI doesn't visually break
-      disabledElements.forEach(el => el.disabled = true);
-      // -----------------------------------------------------------------------------------------------
       
-      // 🟢 NEW: Capture all service amounts
+      // 🟢 BULLETPROOF CAPTURE: Scrape amounts directly from the DOM
       let serviceAmounts = {};
-      for (let key in obj) {
-          if (key.startsWith('amt_') && obj[key]) {
-              serviceAmounts[key] = parseFloat(obj[key]) || 0;
+      e.target.querySelectorAll('input[name^="amt_"]').forEach(input => {
+          let val = parseFloat(input.value);
+          if (!isNaN(val) && val > 0) {
+              serviceAmounts[input.name] = val;
           }
-      }
+      });
       
       obj.manpower = fd.getAll('manpower');
       let rawServices = fd.getAll('services');
@@ -4742,9 +4738,8 @@ function generateSingleEventCard(e) {
           const newId = await getNextEventId();
           const batch = db.batch(); // Use a Firebase Batch to push everything instantly
 
-          // Loop through our array of dates. If it's a 1-day event, it loops once. If it's a 5-day leave, it loops 5 times!
+          // Loop through our array of dates. If it's a 1-day event, it loops once.
           eventDatesArray.forEach((dateStr, index) => {
-              // The first day gets the exact Event ID. Subsequent days get a unique timestamped ID.
               let docId = (index === 0) ? newId : `${newId}_${Date.now()}_${index}`;
               let docRef = db.collection("dashboard_events").doc(docId);
               
@@ -4790,7 +4785,6 @@ function generateSingleEventCard(e) {
           await batch.commit(); // Execute the bulk upload
           
           // 🟢 NEW: SEND PUSH NOTIFICATIONS (Status Aware) 🟢
-          // Only send notifications if the event is NOT Pencil Booked
           if (obj.eventStatus === 'Confirmed' || obj.eventStatus === 'Cancelled') {
               try {
                   const tokens = [];
@@ -4832,7 +4826,6 @@ function generateSingleEventCard(e) {
           // 🔴 END NEW PUSH LOGIC 🔴
 
           bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide();
-          bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
           e.target.reset(); 
           document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
           document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
