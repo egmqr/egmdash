@@ -7840,8 +7840,8 @@ function computeBillingSales() {
                     <tbody>
                         ${htmlT6}
                         <tr class="bg-light fw-bold"><td class="text-start text-primary">Tax Income</td><td class="text-primary">₱${taxIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr class="bg-light fw-bold"><td class="text-start text-info">10% Share (From T2)</td><td class="text-info">₱${cexTotalFromRest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${(t6_TranspoSum + taxIncome + cexTotalFromRest).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-light fw-bold"><td class="text-start text-info">10% Share (T2 & T5)</td><td class="text-info">₱${(cexTotalFromRest + (t5_JGSum * 0.10)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${(t6_TranspoSum + taxIncome + cexTotalFromRest + (t5_JGSum * 0.10)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
                 </table>
             </div>
