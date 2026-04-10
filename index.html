@@ -6249,26 +6249,36 @@ if (!isConfirmed) return;
 
       if (await egmConfirm(`Load the saved session for ${data.startDate} to ${data.endDate}?\n\nThis will instantly restore your manual edits, custom pays, and added expenses!`)) {
           
-          // 🟢 THE FIX: Wait 350ms for the Confirm box to fully fade out before hiding the Load box!
+          // The confirm modal has fully faded away by the time we reach this line.
+          // Now it is completely safe to hide the Load Session modal.
+          const loadModalEl = document.getElementById('loadSessionModal');
+          const loadModal = bootstrap.Modal.getInstance(loadModalEl);
+          if (loadModal) loadModal.hide();
+
+          document.getElementById('prStartDate').value = data.startDate;
+          document.getElementById('prEndDate').value = data.endDate;
+          
+          renderExpenseQueue();
+          
+          try {
+              currentPayrollData = JSON.parse(data.sessionData);
+              lastComputedRange = `${data.startDate}_${data.endDate}`; 
+              
+              renderPayrollTable();
+              showToast("Cloud Session loaded successfully!", "success");
+              
+              markPayrollEdited(); 
+          } catch (e) {
+              egmAlert("Error parsing saved session data.");
+          }
+          
+          // 🟢 SAFETY SWEEPER: 400ms later, forcefully scrub the DOM of any stranded overlays
           setTimeout(() => {
-              document.getElementById('prStartDate').value = data.startDate;
-              document.getElementById('prEndDate').value = data.endDate;
-              
-              renderExpenseQueue();
-              
-              try {
-                  currentPayrollData = JSON.parse(data.sessionData);
-                  lastComputedRange = `${data.startDate}_${data.endDate}`; 
-                  
-                  renderPayrollTable();
-                  bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
-                  showToast("Cloud Session loaded successfully!", "success");
-                  
-                  markPayrollEdited(); 
-              } catch (e) {
-                  egmAlert("Error parsing saved session data.");
-              }
-          }, 350);
+              document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+              document.body.classList.remove('modal-open');
+              document.body.style.overflow = '';
+              document.body.style.paddingRight = '';
+          }, 400);
       }
   }
 
@@ -6730,7 +6740,7 @@ window.egmAlert = function(message, title = "Notice", titleColor = "primary") {
     });
 };
 
-// 3. Modern Asynchronous Confirmation Box
+// 3. Modern Asynchronous Confirmation Box (Collision-Proof)
 window.egmConfirm = function(message, title = "Confirm Action", confirmBtnText = "Yes, Proceed", confirmBtnColor = "danger") {
     return new Promise((resolve) => {
         document.getElementById('globalConfirmTitle').innerHTML = `<i class="bi bi-question-circle me-1"></i> ${title}`;
@@ -6747,14 +6757,13 @@ window.egmConfirm = function(message, title = "Confirm Action", confirmBtnText =
 
         const handleOk = () => {
             isResolved = true;
-            resolve(true);
-            modal.hide();
+            modal.hide(); // Hide the modal first
         };
 
         const hiddenHandler = () => {
             okBtn.removeEventListener('click', handleOk);
             modalEl.removeEventListener('hidden.bs.modal', hiddenHandler);
-            if (!isResolved) resolve(false);
+            resolve(isResolved); // 🟢 THE FIX: Resolve ONLY after the modal has completely faded away!
         };
 
         okBtn.addEventListener('click', handleOk);
