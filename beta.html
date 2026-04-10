@@ -7742,11 +7742,12 @@ function computeBillingSales() {
         // Tables 3, 4, 5, 6 Row Generation
         const sdeThird = sde / 3;
         
-        const jiniTotal = ji_rest + sdeThird;
+        // 🟢 FIX: JiniCis and TinaLex strictly isolate their Table 2 shares
+        const jiniTotal = ji_rest;
         t3_JiniSum += jiniTotal;
         htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${jiniTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
 
-        const tinaTotal = t_rest + sdeThird;
+        const tinaTotal = t_rest;
         t4_TinaSum += tinaTotal;
         htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${tinaTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
 
