@@ -1043,9 +1043,9 @@
             <input type="text" name="eventName" class="form-control fw-bold">
         </div>
         <div class="col-4 col-md-2 mt-4 pt-1">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="avp" id="newAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'new')">
-                <label class="form-check-label fw-bold text-primary small" for="newAvpCheck">AVP</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input border-primary" type="checkbox" name="avp" id="editAvpCheck" value="true" onchange="toggleAvpFields(this.checked, 'edit')">
+                <label class="form-check-label fw-bold text-primary small" for="editAvpCheck">AVP</label>
             </div>
         </div>
       </div>
@@ -1297,6 +1297,12 @@
                   <div class="col-12 col-md-4">
                       <label class="form-label-sm">Invoice Number</label>
                       <input type="text" name="invoiceNumber" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-12 mt-2">
+                      <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" name="noWithheld" id="newNoWithheld">
+                          <label class="form-check-label small fw-bold text-dark" for="newNoWithheld">No Withheld</label>
+                      </div>
                   </div>
               </div>
           </div>
@@ -1784,6 +1790,12 @@
                   <div class="col-12 col-md-4">
                       <label class="form-label-sm">Invoice Number</label>
                       <input type="text" name="invoiceNumber" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-12 mt-2">
+                      <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" name="noWithheld" id="editNoWithheld">
+                          <label class="form-check-label small fw-bold text-dark" for="editNoWithheld">No Withheld</label>
+                      </div>
                   </div>
               </div>
           </div>
@@ -4314,6 +4326,9 @@ function generateSingleEventCard(e) {
         form.elements['grNumber'].value = paymentSourceEvent['GR Number'] || '';
         form.elements['invoiceNumber'].value = paymentSourceEvent['Invoice Number'] || '';
         form.elements['amount'].value = paymentSourceEvent['Amount'] || '0';
+        if (document.getElementById('editNoWithheld')) {
+            document.getElementById('editNoWithheld').checked = paymentSourceEvent['No Withheld'] === true;
+        }
         form.elements['paymentNotes'].value = paymentSourceEvent['Payment Notes'] || '';
         
         // --- POPULATE EDITING SECTION ---
@@ -4684,7 +4699,8 @@ function generateSingleEventCard(e) {
                   amount: obj.amount || "0",
                   paymentNotes: obj.paymentNotes || "",
                   invoiceUrl: obj.invoiceUrl || "",
-                  checkUrl: obj.checkUrl || ""
+                  checkUrl: obj.checkUrl || "",
+                  noWithheld: document.getElementById('newNoWithheld') ? document.getElementById('newNoWithheld').checked : false
               });
           });
 
@@ -4922,7 +4938,6 @@ for (const personName of peopleToNotify){
       }
 
       // 🟢 CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
-      // 🟢 CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
       const oldEvent = rawEvents.find(ev => ev['Doc ID'] === obj.firestoreDocId);
       const cachedOldStatus = oldEvent ? String(oldEvent['Event Status'] || "").trim() : "";
       const cachedOldCrew = oldEvent ? String(oldEvent['Manpower'] || "").trim() : "";
@@ -4969,7 +4984,8 @@ for (const personName of peopleToNotify){
               amount: obj.amount || "0",
               paymentNotes: obj.paymentNotes || "",
               invoiceUrl: obj.invoiceUrl || "",
-              checkUrl: obj.checkUrl || ""
+              checkUrl: obj.checkUrl || "",
+              noWithheld: document.getElementById('editNoWithheld') ? document.getElementById('editNoWithheld').checked : false
           });
 
           // 🟢 SMART DUAL-LANE NOTIFIER 🟢
@@ -5906,7 +5922,8 @@ db.collection("dashboard_events").onSnapshot({ includeMetadataChanges: true }, (
             'Amount': String(d.amount || "0"),
             'Payment Notes': String(d.paymentNotes || ""),
             'Invoice URL': String(d.invoiceUrl || ""),
-            'Check URL': String(d.checkUrl || "")
+            'Check URL': String(d.checkUrl || ""),
+            'No Withheld': d.noWithheld === true || String(d.noWithheld) === "true"
         });
     });
 
