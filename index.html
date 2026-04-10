@@ -410,10 +410,7 @@
         z-index: 1080 !important; 
     }
     
-    /* Ensure the dark overlay backdrop for the Auth Modal also sits above the Lightbox */
-    .modal-backdrop:nth-of-type(even) {
-        z-index: 1070 !important;
-    }
+
     /* =========================================
    Global Styles
    ========================================= */
@@ -7490,6 +7487,47 @@ window.savePayrollModalChanges = function() {
       toggleBtn.innerHTML = isExpanded ? 'Filters <span>▲</span>' : 'Filters <span>▼</span>';
     });
   }
+});
+  // ==============================================================================
+// 🟢 BOOTSTRAP 5 GLOBAL MODAL COLLISION & BACKDROP PATCH 🟢
+// ==============================================================================
+
+document.addEventListener('show.bs.modal', function (e) {
+    // 1. Prevent duplicate backdrops if the modal is already on the screen
+    if (e.target.classList.contains('show')) {
+        e.preventDefault();
+    }
+    
+    // 2. Dynamically fix the Auth Modal backdrop z-index (Replacing the dangerous CSS we deleted)
+    if (e.target.id === 'authModal') {
+        setTimeout(() => {
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 0) {
+                backdrops[backdrops.length - 1].style.setProperty('z-index', '1070', 'important');
+            }
+        }, 10);
+    }
+});
+
+document.addEventListener('hidden.bs.modal', function () {
+    const openModals = document.querySelectorAll('.modal.show');
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    
+    // 3. Scrub stranded backdrops: If there are more dark overlays than open modals, delete the extras
+    if (backdrops.length > openModals.length) {
+        for (let i = 0; i < backdrops.length - openModals.length; i++) {
+            backdrops[i].remove();
+        }
+    }
+    
+    // 4. Fix body scrolling if stacked modals close out of order
+    if (openModals.length === 0) {
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    } else {
+        document.body.classList.add('modal-open');
+    }
 });
 </script>
 </body>
