@@ -1254,7 +1254,14 @@
   </div>
 
   <div id="newPaymentFields">
-      <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="section-title text-secondary mb-0"><i class="bi bi-credit-card me-1"></i> Payment Setup</div>
+          
+          <div class="form-check form-switch mb-0" id="newNoWithheldWrapper" style="display: none;">
+              <input class="form-check-input" type="checkbox" name="noWithheld" id="newNoWithheld">
+              <label class="form-check-label small fw-bold text-dark" for="newNoWithheld">No Withheld</label>
+          </div>
+      </div>
       <select name="paymentType" id="newPaymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('new')">
           <option value="">-- Choose Payment Method --</option>
           <option>Cash AR</option>
@@ -1747,7 +1754,14 @@
   </div>
   
   <div id="editPaymentFields">
-      <div class="section-title text-secondary"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="section-title text-secondary mb-0"><i class="bi bi-credit-card me-1"></i> Payment Info</div>
+          
+          <div class="form-check form-switch mb-0" id="editNoWithheldWrapper" style="display: none;">
+              <input class="form-check-input" type="checkbox" name="noWithheld" id="editNoWithheld">
+              <label class="form-check-label small fw-bold text-dark" for="editNoWithheld">No Withheld</label>
+          </div>
+      </div>
       <select id="editPaymentType" name="paymentType" class="form-select form-select-sm mb-3 fw-bold" onchange="togglePaymentUI('edit')">
           <option value="">-- Choose Payment Method --</option>
           <option>Cash AR</option>
@@ -2795,10 +2809,16 @@ function handleAddCustomService(inputId, containerId) {
       const invUpGrp = document.getElementById(prefix + 'PayInvUploadGroup');
       const chkUpGrp = document.getElementById(prefix + 'PayCheckUploadGroup');
       const statusSel = document.getElementById(prefix + 'BillingStatus');
+      
+      // Grab the new No Withheld wrapper next to the heading
+      const noWithheldWrapper = document.getElementById(prefix + 'NoWithheldWrapper');
 
       [amtGrp, statGrp, billGrp, invUpGrp, chkUpGrp].forEach(el => el.style.display = 'none');
       statusSel.innerHTML = '';
       statusSel.disabled = false;
+      
+      // Hide the toggle by default
+      if (noWithheldWrapper) noWithheldWrapper.style.display = 'none';
       
       if (!type) { box.style.display = 'none'; return; }
       box.style.display = 'block';
@@ -2814,10 +2834,13 @@ function handleAddCustomService(inputId, containerId) {
       } else if (type === 'Billing') {
           statGrp.style.display = 'block'; billGrp.style.display = 'block'; invUpGrp.style.display = 'block';
           statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
+          
+          // SHOW the No Withheld toggle ONLY for Billing
+          if (noWithheldWrapper) noWithheldWrapper.style.display = 'block';
       }
-  // ... existing togglePaymentUI logic ...
+      
       checkInvoiceRequired(prefix);
-    toggleServiceAmounts(prefix);
+      toggleServiceAmounts(prefix);
   }
   function toggleServiceAmounts(prefix) {
     const role = getUserRole();
