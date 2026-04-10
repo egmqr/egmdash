@@ -4329,13 +4329,20 @@ function generateSingleEventCard(e) {
         
         // 🟢 NEW: Restore the saved Service Amounts to the text boxes!
         try {
-            let savedAmounts = JSON.parse(e['Service Amounts JSON'] || "{}");
+            // CRITICAL FIX: Read from paymentSourceEvent first (for multi-day consistency)
+            let jsonString = paymentSourceEvent['Service Amounts JSON'] || e['Service Amounts JSON'] || "{}";
+            let savedAmounts = JSON.parse(jsonString);
+            
+            // Loop through the saved amounts and inject them directly into the DOM using querySelector
             for (let key in savedAmounts) {
-                if (form.elements[key]) {
-                    form.elements[key].value = savedAmounts[key];
+                let inputEl = form.querySelector(`input[name="${key}"]`);
+                if (inputEl) {
+                    inputEl.value = savedAmounts[key];
                 }
             }
-        } catch(ex) {}
+        } catch(ex) {
+            console.error("Error loading service amounts:", ex);
+        }
         
         // Use 'mainEvent' instead of 'e' so Added Days copy the main payment data
         // Use 'paymentSourceEvent' so we copy the actual money data no matter which day originally held it
