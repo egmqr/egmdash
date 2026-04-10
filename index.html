@@ -1087,12 +1087,13 @@
       <div class="mb-4 p-3 bg-light rounded border shadow-sm">
           <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
           <div id="newServicesContainer">
-    
-    <div class="row px-2 g-2" id="newStandardServices">
+    <div class="row px-2 g-2 m-0 p-0" id="newStandardServices">
         
         <div class="col-12 col-md-6 small mb-2">
-            <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo" id="newSrvPhoto" onchange="document.getElementById('newSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'">
-            <label for="newSrvPhoto" class="fw-bold text-dark">Photo</label></div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Photo" id="newSrvPhoto" onchange="document.getElementById('newSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('new');">
+                <label class="form-check-label fw-bold text-dark" for="newSrvPhoto">Photo</label>
+            </div>
             <input type="number" name="amt_Photo" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
             <div id="newSrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
                 <div class="input-group input-group-sm">
@@ -1103,8 +1104,10 @@
         </div>
         
         <div class="col-12 col-md-12 small mb-2">
-            <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="newSrvPhotoQR" onchange="document.getElementById('newSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'">
-            <label for="newSrvPhotoQR" class="fw-bold text-dark">Photo Souvenir QR</label></div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="newSrvPhotoQR" onchange="document.getElementById('newSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('new');">
+                <label class="form-check-label fw-bold text-dark" for="newSrvPhotoQR">Photo Souvenir QR</label>
+            </div>
             <input type="number" name="amt_PhotoQR" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
             
             <div id="newSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
@@ -1145,8 +1148,10 @@
         </div>
         
         <div class="col-12 col-md-6 small mb-2">
-            <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="newSrvFrame" onchange="document.getElementById('newSrvFrameDetails').style.display = this.checked ? 'block' : 'none'">
-            <label for="newSrvFrame" class="fw-bold text-dark">Frame Token</label></div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="newSrvFrame" onchange="document.getElementById('newSrvFrameDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('new');">
+                <label class="form-check-label fw-bold text-dark" for="newSrvFrame">Frame Token</label>
+            </div>
             <input type="number" name="amt_FrameToken" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
             <div id="newSrvFrameDetails" class="mt-1 pe-2" style="display:none;">
                 <div class="input-group input-group-sm">
@@ -1156,24 +1161,25 @@
             </div>
         </div>
 
-        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> <label>Photo studio</label></div><input type="number" name="amt_PhotoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
-        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> <label>Video doc</label></div><input type="number" name="amt_VideoDoc" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
-        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> <label>Video SDE</label></div><input type="number" name="amt_VideoSDE" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
-        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> <label>Video highlights</label></div><input type="number" name="amt_VideoHigh" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
-        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> <label>Video studio</label></div><input type="number" name="amt_VideoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
-        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Transpo"> <label class="fw-bold text-primary">Transpo</label></div><input type="number" name="amt_Transpo" class="form-control form-control-sm mt-1 superadmin-billing-amt border-primary" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo studio" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Photo studio</label></div><input type="number" name="amt_PhotoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video documentation" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Video doc</label></div><input type="number" name="amt_VideoDoc" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video SDE" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Video SDE</label></div><input type="number" name="amt_VideoSDE" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video highlights" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Video highlights</label></div><input type="number" name="amt_VideoHigh" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video studio" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Video studio</label></div><input type="number" name="amt_VideoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Transpo" onchange="toggleServiceAmounts('new')"> <label class="form-check-label fw-bold text-primary">Transpo</label></div><input type="number" name="amt_Transpo" class="form-control form-control-sm mt-1 superadmin-billing-amt border-primary" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
     </div>
     
-    <div class="row px-2 g-2" id="newAvpServices" style="display:none;">
+    <div class="row px-2 g-2 m-0 p-0" id="newAvpServices" style="display:none;">
         <div class="col-12 col-md-6 small mb-2">
-            <div class="form-check p-3 bg-white rounded border shadow-sm">
-                <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="newSrvPreProd" checked>
-                <label for="newSrvPreProd" class="fw-bold text-primary ms-1">Pre-Prod</label>
-                <input type="number" name="amt_PreProd" class="form-control form-control-sm mt-2 superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 180px;">
+            <div class="p-3 bg-white rounded border shadow-sm">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="newSrvPreProd" checked onchange="toggleServiceAmounts('new')">
+                    <label class="form-check-label fw-bold text-primary" for="newSrvPreProd">Pre-Prod</label>
+                </div>
+                <input type="number" name="amt_PreProd" class="form-control form-control-sm superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 200px;">
             </div>
         </div>
     </div>
-
 </div>
           
           <div class="input-group input-group-sm mt-3">
@@ -1558,92 +1564,100 @@
       <div class="mb-4 p-3 bg-light rounded border shadow-sm">
           <label class="form-label-sm mb-2 text-secondary d-block">Services Provided</label>
           <div class="row px-2 g-2" id="editServicesContainer">
-              
-              <div class="row px-2 g-2 m-0 p-0" id="editStandardServices">
-                  <div class="col-12 col-md-6 small mb-2">
-                      <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo" id="editSrvPhoto" onchange="document.getElementById('editSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'">
-                      <label for="editSrvPhoto" class="fw-bold text-dark">Photo</label></div>
-                      <input type="number" name="amt_Photo" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
-                      <div id="editSrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
-                          <div class="input-group input-group-sm">
-                              <input type="number" id="editSrvPhotoCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">photographer(s)</span>
-                          </div>
-                      </div>
-                  </div>
-                  
-                  <div class="col-12 col-md-12 small mb-2">
-                      <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="editSrvPhotoQR" onchange="document.getElementById('editSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'">
-                      <label for="editSrvPhotoQR" class="fw-bold text-dark">Photo Souvenir QR</label></div>
-                      <input type="number" name="amt_PhotoQR" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
-                      
-                      <div id="editSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
-                          <div class="d-flex gap-3 mb-2">
-                              <div class="form-check">
-                                  <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('edit')" checked>
-                                  <label class="form-check-label fw-bold text-dark" for="editTypeWithPrints">With Prints</label>
-                              </div>
-                              <div class="form-check">
-                                  <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('edit')">
-                                  <label class="form-check-label fw-bold text-dark" for="editTypeWithoutPrints">Without Prints</label>
-                              </div>
-                          </div>
-                          
-                          <div id="editDetailsWithPrints">
-                              <div class="input-group input-group-sm mb-1">
-                                  <input type="number" id="editSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                                  <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
-                              </div>
-                              <div class="input-group input-group-sm">
-                                  <input type="number" id="editSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                                  <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
-                                  <select id="editSrvPrintsSize" class="form-select border-secondary-subtle">
-                                      <option value="4R">4R</option>
-                                      <option value="Wallet size">Wallet size</option>
-                                      <option value="5R">5R</option>
-                                  </select>
-                              </div>
-                          </div>
-                          
-                          <div id="editDetailsWithoutPrints" style="display: none;">
-                              <div class="input-group input-group-sm">
-                                  <input type="number" id="editSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
-                                  <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-                  
-                  <div class="col-12 col-md-6 small mb-2">
-                      <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="editSrvFrame" onchange="document.getElementById('editSrvFrameDetails').style.display = this.checked ? 'block' : 'none'">
-                      <label for="editSrvFrame" class="fw-bold text-dark">Frame Token</label></div>
-                      <input type="number" name="amt_FrameToken" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
-                      <div id="editSrvFrameDetails" class="mt-1 pe-2" style="display:none;">
-                          <div class="input-group input-group-sm">
-                              <input type="number" id="editSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
-                              <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
-                          </div>
-                      </div>
-                  </div>
+    <div class="row px-2 g-2 m-0 p-0" id="editStandardServices">
+        
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Photo" id="editSrvPhoto" onchange="document.getElementById('editSrvPhotoDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('edit');">
+                <label class="form-check-label fw-bold text-dark" for="editSrvPhoto">Photo</label>
+            </div>
+            <input type="number" name="amt_Photo" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            <div id="editSrvPhotoDetails" class="mt-1 pe-2" style="display:none;">
+                <div class="input-group input-group-sm">
+                    <input type="number" id="editSrvPhotoCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                    <span class="input-group-text bg-light text-muted border-secondary-subtle">photographer(s)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-12 small mb-2">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Photo Souvenir Master" id="editSrvPhotoQR" onchange="document.getElementById('editSrvPhotoQRDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('edit');">
+                <label class="form-check-label fw-bold text-dark" for="editSrvPhotoQR">Photo Souvenir QR</label>
+            </div>
+            <input type="number" name="amt_PhotoQR" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            
+            <div id="editSrvPhotoQRDetails" class="mt-2 p-2 border rounded bg-light border-secondary-subtle" style="display:none; max-width: 400px;">
+                <div class="d-flex gap-3 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithPrints" value="with_prints" onchange="togglePhotoQRDetails('edit')" checked>
+                        <label class="form-check-label fw-bold text-dark" for="editTypeWithPrints">With Prints</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="editPhotoQRType" id="editTypeWithoutPrints" value="without_prints" onchange="togglePhotoQRDetails('edit')">
+                        <label class="form-check-label fw-bold text-dark" for="editTypeWithoutPrints">Without Prints</label>
+                    </div>
+                </div>
+                
+                <div id="editDetailsWithPrints">
+                    <div class="input-group input-group-sm mb-1">
+                        <input type="number" id="editSrvPrintsBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <input type="number" id="editSrvPrintsCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">prints</span>
+                        <select id="editSrvPrintsSize" class="form-select border-secondary-subtle">
+                            <option value="4R">4R</option>
+                            <option value="Wallet size">Wallet size</option>
+                            <option value="5R">5R</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="editDetailsWithoutPrints" style="display: none;">
+                    <div class="input-group input-group-sm">
+                        <input type="number" id="editSrvQRBooth" class="form-control border-secondary-subtle" placeholder="Booths" min="1">
+                        <span class="input-group-text bg-light text-muted border-secondary-subtle">booth(s)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="Frame Token" id="editSrvFrame" onchange="document.getElementById('editSrvFrameDetails').style.display = this.checked ? 'block' : 'none'; toggleServiceAmounts('edit');">
+                <label class="form-check-label fw-bold text-dark" for="editSrvFrame">Frame Token</label>
+            </div>
+            <input type="number" name="amt_FrameToken" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 150px;">
+            <div id="editSrvFrameDetails" class="mt-1 pe-2" style="display:none;">
+                <div class="input-group input-group-sm">
+                    <input type="number" id="editSrvFrameCount" class="form-control border-secondary-subtle" placeholder="Qty" min="1">
+                    <span class="input-group-text bg-light text-muted border-secondary-subtle">frame(s)</span>
+                </div>
+            </div>
+        </div>
 
-                  <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo studio"> <label>Photo studio</label></div><input type="number" name="amt_PhotoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
-                  <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video documentation"> <label>Video doc</label></div><input type="number" name="amt_VideoDoc" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
-                  <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video SDE"> <label>Video SDE</label></div><input type="number" name="amt_VideoSDE" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
-                  <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video highlights"> <label>Video highlights</label></div><input type="number" name="amt_VideoHigh" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
-                  <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video studio"> <label>Video studio</label></div><input type="number" name="amt_VideoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
-                  <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Transpo"> <label class="fw-bold text-primary">Transpo</label></div><input type="number" name="amt_Transpo" class="form-control form-control-sm mt-1 superadmin-billing-amt border-primary" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
-              </div>
-              
-              <div class="row px-2 g-2 m-0 p-0" id="editAvpServices" style="display:none;">
-                  <div class="col-12 col-md-6 small mb-2">
-                      <div class="form-check p-3 bg-white rounded border shadow-sm">
-                          <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="editSrvPreProd" checked>
-                          <label for="editSrvPreProd" class="fw-bold text-primary ms-1">Pre-Prod</label>
-                          <input type="number" name="amt_PreProd" class="form-control form-control-sm mt-2 superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 180px;">
-                      </div>
-                  </div>
-              </div>
-          </div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Photo studio" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Photo studio</label></div><input type="number" name="amt_PhotoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video documentation" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Video doc</label></div><input type="number" name="amt_VideoDoc" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video SDE" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Video SDE</label></div><input type="number" name="amt_VideoSDE" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video highlights" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Video highlights</label></div><input type="number" name="amt_VideoHigh" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video studio" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Video studio</label></div><input type="number" name="amt_VideoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+        <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Transpo" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label fw-bold text-primary">Transpo</label></div><input type="number" name="amt_Transpo" class="form-control form-control-sm mt-1 superadmin-billing-amt border-primary" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+    </div>
+    
+    <div class="row px-2 g-2 m-0 p-0" id="editAvpServices" style="display:none;">
+        <div class="col-12 col-md-6 small mb-2">
+            <div class="p-3 bg-white rounded border shadow-sm">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="editSrvPreProd" checked onchange="toggleServiceAmounts('edit')">
+                    <label class="form-check-label fw-bold text-primary" for="editSrvPreProd">Pre-Prod</label>
+                </div>
+                <input type="number" name="amt_PreProd" class="form-control form-control-sm superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 200px;">
+            </div>
+        </div>
+    </div>
+</div>
           
           <div class="input-group input-group-sm mt-3">
               <span class="input-group-text bg-white"><i class="bi bi-plus-circle text-muted"></i></span>
@@ -2715,22 +2729,28 @@ function handleAddCustomService(inputId, containerId) {
   function addCustomServiceCheckbox(name, containerId, checkDefault = true) {
     if(!name || name.trim() === '') return;
     name = name.trim();
-    // (Existing duplicate checks...)
+    const container = document.getElementById(containerId);
+    const existing = Array.from(container.querySelectorAll('input[name="services"]')).map(el => el.value.toLowerCase());
+    if(existing.includes(name.toLowerCase())) {
+       const cb = container.querySelector(`input[name="services"][value="${name}"]`);
+       if(cb && checkDefault) { cb.checked = true; cb.onchange(); }
+       return;
+    }
     
+    const prefix = containerId.includes('new') ? 'new' : 'edit';
     const div = document.createElement('div');
     div.className = 'col-6 col-md-4 small mb-2';
-    // Give it the checkbox AND the hidden amount input
+    
+    // Generates the checkbox and matching amount input
     div.innerHTML = `
         <div class="form-check custom-service-cb text-primary fw-bold">
-            <input class="form-check-input" type="checkbox" name="services" value="${name}" ${checkDefault ? 'checked' : ''}>
-            <label>${name}</label>
+            <input class="form-check-input" type="checkbox" name="services" value="${name}" ${checkDefault ? 'checked' : ''} onchange="toggleServiceAmounts('${prefix}')">
+            <label class="form-check-label">${name}</label>
         </div>
         <input type="number" name="amt_${name.replace(/\s+/g, '')}" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;">
     `;
-    document.getElementById(containerId).appendChild(div);
+    container.appendChild(div);
     
-    // Re-run the toggle to see if the new input should be shown right away
-    const prefix = containerId.includes('new') ? 'new' : 'edit';
     toggleServiceAmounts(prefix);
 }
 
@@ -2792,19 +2812,36 @@ function handleAddCustomService(inputId, containerId) {
   }
   function toggleServiceAmounts(prefix) {
     const role = getUserRole();
-    const pType = document.getElementById(prefix + 'PaymentType').value;
-    const amtInputs = document.querySelectorAll(`#${prefix}ServicesContactFields .superadmin-billing-amt`);
+    const pTypeEl = document.getElementById(prefix + 'PaymentType');
+    const pType = pTypeEl ? pTypeEl.value : '';
+    
+    const container = document.getElementById(prefix + 'ServicesContactFields');
+    if (!container) return;
 
-    // Only show amounts if Superadmin AND Payment Type is Billing
-    if (role === 'superadmin' && pType === 'Billing') {
-        amtInputs.forEach(el => el.style.setProperty('display', 'block', 'important'));
-    } else {
-        amtInputs.forEach(el => el.style.setProperty('display', 'none', 'important'));
-    }
+    // Get all service checkboxes within this modal
+    const checkboxes = container.querySelectorAll('input[name="services"]');
+    
+    checkboxes.forEach(cb => {
+        // Map the checkbox value to its hidden amount input name
+        let amtName = 'amt_' + cb.value.replace(/\s+/g, '');
+        if (cb.value === 'Photo Souvenir Master') amtName = 'amt_PhotoQR';
+        if (cb.value === 'Video documentation') amtName = 'amt_VideoDoc';
+        if (cb.value === 'Video highlights') amtName = 'amt_VideoHigh';
+        if (cb.value === 'Frame Token') amtName = 'amt_FrameToken';
+        if (cb.value === 'Pre-Prod') amtName = 'amt_PreProd';
+        
+        const amtInput = container.querySelector(`input[name="${amtName}"]`);
+        
+        if (amtInput) {
+            // Rule: Must be Superadmin + Billing + Checked!
+            if (role === 'superadmin' && pType === 'Billing' && cb.checked) {
+                amtInput.style.setProperty('display', 'block', 'important');
+            } else {
+                amtInput.style.setProperty('display', 'none', 'important');
+            }
+        }
+    });
 }
-
-// Inside your existing togglePaymentUI(prefix) function, add this to the very bottom:
-// toggleServiceAmounts(prefix);
   // Forces the Invoice URL to be required based on Billing Status
   function checkInvoiceRequired(prefix) {
       const status = document.getElementById(prefix + 'BillingStatus').value;
