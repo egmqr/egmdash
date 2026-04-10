@@ -574,7 +574,7 @@
         <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
         <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), true)"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
         <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), true)"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
-       <li class="nav-item"><a class="nav-link" id="bs-tab" onclick="requireAuth(() => handleTabClick('billingsales'), 'superadmin')"><i class="bi bi-graph-up-arrow me-1"></i> Billing Sales <i class="bi bi-shield-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
+       <li class="nav-item"><a class="nav-link" id="bs-tab" onclick="requireAuth(() => handleTabClick('billingsales'), 'superadmin')"><i class="bi bi-shield-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
       </ul>
       <div class="d-flex gap-2">
         <button id="copyFilterLinkBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" onclick="copyCurrentUrl()" title="Copy link with active filters">
