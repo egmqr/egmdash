@@ -7739,22 +7739,32 @@ function computeBillingSales() {
 
         htmlT2 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td>₱${e_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td>₱${ji_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td>₱${t_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td>₱${jg_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="fw-bold">₱${restTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
 
-        // Tables 3, 4, 5, 6 Row Generation
+       // Tables 3, 4, 5, 6 Row Generation
         const sdeThird = sde / 3;
         
-        // 🟢 FIX: JiniCis and TinaLex strictly isolate their Table 2 shares
-        const jiniTotal = ji_rest;
-        t3_JiniSum += jiniTotal;
-        htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${jiniTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        // 🟢 JiniCis Rows (T2 Share + SDE Share)
+        htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-muted fw-normal" style="font-size: 0.75rem;">(From T2)</span></td><td class="fw-bold text-success">₱${ji_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        if (sdeThird > 0) {
+            htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        }
+        t3_JiniSum += (ji_rest + sdeThird);
 
-        const tinaTotal = t_rest;
-        t4_TinaSum += tinaTotal;
-        htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${tinaTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        // 🟢 TinaLex Rows (T2 Share + SDE Share)
+        htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-muted fw-normal" style="font-size: 0.75rem;">(From T2)</span></td><td class="fw-bold text-success">₱${t_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        if (sdeThird > 0) {
+            htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        }
+        t4_TinaSum += (t_rest + sdeThird);
 
-        // 🟢 FIX: Isolate JG's specific services, removing jg_rest so we can show it explicitly in the summary below!
-        const jgSpecific = sdeThird + doc + preprod + high + vstudio;
-        t5_JGSum += jgSpecific;
-        htmlT5 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${jgSpecific.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        // 🟢 JG Rows (Specific Services + SDE Share)
+        const jgSpecificOther = doc + preprod + high + vstudio;
+        if (jgSpecificOther > 0 || sdeThird === 0) { // Always show at least one row for JG
+            htmlT5 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-muted fw-normal" style="font-size: 0.75rem;">(Specifics)</span></td><td class="fw-bold text-success">₱${jgSpecificOther.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        }
+        if (sdeThird > 0) {
+            htmlT5 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        }
+        t5_JGSum += (jgSpecificOther + sdeThird);
 
         t6_TranspoSum += transpo;
         htmlT6 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${transpo.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
@@ -7840,8 +7850,8 @@ function computeBillingSales() {
                     <tbody>
                         ${htmlT6}
                         <tr class="bg-light fw-bold"><td class="text-start text-primary">Tax Income</td><td class="text-primary">₱${taxIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr class="bg-light fw-bold"><td class="text-start text-info">10% Share (T2 & T5)</td><td class="text-info">₱${(cexTotalFromRest + (t5_JGSum * 0.10)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${(t6_TranspoSum + taxIncome + cexTotalFromRest + (t5_JGSum * 0.10)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-light fw-bold"><td class="text-start text-info">10% Share (All Services)</td><td class="text-info">₱${(cex_E + (t3_JiniSum * 0.10) + (t4_TinaSum * 0.10) + (t5_JGSum * 0.10) + cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${(t6_TranspoSum + taxIncome + cex_E + (t3_JiniSum * 0.10) + (t4_TinaSum * 0.10) + (t5_JGSum * 0.10) + cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
                 </table>
             </div>
