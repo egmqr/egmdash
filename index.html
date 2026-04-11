@@ -7963,7 +7963,7 @@ function computeBillingSales() {
                     <td class="p-2">
                         <div class="input-group input-group-sm justify-content-end shadow-sm">
                             <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
-                            <input type="number" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00" value="${t7_data.jgPbManual || ''}" oninput="updateJgPb(this.value)">
+                            <input type="number" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00" value="${t7_data.jgPbManual || ''}" onchange="updateJgPb(this.value)" onkeyup="if(event.key === 'Enter') this.blur();">
                         </div>
                         ${finalAmounts[a.name] !== t7_data.jgPbManual ? `<div class="small text-end mt-1 text-primary fw-bold">Adj: ₱${finalAmounts[a.name].toLocaleString(undefined, {minimumFractionDigits: 2})}</div>` : ''}
                     </td>
@@ -7992,7 +7992,7 @@ function computeBillingSales() {
                 <td class="p-2">
                     <div class="input-group input-group-sm justify-content-end shadow-sm">
                         <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
-                        <input type="number" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00" value="${a.amt || ''}" oninput="updateT7CustomAmt(${idx}, this.value)">
+                        <input type="number" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00" value="${a.amt || ''}" onchange="updateT7CustomAmt(${idx}, this.value)" onkeyup="if(event.key === 'Enter') this.blur();">
                     </div>
                     ${a.name && finalAmounts[a.name] !== a.amt ? `<div class="small text-end mt-1 text-primary fw-bold">Adj: ₱${finalAmounts[a.name].toLocaleString(undefined, {minimumFractionDigits: 2})}</div>` : ''}
                 </td>
