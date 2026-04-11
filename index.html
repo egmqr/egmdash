@@ -1199,7 +1199,7 @@
         <div class="col-12 col-md-6 small mb-2">
             <div class="p-3 bg-white rounded border shadow-sm">
                 <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="newSrvPreProd" checked onchange="toggleServiceAmounts('new')">
+                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="newSrvPreProd" onchange="toggleServiceAmounts('new')">
                     <label class="form-check-label fw-bold text-primary" for="newSrvPreProd">Pre-Prod</label>
                 </div>
                 <input type="number" name="amt_PreProd" class="form-control form-control-sm superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 200px;">
@@ -1684,7 +1684,7 @@
         <div class="col-12 col-md-6 small mb-2">
             <div class="p-3 bg-white rounded border shadow-sm">
                 <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="editSrvPreProd" checked onchange="toggleServiceAmounts('edit')">
+                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="editSrvPreProd" onchange="toggleServiceAmounts('edit')">
                     <label class="form-check-label fw-bold text-primary" for="editSrvPreProd">Pre-Prod</label>
                 </div>
                 <input type="number" name="amt_PreProd" class="form-control form-control-sm superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 200px;">
@@ -3022,12 +3022,20 @@ function handleAddCustomService(inputId, containerId) {
     if(crew) crew.style.display = isAvp ? 'none' : 'block'; 
     
     const formId = prefix === 'new' ? 'eventForm' : 'editForm';
-    const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
-    if (dateInput) {
-        if (isAvp) { dateInput.removeAttribute('required'); } 
-        else { dateInput.setAttribute('required', 'required'); }
+        const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
+        if (dateInput) {
+            if (isAvp) dateInput.removeAttribute('required'); 
+            else dateInput.setAttribute('required', 'required');
+        }
+        
+        // 🟢 AUTO-TOGGLE PRE-PROD BASED ON AVP SWITCH
+        const preProdCheckbox = document.getElementById(prefix + 'SrvPreProd');
+        if (preProdCheckbox) {
+            preProdCheckbox.checked = isAvp;
+            // Force the billing amounts UI to update since we changed a checkbox programmatically
+            if (typeof toggleServiceAmounts === 'function') toggleServiceAmounts(prefix);
+        }
     }
-}
 
   function togglePhotoQRDetails(prefix) {
       const type = document.querySelector(`input[name="${prefix}PhotoQRType"]:checked`).value;
