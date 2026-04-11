@@ -591,18 +591,15 @@
   <div class="row g-2 align-items-end">
     
     <div class="col-12 col-md-3 d-flex align-items-end gap-2">
-      <div class="flex-grow-1">
-        <span class="form-label-sm">ID/Event Name</span>
-        
-        <div class="input-group input-group-sm">
-          <input type="text" id="fName" class="form-control" placeholder="Search..." onkeyup="applyFilters()">
-          
-          <button class="btn btn-light border border-secondary-subtle d-md-none text-danger px-2" type="button" onclick="clearFilters()" title="Clear">
-            <i class="bi bi-x-lg" style="font-size: 0.75rem;"></i>
-          </button>
-        </div>
-        
-      </div>
+      <div class="col-12 col-md-3">
+              <span class="form-label-sm">ID/Event Name</span>
+              <div class="input-group input-group-sm">
+                  <input type="text" id="fPaySearch" class="form-control" placeholder="Search..." onkeyup="handlePaySearch()">
+                  <button id="fPaySearchClearBtn" class="btn btn-light border border-start-0 border-secondary-subtle text-danger px-2 d-none" type="button" onclick="document.getElementById('fPaySearch').value=''; handlePaySearch();" title="Clear">
+                      <i class="bi bi-x-lg" style="font-size: 0.75rem;"></i>
+                  </button>
+              </div>
+          </div>
       
       <button class="btn btn-primary btn-sm d-md-none fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#advancedEventFilters" style="height: 31px; padding: 0 12px;">
         <i class="bi bi-sliders"></i>
@@ -3213,16 +3210,24 @@ function handleEqSearch() {
 
   function handlePaySearch() {
       const searchBox = document.getElementById('fPaySearch');
+      const clearBtn = document.getElementById('fPaySearchClearBtn');
       const grInvBox = document.getElementById('fGrInv');
       const typeFilter = document.getElementById('fPayType');
       const statusFilter = document.getElementById('fBillStatus');
       
-      // Visually reset other fields when typing in the main search box
       if (searchBox && searchBox.value.trim().length > 0) {
+          // Show the X button and connect the borders
+          if (clearBtn) { clearBtn.classList.remove('d-none'); searchBox.classList.add('border-end-0'); }
+          
+          // Visually reset the other fields
           if (grInvBox) grInvBox.value = '';
           if (typeFilter) typeFilter.value = '';
           if (statusFilter) statusFilter.value = 'Unpaid';
+      } else {
+          // Hide the X button and restore the rounded border on the search box
+          if (clearBtn) { clearBtn.classList.add('d-none'); searchBox.classList.remove('border-end-0'); }
       }
+      
       applyFilters();
   }
 
