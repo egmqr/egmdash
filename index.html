@@ -7873,79 +7873,264 @@ function computeBillingSales() {
             </div>
         </div>
 
-        <div class="row mt-2 mb-5">
+        <div class="row mt-4 mb-5">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-end mb-3">
-                    <h5 class="fw-bold text-dark mb-0">Fund Transfers</h5>
+                    <h5 class="fw-bold text-dark mb-0">Table 7: Fund Transfers</h5>
                     <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm" onclick="addTransferRow()"><i class="bi bi-plus-lg me-1"></i> ADD CUSTOM ROW</button>
                 </div>
+
+                <div class="bg-primary bg-opacity-10 p-3 rounded-3 border border-primary border-opacity-25 mb-3 shadow-sm">
+                    <h6 class="fw-bold mb-3 text-primary" style="font-size: 0.85rem;"><i class="bi bi-arrow-left-right me-2"></i>Manual Fund Adjustments</h6>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label-sm text-dark">From Account (Subtract)</label>
+                            <select id="t7_adjFrom" class="form-select form-select-sm fw-bold"></select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label-sm text-dark">To Account (Add)</label>
+                            <select id="t7_adjTo" class="form-select form-select-sm fw-bold"></select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label-sm text-dark">Amount</label>
+                            <div class="input-group input-group-sm shadow-sm">
+                                <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
+                                <input type="number" id="t7_adjAmt" class="form-control fw-bold text-primary border-start-0" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-1">
+                            <button class="btn btn-sm btn-primary w-100 fw-bold shadow-sm" onclick="applyT7Adjustment()">APPLY</button>
+                        </div>
+                    </div>
+                    <div id="t7_adjLog" class="mt-3"></div>
+                </div>
+
                 <div class="${wrapperClass}"><table class="${tblClass}">
                     <thead class="${headClass}">
-                        <tr><th class="text-start border-0">Account</th><th class="border-0">Account Number</th><th class="border-0 text-end" style="width: 200px;">Amount</th></tr>
+                        <tr><th class="text-start border-0">Account</th><th class="border-0">Account Number</th><th class="border-0 text-end" style="width: 250px;">Amount</th></tr>
                     </thead>
                     <tbody id="t7_body">
-                        <tr><td class="text-start fw-bold">Created PB</td><td>4053 0993 14</td><td class="fw-bold text-success text-end pe-3">₱${t1_totalDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr><td class="text-start fw-bold">Created Expenses</td><td>4059 5833 31</td><td class="fw-bold text-success text-end pe-3">₱${(t6_TranspoSum + taxIncome + cex_E + (t3_JiniSum * 0.10) + (t4_TinaSum * 0.10) + (t5_JGSum * 0.10) + cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr><td class="text-start fw-bold">JiniCis</td><td>4099 5620 94</td><td class="fw-bold text-success text-end pe-3">₱${(t3_JiniSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr><td class="text-start fw-bold">TinaLex</td><td>4059 5957 47</td><td class="fw-bold text-success text-end pe-3">₱${(t4_TinaSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr>
-                            <td class="text-start fw-bold">JG ATM</td>
-                            <td>4099 5255 34</td>
-                            <td class="fw-bold text-success text-end pe-3" id="t7_jgAtmText">
-                                ₱${((t5_JGSum * 0.90) + (t2_JG - cex_JG)).toLocaleString(undefined, {minimumFractionDigits: 2})}
-                                <input type="hidden" id="t7_jgBase" value="${((t5_JGSum * 0.90) + (t2_JG - cex_JG))}">
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-start fw-bold align-middle">JG PB</td>
-                            <td class="align-middle">4053 0993 06</td>
-                            <td class="p-2">
-                                <div class="input-group input-group-sm justify-content-end shadow-sm">
-                                    <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
-                                    <input type="number" id="t7_jgPbInput" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00" oninput="updateJgAtm()">
-                                </div>
-                            </td>
-                        </tr>
-                        <tr><td class="text-start fw-bold">EGM</td><td>Cash</td><td class="fw-bold text-success text-end pe-3">₱${(t2_E - cex_E).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr>
-                            <td class="p-2"><input type="text" class="form-control form-control-sm fw-bold" placeholder="Account Name"></td>
-                            <td class="p-2"><input type="text" class="form-control form-control-sm" placeholder="Account Number"></td>
-                            <td class="p-2">
-                                <div class="input-group input-group-sm justify-content-end shadow-sm">
-                                    <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
-                                    <input type="number" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00">
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
+                        </tbody>
                 </table></div>
+
+                <button class="btn btn-danger w-100 py-3 fw-bold shadow-sm mt-3" onclick="generateTable7Image()"><i class="bi bi-image me-1"></i> GENERATE COMPACT IMAGE</button>
             </div>
         </div>
     `;
 
-    // 🟢 Attach global JS helpers for Table 7 interactivity
-    window.updateJgAtm = function() {
-        const base = parseFloat(document.getElementById('t7_jgBase').value) || 0;
-        const pb = parseFloat(document.getElementById('t7_jgPbInput').value) || 0;
-        const newTotal = base - pb;
-        document.getElementById('t7_jgAtmText').childNodes[0].nodeValue = '₱' + newTotal.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ';
+    // 🟢 INITIALIZE TABLE 7 DATA ENGINE
+    window.t7_data = {
+        base: [
+            { name: 'Created PB', acc: '4053 0993 14', amt: t1_totalDue },
+            { name: 'Created Expenses', acc: '4059 5833 31', amt: (t6_TranspoSum + taxIncome + cex_E + (t3_JiniSum * 0.10) + (t4_TinaSum * 0.10) + (t5_JGSum * 0.10) + cex_JG) },
+            { name: 'JiniCis', acc: '4099 5620 94', amt: t3_JiniSum * 0.90 },
+            { name: 'TinaLex', acc: '4059 5957 47', amt: t4_TinaSum * 0.90 },
+            { name: 'JG ATM', acc: '4099 5255 34', amt: ((t5_JGSum * 0.90) + (t2_JG - cex_JG)) },
+            { name: 'JG PB', acc: '4053 0993 06', amt: 0 },
+            { name: 'EGM', acc: 'Cash', amt: t2_E - cex_E }
+        ],
+        custom: [],
+        adjustments: [],
+        jgPbManual: 0 // Retains the specific JG PB input logic seamlessly
     };
 
-    window.addTransferRow = function() {
+    // 🟢 CORE RENDER FUNCTION
+    window.renderTable7 = function() {
+        // 1. Calculate final amounts dynamically
+        let finalAmounts = {};
+        t7_data.base.forEach(a => finalAmounts[a.name] = a.amt);
+        t7_data.custom.forEach(a => { if(a.name) finalAmounts[a.name] = a.amt; });
+
+        // Apply special JG PB input before generic adjustments
+        if (finalAmounts['JG ATM'] !== undefined) finalAmounts['JG ATM'] -= t7_data.jgPbManual;
+        if (finalAmounts['JG PB'] !== undefined) finalAmounts['JG PB'] += t7_data.jgPbManual;
+
+        // Apply generic adjustments
+        t7_data.adjustments.forEach(adj => {
+            if(finalAmounts[adj.from] !== undefined) finalAmounts[adj.from] -= adj.amt;
+            if(finalAmounts[adj.to] !== undefined) finalAmounts[adj.to] += adj.amt;
+        });
+
         const tbody = document.getElementById('t7_body');
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="p-2"><input type="text" class="form-control form-control-sm fw-bold" placeholder="Account Name"></td>
-            <td class="p-2"><input type="text" class="form-control form-control-sm" placeholder="Account Number"></td>
-            <td class="p-2">
-                <div class="input-group input-group-sm justify-content-end shadow-sm">
-                    <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
-                    <input type="number" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00">
-                </div>
-            </td>
-        `;
-        tbody.appendChild(tr);
+        let html = '';
+
+        // 2. Draw Base Rows
+        t7_data.base.forEach(a => {
+            if (a.name === 'JG PB') {
+                html += `<tr>
+                    <td class="text-start fw-bold align-middle">${a.name}</td>
+                    <td class="align-middle">${a.acc}</td>
+                    <td class="p-2">
+                        <div class="input-group input-group-sm justify-content-end shadow-sm">
+                            <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
+                            <input type="number" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00" value="${t7_data.jgPbManual || ''}" oninput="updateJgPb(this.value)">
+                        </div>
+                        ${finalAmounts[a.name] !== t7_data.jgPbManual ? `<div class="small text-end mt-1 text-primary fw-bold">Adj: ₱${finalAmounts[a.name].toLocaleString(undefined, {minimumFractionDigits: 2})}</div>` : ''}
+                    </td>
+                </tr>`;
+            } else {
+                html += `<tr>
+                    <td class="text-start fw-bold">${a.name}</td>
+                    <td>${a.acc}</td>
+                    <td class="fw-bold text-success text-end pe-3">
+                        ₱${finalAmounts[a.name].toLocaleString(undefined, {minimumFractionDigits: 2})}
+                        ${finalAmounts[a.name] !== a.amt && a.name !== 'JG ATM' ? `<br><span class="small text-muted fw-normal fst-italic">Base: ₱${a.amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>` : ''}
+                        ${a.name === 'JG ATM' && finalAmounts['JG ATM'] !== a.amt ? `<br><span class="small text-muted fw-normal fst-italic">Base: ₱${a.amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>` : ''}
+                    </td>
+                </tr>`;
+            }
+        });
+
+        // 3. Draw Custom Rows
+        t7_data.custom.forEach((a, idx) => {
+            html += `<tr>
+                <td class="p-2 d-flex align-items-center">
+                    <button class="btn btn-sm text-danger p-0 me-2" onclick="removeT7Custom(${idx})"><i class="bi bi-x-circle-fill"></i></button>
+                    <input type="text" class="form-control form-control-sm fw-bold" placeholder="Account Name" value="${a.name}" onchange="updateT7CustomName(${idx}, this.value)">
+                </td>
+                <td class="p-2"><input type="text" class="form-control form-control-sm" placeholder="Account Number" value="${a.acc}" onchange="updateT7CustomAcc(${idx}, this.value)"></td>
+                <td class="p-2">
+                    <div class="input-group input-group-sm justify-content-end shadow-sm">
+                        <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
+                        <input type="number" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00" value="${a.amt || ''}" oninput="updateT7CustomAmt(${idx}, this.value)">
+                    </div>
+                    ${a.name && finalAmounts[a.name] !== a.amt ? `<div class="small text-end mt-1 text-primary fw-bold">Adj: ₱${finalAmounts[a.name].toLocaleString(undefined, {minimumFractionDigits: 2})}</div>` : ''}
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+
+        // 4. Update Adjustment Dropdowns
+        const options = [...t7_data.base.map(a=>a.name), ...t7_data.custom.filter(a=>a.name.trim() !== '').map(a=>a.name)];
+        const selectFrom = document.getElementById('t7_adjFrom');
+        const selectTo = document.getElementById('t7_adjTo');
+        const currFrom = selectFrom.value; const currTo = selectTo.value;
+
+        let optHtml = '<option value="">Select Account</option>';
+        options.forEach(o => optHtml += `<option value="${o}">${o}</option>`);
+
+        selectFrom.innerHTML = optHtml; selectTo.innerHTML = optHtml;
+        if (options.includes(currFrom)) selectFrom.value = currFrom;
+        if (options.includes(currTo)) selectTo.value = currTo;
+
+        // 5. Build Adjustment Logs
+        const logDiv = document.getElementById('t7_adjLog');
+        if (t7_data.adjustments.length === 0) {
+            logDiv.innerHTML = '';
+        } else {
+            let logHtml = '<div class="d-flex flex-wrap gap-2">';
+            t7_data.adjustments.forEach((adj, i) => {
+                logHtml += `<span class="badge bg-white border border-primary text-dark shadow-sm p-2 d-flex align-items-center">
+                    <span class="text-danger me-1">${adj.from}</span> <i class="bi bi-arrow-right text-muted mx-1"></i> <span class="text-success ms-1">${adj.to}</span>
+                    <strong class="ms-2">₱${adj.amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</strong>
+                    <i class="bi bi-x ms-2 text-muted" style="cursor:pointer; font-size:1.1rem;" onclick="removeT7Adjustment(${i})"></i>
+                </span>`;
+            });
+            logHtml += '</div>';
+            logDiv.innerHTML = logHtml;
+        }
     };
+
+    // 🟢 UI INTERACTIVITY CONTROLLERS
+    window.updateJgPb = function(val) { window.t7_data.jgPbManual = parseFloat(val) || 0; window.renderTable7(); };
+    window.addTransferRow = function() { window.t7_data.custom.push({ name: '', acc: '', amt: 0 }); window.renderTable7(); };
+    window.removeT7Custom = function(idx) { window.t7_data.custom.splice(idx, 1); window.renderTable7(); };
+    window.updateT7CustomName = function(idx, val) { window.t7_data.custom[idx].name = val; window.renderTable7(); };
+    window.updateT7CustomAcc = function(idx, val) { window.t7_data.custom[idx].acc = val; window.renderTable7(); };
+    window.updateT7CustomAmt = function(idx, val) { window.t7_data.custom[idx].amt = parseFloat(val) || 0; window.renderTable7(); };
+
+    window.applyT7Adjustment = function() {
+        const from = document.getElementById('t7_adjFrom').value;
+        const to = document.getElementById('t7_adjTo').value;
+        const amt = parseFloat(document.getElementById('t7_adjAmt').value);
+
+        if (!from || !to) return window.egmAlert("Please select both 'From' and 'To' accounts.");
+        if (from === to) return window.egmAlert("Cannot transfer to the same account.");
+        if (!amt || amt <= 0) return window.egmAlert("Enter a valid amount to transfer.");
+
+        window.t7_data.adjustments.push({ from, to, amt });
+        document.getElementById('t7_adjAmt').value = '';
+        window.renderTable7();
+    };
+
+    window.removeT7Adjustment = function(idx) { window.t7_data.adjustments.splice(idx, 1); window.renderTable7(); };
+
+    // 🟢 HTML5 CANVAS HIGH-RES EXPORT
+    window.generateTable7Image = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Recalculate final amounts specifically for export drawing
+        let finalAmounts = {};
+        t7_data.base.forEach(a => finalAmounts[a.name] = a.amt);
+        t7_data.custom.forEach(a => { if(a.name) finalAmounts[a.name] = a.amt; });
+        finalAmounts['JG ATM'] -= t7_data.jgPbManual; finalAmounts['JG PB'] += t7_data.jgPbManual;
+        t7_data.adjustments.forEach(adj => {
+            if(finalAmounts[adj.from] !== undefined) finalAmounts[adj.from] -= adj.amt;
+            if(finalAmounts[adj.to] !== undefined) finalAmounts[adj.to] += adj.amt;
+        });
+
+        const rowsToDraw = [];
+        t7_data.base.forEach(a => rowsToDraw.push({ name: a.name, acc: a.acc, amt: finalAmounts[a.name] }));
+        t7_data.custom.forEach(a => { if(a.name) rowsToDraw.push({ name: a.name, acc: a.acc, amt: finalAmounts[a.name] }); });
+
+        const rowHeight = 40;
+        const headerHeight = 120;
+        const footerHeight = 50; // Extra padding so bottom doesn't cut off
+        const totalHeight = headerHeight + (rowsToDraw.length * rowHeight) + footerHeight;
+
+        const scale = 3; // Super-crisp export
+        canvas.width = 700 * scale; canvas.height = totalHeight * scale;
+        ctx.scale(scale, scale);
+
+        // Background
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 700, totalHeight);
+
+        // Header Title
+        ctx.fillStyle = '#000000'; ctx.font = 'bold 22px Inter, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('EGM FUND TRANSFERS', 350, 40);
+        ctx.font = '14px Inter, sans-serif'; ctx.fillStyle = '#666666';
+        const procDate = document.getElementById('bsProcessDate').value || 'N/A';
+        ctx.fillText('Processed Date: ' + procDate, 350, 65);
+
+        // Table Header Banner
+        ctx.fillStyle = '#0d9488'; // EGM Teal
+        ctx.fillRect(30, 90, 640, 35);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.textAlign = 'left'; ctx.fillText('ACCOUNT', 45, 112);
+        ctx.fillText('ACCOUNT NUMBER', 250, 112);
+        ctx.textAlign = 'right'; ctx.fillText('AMOUNT', 655, 112);
+
+        // Draw the Rows
+        let y = 125;
+        rowsToDraw.forEach((r, i) => {
+            if (i % 2 === 0) { ctx.fillStyle = '#f8fafc'; ctx.fillRect(30, y, 640, rowHeight); }
+            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1; ctx.strokeRect(30, y, 640, rowHeight);
+
+            ctx.fillStyle = '#0f172a'; ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.textAlign = 'left'; ctx.fillText(r.name, 45, y + 25);
+            ctx.font = '14px Inter, sans-serif'; ctx.fillText(r.acc || '-', 250, y + 25);
+            ctx.textAlign = 'right'; ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.fillStyle = '#16a34a'; // Success green
+            ctx.fillText('₱ ' + r.amt.toLocaleString(undefined, {minimumFractionDigits: 2}), 655, y + 25);
+            y += rowHeight;
+        });
+
+        // Watermark / Subtext
+        if (t7_data.adjustments.length > 0 || t7_data.jgPbManual > 0) {
+            ctx.textAlign = 'left'; ctx.fillStyle = '#94a3b8'; ctx.font = 'italic 12px Inter, sans-serif';
+            ctx.fillText('* Final amounts include manual transfer adjustments.', 30, y + 25);
+        }
+
+        // Trigger Download
+        const link = document.createElement('a');
+        link.download = `Fund_Transfers_${procDate}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg', 1.0);
+        link.click();
+    };
+
+    // Wake it up instantly!
+    setTimeout(window.renderTable7, 50);
 }
 </script>
 </body>
