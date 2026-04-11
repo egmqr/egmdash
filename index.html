@@ -3804,14 +3804,8 @@ function generateSingleEventCard(e) {
     }
 
     // 2. Filter the table data based on our smart rules
-    let displayData = [];
-    if (showAllDays) {
-        // Text search WITHOUT specific payment filters: Show Main Days and Added Days
-        displayData = data.filter(item => item['Event Name'] !== 'Crew Leave');
-    } else {
-        // 🟢 THE FIX: ALWAYS show the true Main Day AND any AVPs, bypassing the group-hide
-        displayData = data.filter(item => (item['Doc ID'] === projectMainDays[item['Event ID']] || item['AVP Required'] === 'TRUE') && item['Event Name'] !== 'Crew Leave');
-    }
+    // 🟢 FIX: Always collapse multi-day events down to Day 1 (Main Day), even when actively searching!
+    let displayData = data.filter(item => (item['Doc ID'] === projectMainDays[item['Event ID']] || item['AVP Required'] === 'TRUE') && item['Event Name'] !== 'Crew Leave');
 
     // Sort the final display rows
     displayData.sort((a, b) => {
