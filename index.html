@@ -7736,14 +7736,14 @@ function computeBillingSales() {
         const sdeThird = sde / 3;
         
         // 🟢 JiniCis Rows (T2 Share + SDE Share)
-        htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-muted fw-normal" style="font-size: 0.75rem;">(From T2)</span></td><td class="fw-bold text-success">₱${ji_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${ji_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         if (sdeThird > 0) {
             htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }
         t3_JiniSum += (ji_rest + sdeThird);
 
         // 🟢 TinaLex Rows (T2 Share + SDE Share)
-        htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-muted fw-normal" style="font-size: 0.75rem;">(From T2)</span></td><td class="fw-bold text-success">₱${t_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${t_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         if (sdeThird > 0) {
             htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }
@@ -7784,7 +7784,7 @@ function computeBillingSales() {
             #bsReportsContainer .table th { font-size: 0.75rem; font-weight: 700; }
         </style>
         
-        <h5 class="fw-bold text-dark mt-4 mb-3">1. Computation Table</h5>
+        <h5 class="fw-bold text-dark mt-4 mb-3">Summary</h5>
         <div class="${wrapperClass}"><table class="${tblClass}">
             <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Amount Net of VAT</th><th class="border-0">Less VAT</th><th class="border-0">Total Sales (VAT Inc)</th><th class="border-0">Less Withholding</th><th class="border-0">Amount Due</th><th class="border-0">Total Amount Due</th></tr></thead>
             <tbody>
@@ -7794,7 +7794,7 @@ function computeBillingSales() {
             </tbody>
         </table></div>
 
-        <h5 class="fw-bold text-dark mt-4 mb-3">2. "Rest of Services" Distribution</h5>
+        <h5 class="fw-bold text-dark mt-4 mb-3">Distribution</h5>
         <div class="${wrapperClass}"><table class="${tblClass}">
             <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Edgar (${(pE*100).toFixed(0)}%)</th><th class="border-0">JiniCis (${(pJi*100).toFixed(0)}%)</th><th class="border-0">TinaLex (${(pT*100).toFixed(0)}%)</th><th class="border-0">JG (${(pJG*100).toFixed(0)}%)</th><th class="border-0">Total</th></tr></thead>
             <tbody>
@@ -7806,7 +7806,7 @@ function computeBillingSales() {
 
         <div class="row g-4">
             <div class="col-12 col-lg-6">
-                <h5 class="fw-bold text-dark mb-3">3. JiniCis Only</h5>
+                <h5 class="fw-bold text-dark mb-3">JiniCis</h5>
                 <div class="${wrapperClass}"><table class="${tblClass}">
                     <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">JiniCis Share</th></tr></thead>
                     <tbody>
@@ -7818,7 +7818,7 @@ function computeBillingSales() {
             </div>
 
             <div class="col-12 col-lg-6">
-                <h5 class="fw-bold text-dark mb-3">4. TinaLex Only</h5>
+                <h5 class="fw-bold text-dark mb-3">TinaLex</h5>
                 <div class="${wrapperClass}"><table class="${tblClass}">
                     <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">TinaLex Share</th></tr></thead>
                     <tbody>
@@ -7830,20 +7830,20 @@ function computeBillingSales() {
             </div>
 
             <div class="col-12 col-lg-6">
-                <h5 class="fw-bold text-dark mb-3">5. JG Only</h5>
+                <h5 class="fw-bold text-dark mb-3">JG</h5>
                 <div class="${wrapperClass}"><table class="${tblClass}">
                     <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">JG Share</th></tr></thead>
                     <tbody>
                         ${htmlT5}
                         <tr class="bg-light fw-bold"><td class="text-start text-danger">10% Share</td><td class="text-danger">₱${(t5_JGSum * 0.10).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr class="bg-light fw-bold"><td class="text-start text-info">90% Share (From Table 2)</td><td class="text-info">₱${(t2_JG - cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-light fw-bold"><td class="text-start text-info">90% Share (From Distribution)</td><td class="text-info">₱${(t2_JG - cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                         <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${((t5_JGSum * 0.90) + (t2_JG - cex_JG)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
                 </table></div>
             </div>
 
             <div class="col-12 col-lg-6">
-                <h5 class="fw-bold text-dark mb-3">6. Created Ex Only</h5>
+                <h5 class="fw-bold text-dark mb-3">Created Ex</h5>
                 <div class="${wrapperClass}"><table class="${tblClass}">
                     <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Created Expenses Share</th></tr></thead>
                     <tbody>
