@@ -3349,22 +3349,27 @@ function handleEqSearch() {
     document.getElementById('ex-tab').classList.toggle('active', t==='expenses');
     
     if (t === 'booth') {
-        if (currentBoothMode === 'new') { setBoothMode('view'); } 
-        else { setBoothMode(currentBoothMode); }
-        
-        let url = new URL(window.location);
-        url.searchParams.set('tab', 'booth');
-        ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
-        window.history.replaceState({}, '', url);
-    } else if (t === 'expenses') {
-        let url = new URL(window.location);
-        url.searchParams.set('tab', 'expenses');
-        ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
-        window.history.replaceState({}, '', url);
-    } else {
-        applyFilters(); 
-    }
+      if (currentBoothMode === 'new') { setBoothMode('view'); } 
+      else { setBoothMode(currentBoothMode); }
+      
+      let url = new URL(window.location);
+      url.searchParams.set('tab', 'booth');
+      ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url);
+  } else if (t === 'expenses') {
+      let url = new URL(window.location);
+      url.searchParams.set('tab', 'expenses');
+      ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url);
+  } else if (t === 'billingsales') {
+      let url = new URL(window.location);
+      url.searchParams.set('tab', 'billingsales');
+      ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url);
+  } else {
+      applyFilters(); 
   }
+}
 // Smart router for Edit buttons
 function handleEditClick(docId) {
     const role = getUserRole();
