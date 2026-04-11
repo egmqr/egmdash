@@ -574,7 +574,7 @@
         <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
         <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), true)"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
         <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), true)"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
-       <li class="nav-item"><a class="nav-link" id="bs-tab" onclick="requireAuth(() => handleTabClick('billingsales'), 'superadmin')"><i class="bi bi-graph-up-arrow me-1"></i> Billing Sales <i class="bi bi-shield-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
+       <li class="nav-item"><a class="nav-link" id="bs-tab" onclick="requireAuth(() => handleTabClick('billingsales'), 'superadmin')"><i class="bi bi-shield-lock-fill" style="font-size:0.75rem;"></i></a></li>
       </ul>
       <div class="d-flex gap-2">
         <button id="copyFilterLinkBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" onclick="copyCurrentUrl()" title="Copy link with active filters">
@@ -638,8 +638,16 @@
         </div>
       </div>
       <div class="filter-panel" id="paymentFilters" style="display:none;">
-        <div class="row g-2 align-items-end">
-          <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+       <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-3">
+              <span class="form-label-sm">ID/Event Name</span>
+              <div class="input-group input-group-sm">
+                  <input type="text" id="fPaySearch" class="form-control" placeholder="Search..." onkeyup="handlePaySearch()">
+                  <button id="fPaySearchClearBtn" class="btn btn-light border border-start-0 border-secondary-subtle text-danger px-2 d-none" type="button" onclick="document.getElementById('fPaySearch').value=''; handlePaySearch();" title="Clear">
+                      <i class="bi bi-x-lg" style="font-size: 0.75rem;"></i>
+                  </button>
+              </div>
+          </div>
           <div class="col-6 col-md-2"><span class="form-label-sm">GR / Invoice #</span><input type="text" id="fGrInv" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="updateFilterStatuses(); applyFilters()">
     <option value="">All Types</option>
@@ -1199,7 +1207,7 @@
         <div class="col-12 col-md-6 small mb-2">
             <div class="p-3 bg-white rounded border shadow-sm">
                 <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="newSrvPreProd" checked onchange="toggleServiceAmounts('new')">
+                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="newSrvPreProd" onchange="toggleServiceAmounts('new')">
                     <label class="form-check-label fw-bold text-primary" for="newSrvPreProd">Pre-Prod</label>
                 </div>
                 <input type="number" name="amt_PreProd" class="form-control form-control-sm superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 200px;">
@@ -1684,7 +1692,7 @@
         <div class="col-12 col-md-6 small mb-2">
             <div class="p-3 bg-white rounded border shadow-sm">
                 <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="editSrvPreProd" checked onchange="toggleServiceAmounts('edit')">
+                    <input class="form-check-input" type="checkbox" name="services" value="Pre-Prod" id="editSrvPreProd" onchange="toggleServiceAmounts('edit')">
                     <label class="form-check-label fw-bold text-primary" for="editSrvPreProd">Pre-Prod</label>
                 </div>
                 <input type="number" name="amt_PreProd" class="form-control form-control-sm superadmin-billing-amt border-primary" placeholder="Pre-Prod Amount ₱" style="display:none; max-width: 200px;">
@@ -2529,37 +2537,61 @@ async function subscribeToNotifications() {
   let selectedExistingQrLogoId = "";
   let existingLogosCache = null;
 
-  // THE NEW FIREBASE GATEKEEPER (Dual-Role)
+  // 🟢 HIERARCHICAL ACCESS CONTROL 🟢
   function getUserRole() {
       return localStorage.getItem('egm_auth_role') || null;
   }
 
-  async function requireAuth(actionFunction, roleLevel = null) {
-    // If original code passed 'true', map it to 'admin' to preserve functionality
-    if (roleLevel === true) roleLevel = 'admin';
+  function getRoleValue(role) {
+      const roles = { 'superadmin': 3, 'admin': 2, 'editor': 1 };
+      return roles[role] || 0; // 0 = non-admin/unauthenticated
+  }
 
-    const role = getUserRole();
-    const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+  async function requireAuth(actionFunction, requiredRole = 'admin') {
+      if (requiredRole === true) requiredRole = 'admin'; // Safely map legacy boolean flags
 
-    if (role && !isExpired) {
-        if (roleLevel === 'superadmin' && role !== 'superadmin') {
-            if (await egmConfirm("Superadmin access is required. Would you like to sign out to switch accounts?")) signOut();
-            return;
-        }
-        if (roleLevel === 'admin' && role !== 'admin' && role !== 'superadmin') {
-            if (await egmConfirm("Admin access is required. Would you like to sign out to switch accounts?")) signOut();
-            return;
-        }
-        actionFunction();
-    } else {
-        pendingAuthAction = () => requireAuth(actionFunction, roleLevel);
-        document.getElementById('authPassword').value = '';
-        document.getElementById('authError').style.display = 'none';
-        const authModal = bootstrap.Modal.getInstance(document.getElementById('authModal')) || new bootstrap.Modal(document.getElementById('authModal'));
-        authModal.show();
-        setTimeout(() => document.getElementById('authPassword').focus(), 500);
-    }
-}
+      const role = getUserRole();
+      const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+      const activeRole = (!isExpired) ? role : null;
+
+      const reqVal = getRoleValue(requiredRole);
+      const actVal = getRoleValue(activeRole);
+
+      if (actVal >= reqVal) {
+          actionFunction(); // Native access granted based on hierarchy
+      } else {
+          requestAccessLoop(requiredRole, actionFunction); // Trigger loop
+      }
+  }
+
+  async function requestAccessLoop(requiredRole, actionFunction) {
+      const displayRole = requiredRole.charAt(0).toUpperCase() + requiredRole.slice(1);
+      const wantsToProceed = await window.egmConfirm(
+          `${displayRole} access is required. Would you like to enter the password or switch accounts?`, 
+          "Access Restricted", 
+          "Enter Password", 
+          "primary"
+      );
+
+      if (!wantsToProceed) return; // Exit if they hit Cancel
+
+      pendingAuthAction = () => {
+          const newRole = getUserRole();
+          // Check if the NEW password they just typed actually satisfies the target requirement
+          if (getRoleValue(newRole) >= getRoleValue(requiredRole)) {
+              actionFunction(); // Passed!
+          } else {
+              egmAlert(`Access Denied.\n\nYour password granted '${newRole}' access, but '${requiredRole}' access is required.`).then(() => {
+                  requestAccessLoop(requiredRole, actionFunction); // Loop it back!
+              });
+          }
+      };
+
+      document.getElementById('authPassword').value = '';
+      document.getElementById('authError').style.display = 'none';
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('authModal')).show();
+      setTimeout(() => document.getElementById('authPassword').focus(), 500);
+  }
 
   async function submitAuth() {
       const pass = document.getElementById('authPassword').value.trim();
@@ -2571,14 +2603,10 @@ async function subscribeToNotifications() {
       btn.disabled = true;
 
       try {
-          // 🟢 THE FAST FIREBASE METHOD: 
-          // We ask Firebase to look for a document whose ID exactly matches what they typed.
           const docRef = await db.collection("access_codes").doc(pass).get();
 
           if (docRef.exists) {
-              // The password matched a document! Grab the role (admin or editor)
               const data = docRef.data();
-              
               localStorage.setItem('egm_auth_role', data.role);
               localStorage.setItem('egm_auth_exp', Date.now() + (12 * 3600000)); // 12 hours
               
@@ -2586,7 +2614,6 @@ async function subscribeToNotifications() {
               document.getElementById('authPassword').value = '';
               finalizeAuth(btn, originalText);
           } else {
-              // The document didn't exist, meaning the password was wrong
               document.getElementById('authError').innerText = "Incorrect Password!";
               document.getElementById('authError').style.display = 'block';
               btn.innerHTML = originalText;
@@ -2615,25 +2642,23 @@ async function subscribeToNotifications() {
       const role = getUserRole();
       const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
       
-      // If the browser remembers a role, but the 12-hour timer is up (or missing), wipe it silently
       if (role && isExpired) {
           localStorage.removeItem('egm_auth_role');
           localStorage.removeItem('egm_auth_exp');
       }
 
-      // Determine the true active role
-      const activeRole = (!isExpired) ? role : null;
+      const activeRole = (!isExpired) ? getUserRole() : null;
+      const actVal = getRoleValue(activeRole);
 
       const newEntryBtn = document.getElementById('newEntryBtn');
       const logoutBtn = document.getElementById('logoutBtn');
       
       if (newEntryBtn) {
-          // Hide New Entry button entirely if the user is an active editor
-          newEntryBtn.style.display = (activeRole === 'editor') ? 'none' : 'flex';
+          // Rule: Hidden for non-admin (0) and editor (1). Visible for admin (2) and superadmin (3)
+          newEntryBtn.style.display = (actVal >= 2) ? 'flex' : 'none';
       }
       
       if (logoutBtn) {
-          // Show the Sign Out button ONLY if they have a valid, unexpired role
           logoutBtn.style.display = activeRole ? 'flex' : 'none';
       }
   }
@@ -3022,12 +3047,20 @@ function handleAddCustomService(inputId, containerId) {
     if(crew) crew.style.display = isAvp ? 'none' : 'block'; 
     
     const formId = prefix === 'new' ? 'eventForm' : 'editForm';
-    const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
-    if (dateInput) {
-        if (isAvp) { dateInput.removeAttribute('required'); } 
-        else { dateInput.setAttribute('required', 'required'); }
+        const dateInput = document.querySelector(`#${formId} input[name="eventDate"]`);
+        if (dateInput) {
+            if (isAvp) dateInput.removeAttribute('required'); 
+            else dateInput.setAttribute('required', 'required');
+        }
+        
+        // 🟢 AUTO-TOGGLE PRE-PROD BASED ON AVP SWITCH
+        const preProdCheckbox = document.getElementById(prefix + 'SrvPreProd');
+        if (preProdCheckbox) {
+            preProdCheckbox.checked = isAvp;
+            // Force the billing amounts UI to update since we changed a checkbox programmatically
+            if (typeof toggleServiceAmounts === 'function') toggleServiceAmounts(prefix);
+        }
     }
-}
 
   function togglePhotoQRDetails(prefix) {
       const type = document.querySelector(`input[name="${prefix}PhotoQRType"]:checked`).value;
@@ -3195,9 +3228,32 @@ function handleEqSearch() {
       renderEditingQueue(rawEvents);
   }
 
+  function handlePaySearch() {
+      const searchBox = document.getElementById('fPaySearch');
+      const clearBtn = document.getElementById('fPaySearchClearBtn');
+      const grInvBox = document.getElementById('fGrInv');
+      const typeFilter = document.getElementById('fPayType');
+      const statusFilter = document.getElementById('fBillStatus');
+      
+      if (searchBox && searchBox.value.trim().length > 0) {
+          // Show the X button and connect the borders
+          if (clearBtn) { clearBtn.classList.remove('d-none'); searchBox.classList.add('border-end-0'); }
+          
+          // Visually reset the other fields
+          if (grInvBox) grInvBox.value = '';
+          if (typeFilter) typeFilter.value = '';
+          if (statusFilter) statusFilter.value = 'Unpaid';
+      } else {
+          // Hide the X button and restore the rounded border on the search box
+          if (clearBtn) { clearBtn.classList.add('d-none'); searchBox.classList.remove('border-end-0'); }
+      }
+      
+      applyFilters();
+  }
+
   function applyFilters() {
-    const todayDate = new Date();
-    const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
+  const todayDate = new Date();
+  const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
     let url = new URL(window.location);
     // Scrub Facebook tracking garbage from the URL
     url.searchParams.delete('fbclid');
@@ -3249,24 +3305,25 @@ function handleEqSearch() {
       window.history.replaceState({}, '', url);
 
     } else if (currentTab === 'payments') {
-      const q=document.getElementById('fPaySearch').value.toLowerCase(), 
-            grInv=document.getElementById('fGrInv').value.toLowerCase(),
-            t=document.getElementById('fPayType').value, 
-            s=document.getElementById('fBillStatus').value;
-            
-      if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
-      if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
-      if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
-      
-      if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed', 'Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Pending', 'Pending Clearance'].includes(e['Billing Status'])); } 
-      else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
+    const q=document.getElementById('fPaySearch').value.toLowerCase().trim(), 
+          grInv=document.getElementById('fGrInv').value.toLowerCase().trim(),
+          t=document.getElementById('fPayType').value, 
+          s=document.getElementById('fBillStatus').value;
+          
+    if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
+    if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
+    
+    // 🟢 NEW: If searching by ID/Name (q), bypass the Payment Type, Billing Status, and Cancelled/Pencil filters entirely!
+    if (!q) {
+        if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
+        
+        if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed', 'Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Pending', 'Pending Clearance'].includes(e['Billing Status'])); } 
+        else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
 
-      if (!q && !grInv) {
-          // 🟢 THE FIX: Exempt AVPs from the 'Pencil Booked' purge
-          filtered = filtered.filter(e => e['Event Status'] !== 'Cancelled' && (e['Event Status'] !== 'Pencil Booked' || e['AVP Required'] === 'TRUE'));
-      }
-      
-      renderPayments(filtered);
+        filtered = filtered.filter(e => e['Event Status'] !== 'Cancelled' && e['Event Status'] !== 'Pencil Booked');
+    }
+    
+    renderPayments(filtered);
       
       url.searchParams.set('tab', 'payments');
       if(q) url.searchParams.set('q', q); else url.searchParams.delete('q');
@@ -3349,47 +3406,37 @@ function handleEqSearch() {
     document.getElementById('ex-tab').classList.toggle('active', t==='expenses');
     
     if (t === 'booth') {
-        if (currentBoothMode === 'new') { setBoothMode('view'); } 
-        else { setBoothMode(currentBoothMode); }
-        
-        let url = new URL(window.location);
-        url.searchParams.set('tab', 'booth');
-        ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
-        window.history.replaceState({}, '', url);
-    } else if (t === 'expenses') {
-        let url = new URL(window.location);
-        url.searchParams.set('tab', 'expenses');
-        ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
-        window.history.replaceState({}, '', url);
-    } else {
-        applyFilters(); 
-    }
+      if (currentBoothMode === 'new') { setBoothMode('view'); } 
+      else { setBoothMode(currentBoothMode); }
+      
+      let url = new URL(window.location);
+      url.searchParams.set('tab', 'booth');
+      ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url);
+  } else if (t === 'expenses') {
+      let url = new URL(window.location);
+      url.searchParams.set('tab', 'expenses');
+      ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url);
+  } else if (t === 'billingsales') {
+      let url = new URL(window.location);
+      url.searchParams.set('tab', 'billingsales');
+      ['q', 'grInv', 'type', 'status', 'fName', 'fDateFrom', 'fDateTo', 'fCrew', 'fStatus', 'fEqSearch', 'fEqStatus'].forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url);
+  } else {
+      applyFilters(); 
   }
+}
 // Smart router for Edit buttons
 function handleEditClick(docId) {
-    const role = getUserRole();
-    const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
-    
-    if (!role || isExpired) {
-        // Non-admin (View-Only): Ask for password (FALSE = accepts both Editor and Admin passwords)
-        requireAuth(() => {
-            const cardModalEl = document.getElementById('eventCardModal');
-            if (cardModalEl && cardModalEl.classList.contains('show')) {
-                bootstrap.Modal.getInstance(cardModalEl).hide();
-                setTimeout(() => openEditModal(docId), 350);
-            } else {
-                openEditModal(docId);
-            }
-        }, false); 
+    // We let them open the modal directly. 
+    // The "openEditModal" function will instantly calculate if they are View-Only, Editor, or Admin, and lock fields dynamically!
+    const cardModalEl = document.getElementById('eventCardModal');
+    if (cardModalEl && cardModalEl.classList.contains('show')) {
+        bootstrap.Modal.getInstance(cardModalEl).hide();
+        setTimeout(() => openEditModal(docId), 350);
     } else {
-        // Admin or Editor: Open the modal directly
-        const cardModalEl = document.getElementById('eventCardModal');
-        if (cardModalEl && cardModalEl.classList.contains('show')) {
-            bootstrap.Modal.getInstance(cardModalEl).hide();
-            setTimeout(() => openEditModal(docId), 350);
-        } else {
-            openEditModal(docId);
-        }
+        openEditModal(docId);
     }
 }
 
@@ -3785,7 +3832,15 @@ function generateSingleEventCard(e) {
       // UX BONUS: Add a badge if this payment covers multiple days/locations
       const multiBadge = multiDayCount > 1 ? `<span class="badge badge-teal ms-1" style="font-size: 0.65rem;">+${multiDayCount - 1} Day/Loc</span>` : '';
       
-      const nameDisplay = isAvp ? `<span class="fw-bold text-dark">${p['Event Name']}</span> <span class="badge badge-avp rounded-pill shadow-sm">AVP</span> ${multiBadge}` : `<span class="fw-bold text-dark">${p['Event Name']}</span> ${multiBadge}`;
+      // 🟢 FIX: Add explicit warning badges for Cancelled or Pencil Booked
+      let statusWarningBadge = '';
+      if (p['Event Status'] === 'Cancelled') {
+          statusWarningBadge = `<span class="badge bg-danger ms-1 shadow-sm" style="font-size: 0.65rem;"><i class="bi bi-x-circle-fill"></i> CANCELLED</span>`;
+      } else if (p['Event Status'] === 'Pencil Booked') {
+          statusWarningBadge = `<span class="badge bg-secondary ms-1 shadow-sm" style="font-size: 0.65rem;"><i class="bi bi-pencil-fill"></i> PENCIL BOOKED</span>`;
+      }
+      
+      const nameDisplay = isAvp ? `<span class="fw-bold text-dark">${p['Event Name']}</span> <span class="badge badge-avp rounded-pill shadow-sm">AVP</span> ${multiBadge} ${statusWarningBadge}` : `<span class="fw-bold text-dark">${p['Event Name']}</span> ${multiBadge} ${statusWarningBadge}`;
       
       let badgeClass = 'badge-soft-dark';
       if(payData['Payment Type'] === 'Billing') badgeClass = 'badge-soft-warning';
@@ -3852,37 +3907,35 @@ function generateSingleEventCard(e) {
 
   function setEditFormState(isReadOnly) {
       const role = getUserRole();
+      const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
+      const activeRole = (!isExpired) ? role : null;
+      const actVal = getRoleValue(activeRole);
+      
       const form = document.getElementById('editForm');
       const allElements = form.querySelectorAll('input, select, textarea, button');
       
       allElements.forEach(el => {
-          // Never disable the close button, theme toggle, or the save button (we handle Save visibility separately)
           if(el.id === 'themeToggleBtn' || el.id === 'editSubmitBtn' || el.classList.contains('btn-close')) return;
           
-          if (isReadOnly) {
+          if (isReadOnly || actVal === 0) {
               el.disabled = true; // Non-admin/Unauthenticated: All disabled
-          } else if (role === 'editor') {
-              // Editors: Only elements with the 'editor-field' class are enabled
-              if (el.classList.contains('editor-field')) {
-                  el.disabled = false;
-              } else {
-                  el.disabled = true;
-              }
-          } else {
-              el.disabled = false; // Admin AND Superadmin: All enabled
+          } else if (actVal === 1) { // Editor
+              if (el.classList.contains('editor-field')) el.disabled = false;
+              else el.disabled = true;
+          } else { // Admin (2) & Superadmin (3)
+              el.disabled = false; 
           }
       });
 
-      // Special button logic
-      if (document.getElementById('editCrewAddBtn')) document.getElementById('editCrewAddBtn').disabled = (isReadOnly || role === 'editor');
-      if (document.getElementById('editServiceAddBtn')) document.getElementById('editServiceAddBtn').disabled = (isReadOnly || role === 'editor');
+      if (document.getElementById('editCrewAddBtn')) document.getElementById('editCrewAddBtn').disabled = (isReadOnly || actVal === 1);
+      if (document.getElementById('editServiceAddBtn')) document.getElementById('editServiceAddBtn').disabled = (isReadOnly || actVal === 1);
       
-      // 🟢 THE FIX: Force show the REMOVE spans for both Admin AND Superadmin
+      // Remove File buttons only available to Admin+
       document.querySelectorAll('.admin-remove-btn').forEach(btn => {
-          btn.style.display = ((role === 'admin' || role === 'superadmin') && !isReadOnly) ? 'inline-block' : 'none';
+          btn.style.display = (actVal >= 2 && !isReadOnly) ? 'inline-block' : 'none';
       });
       
-      if (isReadOnly) {
+      if (isReadOnly || actVal === 0) {
           document.getElementById('editSubmitBtn').style.display = 'none';
           document.getElementById('editDeleteBtn').style.display = 'none';
           if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = 'none';
@@ -3891,26 +3944,24 @@ function generateSingleEventCard(e) {
           document.getElementById('editSubmitBtn').style.display = 'block';
           document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
           
-          // 🟢 THE FIX: Allow both Admin AND Superadmin to delete projects or add days
-          document.getElementById('editDeleteBtn').style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none';
-          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
+          // Delete and Add Day buttons only available to Admin+
+          document.getElementById('editDeleteBtn').style.display = (actVal >= 2) ? 'block' : 'none';
+          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = (actVal >= 2) ? 'inline-block' : 'none';
       }
   }
 
   function unlockEditModal() {
     const editModalEl = document.getElementById('editEventModal');
     const editModal = bootstrap.Modal.getInstance(editModalEl);
-    
-    // Grab the Document ID of the event we are currently looking at
     const currentDocId = document.getElementById('editFirestoreDocId').value;
     
     editModal.hide();
     
-    // Require auth, then re-run the full openEditModal function so it builds fresh as an Admin!
+    // Ask for at least 'editor' access. If they login as Admin, the loop seamlessly passes them through!
     setTimeout(() => { 
         requireAuth(() => { 
             openEditModal(currentDocId); 
-        }); 
+        }, 'editor'); 
     }, 300); 
 }
 
@@ -4658,26 +4709,22 @@ function generateSingleEventCard(e) {
       });
   }
 
-  // --- EVENT FORM SUBMISSIONS ---
-  
   document.getElementById('eventForm').onsubmit = async (e) => {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
       const ov = document.getElementById('submitOverlay');
+      
       const fd = new FormData(e.target);
       const obj = Object.fromEntries(fd.entries());
-
-      // Put them immediately back to sleep so the Editor UI doesn't visually break
-      disabledElements.forEach(el => el.disabled = true);
-      // -----------------------------------------------------------------------------------------------
       
-      // 🟢 NEW: Capture all service amounts
+      // 🟢 BULLETPROOF CAPTURE: Scrape amounts directly from the DOM
       let serviceAmounts = {};
-      for (let key in obj) {
-          if (key.startsWith('amt_') && obj[key]) {
-              serviceAmounts[key] = parseFloat(obj[key]) || 0;
+      e.target.querySelectorAll('input[name^="amt_"]').forEach(input => {
+          let val = parseFloat(input.value);
+          if (!isNaN(val) && val > 0) {
+              serviceAmounts[input.name] = val;
           }
-      }
+      });
       
       obj.manpower = fd.getAll('manpower');
       let rawServices = fd.getAll('services');
@@ -4742,9 +4789,8 @@ function generateSingleEventCard(e) {
           const newId = await getNextEventId();
           const batch = db.batch(); // Use a Firebase Batch to push everything instantly
 
-          // Loop through our array of dates. If it's a 1-day event, it loops once. If it's a 5-day leave, it loops 5 times!
+          // Loop through our array of dates. If it's a 1-day event, it loops once.
           eventDatesArray.forEach((dateStr, index) => {
-              // The first day gets the exact Event ID. Subsequent days get a unique timestamped ID.
               let docId = (index === 0) ? newId : `${newId}_${Date.now()}_${index}`;
               let docRef = db.collection("dashboard_events").doc(docId);
               
@@ -4790,7 +4836,6 @@ function generateSingleEventCard(e) {
           await batch.commit(); // Execute the bulk upload
           
           // 🟢 NEW: SEND PUSH NOTIFICATIONS (Status Aware) 🟢
-          // Only send notifications if the event is NOT Pencil Booked
           if (obj.eventStatus === 'Confirmed' || obj.eventStatus === 'Cancelled') {
               try {
                   const tokens = [];
@@ -4832,7 +4877,6 @@ function generateSingleEventCard(e) {
           // 🔴 END NEW PUSH LOGIC 🔴
 
           bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide();
-          bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide(); 
           e.target.reset(); 
           document.querySelectorAll('#newCrewContainer .custom-crew-cb').forEach(el => el.remove());
           document.querySelectorAll('#newServicesContainer .custom-service-cb').forEach(el => el.remove());
@@ -6854,7 +6898,8 @@ window.egmConfirm = function(message, title = "Confirm Action", confirmBtnText =
         document.getElementById('globalConfirmMessage').innerHTML = message.replace(/\n/g, '<br>');
         
         const okBtn = document.getElementById('globalConfirmOkBtn');
-        okBtn.className = `btn btn-${confirmBtnColor} fw-bold shadow-sm w-50 rounded-3`;
+        // 🟢 FIX: Added text-nowrap to prevent two-line buttons
+        okBtn.className = `btn btn-${confirmBtnColor} fw-bold shadow-sm w-50 rounded-3 text-nowrap`;
         okBtn.innerText = confirmBtnText;
 
         const modalEl = document.getElementById('globalConfirmModal');
@@ -7743,14 +7788,14 @@ function computeBillingSales() {
         const sdeThird = sde / 3;
         
         // 🟢 JiniCis Rows (T2 Share + SDE Share)
-        htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-muted fw-normal" style="font-size: 0.75rem;">(From T2)</span></td><td class="fw-bold text-success">₱${ji_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${ji_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         if (sdeThird > 0) {
             htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }
         t3_JiniSum += (ji_rest + sdeThird);
 
         // 🟢 TinaLex Rows (T2 Share + SDE Share)
-        htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-muted fw-normal" style="font-size: 0.75rem;">(From T2)</span></td><td class="fw-bold text-success">₱${t_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${t_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         if (sdeThird > 0) {
             htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }
@@ -7783,10 +7828,15 @@ function computeBillingSales() {
     // Wrap the HTML with modern Bootstrap table formatting
     const wrapperClass = "table-responsive border rounded-4 shadow-sm mb-5 bg-white overflow-hidden";
     const tblClass = "table table-hover text-end align-middle mb-0";
-    const headClass = "bg-light text-secondary align-middle"; // Removed text-uppercase
+    const headClass = "bg-light text-secondary align-middle"; 
 
     document.getElementById('bsReportsContainer').innerHTML = `
-        <h5 class="fw-bold text-dark mt-4 mb-3">1. Computation Table</h5>
+        <style>
+            #bsReportsContainer .table { font-size: 0.8rem; }
+            #bsReportsContainer .table th { font-size: 0.75rem; font-weight: 700; }
+        </style>
+        
+        <h5 class="fw-bold text-dark mt-4 mb-3">Summary</h5>
         <div class="${wrapperClass}"><table class="${tblClass}">
             <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Amount Net of VAT</th><th class="border-0">Less VAT</th><th class="border-0">Total Sales (VAT Inc)</th><th class="border-0">Less Withholding</th><th class="border-0">Amount Due</th><th class="border-0">Total Amount Due</th></tr></thead>
             <tbody>
@@ -7796,7 +7846,7 @@ function computeBillingSales() {
             </tbody>
         </table></div>
 
-        <h5 class="fw-bold text-dark mt-4 mb-3">2. "Rest of Services" Distribution</h5>
+        <h5 class="fw-bold text-dark mt-4 mb-3">Distribution</h5>
         <div class="${wrapperClass}"><table class="${tblClass}">
             <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Edgar (${(pE*100).toFixed(0)}%)</th><th class="border-0">JiniCis (${(pJi*100).toFixed(0)}%)</th><th class="border-0">TinaLex (${(pT*100).toFixed(0)}%)</th><th class="border-0">JG (${(pJG*100).toFixed(0)}%)</th><th class="border-0">Total</th></tr></thead>
             <tbody>
@@ -7808,44 +7858,44 @@ function computeBillingSales() {
 
         <div class="row g-4">
             <div class="col-12 col-lg-6">
-                <h5 class="fw-bold text-dark mb-3">3. JiniCis Only</h5>
+                <h5 class="fw-bold text-dark mb-3">JiniCis</h5>
                 <div class="${wrapperClass}"><table class="${tblClass}">
                     <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">JiniCis Share</th></tr></thead>
                     <tbody>
                         ${htmlT3}
                         <tr class="bg-light fw-bold"><td class="text-start text-danger">10% Share</td><td class="text-danger">₱${(t3_JiniSum * 0.10).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total (90%)</td><td class="text-success">₱${(t3_JiniSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${(t3_JiniSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
                 </table></div>
             </div>
 
             <div class="col-12 col-lg-6">
-                <h5 class="fw-bold text-dark mb-3">4. TinaLex Only</h5>
+                <h5 class="fw-bold text-dark mb-3">TinaLex</h5>
                 <div class="${wrapperClass}"><table class="${tblClass}">
                     <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">TinaLex Share</th></tr></thead>
                     <tbody>
                         ${htmlT4}
                         <tr class="bg-light fw-bold"><td class="text-start text-danger">10% Share</td><td class="text-danger">₱${(t4_TinaSum * 0.10).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total (90%)</td><td class="text-success">₱${(t4_TinaSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${(t4_TinaSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
                 </table></div>
             </div>
 
             <div class="col-12 col-lg-6">
-                <h5 class="fw-bold text-dark mb-3">5. JG Only</h5>
+                <h5 class="fw-bold text-dark mb-3">JG</h5>
                 <div class="${wrapperClass}"><table class="${tblClass}">
                     <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">JG Share</th></tr></thead>
                     <tbody>
                         ${htmlT5}
                         <tr class="bg-light fw-bold"><td class="text-start text-danger">10% Share</td><td class="text-danger">₱${(t5_JGSum * 0.10).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr class="bg-light fw-bold"><td class="text-start text-info">90% Share (From Table 2)</td><td class="text-info">₱${(t2_JG - cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-light fw-bold"><td class="text-start text-info">90% Share (From Distribution)</td><td class="text-info">₱${(t2_JG - cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                         <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${((t5_JGSum * 0.90) + (t2_JG - cex_JG)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
                 </table></div>
             </div>
 
             <div class="col-12 col-lg-6">
-                <h5 class="fw-bold text-dark mb-3">6. Created Ex Only</h5>
+                <h5 class="fw-bold text-dark mb-3">Created Ex</h5>
                 <div class="${wrapperClass}"><table class="${tblClass}">
                     <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Created Expenses Share</th></tr></thead>
                     <tbody>
