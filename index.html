@@ -7880,22 +7880,22 @@ function computeBillingSales() {
                     <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm" onclick="addTransferRow()"><i class="bi bi-plus-lg me-1"></i> ADD CUSTOM ROW</button>
                 </div>
 
-                <div class="bg-primary bg-opacity-10 p-3 rounded-3 border border-primary border-opacity-25 mb-3 shadow-sm">
+                <div class="card p-3 mb-3 shadow-sm bg-light border-secondary-subtle">
                     <h6 class="fw-bold mb-3 text-primary" style="font-size: 0.85rem;"><i class="bi bi-arrow-left-right me-2"></i>Manual Fund Adjustments</h6>
                     <div class="row g-2 align-items-end">
                         <div class="col-12 col-md-4">
-                            <label class="form-label-sm text-dark">From Account (Subtract)</label>
+                            <label class="form-label-sm text-secondary">From Account (Subtract)</label>
                             <select id="t7_adjFrom" class="form-select form-select-sm fw-bold"></select>
                         </div>
                         <div class="col-12 col-md-4">
-                            <label class="form-label-sm text-dark">To Account (Add)</label>
+                            <label class="form-label-sm text-secondary">To Account (Add)</label>
                             <select id="t7_adjTo" class="form-select form-select-sm fw-bold"></select>
                         </div>
                         <div class="col-12 col-md-3">
-                            <label class="form-label-sm text-dark">Amount</label>
+                            <label class="form-label-sm text-secondary">Amount</label>
                             <div class="input-group input-group-sm shadow-sm">
                                 <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
-                                <input type="number" id="t7_adjAmt" class="form-control fw-bold text-primary border-start-0" placeholder="0.00">
+                                <input type="number" id="t7_adjAmt" class="form-control fw-bold text-success border-start-0" placeholder="0.00" onkeyup="if(event.key === 'Enter') applyT7Adjustment();">
                             </div>
                         </div>
                         <div class="col-12 col-md-1">
@@ -7998,9 +7998,9 @@ function computeBillingSales() {
         if (t7_data.adjustments.length === 0) {
             logDiv.innerHTML = '';
         } else {
-            let logHtml = '<div class="d-flex flex-wrap gap-2">';
+            let logHtml = '<div class="d-flex flex-wrap gap-2 mt-1">';
             t7_data.adjustments.forEach((adj, i) => {
-                logHtml += `<span class="badge bg-white border border-primary text-dark shadow-sm p-2 d-flex align-items-center">
+                logHtml += `<span class="badge bg-white border border-secondary-subtle text-dark shadow-sm p-2 d-flex align-items-center">
                     <span class="text-danger me-1">${adj.from}</span> <i class="bi bi-arrow-right text-muted mx-1"></i> <span class="text-success ms-1">${adj.to}</span>
                     <strong class="ms-2">₱${adj.amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</strong>
                     <i class="bi bi-x ms-2 text-muted" style="cursor:pointer; font-size:1.1rem;" onclick="removeT7Adjustment(${i})"></i>
