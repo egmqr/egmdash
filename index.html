@@ -7776,9 +7776,14 @@ function computeBillingSales() {
     // Wrap the HTML with modern Bootstrap table formatting
     const wrapperClass = "table-responsive border rounded-4 shadow-sm mb-5 bg-white overflow-hidden";
     const tblClass = "table table-hover text-end align-middle mb-0";
-    const headClass = "bg-light text-secondary align-middle"; // Removed text-uppercase
+    const headClass = "bg-light text-secondary align-middle"; 
 
     document.getElementById('bsReportsContainer').innerHTML = `
+        <style>
+            #bsReportsContainer .table { font-size: 0.8rem; }
+            #bsReportsContainer .table th { font-size: 0.75rem; font-weight: 700; }
+        </style>
+        
         <h5 class="fw-bold text-dark mt-4 mb-3">1. Computation Table</h5>
         <div class="${wrapperClass}"><table class="${tblClass}">
             <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Amount Net of VAT</th><th class="border-0">Less VAT</th><th class="border-0">Total Sales (VAT Inc)</th><th class="border-0">Less Withholding</th><th class="border-0">Amount Due</th><th class="border-0">Total Amount Due</th></tr></thead>
