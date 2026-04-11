@@ -638,8 +638,16 @@
         </div>
       </div>
       <div class="filter-panel" id="paymentFilters" style="display:none;">
-        <div class="row g-2 align-items-end">
-          <div class="col-12 col-md-3"><span class="form-label-sm">ID/Event Name</span><input type="text" id="fPaySearch" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
+       <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-3">
+              <span class="form-label-sm">ID/Event Name</span>
+              <div class="input-group input-group-sm">
+                  <input type="text" id="fPaySearch" class="form-control border-end-0" placeholder="Search..." onkeyup="handlePaySearch()">
+                  <button class="btn btn-light border border-start-0 border-secondary-subtle text-danger px-2" type="button" onclick="document.getElementById('fPaySearch').value=''; handlePaySearch();" title="Clear">
+                      <i class="bi bi-x-lg" style="font-size: 0.75rem;"></i>
+                  </button>
+              </div>
+          </div>
           <div class="col-6 col-md-2"><span class="form-label-sm">GR / Invoice #</span><input type="text" id="fGrInv" class="form-control form-control-sm" placeholder="Search..." onkeyup="applyFilters()"></div>
           <div class="col-6 col-md-2"><span class="form-label-sm">Payment Type</span><select id="fPayType" class="form-select form-select-sm" onchange="updateFilterStatuses(); applyFilters()">
     <option value="">All Types</option>
@@ -3203,9 +3211,24 @@ function handleEqSearch() {
       renderEditingQueue(rawEvents);
   }
 
+  function handlePaySearch() {
+      const searchBox = document.getElementById('fPaySearch');
+      const grInvBox = document.getElementById('fGrInv');
+      const typeFilter = document.getElementById('fPayType');
+      const statusFilter = document.getElementById('fBillStatus');
+      
+      // Visually reset other fields when typing in the main search box
+      if (searchBox && searchBox.value.trim().length > 0) {
+          if (grInvBox) grInvBox.value = '';
+          if (typeFilter) typeFilter.value = '';
+          if (statusFilter) statusFilter.value = 'Unpaid';
+      }
+      applyFilters();
+  }
+
   function applyFilters() {
-    const todayDate = new Date();
-    const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
+  const todayDate = new Date();
+  const todayStr = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
     let url = new URL(window.location);
     // Scrub Facebook tracking garbage from the URL
     url.searchParams.delete('fbclid');
@@ -3257,24 +3280,25 @@ function handleEqSearch() {
       window.history.replaceState({}, '', url);
 
     } else if (currentTab === 'payments') {
-      const q=document.getElementById('fPaySearch').value.toLowerCase(), 
-            grInv=document.getElementById('fGrInv').value.toLowerCase(),
-            t=document.getElementById('fPayType').value, 
-            s=document.getElementById('fBillStatus').value;
-            
-      if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
-      if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
-      if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
-      
-      if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed', 'Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Pending', 'Pending Clearance'].includes(e['Billing Status'])); } 
+    const q=document.getElementById('fPaySearch').value.toLowerCase().trim(), 
+          grInv=document.getElementById('fGrInv').value.toLowerCase().trim(),
+          t=document.getElementById('fPayType').value, 
+          s=document.getElementById('fBillStatus').value;
+          
+    if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
+    if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
+    
+    // 🟢 NEW: If searching by ID/Name (q), bypass the Payment Type, Billing Status, and Cancelled/Pencil filters entirely!
+    if (!q) {
+        if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
+        
+        if(s === 'Unpaid') { filtered = filtered.filter(e => ['GR Pending', 'GR Received', 'GR Processed', 'Pending Invoice', 'Invoice Uploaded', 'Invoice Sent', 'Pending', 'Pending Clearance'].includes(e['Billing Status'])); } 
         else if(s) { filtered = filtered.filter(e => e['Billing Status'] === s); }
 
-        // 🟢 FIX: Hide Cancelled & Pencil Booked from all filters EXCEPT when strictly searching by ID/Name (q)
-        if (!q) {
-            filtered = filtered.filter(e => e['Event Status'] !== 'Cancelled' && e['Event Status'] !== 'Pencil Booked');
-        }
-        
-        renderPayments(filtered);
+        filtered = filtered.filter(e => e['Event Status'] !== 'Cancelled' && e['Event Status'] !== 'Pencil Booked');
+    }
+    
+    renderPayments(filtered);
       
       url.searchParams.set('tab', 'payments');
       if(q) url.searchParams.set('q', q); else url.searchParams.delete('q');
