@@ -3427,17 +3427,19 @@ function handleEqSearch() {
       applyFilters(); 
   }
 }
-// Smart router for Edit buttons
+
+  // Smart router for Edit buttons
 function handleEditClick(docId) {
-    // We let them open the modal directly. 
-    // The "openEditModal" function will instantly calculate if they are View-Only, Editor, or Admin, and lock fields dynamically!
-    const cardModalEl = document.getElementById('eventCardModal');
-    if (cardModalEl && cardModalEl.classList.contains('show')) {
-        bootstrap.Modal.getInstance(cardModalEl).hide();
-        setTimeout(() => openEditModal(docId), 350);
-    } else {
-        openEditModal(docId);
-    }
+    // 🟢 NEW: Strictly require at least 'editor' access BEFORE opening the modal!
+    requireAuth(() => {
+        const cardModalEl = document.getElementById('eventCardModal');
+        if (cardModalEl && cardModalEl.classList.contains('show')) {
+            bootstrap.Modal.getInstance(cardModalEl).hide();
+            setTimeout(() => openEditModal(docId), 350);
+        } else {
+            openEditModal(docId);
+        }
+    }, 'editor');
 }
 
 // Smart router for Calendar Pills
@@ -3905,10 +3907,9 @@ function generateSingleEventCard(e) {
 
   
 
-  function setEditFormState(isReadOnly) {
-      const role = getUserRole();
+  function setEditFormState() {
       const isExpired = !localStorage.getItem('egm_auth_exp') || Date.now() > parseInt(localStorage.getItem('egm_auth_exp'));
-      const activeRole = (!isExpired) ? role : null;
+      const activeRole = (!isExpired) ? getUserRole() : null;
       const actVal = getRoleValue(activeRole);
       
       const form = document.getElementById('editForm');
@@ -3917,53 +3918,29 @@ function generateSingleEventCard(e) {
       allElements.forEach(el => {
           if(el.id === 'themeToggleBtn' || el.id === 'editSubmitBtn' || el.classList.contains('btn-close')) return;
           
-          if (isReadOnly || actVal === 0) {
-              el.disabled = true; // Non-admin/Unauthenticated: All disabled
-          } else if (actVal === 1) { // Editor
+          if (actVal === 1) { // Editor
               if (el.classList.contains('editor-field')) el.disabled = false;
               else el.disabled = true;
-          } else { // Admin (2) & Superadmin (3)
+          } else if (actVal >= 2) { // Admin (2) & Superadmin (3)
               el.disabled = false; 
           }
       });
 
-      if (document.getElementById('editCrewAddBtn')) document.getElementById('editCrewAddBtn').disabled = (isReadOnly || actVal === 1);
-      if (document.getElementById('editServiceAddBtn')) document.getElementById('editServiceAddBtn').disabled = (isReadOnly || actVal === 1);
+      if (document.getElementById('editCrewAddBtn')) document.getElementById('editCrewAddBtn').disabled = (actVal === 1);
+      if (document.getElementById('editServiceAddBtn')) document.getElementById('editServiceAddBtn').disabled = (actVal === 1);
       
       // Remove File buttons only available to Admin+
       document.querySelectorAll('.admin-remove-btn').forEach(btn => {
-          btn.style.display = (actVal >= 2 && !isReadOnly) ? 'inline-block' : 'none';
+          btn.style.display = (actVal >= 2) ? 'inline-block' : 'none';
       });
       
-      if (isReadOnly || actVal === 0) {
-          document.getElementById('editSubmitBtn').style.display = 'none';
-          document.getElementById('editDeleteBtn').style.display = 'none';
-          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = 'none';
-          document.getElementById('editAuthWarning').style.setProperty('display', 'flex', 'important');
-      } else {
-          document.getElementById('editSubmitBtn').style.display = 'block';
-          document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
-          
-          // Delete and Add Day buttons only available to Admin+
-          document.getElementById('editDeleteBtn').style.display = (actVal >= 2) ? 'block' : 'none';
-          if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = (actVal >= 2) ? 'inline-block' : 'none';
-      }
+      document.getElementById('editSubmitBtn').style.display = 'block';
+      if(document.getElementById('editAuthWarning')) document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
+      
+      // Delete and Add Day buttons only available to Admin+
+      document.getElementById('editDeleteBtn').style.display = (actVal >= 2) ? 'block' : 'none';
+      if(document.getElementById('editModalAddDayBtn')) document.getElementById('editModalAddDayBtn').style.display = (actVal >= 2) ? 'inline-block' : 'none';
   }
-
-  function unlockEditModal() {
-    const editModalEl = document.getElementById('editEventModal');
-    const editModal = bootstrap.Modal.getInstance(editModalEl);
-    const currentDocId = document.getElementById('editFirestoreDocId').value;
-    
-    editModal.hide();
-    
-    // Ask for at least 'editor' access. If they login as Admin, the loop seamlessly passes them through!
-    setTimeout(() => { 
-        requireAuth(() => { 
-            openEditModal(currentDocId); 
-        }, 'editor'); 
-    }, 300); 
-}
 
   function openPaymentDocModal(eventId, docType, isOverwrite = false) {
       document.getElementById('upPayEventId').value = eventId;
@@ -4476,10 +4453,10 @@ function generateSingleEventCard(e) {
         if (document.getElementById('editEditedStamp')) document.getElementById('editEditedStamp').innerText = e['Edited Timestamp'] || '';
         // --------------------------------
 
-       // Lock the payment block if: it's an Added Day, the user is an Editor, or the user is View-Only
+       // Lock the payment block if: it's an Added Day or the user is an Editor
         const paymentBlockSection = document.getElementById('editPaymentFields');
         paymentBlockSection.style.display = 'block'; // Always show it
-        if (!isMainDay || role === 'editor' || isReadOnly) {
+        if (!isMainDay || role === 'editor') {
             paymentBlockSection.style.opacity = '0.5';
             paymentBlockSection.style.pointerEvents = 'none'; // Kills all clicks, including links!
         } else {
@@ -4525,18 +4502,13 @@ function generateSingleEventCard(e) {
             bootstrap.Modal.getInstance(document.getElementById('editEventModal')).hide();
             setTimeout(() => requireAuth(() => openAddDayModal(id)), 300);
         };
-        // Hide the button if they are in View-Only mode
-        editModalAddDayBtn.style.display = isReadOnly ? 'none' : 'inline-block';
     }
-    // Ensure the modal state matches Firebase Auth
-    setEditFormState(isReadOnly);
     
-    // THE FIX: If they try to open an edit modal from the list and aren't logged in,
-    // the requireAuth() used in the button will handle it. 
-    // If they come from the Calendar (View-Only mode), this shows the warning.
-    if (isReadOnly) {
-        document.getElementById('editAuthWarning').style.setProperty('display', 'flex', 'important');
-    } else {
+    // Ensure the modal state matches Firebase Auth
+    setEditFormState();
+    
+    // Ensure the legacy View-Only warning banner is hidden
+    if (document.getElementById('editAuthWarning')) {
         document.getElementById('editAuthWarning').style.setProperty('display', 'none', 'important');
     }
     
