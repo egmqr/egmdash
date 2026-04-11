@@ -6900,7 +6900,8 @@ window.egmConfirm = function(message, title = "Confirm Action", confirmBtnText =
         document.getElementById('globalConfirmMessage').innerHTML = message.replace(/\n/g, '<br>');
         
         const okBtn = document.getElementById('globalConfirmOkBtn');
-        okBtn.className = `btn btn-${confirmBtnColor} fw-bold shadow-sm w-50 rounded-3`;
+        // 🟢 FIX: Added text-nowrap to prevent two-line buttons
+        okBtn.className = `btn btn-${confirmBtnColor} fw-bold shadow-sm w-50 rounded-3 text-nowrap`;
         okBtn.innerText = confirmBtnText;
 
         const modalEl = document.getElementById('globalConfirmModal');
