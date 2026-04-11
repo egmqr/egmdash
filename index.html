@@ -7872,7 +7872,80 @@ function computeBillingSales() {
                 </table></div>
             </div>
         </div>
+
+        <div class="row mt-2 mb-5">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-end mb-3">
+                    <h5 class="fw-bold text-dark mb-0">Fund Transfers</h5>
+                    <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm" onclick="addTransferRow()"><i class="bi bi-plus-lg me-1"></i> ADD CUSTOM ROW</button>
+                </div>
+                <div class="${wrapperClass}"><table class="${tblClass}">
+                    <thead class="${headClass}">
+                        <tr><th class="text-start border-0">Account</th><th class="border-0">Account Number</th><th class="border-0 text-end" style="width: 200px;">Amount</th></tr>
+                    </thead>
+                    <tbody id="t7_body">
+                        <tr><td class="text-start fw-bold">Created PB</td><td>4053 0993 14</td><td class="fw-bold text-success text-end pe-3">₱${t1_totalDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr><td class="text-start fw-bold">Created Expenses</td><td>4059 5833 31</td><td class="fw-bold text-success text-end pe-3">₱${(t6_TranspoSum + taxIncome + cex_E + (t3_JiniSum * 0.10) + (t4_TinaSum * 0.10) + (t5_JGSum * 0.10) + cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr><td class="text-start fw-bold">JiniCis</td><td>4099 5620 94</td><td class="fw-bold text-success text-end pe-3">₱${(t3_JiniSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr><td class="text-start fw-bold">TinaLex</td><td>4059 5957 47</td><td class="fw-bold text-success text-end pe-3">₱${(t4_TinaSum * 0.90).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr>
+                            <td class="text-start fw-bold">JG ATM</td>
+                            <td>4099 5255 34</td>
+                            <td class="fw-bold text-success text-end pe-3" id="t7_jgAtmText">
+                                ₱${((t5_JGSum * 0.90) + (t2_JG - cex_JG)).toLocaleString(undefined, {minimumFractionDigits: 2})}
+                                <input type="hidden" id="t7_jgBase" value="${((t5_JGSum * 0.90) + (t2_JG - cex_JG))}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-start fw-bold align-middle">JG PB</td>
+                            <td class="align-middle">4053 0993 06</td>
+                            <td class="p-2">
+                                <div class="input-group input-group-sm justify-content-end shadow-sm">
+                                    <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
+                                    <input type="number" id="t7_jgPbInput" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00" oninput="updateJgAtm()">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr><td class="text-start fw-bold">EGM</td><td>Cash</td><td class="fw-bold text-success text-end pe-3">₱${(t2_E - cex_E).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr>
+                            <td class="p-2"><input type="text" class="form-control form-control-sm fw-bold" placeholder="Account Name"></td>
+                            <td class="p-2"><input type="text" class="form-control form-control-sm" placeholder="Account Number"></td>
+                            <td class="p-2">
+                                <div class="input-group input-group-sm justify-content-end shadow-sm">
+                                    <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
+                                    <input type="number" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00">
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table></div>
+            </div>
+        </div>
     `;
+
+    // 🟢 Attach global JS helpers for Table 7 interactivity
+    window.updateJgAtm = function() {
+        const base = parseFloat(document.getElementById('t7_jgBase').value) || 0;
+        const pb = parseFloat(document.getElementById('t7_jgPbInput').value) || 0;
+        const newTotal = base - pb;
+        document.getElementById('t7_jgAtmText').childNodes[0].nodeValue = '₱' + newTotal.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ';
+    };
+
+    window.addTransferRow = function() {
+        const tbody = document.getElementById('t7_body');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="p-2"><input type="text" class="form-control form-control-sm fw-bold" placeholder="Account Name"></td>
+            <td class="p-2"><input type="text" class="form-control form-control-sm" placeholder="Account Number"></td>
+            <td class="p-2">
+                <div class="input-group input-group-sm justify-content-end shadow-sm">
+                    <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
+                    <input type="number" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00">
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    };
 }
 </script>
 </body>
