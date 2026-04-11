@@ -2564,16 +2564,8 @@ async function subscribeToNotifications() {
       }
   }
 
-  async function requestAccessLoop(requiredRole, actionFunction) {
+  function requestAccessLoop(requiredRole, actionFunction) {
       const displayRole = requiredRole.charAt(0).toUpperCase() + requiredRole.slice(1);
-      const wantsToProceed = await window.egmConfirm(
-          `${displayRole} access is required. Would you like to enter the password or switch accounts?`, 
-          "Access Restricted", 
-          "Enter Password", 
-          "primary"
-      );
-
-      if (!wantsToProceed) return; // Exit if they hit Cancel
 
       pendingAuthAction = () => {
           const newRole = getUserRole();
@@ -2589,6 +2581,13 @@ async function subscribeToNotifications() {
 
       document.getElementById('authPassword').value = '';
       document.getElementById('authError').style.display = 'none';
+      
+      // Update the password modal's text to show exactly what access is needed!
+      const authPromptText = document.querySelector('#authModal .text-muted');
+      if (authPromptText) {
+          authPromptText.innerText = `${displayRole} access is required to proceed.`;
+      }
+      
       bootstrap.Modal.getOrCreateInstance(document.getElementById('authModal')).show();
       setTimeout(() => document.getElementById('authPassword').focus(), 500);
   }
