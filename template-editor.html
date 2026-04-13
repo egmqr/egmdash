@@ -21,7 +21,7 @@
         .app-container { display: flex; height: 100vh; width: 100vw; }
         
         /* Left: Canvas Area */
-        .canvas-area { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--bg-canvas-wrapper); border-right: 1px solid var(--border-color); position: relative; overflow: auto; padding: 20px; }
+        .canvas-area { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--bg-canvas-wrapper); border-right: 1px solid var(--border-color); position: relative; overflow: hidden; padding: 20px; }
         .back-btn { position: absolute; top: 20px; left: 20px; background: #333333; color: white; border: none; padding: 15px 20px; font-size: 16px; font-weight: bold; cursor: pointer; z-index: 10; border-radius: 4px; }
         .back-btn:hover { background: #444444; }
         
@@ -379,8 +379,26 @@
             }
         } else {
             // Dragging
-            l.X = Math.round(dragState.startLeft + dx);
-            l.Y = Math.round(dragState.startTop + dy);
+            let newX = Math.round(dragState.startLeft + dx);
+            let newY = Math.round(dragState.startTop + dy);
+            const snapThreshold = 20.0;
+
+            // Snap X (Left and Right edges)
+            if (Math.abs(newX) < snapThreshold) {
+                newX = 0;
+            } else if (Math.abs((newX + l.Width) - templateState.CanvasWidth) < snapThreshold) {
+                newX = Math.round(templateState.CanvasWidth - l.Width);
+            }
+
+            // Snap Y (Top and Bottom edges)
+            if (Math.abs(newY) < snapThreshold) {
+                newY = 0;
+            } else if (Math.abs((newY + l.Height) - templateState.CanvasHeight) < snapThreshold) {
+                newY = Math.round(templateState.CanvasHeight - l.Height);
+            }
+
+            l.X = newX;
+            l.Y = newY;
         }
 
         applyTransform(l.domElement, l);
