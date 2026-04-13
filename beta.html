@@ -3583,7 +3583,7 @@ function generateSingleEventCard(e) {
     </div>`;
 }
 
-// 🟢 UNIFIED OCR SCANNER & UPLOADER 🟢
+// 🟢 UNIFIED OCR SCANNER & UPLOADER (With Filename Verification) 🟢
 async function uploadAndScanInvoice(prefix) {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -3598,23 +3598,51 @@ async function uploadAndScanInvoice(prefix) {
         ov.style.display = 'flex';
 
         let finalInvoiceNum = "";
+        let ocrNum = "";
+        let fileNum = "";
+        let toastMsg = "";
+        let toastType = "success";
 
         try {
-            // --- 1. OCR SCANNING ---
+            // --- 1. FILENAME EXTRACTION (For Verification & Fallback) ---
+            // Grabs the last 3 digits of the filename before the extension
+            const baseName = file.name.substring(0, file.lastIndexOf('.')) || file.name;
+            const allFileDigits = baseName.replace(/\D/g, ''); // Strips all letters/symbols
+            if (allFileDigits.length >= 3) {
+                fileNum = allFileDigits.slice(-3); // Keeps only the last 3 digits
+            } else if (allFileDigits.length > 0) {
+                fileNum = allFileDigits;
+            }
+
+            // --- 2. OCR SCANNING ---
             const result = await Tesseract.recognize(file, 'eng');
             const scannedText = result.data.text;
             
-            // 🟢 THE FIX: Ultra-forgiving Regex! 
-            // 1. Ignores the "No." prefix completely.
-            // 2. Hunts for ANY standalone 4-digit number starting with a zero (or the letter 'O').
+            // Hunts for ANY standalone 4-digit number starting with a zero (or 'O')
             const match = scannedText.match(/\b([0O]\d{3})\b/i); 
-            
             if (match && match[1]) {
-                // Grab the 4 characters, chop off the first one (0 or O), and keep the remaining 3 digits!
-                finalInvoiceNum = match[1].substring(1); 
+                ocrNum = match[1].substring(1); 
             }
 
-            // --- 2. AUTO UPLOAD TO DRIVE ---
+            // --- 3. VERIFICATION LOGIC ---
+            if (ocrNum && fileNum) {
+                if (ocrNum === fileNum) {
+                    finalInvoiceNum = ocrNum;
+                    toastMsg = `Verified! Scan (${ocrNum}) perfectly matches filename.`;
+                } else {
+                    finalInvoiceNum = ocrNum; // Trust the OCR's specific pattern over random filenames
+                    toastMsg = `Warning: OCR found ${ocrNum}, but filename ends in ${fileNum}.`;
+                    toastType = "warning";
+                }
+            } else if (ocrNum) {
+                finalInvoiceNum = ocrNum;
+                toastMsg = `Scanned successfully: ${finalInvoiceNum}`;
+            } else if (fileNum) {
+                finalInvoiceNum = fileNum;
+                toastMsg = `OCR missed, but safely grabbed ${finalInvoiceNum} from filename!`;
+            }
+
+            // --- 4. AUTO UPLOAD TO DRIVE ---
             const b64Data = await readFileAsBase64(file);
             
             const uploadRes = await callApi({
@@ -3656,15 +3684,14 @@ async function uploadAndScanInvoice(prefix) {
                     numInput.disabled = false; 
                 }
 
+                // Fire the dynamic Verification/Fallback Toast message
                 if (finalInvoiceNum) {
-                    showToast(`Invoice ${finalInvoiceNum} uploaded and linked!`, "success");
+                    showToast(toastMsg, toastType);
                 } else {
-                    showToast("Uploaded successfully, but couldn't detect the number. Please enter it manually.", "warning");
+                    showToast("Uploaded successfully, but couldn't detect the number from OCR or filename.", "warning");
                 }
             } else {
-                // 🟢 THE FIX: Safely check if uploadRes exists before reading its properties!
-                const errMsg = uploadRes ? (uploadRes.error || "Unknown error") : "Check if Apps Script backend is deployed.";
-                // Note: callApi already shows an alert if it returns null, so we only alert if we have a specific uploadRes error.
+                const errMsg = uploadRes ? (uploadRes.error || "Unknown error") : "Check if Apps Script backend is deployed as a New Version.";
                 if (uploadRes) {
                     egmAlert("Upload failed: " + errMsg);
                 }
