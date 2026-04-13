@@ -166,9 +166,17 @@
     const designCanvas = document.getElementById('designCanvas');
     const canvasWrapper = document.getElementById('canvasWrapper');
 
-    // --- INITIALIZATION ---
+    // --- LOAD & SAVE MECHANISMS ---
     function init() {
-        updateCanvasSize();
+        // 🟢 NEW: Check if Dashboard passed a template to edit
+        const templateToEditStr = localStorage.getItem('egm_template_to_edit');
+        if (templateToEditStr) {
+            const loadedTemplate = JSON.parse(templateToEditStr);
+            loadTemplateData(loadedTemplate);
+            localStorage.removeItem('egm_template_to_edit');
+        } else {
+            updateCanvasSize();
+        }
         
         canvasWrapper.addEventListener('mousedown', (e) => {
             if (e.target === canvasWrapper || e.target === designCanvas) {
@@ -176,7 +184,6 @@
             }
         });
 
-        // 🟢 Wire up global resize handles
         document.querySelectorAll('.resize-handle').forEach(handle => {
             handle.addEventListener('mousedown', (e) => {
                 if (!selectedLayerId) return;
@@ -187,7 +194,45 @@
             });
         });
     }
+function loadTemplateData(data) {
+        templateState.Name = data.Name;
+        templateState.CanvasWidth = data.CanvasWidth;
+        templateState.CanvasHeight = data.CanvasHeight;
+        
+        document.getElementById('txtCanvasWidth').value = data.CanvasWidth;
+        document.getElementById('txtCanvasHeight').value = data.CanvasHeight;
+        document.getElementById('cmbCanvasPreset').value = "Custom";
+        handlePresetChange();
 
+        designCanvas.innerHTML = '<div id="selectionOverlay"><div class="resize-handle handle-nw" data-pos="nw"></div><div class="resize-handle handle-ne" data-pos="ne"></div><div class="resize-handle handle-sw" data-pos="sw"></div><div class="resize-handle handle-se" data-pos="se"></div></div>';
+        templateState.Layers = [];
+
+        // Reverse back to DOM Top-to-Bottom mapping
+        const layersToLoad = [...data.Layers].reverse();
+
+        layersToLoad.forEach((l, index) => {
+            const layerData = {
+                id: generateId(),
+                LayerType: l.LayerType,
+                DisplayName: l.DisplayName,
+                Width: l.Width, Height: l.Height, X: l.X, Y: l.Y, Rotation: l.Rotation,
+                isLocked: false, ImagePath: l.ImagePath
+            };
+            
+            if (l.LayerType === 'PhotoSlot') {
+                const theme = getSlotTheme(index);
+                layerData.themeBg = theme.bg; layerData.themeBorder = theme.border;
+            }
+            createDOMElement(layerData);
+            templateState.Layers.push(layerData);
+        });
+
+        refreshLayers();
+        if (templateState.Layers.length > 0) selectLayer(templateState.Layers[0].id);
+        
+        // Re-wire selection overlay
+        init(); 
+    }
     // --- CANVAS SIZING ---
     function handlePresetChange() {
         const val = document.getElementById('cmbCanvasPreset').value;
@@ -618,36 +663,32 @@
         selectLayer(templateState.Layers.length > 0 ? templateState.Layers[0].id : null);
     }
 
-    // --- EXPORT TO MATCH C# JSON ---
     function saveTemplate() {
-        // Strip out web-specific data (DOM elements, internal IDs) to match C# PrintTemplate exactly
+        // 🟢 Prompt for Name
+        let templateName = prompt("Enter template name:", templateState.Name || "New_Template");
+        if (!templateName) return; // User cancelled
+
+        templateState.Name = templateName;
+
         const exportData = {
+            Name: templateName,
             CanvasWidth: templateState.CanvasWidth,
             CanvasHeight: templateState.CanvasHeight,
             Layers: templateState.Layers.map(l => ({
                 LayerType: l.LayerType,
-                DisplayName: l.DisplayName.replace('🔒 ', ''), // Clean name
-                ImagePath: l.LayerType === 'ImageLayer' ? l.ImagePath : null,
-                Width: l.Width,
-                Height: l.Height,
                 X: l.X,
                 Y: l.Y,
-                Rotation: l.Rotation
-            })).reverse() // C# expects bottom layer first, our array is top layer first
+                Width: l.Width,
+                Height: l.Height,
+                ImagePath: l.LayerType === 'ImageLayer' ? l.ImagePath : null,
+                Rotation: l.Rotation,
+                DisplayName: l.DisplayName.replace('🔒 ', '')
+            })).reverse() // Format exactly for C# / Engine
         };
 
-        const jsonStr = JSON.stringify(exportData, null, 2);
-        
-        // Trigger file download
-        const blob = new Blob([jsonStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Template_${new Date().getTime()}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // 🟢 Send to Dashboard via Bridge & Close Window
+        localStorage.setItem('egm_saved_template', JSON.stringify(exportData));
+        window.close();
     }
 
     // Boot up
