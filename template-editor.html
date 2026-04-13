@@ -549,11 +549,21 @@
         const layer = templateState.Layers.find(l => l.id === selectedLayerId);
         if (!layer || layer.isLocked) return;
 
+        const lockRatio = (layer.LayerType === 'PhotoSlot') || document.getElementById('chkLockAspectRatio').checked;
+        const currentRatio = layer.Width / layer.Height;
+
         layer.X = 0;
         layer.Y = 0;
-        layer.Width = templateState.CanvasWidth;
-        layer.Height = templateState.CanvasHeight;
         layer.Rotation = 0;
+
+        // 🟢 THE FIX: If locked or a Photo Slot, scale the width to 100% and calculate the height.
+        if (lockRatio) {
+            layer.Width = templateState.CanvasWidth;
+            layer.Height = Math.round(templateState.CanvasWidth / currentRatio);
+        } else {
+            layer.Width = templateState.CanvasWidth;
+            layer.Height = templateState.CanvasHeight;
+        }
 
         applyTransform(layer.domElement, layer);
         syncPropertyPanel(layer);
