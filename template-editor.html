@@ -697,27 +697,13 @@ function loadTemplateData(data) {
             })).reverse() // Format exactly for Engine
         };
 
-        // 🟢 1. Save to Local Computer
-        // 🟢 THE FIX: Removed the "null, 2" formatting. This creates a minified JSON, saving huge amounts of memory.
-        const jsonString = JSON.stringify(exportData); 
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `${templateName.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`; // Safe filename
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-
-        // 🟢 2. Bridge to Dashboard Listbox
+        // 🟢 Bridge to Dashboard Listbox (Direct RAM transfer only)
         if (window.opener && window.opener.receiveTemplateFromEditor) {
             window.opener.receiveTemplateFromEditor(exportData);
         }
         
-        // Slight delay to ensure the browser successfully starts the download before closing the window
-        setTimeout(() => {
-            window.close();
-        }, 300);
+        // Close the window instantly
+        window.close();
     }
 
     // Boot up
