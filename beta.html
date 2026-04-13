@@ -2867,6 +2867,10 @@ function handleAddCustomService(inputId, containerId) {
         if (amtGrp) amtGrp.style.display = 'block'; 
         if (statGrp) statGrp.style.display = 'block'; 
         if (invUpGrp) invUpGrp.style.display = 'block';
+        
+        // 🟢 THE FIX: Ensure the text field group (billGrp) is visible for ORCR types
+        if (billGrp) billGrp.style.display = 'block'; 
+        
         if (type === 'Check ORCR' && chkUpGrp) chkUpGrp.style.display = 'block';
         if (statusSel) statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="Invoice Sent">Invoice Sent</option><option value="Paid">Paid</option>';
     } else if (type === 'Billing') {
