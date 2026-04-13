@@ -664,31 +664,45 @@ function loadTemplateData(data) {
     }
 
     function saveTemplate() {
-        // 🟢 Prompt for Name
-        let templateName = prompt("Enter template name:", templateState.Name || "New_Template");
-        if (!templateName) return; // User cancelled
+        let templateName = prompt("Enter template name:", templateState.Name || "multi-port");
+        if (!templateName) return; 
 
         templateState.Name = templateName;
 
         const exportData = {
             Name: templateName,
-            CanvasWidth: templateState.CanvasWidth,
-            CanvasHeight: templateState.CanvasHeight,
+            CanvasWidth: Math.round(templateState.CanvasWidth),
+            CanvasHeight: Math.round(templateState.CanvasHeight),
             Layers: templateState.Layers.map(l => ({
                 LayerType: l.LayerType,
-                X: l.X,
-                Y: l.Y,
-                Width: l.Width,
-                Height: l.Height,
+                X: Math.round(l.X),
+                Y: Math.round(l.Y),
+                Width: Math.round(l.Width),
+                Height: Math.round(l.Height),
                 ImagePath: l.LayerType === 'ImageLayer' ? l.ImagePath : null,
-                Rotation: l.Rotation,
+                Rotation: Math.round(l.Rotation),
                 DisplayName: l.DisplayName.replace('🔒 ', '')
-            })).reverse() // Format exactly for C# / Engine
+            })).reverse() // Format exactly for Engine
         };
 
-        // 🟢 Send to Dashboard via Bridge & Close Window
+        // 🟢 1. Save to Local Computer
+        const jsonString = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${templateName.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`; // Safe filename
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+
+        // 🟢 2. Bridge to Dashboard Listbox
         localStorage.setItem('egm_saved_template', JSON.stringify(exportData));
-        window.close();
+        
+        // Slight delay to ensure the browser successfully starts the download before closing the window
+        setTimeout(() => {
+            window.close();
+        }, 300);
     }
 
     // Boot up
