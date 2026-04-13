@@ -344,6 +344,10 @@
     function handleMouseDown(e, layer, isGlobalResize = false, handlePos = null) {
         if (layer.isLocked) return;
         e.stopPropagation();
+        
+        // 🟢 THE FIX: Prevent the browser from starting a native text/image drag!
+        e.preventDefault(); 
+        
         selectLayer(layer.id);
 
         dragState = {
