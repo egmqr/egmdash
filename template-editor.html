@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Layout Editor</title>
+    <style>
+        /* Base Dark Theme replicating WPF setup */
+        :root {
+            --bg-main: #222222;
+            --bg-panel: #1A1A1A;
+            --bg-canvas-wrapper: #111111;
+            --border-color: #444444;
+            --text-main: #FFFFFF;
+            --text-muted: #AAAAAA;
+            --accent: #007ACC;
+        }
+
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-main); color: var(--text-main); overflow: hidden; }
+        
+        .app-container { display: flex; height: 100vh; width: 100vw; }
+        
+        /* Left: Canvas Area */
+        .canvas-area { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--bg-canvas-wrapper); border-right: 1px solid var(--border-color); position: relative; overflow: auto; padding: 20px; }
+        .back-btn { position: absolute; top: 20px; left: 20px; background: #333333; color: white; border: none; padding: 15px 20px; font-size: 16px; font-weight: bold; cursor: pointer; z-index: 10; border-radius: 4px; }
+        .back-btn:hover { background: #444444; }
+        
+        /* The Actual Canvas */
+        #designCanvas { background: white; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); transform-origin: top left; }
+        
+        /* Right: Sidebar */
+        .sidebar { width: 380px; background: var(--bg-panel); display: flex; flex-direction: column; }
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        /* Form Elements */
+        h3 { margin-top: 0; font-size: 20px; letter-spacing: 1px; }
+        label { display: block; color: var(--text-muted); font-size: 12px; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
+        select, input[type="text"], input[type="number"] { width: 100%; background: #222; color: white; border: 1px solid var(--border-color); padding: 10px; font-size: 16px; margin-bottom: 15px; box-sizing: border-box; border-radius: 4px; }
+        select:focus, input:focus { outline: none; border-color: var(--accent); }
+        
+        .btn { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; border: none; cursor: pointer; margin-bottom: 10px; border-radius: 4px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-dark { background: #333333; } .btn-dark:hover { background: #444444; }
+        .btn-primary { background: var(--accent); } .btn-primary:hover { background: #005A9E; }
+        .btn-danger { background: #D32F2F; } .btn-danger:hover { background: #B71C1C; }
+        .btn-success { background: #2E7D32; height: 70px; font-size: 18px; margin: 0; border-radius: 0; } .btn-success:hover { background: #1B5E20; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .divider { height: 2px; background: var(--border-color); margin: 20px 0; }
+
+        /* Layers List */
+        .layer-list { border: 1px solid var(--border-color); background: #222; height: 220px; overflow-y: auto; margin-bottom: 15px; }
+        .layer-item { padding: 12px 15px; background: #2A2A2A; border-bottom: 1px solid #111; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .layer-item:hover { background: #333; }
+        .layer-item.active { background: var(--accent); color: white; }
+        
+        /* Draggable Elements on Canvas */
+        .canvas-element { position: absolute; transform-origin: center center; cursor: move; user-select: none; }
+        .canvas-element img { width: 100%; height: 100%; pointer-events: none; }
+        .photo-slot { width: 100%; height: 100%; border: 4px solid; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-size: 24px; color: white; box-sizing: border-box; }
+        
+        /* Resize Handles (Replicating WPF Thumbs) */
+        .resize-handle { position: absolute; width: 14px; height: 14px; background: white; border: 2px solid var(--accent); border-radius: 50%; z-index: 100; display: none; }
+        .canvas-element.active .resize-handle { display: block; }
+        .handle-nw { top: -7px; left: -7px; cursor: nwse-resize; }
+        .handle-ne { top: -7px; right: -7px; cursor: nesw-resize; }
+        .handle-sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
+        .handle-se { bottom: -7px; right: -7px; cursor: nwse-resize; }
+
+        /* Action Panel */
+        .action-panel { display: flex; gap: 10px; margin-bottom: 15px; }
+        .action-panel .btn { margin-bottom: 0; padding: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="canvas-area" id="canvasWrapper">
+        <button class="back-btn" onclick="window.history.back()">⬅️ BACK TO DASHBOARD</button>
+        
+        <div id="designCanvas"></div>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-content">
+            <h3>LAYOUT TOOLS</h3>
+            
+            <label>CANVAS SIZE</label>
+            <select id="cmbCanvasPreset" onchange="handlePresetChange()">
+                <option value="1800x1200">4x6 Landscape (1800 x 1200)</option>
+                <option value="1200x1800">4x6 Portrait (1200 x 1800)</option>
+                <option value="2100x1500">5x7 Landscape (2100 x 1500)</option>
+                <option value="1500x2100">5x7 Portrait (1500 x 2100)</option>
+                <option value="Custom">Custom</option>
+            </select>
+
+            <div id="panelCustomSize" class="grid-2" style="display:none;">
+                <div>
+                    <label>Custom Width</label>
+                    <input type="number" id="txtCanvasWidth" value="1800" onchange="updateCanvasSize()">
+                </div>
+                <div>
+                    <label>Custom Height</label>
+                    <input type="number" id="txtCanvasHeight" value="1200" onchange="updateCanvasSize()">
+                </div>
+            </div>
+
+            <button class="btn btn-dark" onclick="addPhotoSlot()">📷 ADD PHOTO SLOT</button>
+            <button class="btn btn-dark" onclick="document.getElementById('fileUpload').click()">🖼️ ADD IMAGE OVERLAY</button>
+            <input type="file" id="fileUpload" style="display:none;" accept="image/png, image/jpeg" onchange="addImageLayer(event)">
+
+            <div class="divider"></div>
+
+            <h3>LAYERS</h3>
+            <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; cursor: pointer;">
+                <input type="checkbox" id="chkLockAspectRatio" checked> 🔒 Lock Aspect Ratio
+            </label>
+
+            <div class="layer-list" id="layersList"></div>
+
+            <div id="layerActionsPanel" style="display: none;">
+                <div class="action-panel">
+                    <button class="btn btn-dark" id="btnToggleLock" style="flex: 0 0 50px;" onclick="toggleLock()">🔓</button>
+                    <button class="btn btn-primary" style="flex: 1;" onclick="scaleToCanvas()">📐 SCALE TO CANVAS</button>
+                    <button class="btn btn-danger" style="flex: 0 0 50px;" onclick="deleteLayer()">🗑️</button>
+                </div>
+
+                <label>ROTATION (DEGREES)</label>
+                <input type="range" id="sldRotation" min="-180" max="180" value="0" style="width: 100%; margin-bottom: 20px;" oninput="updateLayerProperty('rotation', this.value)">
+
+                <label>ELEMENT SIZE (PX)</label>
+                <div class="grid-2">
+                    <input type="number" id="txtLayerWidth" placeholder="Width" onchange="updateLayerProperty('width', this.value)">
+                    <input type="number" id="txtLayerHeight" placeholder="Height" onchange="updateLayerProperty('height', this.value)">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-success" onclick="saveTemplate()">💾 SAVE TEMPLATE</button>
+    </div>
+</div>
+
+<script>
+    // --- STATE MANAGEMENT ---
+    let templateState = {
+        CanvasWidth: 1800,
+        CanvasHeight: 1200,
+        Layers: [] // { id, LayerType, DisplayName, ImagePath, Width, Height, X, Y, Rotation, isLocked, domElement }
+    };
+    
+    let selectedLayerId = null;
+    let dragState = null; // Used for canvas interactions
+
+    const designCanvas = document.getElementById('designCanvas');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+
+    // --- INITIALIZATION ---
+    function init() {
+        updateCanvasSize();
+        
+        // Canvas deselect logic
+        canvasWrapper.addEventListener('mousedown', (e) => {
+            if (e.target === canvasWrapper || e.target === designCanvas) {
+                selectLayer(null);
+            }
+        });
+    }
+
+    // --- CANVAS SIZING ---
+    function handlePresetChange() {
+        const val = document.getElementById('cmbCanvasPreset').value;
+        if (val === 'Custom') {
+            document.getElementById('panelCustomSize').style.display = 'grid';
+        } else {
+            document.getElementById('panelCustomSize').style.display = 'none';
+            const [w, h] = val.split('x');
+            document.getElementById('txtCanvasWidth').value = w;
+            document.getElementById('txtCanvasHeight').value = h;
+            updateCanvasSize();
+        }
+    }
+
+    function updateCanvasSize() {
+        templateState.CanvasWidth = parseInt(document.getElementById('txtCanvasWidth').value) || 1800;
+        templateState.CanvasHeight = parseInt(document.getElementById('txtCanvasHeight').value) || 1200;
+        
+        designCanvas.style.width = templateState.CanvasWidth + 'px';
+        designCanvas.style.height = templateState.CanvasHeight + 'px';
+        
+        // Auto-scale to fit window viewing area
+        const wrapperRect = canvasWrapper.getBoundingClientRect();
+        const scaleX = (wrapperRect.width - 60) / templateState.CanvasWidth;
+        const scaleY = (wrapperRect.height - 60) / templateState.CanvasHeight;
+        const scale = Math.min(scaleX, scaleY, 1); // Never scale up, only down
+        
+        designCanvas.style.transform = `scale(${scale})`;
+    }
+
+    // --- LAYER CREATION ---
+    function generateId() { return 'layer_' + Math.random().toString(36).substr(2, 9); }
+
+    function getSlotTheme(index) {
+        const themes = [
+            { bg: 'rgba(76, 175, 80, 0.7)', border: 'DarkGreen' },
+            { bg: 'rgba(33, 150, 243, 0.7)', border: 'DarkBlue' },
+            { bg: 'rgba(255, 152, 0, 0.7)', border: 'DarkOrange' },
+            { bg: 'rgba(156, 39, 176, 0.7)', border: 'Purple' },
+            { bg: 'rgba(244, 67, 54, 0.7)', border: 'DarkRed' },
+            { bg: 'rgba(0, 188, 212, 0.7)', border: 'DarkCyan' }
+        ];
+        return themes[index % themes.length];
+    }
+
+    function addPhotoSlot() {
+        let slotCount = templateState.Layers.filter(l => l.LayerType === 'PhotoSlot').length;
+        const theme = getSlotTheme(slotCount);
+        
+        const layerData = {
+            id: generateId(),
+            LayerType: 'PhotoSlot',
+            DisplayName: `Photo Slot ${slotCount + 1}`,
+            Width: templateState.CanvasWidth > 0 ? templateState.CanvasWidth : 1200,
+            Height: templateState.CanvasHeight > 0 ? templateState.CanvasHeight : 1800,
+            X: 0, Y: 0, Rotation: 0, isLocked: false,
+            themeBg: theme.bg, themeBorder: theme.border
+        };
+
+        createDOMElement(layerData);
+        templateState.Layers.unshift(layerData); // Add to top
+        refreshLayers();
+        selectLayer(layerData.id);
+    }
+
+    function addImageLayer(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                let startW = img.width;
+                let startH = img.height;
+                if (startW > 800) {
+                    const ratio = 800 / startW;
+                    startW = 800;
+                    startH = startH * ratio;
+                }
+
+                const layerData = {
+                    id: generateId(),
+                    LayerType: 'ImageLayer',
+                    DisplayName: file.name,
+                    ImagePath: e.target.result, // Base64 for web portability
+                    Width: startW, Height: startH,
+                    X: 100, Y: 100, Rotation: 0, isLocked: false
+                };
+
+                createDOMElement(layerData);
+                templateState.Layers.unshift(layerData);
+                refreshLayers();
+                selectLayer(layerData.id);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        event.target.value = ''; // Reset input
+    }
+
+    // --- DOM ELEMENT FACTORY ---
+    function createDOMElement(layer) {
+        const container = document.createElement('div');
+        container.className = 'canvas-element';
+        container.id = layer.id;
+        
+        applyTransform(container, layer);
+
+        if (layer.LayerType === 'PhotoSlot') {
+            const inner = document.createElement('div');
+            inner.className = 'photo-slot';
+            inner.style.backgroundColor = layer.themeBg || 'rgba(0,0,0,0.5)';
+            inner.style.borderColor = layer.themeBorder || '#fff';
+            inner.innerHTML = `${layer.DisplayName.toUpperCase()}<br>(Drag & Resize)`;
+            container.appendChild(inner);
+        } else {
+            const img = document.createElement('img');
+            img.src = layer.ImagePath;
+            container.appendChild(img);
+        }
+
+        // Add Resize Handles (WPF Thumb equivalents)
+        const handles = ['nw', 'ne', 'sw', 'se'];
+        handles.forEach(pos => {
+            const handle = document.createElement('div');
+            handle.className = `resize-handle handle-${pos}`;
+            handle.dataset.pos = pos;
+            container.appendChild(handle);
+        });
+
+        // Event Listeners for Interaction
+        container.addEventListener('mousedown', (e) => handleMouseDown(e, layer));
+
+        layer.domElement = container;
+        designCanvas.appendChild(container);
+    }
+
+    function applyTransform(element, layer) {
+        element.style.left = layer.X + 'px';
+        element.style.top = layer.Y + 'px';
+        element.style.width = layer.Width + 'px';
+        element.style.height = layer.Height + 'px';
+        element.style.transform = `rotate(${layer.Rotation}deg)`;
+    }
+
+    // --- INTERACTION LOGIC (DRAG & RESIZE) ---
+    function handleMouseDown(e, layer) {
+        if (layer.isLocked) return;
+        e.stopPropagation();
+        selectLayer(layer.id);
+
+        const isResize = e.target.classList.contains('resize-handle');
+        
+        dragState = {
+            layer: layer,
+            isResize: isResize,
+            handle: isResize ? e.target.dataset.pos : null,
+            startX: e.clientX,
+            startY: e.clientY,
+            startW: layer.Width,
+            startH: layer.Height,
+            startLeft: layer.X,
+            startTop: layer.Y,
+            ratio: layer.Width / layer.Height
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    function handleMouseMove(e) {
+        if (!dragState) return;
+
+        // Get scale factor to normalize mouse movement to canvas scale
+        const scale = designCanvas.getBoundingClientRect().width / templateState.CanvasWidth;
+        const dx = (e.clientX - dragState.startX) / scale;
+        const dy = (e.clientY - dragState.startY) / scale;
+
+        const l = dragState.layer;
+        const lockRatio = document.getElementById('chkLockAspectRatio').checked;
+
+        if (dragState.isResize) {
+            let newW = dragState.startW;
+            let newH = dragState.startH;
+            let newX = dragState.startLeft;
+            let newY = dragState.startTop;
+
+            if (dragState.handle.includes('e')) newW += dx;
+            if (dragState.handle.includes('w')) { newW -= dx; newX += dx; }
+            if (dragState.handle.includes('s')) newH += dy;
+            if (dragState.handle.includes('n')) { newH -= dy; newY += dy; }
+
+            if (lockRatio) {
+                // Determine dominating axis
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    let oldH = newH;
+                    newH = newW / dragState.ratio;
+                    if (dragState.handle.includes('n')) newY -= (newH - oldH);
+                } else {
+                    let oldW = newW;
+                    newW = newH * dragState.ratio;
+                    if (dragState.handle.includes('w')) newX -= (newW - oldW);
+                }
+            }
+
+            if (newW > 20 && newH > 20) {
+                l.Width = Math.round(newW);
+                l.Height = Math.round(newH);
+                l.X = Math.round(newX);
+                l.Y = Math.round(newY);
+            }
+        } else {
+            // Dragging
+            l.X = Math.round(dragState.startLeft + dx);
+            l.Y = Math.round(dragState.startTop + dy);
+        }
+
+        applyTransform(l.domElement, l);
+        syncPropertyPanel(l);
+    }
+
+    function handleMouseUp() {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        dragState = null;
+    }
+
+    // --- UI PANELS & LAYER MANAGEMENT ---
+    function refreshLayers() {
+        const list = document.getElementById('layersList');
+        list.innerHTML = '';
+        
+        templateState.Layers.forEach((layer, index) => {
+            const div = document.createElement('div');
+            div.className = `layer-item ${layer.id === selectedLayerId ? 'active' : ''}`;
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.innerText = (layer.isLocked ? '🔒 ' : '') + layer.DisplayName;
+            div.appendChild(nameSpan);
+
+            // Simple Up/Down arrows for ordering (Replaces complex WPF Drag/Drop)
+            const controls = document.createElement('div');
+            if (index > 0) controls.innerHTML += `<span style="cursor:pointer; margin-right:8px;" onclick="moveLayer('${layer.id}', -1, event)">▲</span>`;
+            if (index < templateState.Layers.length - 1) controls.innerHTML += `<span style="cursor:pointer;" onclick="moveLayer('${layer.id}', 1, event)">▼</span>`;
+            
+            div.appendChild(controls);
+            div.onclick = () => selectLayer(layer.id);
+            list.appendChild(div);
+            
+            // Sync DOM Z-Index (Top of array = highest z-index)
+            layer.domElement.style.zIndex = templateState.Layers.length - index;
+        });
+    }
+
+    function moveLayer(id, direction, e) {
+        e.stopPropagation();
+        const index = templateState.Layers.findIndex(l => l.id === id);
+        if (index < 0) return;
+        
+        const targetIndex = index + direction;
+        if (targetIndex >= 0 && targetIndex < templateState.Layers.length) {
+            // Swap
+            const temp = templateState.Layers[index];
+            templateState.Layers[index] = templateState.Layers[targetIndex];
+            templateState.Layers[targetIndex] = temp;
+            refreshLayers();
+        }
+    }
+
+    function selectLayer(id) {
+        selectedLayerId = id;
+        
+        // Remove active class from all DOM elements
+        templateState.Layers.forEach(l => l.domElement.classList.remove('active'));
+        
+        const layer = templateState.Layers.find(l => l.id === id);
+        if (layer) {
+            if (!layer.isLocked) layer.domElement.classList.add('active');
+            
+            document.getElementById('layerActionsPanel').style.display = 'block';
+            syncPropertyPanel(layer);
+            
+            // Update lock button UI
+            const btnLock = document.getElementById('btnToggleLock');
+            if (layer.isLocked) {
+                btnLock.innerText = "🔒";
+                btnLock.style.background = "#D32F2F";
+            } else {
+                btnLock.innerText = "🔓";
+                btnLock.style.background = "#555555";
+            }
+        } else {
+            document.getElementById('layerActionsPanel').style.display = 'none';
+        }
+        
+        refreshLayers(); // Updates highlight in sidebar
+    }
+
+    function syncPropertyPanel(layer) {
+        document.getElementById('txtLayerWidth').value = layer.Width;
+        document.getElementById('txtLayerHeight').value = layer.Height;
+        document.getElementById('sldRotation').value = layer.Rotation;
+    }
+
+    // --- ACTIONS ---
+    function updateLayerProperty(prop, value) {
+        const layer = templateState.Layers.find(l => l.id === selectedLayerId);
+        if (!layer || layer.isLocked) return;
+
+        layer[prop.charAt(0).toUpperCase() + prop.slice(1)] = parseFloat(value);
+        applyTransform(layer.domElement, layer);
+    }
+
+    function scaleToCanvas() {
+        const layer = templateState.Layers.find(l => l.id === selectedLayerId);
+        if (!layer || layer.isLocked) return;
+
+        layer.X = 0;
+        layer.Y = 0;
+        layer.Width = templateState.CanvasWidth;
+        layer.Height = templateState.CanvasHeight;
+        layer.Rotation = 0;
+
+        applyTransform(layer.domElement, layer);
+        syncPropertyPanel(layer);
+    }
+
+    function toggleLock() {
+        const layer = templateState.Layers.find(l => l.id === selectedLayerId);
+        if (!layer) return;
+
+        layer.isLocked = !layer.isLocked;
+        selectLayer(layer.id); // Re-triggers UI updates
+    }
+
+    function deleteLayer() {
+        const index = templateState.Layers.findIndex(l => l.id === selectedLayerId);
+        if (index < 0) return;
+
+        const layer = templateState.Layers[index];
+        layer.domElement.remove();
+        templateState.Layers.splice(index, 1);
+        
+        selectLayer(templateState.Layers.length > 0 ? templateState.Layers[0].id : null);
+    }
+
+    // --- EXPORT TO MATCH C# JSON ---
+    function saveTemplate() {
+        // Strip out web-specific data (DOM elements, internal IDs) to match C# PrintTemplate exactly
+        const exportData = {
+            CanvasWidth: templateState.CanvasWidth,
+            CanvasHeight: templateState.CanvasHeight,
+            Layers: templateState.Layers.map(l => ({
+                LayerType: l.LayerType,
+                DisplayName: l.DisplayName.replace('🔒 ', ''), // Clean name
+                ImagePath: l.LayerType === 'ImageLayer' ? l.ImagePath : null,
+                Width: l.Width,
+                Height: l.Height,
+                X: l.X,
+                Y: l.Y,
+                Rotation: l.Rotation
+            })).reverse() // C# expects bottom layer first, our array is top layer first
+        };
+
+        const jsonStr = JSON.stringify(exportData, null, 2);
+        
+        // Trigger file download
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Template_${new Date().getTime()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Boot up
+    window.onload = init;
+    window.onresize = updateCanvasSize;
+
+</script>
+</body>
+</html>
