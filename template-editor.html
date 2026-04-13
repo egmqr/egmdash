@@ -53,17 +53,15 @@
         .layer-item:hover { background: #333; }
         .layer-item.active { background: var(--accent); color: white; }
         
-        /* Draggable Elements on Canvas */
+       /* Draggable Elements on Canvas */
         .canvas-element { position: absolute; transform-origin: center center; cursor: move; user-select: none; }
-        
-        /* 🟢 THE FIX: Force the currently selected layer to the absolute front so handles are always clickable */
-        .canvas-element.active { z-index: 9999 !important; } 
 
         .canvas-element img { width: 100%; height: 100%; pointer-events: none; }
         .photo-slot { width: 100%; height: 100%; border: 4px solid; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-size: 24px; color: white; box-sizing: border-box; }
         
         /* Resize Handles (Replicating WPF Thumbs) */
-        .resize-handle { position: absolute; width: 14px; height: 14px; background: white; border: 2px solid var(--accent); border-radius: 50%; z-index: 100; display: none; }
+        /* 🟢 THE FIX: Z-index is boosted ONLY on the handles, leaving the image in its original layer order */
+        .resize-handle { position: absolute; width: 14px; height: 14px; background: white; border: 2px solid var(--accent); border-radius: 50%; z-index: 9999; display: none; }
         .canvas-element.active .resize-handle { display: block; }
         .handle-nw { top: -7px; left: -7px; cursor: nwse-resize; }
         .handle-ne { top: -7px; right: -7px; cursor: nesw-resize; }
