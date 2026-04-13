@@ -166,12 +166,19 @@
     const designCanvas = document.getElementById('designCanvas');
     const canvasWrapper = document.getElementById('canvasWrapper');
 
-    // --- LOAD & SAVE MECHANISMS ---
     function init() {
-        // 🟢 Grab directly from the parent window's RAM
+        // 🟢 Grab directly from the parent window's RAM without stringifying!
         if (window.opener && window.opener.templateToEdit) {
-            // Deep copy to prevent accidental reference mutations
-            const loadedTemplate = JSON.parse(JSON.stringify(window.opener.templateToEdit));
+            const source = window.opener.templateToEdit;
+            
+            // 🟢 THE FIX: Shallow copy. This uses references instead of duplicating huge 20MB Base64 strings.
+            const loadedTemplate = {
+                Name: source.Name,
+                CanvasWidth: source.CanvasWidth,
+                CanvasHeight: source.CanvasHeight,
+                Layers: source.Layers.map(l => Object.assign({}, l))
+            };
+            
             loadTemplateData(loadedTemplate);
             window.opener.templateToEdit = null; // Cleanup memory
         } else {
@@ -686,7 +693,8 @@ function loadTemplateData(data) {
         };
 
         // 🟢 1. Save to Local Computer
-        const jsonString = JSON.stringify(exportData, null, 2);
+        // 🟢 THE FIX: Removed the "null, 2" formatting. This creates a minified JSON, saving huge amounts of memory.
+        const jsonString = JSON.stringify(exportData); 
         const blob = new Blob([jsonString], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -696,7 +704,7 @@ function loadTemplateData(data) {
         document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
 
-        // 🟢 Bridge to Dashboard Listbox (Direct RAM transfer)
+        // 🟢 2. Bridge to Dashboard Listbox
         if (window.opener && window.opener.receiveTemplateFromEditor) {
             window.opener.receiveTemplateFromEditor(exportData);
         }
