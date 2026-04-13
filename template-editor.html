@@ -191,15 +191,19 @@
             }
         });
 
+        // Re-wire global handles
         document.querySelectorAll('.resize-handle').forEach(handle => {
             handle.addEventListener('mousedown', (e) => {
                 if (!selectedLayerId) return;
-                const layer = templateState.Layers.find(l => l.id === selectedLayerId);
-                if (layer && !layer.isLocked) {
-                    handleMouseDown(e, layer, true, handle.dataset.pos);
-                }
+                const layer = templateState.Layers.find(ly => ly.id === selectedLayerId);
+                if (layer && !layer.isLocked) handleMouseDown(e, layer, true, handle.dataset.pos);
             });
         });
+
+        // 🟢 THE FIX: Force the browser to finish rendering the HTML layout before calculating the scale
+        setTimeout(() => {
+            updateCanvasSize();
+        }, 50);
     }
 function loadTemplateData(data) {
         templateState.Name = data.Name;
@@ -209,7 +213,8 @@ function loadTemplateData(data) {
         document.getElementById('txtCanvasWidth').value = data.CanvasWidth;
         document.getElementById('txtCanvasHeight').value = data.CanvasHeight;
         document.getElementById('cmbCanvasPreset').value = "Custom";
-        handlePresetChange();
+        
+        // 🟢 THE FIX: Removed the immediate updateCanvasSize() from here
 
         designCanvas.innerHTML = '<div id="selectionOverlay"><div class="resize-handle handle-nw" data-pos="nw"></div><div class="resize-handle handle-ne" data-pos="ne"></div><div class="resize-handle handle-sw" data-pos="sw"></div><div class="resize-handle handle-se" data-pos="se"></div></div>';
         templateState.Layers = [];
