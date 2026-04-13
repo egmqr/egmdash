@@ -3703,7 +3703,12 @@ async function uploadAndScanInvoice(prefix) {
                     showToast("Uploaded successfully, but couldn't detect the number. Please enter it manually.", "warning");
                 }
             } else {
-                egmAlert("Upload failed: " + (uploadRes.error || "Unknown error"));
+                // 🟢 THE FIX: Safely check if uploadRes exists before reading its properties!
+                const errMsg = uploadRes ? (uploadRes.error || "Unknown error") : "Check if Apps Script backend is deployed.";
+                // Note: callApi already shows an alert if it returns null, so we only alert if we have a specific uploadRes error.
+                if (uploadRes) {
+                    egmAlert("Upload failed: " + errMsg);
+                }
             }
 
         } catch (err) {
