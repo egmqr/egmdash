@@ -941,8 +941,6 @@
                  <div id="boothCardsList"></div>
                   
                   <button id="boothDownloadAllQRsBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mt-2" style="display:none;" onclick="downloadAllBoothQRs()"><i class="bi bi-download me-1"></i> Download All QR Codes</button>
-                  
-                  <button id="boothDownloadJsonBtn" class="btn btn-outline-dark w-100 py-2 fw-bold shadow-sm mt-2" style="display:none;" onclick="downloadEventJson()"><i class="bi bi-filetype-json me-1"></i> Download Event Config (.json)</button>
               </div>
 
           </div>
@@ -5683,6 +5681,7 @@ for (const personName of peopleToNotify){
               
               const boothsArr = details.boothsStr ? details.boothsStr.split('|') : [];
               const qrIdsArr = details.qrFileIdsStr ? details.qrFileIdsStr.split('|') : [];
+              const jsonIdsArr = details.jsonFileIdsStr ? details.jsonFileIdsStr.split('|') : []; // 🟢 NEW: Map out the JSON File IDs
               const dynamicFolderName = details.folderName || 'Booth ';
               
               boothsArr.forEach((link, i) => {
@@ -5746,6 +5745,12 @@ for (const personName of peopleToNotify){
                         </div>
                      </div>
                      <div class="booth-link-row">
+                        <span>Event Config (.json)</span>
+                        <div class="booth-link-actions">
+                            ${jsonIdsArr[i] ? `<button class="booth-mini-btn" onclick="downloadEventJson('${jsonIdsArr[i]}')"><i class="bi bi-download me-1"></i>Download</button>` : `<span class="text-muted small fst-italic">Unavailable</span>`}
+                        </div>
+                     </div>
+                     <div class="booth-link-row">
                         <span>QR Code</span>
                         <div class="booth-link-actions">${qrCodeActionHtml}</div>
                      </div>
@@ -5755,13 +5760,6 @@ for (const personName of peopleToNotify){
               
               if (boothsArr.length > 1) document.getElementById('boothDownloadAllQRsBtn').style.display = 'block'; 
               else document.getElementById('boothDownloadAllQRsBtn').style.display = 'none'; 
-              
-              // 🟢 THE FIX: Bind the JSON File ID and show the new button if an ID exists
-              const jsonBtn = document.getElementById('boothDownloadJsonBtn');
-              if (jsonBtn) {
-                  jsonBtn.dataset.fileId = details.jsonFileIdsStr || "";
-                  jsonBtn.style.display = details.jsonFileIdsStr ? 'block' : 'none';
-              }
           }
       }
   }
@@ -8386,10 +8384,9 @@ function editTemplate() {
       event.target.value = '';
   }
 // 🟢 TRIGGER JSON DOWNLOAD
-function downloadEventJson() {
-    const fileId = document.getElementById('boothDownloadJsonBtn').dataset.fileId;
+function downloadEventJson(fileId) {
     if (!fileId) {
-        egmAlert("No JSON configuration file found for this event.");
+        egmAlert("No JSON configuration file found for this booth.");
         return;
     }
     
