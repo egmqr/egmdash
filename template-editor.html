@@ -59,10 +59,9 @@
         .canvas-element img { width: 100%; height: 100%; pointer-events: none; }
         .photo-slot { width: 100%; height: 100%; border: 4px solid; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-size: 24px; color: white; box-sizing: border-box; }
         
-        /* Resize Handles (Replicating WPF Thumbs) */
-        /* 🟢 THE FIX: Z-index is boosted ONLY on the handles, leaving the image in its original layer order */
-        .resize-handle { position: absolute; width: 14px; height: 14px; background: white; border: 2px solid var(--accent); border-radius: 50%; z-index: 9999; display: none; }
-        .canvas-element.active .resize-handle { display: block; }
+        /* 🟢 NEW: Global Selection Overlay (Handles always on top!) */
+        #selectionOverlay { position: absolute; pointer-events: none; border: 1px dashed var(--accent); z-index: 9999; display: none; box-sizing: border-box; }
+        .resize-handle { position: absolute; width: 14px; height: 14px; background: white; border: 2px solid var(--accent); border-radius: 50%; pointer-events: auto; }
         .handle-nw { top: -7px; left: -7px; cursor: nwse-resize; }
         .handle-ne { top: -7px; right: -7px; cursor: nesw-resize; }
         .handle-sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
@@ -76,10 +75,17 @@
 <body>
 
 <div class="app-container">
-    <div class="canvas-area" id="canvasWrapper">
+   <div class="canvas-area" id="canvasWrapper">
         <button class="back-btn" onclick="window.close()">✖ CLOSE</button>
         
-        <div id="designCanvas"></div>
+        <div id="designCanvas">
+            <div id="selectionOverlay">
+                <div class="resize-handle handle-nw" data-pos="nw"></div>
+                <div class="resize-handle handle-ne" data-pos="ne"></div>
+                <div class="resize-handle handle-sw" data-pos="sw"></div>
+                <div class="resize-handle handle-se" data-pos="se"></div>
+            </div>
+        </div>
     </div>
 
     <div class="sidebar">
@@ -164,11 +170,21 @@
     function init() {
         updateCanvasSize();
         
-        // Canvas deselect logic
         canvasWrapper.addEventListener('mousedown', (e) => {
             if (e.target === canvasWrapper || e.target === designCanvas) {
                 selectLayer(null);
             }
+        });
+
+        // 🟢 Wire up global resize handles
+        document.querySelectorAll('.resize-handle').forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                if (!selectedLayerId) return;
+                const layer = templateState.Layers.find(l => l.id === selectedLayerId);
+                if (layer && !layer.isLocked) {
+                    handleMouseDown(e, layer, true, handle.dataset.pos);
+                }
+            });
         });
     }
 
@@ -279,14 +295,12 @@
         event.target.value = ''; // Reset input
     }
 
-   function createDOMElement(layer) {
+  function createDOMElement(layer) {
         const container = document.createElement('div');
         container.className = 'canvas-element';
         container.id = layer.id;
         
         applyTransform(container, layer);
-        
-        // 🟢 THE FIX: Apply the pass-through rule immediately upon creation
         container.style.pointerEvents = layer.isLocked ? 'none' : 'auto';
 
         if (layer.LayerType === 'PhotoSlot') {
@@ -302,17 +316,8 @@
             container.appendChild(img);
         }
 
-        // Add Resize Handles (WPF Thumb equivalents)
-        const handles = ['nw', 'ne', 'sw', 'se'];
-        handles.forEach(pos => {
-            const handle = document.createElement('div');
-            handle.className = `resize-handle handle-${pos}`;
-            handle.dataset.pos = pos;
-            container.appendChild(handle);
-        });
-
-        // Event Listeners for Interaction
-        container.addEventListener('mousedown', (e) => handleMouseDown(e, layer));
+        // 🟢 Event Listener for Dragging (Notice handles are gone!)
+        container.addEventListener('mousedown', (e) => handleMouseDown(e, layer, false, null));
 
         layer.domElement = container;
         designCanvas.appendChild(container);
@@ -324,20 +329,27 @@
         element.style.width = layer.Width + 'px';
         element.style.height = layer.Height + 'px';
         element.style.transform = `rotate(${layer.Rotation}deg)`;
-    }
 
-    // --- INTERACTION LOGIC (DRAG & RESIZE) ---
-    function handleMouseDown(e, layer) {
+        // 🟢 Sync the Global Overlay if this is the active layer
+        if (selectedLayerId === layer.id) {
+            const overlay = document.getElementById('selectionOverlay');
+            overlay.style.left = layer.X + 'px';
+            overlay.style.top = layer.Y + 'px';
+            overlay.style.width = layer.Width + 'px';
+            overlay.style.height = layer.Height + 'px';
+            overlay.style.transform = `rotate(${layer.Rotation}deg)`;
+        }
+    }
+    // 🟢 Updated to accept global handle parameters
+    function handleMouseDown(e, layer, isGlobalResize = false, handlePos = null) {
         if (layer.isLocked) return;
         e.stopPropagation();
         selectLayer(layer.id);
 
-        const isResize = e.target.classList.contains('resize-handle');
-        
         dragState = {
             layer: layer,
-            isResize: isResize,
-            handle: isResize ? e.target.dataset.pos : null,
+            isResize: isGlobalResize,
+            handle: handlePos,
             startX: e.clientX,
             startY: e.clientY,
             startW: layer.Width,
@@ -469,13 +481,20 @@
         const layer = templateState.Layers.find(l => l.id === id);
         const chkLock = document.getElementById('chkLockAspectRatio');
         const btnRotate = document.getElementById('btnToggleOrientation');
+        const overlay = document.getElementById('selectionOverlay'); // 🟢 Global Overlay
 
         if (layer) {
-            if (!layer.isLocked) layer.domElement.classList.add('active');
+            if (!layer.isLocked) {
+                layer.domElement.classList.add('active');
+                overlay.style.display = 'block'; // 🟢 Show Overlay
+                applyTransform(layer.domElement, layer); // Force sync
+            } else {
+                overlay.style.display = 'none';
+            }
+            
             document.getElementById('layerActionsPanel').style.display = 'block';
             syncPropertyPanel(layer);
             
-            // 🟢 UI GUARD: Disable aspect ratio checkbox and show Rotate button for Photo Slots
             if (layer.LayerType === 'PhotoSlot') {
                 chkLock.checked = true;
                 chkLock.disabled = true;
@@ -492,6 +511,7 @@
             document.getElementById('layerActionsPanel').style.display = 'none';
             chkLock.disabled = false;
             btnRotate.style.display = 'none';
+            overlay.style.display = 'none'; // 🟢 Hide Overlay
         }
         refreshLayers();
     }
