@@ -5473,6 +5473,8 @@ for (const personName of peopleToNotify){
           document.getElementById('boothCountInput').disabled = true;
           document.getElementById('boothCountHint').style.display = 'none';
           toggleBoothEditFields(true);
+        boothTemplates = [];
+          if (document.getElementById('boothTemplateList')) renderTemplateList();
           
       } else if (mode === 'edit' || mode === 'view') {
           document.getElementById('btnModeEdit').classList.toggle('active', mode === 'edit');
@@ -5634,6 +5636,14 @@ for (const personName of peopleToNotify){
       if (details && details.success === false) return;
 
       if (details) {
+          // 🟢 THE FIX: Always load the templates into memory immediately, regardless of which tab you are currently viewing!
+          try {
+              boothTemplates = JSON.parse(details.templatesStr || "[]");
+          } catch (e) {
+              boothTemplates = [];
+          }
+          if (document.getElementById('boothTemplateList')) renderTemplateList();
+
           if (currentBoothMode === 'edit') {
               document.getElementById('boothEventId').value = selectedId;
               document.getElementById('boothFolderName').value = details.folderName || "";
@@ -5979,7 +5989,13 @@ async function fetchExistingLogos(forceRefresh = false) {
   
   async function runBoothDelete() {
       const selectedId = document.getElementById('boothEventSelect').value;
-      if (!selectedId || !await egmConfirm("WARNING: Are you sure you want to permanently delete this Photobooth setup? This will remove the Cloud storage, URLs, and QR codes.")) return;
+      if (!selectedId) { 
+          // 🟢 THE FIX: Wipe the memory clean if no event is selected
+          boothTemplates = [];
+          if (document.getElementById('boothTemplateList')) renderTemplateList();
+          setBoothMode(currentBoothMode); 
+          return; 
+      }
       
       const ov = document.getElementById('submitOverlay');
       document.getElementById('overlayText').innerText = "Deleting Booth Setup...";
