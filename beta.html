@@ -5969,7 +5969,11 @@ async function fetchExistingLogos(forceRefresh = false) {
       ov.style.display = 'none';
       
       if (res && res.success) {
-          boothDetailsCache = {}; 
+          // 🟢 THE FIX: Wipe only this specific event's memory, keeping the rest of the cache intact!
+          if (eventId) {
+              delete boothDetailsCache[eventId];
+          }
+          
           fetchBoothEvents(true); 
           
           if (actionName === "updateBoothSetup" || actionName === "generateBoothSetup") {
