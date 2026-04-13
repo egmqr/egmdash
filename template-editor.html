@@ -277,13 +277,15 @@
         event.target.value = ''; // Reset input
     }
 
-    // --- DOM ELEMENT FACTORY ---
-    function createDOMElement(layer) {
+   function createDOMElement(layer) {
         const container = document.createElement('div');
         container.className = 'canvas-element';
         container.id = layer.id;
         
         applyTransform(container, layer);
+        
+        // 🟢 THE FIX: Apply the pass-through rule immediately upon creation
+        container.style.pointerEvents = layer.isLocked ? 'none' : 'auto';
 
         if (layer.LayerType === 'PhotoSlot') {
             const inner = document.createElement('div');
