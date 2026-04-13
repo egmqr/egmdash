@@ -111,9 +111,14 @@
             <div class="divider"></div>
 
             <h3>LAYERS</h3>
-            <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; cursor: pointer;">
-                <input type="checkbox" id="chkLockAspectRatio" checked> 🔒 Lock Aspect Ratio
-            </label>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                    <input type="checkbox" id="chkLockAspectRatio" checked> 🔒 Lock Ratio
+                </label>
+                <button id="btnToggleOrientation" class="btn btn-dark" style="width: 40px; height: 32px; padding: 0; margin: 0; display: none;" onclick="togglePhotoSlotOrientation()" title="Toggle Landscape/Portrait">
+                    🔄
+                </button>
+            </div>
 
             <div class="layer-list" id="layersList"></div>
 
@@ -345,13 +350,13 @@
     function handleMouseMove(e) {
         if (!dragState) return;
 
-        // Get scale factor to normalize mouse movement to canvas scale
         const scale = designCanvas.getBoundingClientRect().width / templateState.CanvasWidth;
         const dx = (e.clientX - dragState.startX) / scale;
         const dy = (e.clientY - dragState.startY) / scale;
 
         const l = dragState.layer;
-        const lockRatio = document.getElementById('chkLockAspectRatio').checked;
+        // 🟢 FORCE aspect ratio for Photo Slots, otherwise check the UI checkbox
+        const lockRatio = (l.LayerType === 'PhotoSlot') ? true : document.getElementById('chkLockAspectRatio').checked;
 
         if (dragState.isResize) {
             let newW = dragState.startW;
@@ -365,14 +370,16 @@
             if (dragState.handle.includes('n')) { newH -= dy; newY += dy; }
 
             if (lockRatio) {
-                // Determine dominating axis
+                // Determine dominating axis or use fixed 1.5 ratio for Photo Slots
+                const targetRatio = (l.LayerType === 'PhotoSlot') ? l.Width / l.Height : dragState.ratio;
+                
                 if (Math.abs(dx) > Math.abs(dy)) {
                     let oldH = newH;
-                    newH = newW / dragState.ratio;
+                    newH = newW / targetRatio;
                     if (dragState.handle.includes('n')) newY -= (newH - oldH);
                 } else {
                     let oldW = newW;
-                    newW = newH * dragState.ratio;
+                    newW = newH * targetRatio;
                     if (dragState.handle.includes('w')) newX -= (newW - oldW);
                 }
             }
@@ -384,24 +391,16 @@
                 l.Y = Math.round(newY);
             }
         } else {
-            // Dragging
+            // Dragging with edge snapping logic remains intact
             let newX = Math.round(dragState.startLeft + dx);
             let newY = Math.round(dragState.startTop + dy);
             const snapThreshold = 20.0;
 
-            // Snap X (Left and Right edges)
-            if (Math.abs(newX) < snapThreshold) {
-                newX = 0;
-            } else if (Math.abs((newX + l.Width) - templateState.CanvasWidth) < snapThreshold) {
-                newX = Math.round(templateState.CanvasWidth - l.Width);
-            }
+            if (Math.abs(newX) < snapThreshold) newX = 0;
+            else if (Math.abs((newX + l.Width) - templateState.CanvasWidth) < snapThreshold) newX = Math.round(templateState.CanvasWidth - l.Width);
 
-            // Snap Y (Top and Bottom edges)
-            if (Math.abs(newY) < snapThreshold) {
-                newY = 0;
-            } else if (Math.abs((newY + l.Height) - templateState.CanvasHeight) < snapThreshold) {
-                newY = Math.round(templateState.CanvasHeight - l.Height);
-            }
+            if (Math.abs(newY) < snapThreshold) newY = 0;
+            else if (Math.abs((newY + l.Height) - templateState.CanvasHeight) < snapThreshold) newY = Math.round(templateState.CanvasHeight - l.Height);
 
             l.X = newX;
             l.Y = newY;
@@ -461,33 +460,74 @@
 
     function selectLayer(id) {
         selectedLayerId = id;
-        
-        // Remove active class from all DOM elements
         templateState.Layers.forEach(l => l.domElement.classList.remove('active'));
         
         const layer = templateState.Layers.find(l => l.id === id);
+        const chkLock = document.getElementById('chkLockAspectRatio');
+        const btnRotate = document.getElementById('btnToggleOrientation');
+
         if (layer) {
             if (!layer.isLocked) layer.domElement.classList.add('active');
-            
             document.getElementById('layerActionsPanel').style.display = 'block';
             syncPropertyPanel(layer);
             
-            // Update lock button UI
-            const btnLock = document.getElementById('btnToggleLock');
-            if (layer.isLocked) {
-                btnLock.innerText = "🔒";
-                btnLock.style.background = "#D32F2F";
+            // 🟢 UI GUARD: Disable aspect ratio checkbox and show Rotate button for Photo Slots
+            if (layer.LayerType === 'PhotoSlot') {
+                chkLock.checked = true;
+                chkLock.disabled = true;
+                btnRotate.style.display = 'block';
             } else {
-                btnLock.innerText = "🔓";
-                btnLock.style.background = "#555555";
+                chkLock.disabled = false;
+                btnRotate.style.display = 'none';
             }
+
+            const btnLock = document.getElementById('btnToggleLock');
+            btnLock.innerText = layer.isLocked ? "🔒" : "🔓";
+            btnLock.style.background = layer.isLocked ? "#D32F2F" : "#555555";
         } else {
             document.getElementById('layerActionsPanel').style.display = 'none';
+            chkLock.disabled = false;
+            btnRotate.style.display = 'none';
         }
-        
-        refreshLayers(); // Updates highlight in sidebar
+        refreshLayers();
+    }
+   // 🟢 NEW: Swap orientation while maintaining 3:2 ratio
+    function togglePhotoSlotOrientation() {
+        const layer = templateState.Layers.find(l => l.id === selectedLayerId);
+        if (!layer || layer.LayerType !== 'PhotoSlot' || layer.isLocked) return;
+
+        const oldW = layer.Width;
+        const oldH = layer.Height;
+
+        // Swap dimensions
+        layer.Width = oldH;
+        layer.Height = oldW;
+
+        applyTransform(layer.domElement, layer);
+        syncPropertyPanel(layer);
     }
 
+    // 🟢 UPDATE: Force initial 3:2 Ratio when adding a slot
+    function addPhotoSlot() {
+        let slotCount = templateState.Layers.filter(l => l.LayerType === 'PhotoSlot').length;
+        const theme = getSlotTheme(slotCount);
+        
+        // Use 600x400 as a standard 3:2 starting size
+        const layerData = {
+            id: generateId(),
+            LayerType: 'PhotoSlot',
+            DisplayName: `Photo Slot ${slotCount + 1}`,
+            Width: 600,
+            Height: 400,
+            X: 50, Y: 50, Rotation: 0, isLocked: false,
+            themeBg: theme.bg, themeBorder: theme.border
+        };
+
+        createDOMElement(layerData);
+        templateState.Layers.unshift(layerData);
+        refreshLayers();
+        selectLayer(layerData.id);
+    }
     function syncPropertyPanel(layer) {
         document.getElementById('txtLayerWidth').value = layer.Width;
         document.getElementById('txtLayerHeight').value = layer.Height;
