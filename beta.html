@@ -1316,25 +1316,21 @@
       </div>
       
       <div id="newDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-              <div class="row g-3 mb-3" id="newPayAmountGroup">
-                  <div class="col-12">
-                      <label class="form-label-sm">Amount</label>
-                      <div class="input-group input-group-sm">
-                          <span class="input-group-text bg-white fw-bold">₱</span>
-                          <input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success" value="0">
-                      </div>
+              <div id="newPayAmountGroup" class="mb-3">
+                  <label class="form-label-sm">Amount</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white fw-bold">₱</span>
+                      <input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success" value="0">
                   </div>
               </div>
 
-              <div class="row g-3 mb-3" id="newPayStatusGroup">
-                  <div class="col-12">
-                      <label class="form-label-sm">Status</label>
-                      <select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('new')"></select>
-                  </div>
+              <div id="newPayStatusGroup" class="mb-3 mt-2">
+                  <label class="form-label-sm">Status</label>
+                  <select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('new')"></select>
               </div>
 
-              <div id="newPayBillingGroup" style="display:none;" class="mb-3">
-                  <div class="row g-3">
+              <div id="newPayBillingGroup" style="display:none;" class="mb-3 mt-2">
+                  <div class="row g-2">
                       <div class="col-12 col-md-4">
                           <label class="form-label-sm">Status Date</label>
                           <input type="date" name="billingStatusDate" class="form-control form-control-sm">
@@ -1350,38 +1346,30 @@
                   </div>
               </div>
 
-              <div class="row g-3 mb-3" id="newPayEmailGroup">
-                  <div class="col-12">
-                      <label class="form-label-sm">Email Thread Title</label>
-                      <div class="input-group input-group-sm">
-                          <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
-                          <input type="text" name="emailThread" class="form-control border-start-0">
-                  </div>
-              </div>
-              </div>
-
-              <div class="row g-3 mb-3" id="newPayInvUploadGroup">
-                  <div class="col-12">
-                      <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
-                      <div class="input-group input-group-sm shadow-sm">
-                          <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control" placeholder="Link will appear here..." disabled>
-                          <button class="btn btn-primary fw-bold px-3" type="button" onclick="uploadAndScanInvoice('new')"><i class="bi bi-cloud-upload me-1"></i> UPLOAD INVOICE</button>
-                      </div>
+              <div id="newPayEmailGroup" class="mb-3 mt-2">
+                  <label class="form-label-sm">Email Thread Title</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
+                      <input type="text" name="emailThread" class="form-control border-start-0">
                   </div>
               </div>
 
-              <div class="row g-3 mb-3" id="newPayCheckUploadGroup">
-                  <div class="col-12">
-                      <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
-                      <input type="url" name="checkUrl" id="newCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+              <div id="newPayInvUploadGroup" class="mb-3 mt-2">
+                  <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+                  <div class="input-group input-group-sm shadow-sm">
+                      <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control" placeholder="Link will appear here..." disabled>
+                      <button class="btn btn-primary fw-bold px-3" type="button" onclick="uploadAndScanInvoice('new')"><i class="bi bi-cloud-upload me-1"></i> UPLOAD INVOICE</button>
                   </div>
+              </div>
+
+              <div id="newPayCheckUploadGroup" class="mb-3 mt-2">
+                  <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
+                  <input type="url" name="checkUrl" id="newCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
               </div>
               
-              <div class="row g-3" id="newPayNotesGroup">
-                  <div class="col-12">
-                      <label class="form-label-sm">Payment Notes</label>
-                      <input type="text" name="paymentNotes" id="newPaymentNotes" class="form-control form-control-sm">
-                  </div>
+              <div id="newPayNotesGroup" class="mb-2 mt-2">
+                  <label class="form-label-sm">Payment Notes</label>
+                  <input type="text" name="paymentNotes" id="newPaymentNotes" class="form-control form-control-sm">
               </div>
           </div>
   </div>
@@ -1818,52 +1806,45 @@
       </div>
       
       <div id="editDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-          <div class="row g-3 mb-3" id="editPayAmountGroup">
-              <div class="col-12">
+          <div id="editPayAmountGroup" class="mb-3">
                   <label class="form-label-sm">Amount</label>
                   <div class="input-group input-group-sm">
                       <span class="input-group-text bg-white fw-bold">₱</span>
                       <input type="number" step="0.01" name="amount" id="editAmount" class="form-control border-start-0 fw-bold text-success" value="0">
                   </div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="editPayStatusGroup">
-              <div class="col-12">
+              <div id="editPayStatusGroup" class="mb-3 mt-2">
                   <label class="form-label-sm">Status</label>
                   <select name="billingStatus" id="editBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('edit')"></select>
               </div>
-          </div>
 
-          <div id="editPayBillingGroup" style="display:none;" class="mb-3">
-              <div class="row g-3">
-                  <div class="col-12 col-md-4">
-                      <label class="form-label-sm">Status Date</label>
-                      <input type="date" name="billingStatusDate" class="form-control form-control-sm">
-                  </div>
-                  <div class="col-12 col-md-4">
-                      <label class="form-label-sm">GR Number</label>
-                      <input type="text" name="grNumber" class="form-control form-control-sm">
-                  </div>
-                  <div class="col-12 col-md-4">
-                      <label class="form-label-sm mb-1">Invoice Number</label>
-                      <input type="text" name="invoiceNumber" id="editInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary" disabled>
+              <div id="editPayBillingGroup" style="display:none;" class="mb-3 mt-2">
+                  <div class="row g-2">
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm">Status Date</label>
+                          <input type="date" name="billingStatusDate" class="form-control form-control-sm">
+                      </div>
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm">GR Number</label>
+                          <input type="text" name="grNumber" class="form-control form-control-sm">
+                      </div>
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm mb-1">Invoice Number</label>
+                          <input type="text" name="invoiceNumber" id="editInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary" disabled>
+                      </div>
                   </div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="editPayEmailGroup">
-              <div class="col-12">
+              <div id="editPayEmailGroup" class="mb-3 mt-2">
                   <label class="form-label-sm">Email Thread Title</label>
                   <div class="input-group input-group-sm">
                       <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
                       <input type="text" name="emailThread" class="form-control border-start-0">
                   </div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="editPayInvUploadGroup">
-              <div class="col-12">
+              <div id="editPayInvUploadGroup" class="mb-3 mt-2">
                   <label class="form-label-sm text-primary mb-1"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
                   <div class="input-group input-group-sm shadow-sm">
                       <input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control" placeholder="Link will appear here..." disabled>
@@ -1871,31 +1852,8 @@
                   </div>
                   <div id="editInvoiceLinkDisplay" class="mt-1"></div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="editPayEmailGroup">
-              <div class="col-12">
-                  <label class="form-label-sm">Email Thread Title</label>
-                  <div class="input-group input-group-sm">
-                      <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
-                      <input type="text" name="emailThread" class="form-control border-start-0">
-                  </div>
-              </div>
-          </div>
-
-          <div class="row g-3 mb-3" id="editPayInvUploadGroup">
-              <div class="col-12">
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                      <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
-                      <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
-                  </div>
-                  <input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
-                  <div id="editInvoiceLinkDisplay" class="mt-1"></div>
-              </div>
-          </div>
-
-          <div class="row g-3 mb-3" id="editPayCheckUploadGroup">
-              <div class="col-12">
+              <div id="editPayCheckUploadGroup" class="mb-3 mt-2">
                   <div class="d-flex justify-content-between align-items-center mb-1">
                       <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
                       <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
@@ -1903,14 +1861,11 @@
                   <input type="url" name="checkUrl" id="editCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
                   <div id="editCheckLinkDisplay" class="mt-1"></div>
               </div>
-          </div>
-          
-          <div class="row g-3" id="editPayNotesGroup">
-              <div class="col-12">
+              
+              <div id="editPayNotesGroup" class="mb-2 mt-2">
                   <label class="form-label-sm">Payment Notes</label>
                   <input type="text" name="paymentNotes" id="editPaymentNotes" class="form-control form-control-sm">
               </div>
-          </div>
       </div>
   </div>
   <button type="submit" class="btn btn-warning w-100 py-3 fw-bold shadow-sm mb-2" id="editSubmitBtn"><i class="bi bi-cloud-arrow-up me-1"></i> SAVE CHANGES</button>
