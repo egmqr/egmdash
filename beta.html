@@ -8302,18 +8302,17 @@ function computeBillingSales() {
       document.getElementById('btnExportTemplate').style.display = hasSelection ? 'block' : 'none';
   }
 
-  function openNewTemplate() {
-      localStorage.removeItem('egm_template_to_edit');
-      window.open('template-editor.html', '_blank', 'width=1200,height=800');
-  }
+ function openNewTemplate() {
+    window.templateToEdit = null; // 🟢 Clear memory
+    window.open('template-editor.html', '_blank', 'width=1200,height=800');
+}
 
-  function editTemplate() {
-      const idx = document.getElementById('boothTemplateList').value;
-      if (idx === "") return;
-      // Send the template to the editor window
-      localStorage.setItem('egm_template_to_edit', JSON.stringify(boothTemplates[idx]));
-      window.open('template-editor.html', '_blank', 'width=1200,height=800');
-  }
+function editTemplate() {
+    const idx = document.getElementById('boothTemplateList').value;
+    if (idx === "") return;
+    window.templateToEdit = boothTemplates[idx]; // 🟢 Store directly in RAM! Bypasses 5MB limit.
+    window.open('template-editor.html', '_blank', 'width=1200,height=800');
+}
 
   function removeTemplate() {
       const idx = document.getElementById('boothTemplateList').value;
@@ -8358,21 +8357,17 @@ function computeBillingSales() {
       event.target.value = '';
   }
 
-  // 🟢 CROSS-WINDOW LISTENER: Catches the template immediately when saved in the Editor
-  window.addEventListener('storage', function(e) {
-      if (e.key === 'egm_saved_template') {
-          const newTemplate = JSON.parse(e.newValue);
-          if (newTemplate) {
-              const existingIdx = boothTemplates.findIndex(t => t.Name === newTemplate.Name);
-              if (existingIdx >= 0) boothTemplates[existingIdx] = newTemplate;
-              else boothTemplates.push(newTemplate);
-              
-              renderTemplateList();
-              showToast(`Template '${newTemplate.Name}' loaded from Editor.`, "success");
-              localStorage.removeItem('egm_saved_template'); // Cleanup
-          }
-      }
-  });
+  // 🟢 CROSS-WINDOW BRIDGE: Direct memory function called by the Editor window
+window.receiveTemplateFromEditor = function(newTemplate) {
+    if (newTemplate) {
+        const existingIdx = boothTemplates.findIndex(t => t.Name === newTemplate.Name);
+        if (existingIdx >= 0) boothTemplates[existingIdx] = newTemplate;
+        else boothTemplates.push(newTemplate);
+        
+        renderTemplateList();
+        showToast(`Template '${newTemplate.Name}' loaded from Editor.`, "success");
+    }
+};
 </script>
 </body>
 </html>
