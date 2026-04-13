@@ -1344,11 +1344,48 @@
                       <input type="text" name="grNumber" class="form-control form-control-sm">
                   </div>
                   <div class="col-12 col-md-4">
-                      <div class="d-flex justify-content-between align-items-center mb-1">
-                          <label class="form-label-sm mb-0">Invoice Number</label>
-                          <span class="badge bg-primary text-white shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="scanInvoiceNumber('new')"><i class="bi bi-upc-scan me-1"></i>SCAN</span>
-                      </div>
-                      <input type="text" name="invoiceNumber" id="newInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary">
+                      <label class="form-label-sm mb-1">Invoice Number</label>
+                      <input type="text" name="invoiceNumber" id="newInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary" disabled>
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayEmailGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Email Thread Title</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
+                      <input type="text" name="emailThread" class="form-control border-start-0">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayInvUploadGroup">
+              <div class="col-12">
+                  <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+                  <div class="input-group input-group-sm shadow-sm">
+                      <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control" placeholder="Link will appear here..." disabled>
+                      <button class="btn btn-primary fw-bold px-3" type="button" onclick="uploadAndScanInvoice('new')"><i class="bi bi-cloud-upload me-1"></i> UPLOAD INVOICE</button>
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayEmailGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Email Thread Title</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
+                      <input type="text" name="emailThread" class="form-control border-start-0">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="newPayInvUploadGroup">
+              <div class="col-12">
+                  <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+                  <div class="input-group input-group-sm shadow-sm">
+                      <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control" placeholder="Link will appear here..." disabled>
+                      <button class="btn btn-primary fw-bold px-3" type="button" onclick="uploadAndScanInvoice('new')"><i class="bi bi-cloud-upload me-1"></i> UPLOAD INVOICE</button>
                   </div>
               </div>
           </div>
@@ -1846,12 +1883,30 @@
                       <input type="text" name="grNumber" class="form-control form-control-sm">
                   </div>
                   <div class="col-12 col-md-4">
-                      <div class="d-flex justify-content-between align-items-center mb-1">
-                          <label class="form-label-sm mb-0">Invoice Number</label>
-                          <span class="badge bg-primary text-white shadow-sm" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="scanInvoiceNumber('edit')"><i class="bi bi-upc-scan me-1"></i>SCAN</span>
-                      </div>
-                      <input type="text" name="invoiceNumber" id="editInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary">
+                      <label class="form-label-sm mb-1">Invoice Number</label>
+                      <input type="text" name="invoiceNumber" id="editInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary" disabled>
                   </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="editPayEmailGroup">
+              <div class="col-12">
+                  <label class="form-label-sm">Email Thread Title</label>
+                  <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
+                      <input type="text" name="emailThread" class="form-control border-start-0">
+                  </div>
+              </div>
+          </div>
+
+          <div class="row g-3 mb-3" id="editPayInvUploadGroup">
+              <div class="col-12">
+                  <label class="form-label-sm text-primary mb-1"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+                  <div class="input-group input-group-sm shadow-sm">
+                      <input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control" placeholder="Link will appear here..." disabled>
+                      <button class="btn btn-primary fw-bold px-3" type="button" onclick="uploadAndScanInvoice('edit')"><i class="bi bi-cloud-upload me-1"></i> UPLOAD INVOICE</button>
+                  </div>
+                  <div id="editInvoiceLinkDisplay" class="mt-1"></div>
               </div>
           </div>
 
@@ -3610,9 +3665,8 @@ function generateSingleEventCard(e) {
     </div>`;
 }
 
-  // 🟢 OCR INVOICE SCANNER (Tesseract.js) 🟢
-async function scanInvoiceNumber(prefix) {
-    // 1. Create a hidden file input to let the user select the image
+// 🟢 UNIFIED OCR SCANNER & UPLOADER 🟢
+async function uploadAndScanInvoice(prefix) {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*,application/pdf';
@@ -3621,42 +3675,82 @@ async function scanInvoiceNumber(prefix) {
         const file = e.target.files[0];
         if (!file) return;
 
-        // 2. Turn on the loading overlay
         const ov = document.getElementById('submitOverlay');
-        document.getElementById('overlayText').innerText = "Scanning Invoice... Please wait.";
+        document.getElementById('overlayText').innerText = "Uploading & Scanning... Please wait.";
         ov.style.display = 'flex';
 
+        let finalInvoiceNum = "";
+
         try {
-            // 3. Run the image through Tesseract OCR
+            // --- 1. OCR SCANNING ---
             const result = await Tesseract.recognize(file, 'eng');
-            const scannedText = result.data.text;
+            const match = result.data.text.match(/No[\.\:\s]*(\d{3,})/i); 
             
-            // 4. Regex Pattern to find "No. 0497" or "No 0497" or "No.0497"
-            const regex = /No[\.\:\s]*(\d{3,})/i; 
-            const match = scannedText.match(regex);
-            
-            // 5. Inject the result!
             if (match && match[1]) {
-                const targetInput = document.getElementById(`${prefix}InvoiceNumberInput`);
-                if (targetInput) {
-                    targetInput.value = match[1];
-                    // Flash it green so they know it worked
-                    targetInput.classList.replace('text-primary', 'text-success');
-                    setTimeout(() => targetInput.classList.replace('text-success', 'text-primary'), 2000);
-                }
-                showToast(`Scanned successfully: ${match[1]}`, "success");
-            } else {
-                egmAlert("Could not automatically detect the Invoice Number. The text might be too blurry, or the OCR engine couldn't separate the red ink from the background.\n\nPlease enter it manually.");
+                // Rule: Drop the first zero, and retain the last 3 digits
+                let rawNum = match[1].replace(/^0/, ''); // Drop the leading zero
+                finalInvoiceNum = rawNum.slice(-3);      // Keep only the last 3 digits
             }
+
+            // --- 2. AUTO UPLOAD TO DRIVE ---
+            const b64Data = await readFileAsBase64(file);
+            
+            const uploadRes = await callApi({
+                action: 'uploadDirectToFolder',
+                base64Data: b64Data.base64,
+                filename: b64Data.filename,
+                mimeType: b64Data.mimeType,
+                folderId: '1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX'
+            }, 'POST');
+
+            if (uploadRes && uploadRes.success && uploadRes.url) {
+                const urlInput = document.getElementById(`${prefix}InvoiceUrl`);
+                const numInput = document.getElementById(`${prefix}InvoiceNumberInput`);
+                
+                // Populate and UNLOCK the URL field
+                if (urlInput) {
+                    urlInput.value = uploadRes.url;
+                    urlInput.disabled = false; 
+                    
+                    if (prefix === 'edit') {
+                        const invDisplay = document.getElementById('editInvoiceLinkDisplay');
+                        if (invDisplay) {
+                            invDisplay.innerHTML = `
+                                <div class="d-flex align-items-center mt-1">
+                                    <a href="${uploadRes.url}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> Current Invoice Link</a>
+                                    <span class="badge bg-danger ms-3 shadow-sm admin-remove-btn" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editInvoiceUrl').value=''; document.getElementById('editInvoiceLinkDisplay').innerHTML='';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
+                                </div>`;
+                        }
+                    }
+                }
+                
+                // Populate and UNLOCK the Invoice Number field
+                if (numInput) {
+                    if (finalInvoiceNum) {
+                        numInput.value = finalInvoiceNum;
+                        numInput.classList.replace('text-primary', 'text-success');
+                        setTimeout(() => numInput.classList.replace('text-success', 'text-primary'), 2000);
+                    }
+                    numInput.disabled = false; 
+                }
+
+                if (finalInvoiceNum) {
+                    showToast(`Invoice ${finalInvoiceNum} uploaded and linked!`, "success");
+                } else {
+                    showToast("Uploaded successfully, but couldn't detect the number. Please enter it manually.", "warning");
+                }
+            } else {
+                egmAlert("Upload failed: " + (uploadRes.error || "Unknown error"));
+            }
+
         } catch (err) {
-            console.error("OCR Error:", err);
-            egmAlert("Error scanning image: " + err.message);
+            console.error("Scan/Upload Error:", err);
+            egmAlert("Error processing document: " + err.message);
         }
         
         ov.style.display = 'none';
     };
     
-    // Trigger the file picker
     fileInput.click();
 }
   function renderEvents(data, isDefault) {
@@ -4448,6 +4542,10 @@ async function scanInvoiceNumber(prefix) {
             const currentChk = paymentSourceEvent['Check URL'] || '';
             form.elements['invoiceUrl'].value = currentInv;
             form.elements['checkUrl'].value = currentChk;
+            
+            // 🟢 NEW: Unlock fields if data already exists!
+            document.getElementById('editInvoiceUrl').disabled = !currentInv;
+            document.getElementById('editInvoiceNumberInput').disabled = !paymentSourceEvent['Invoice Number'];
             
             // 2. Create the "View" and "Remove" badges for the Invoice
             const invDisplay = document.getElementById('editInvoiceLinkDisplay');
