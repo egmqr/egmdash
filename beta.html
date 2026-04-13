@@ -3606,7 +3606,7 @@ async function uploadAndScanInvoice(prefix) {
         try {
             // --- 1. FILENAME EXTRACTION (For Verification & Fallback) ---
             // Grabs the last 3 digits of the filename before the extension
-            const baseName = file.name.substring(0, file.lastIndexOf('.')) || file.name;
+            const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
             const allFileDigits = baseName.replace(/\D/g, ''); // Strips all letters/symbols
             if (allFileDigits.length >= 3) {
                 fileNum = allFileDigits.slice(-3); // Keeps only the last 3 digits
