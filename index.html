@@ -7737,8 +7737,11 @@ function computeBillingSales() {
         t1_due += amtDue;
         t1_totalDue += totalAmtDue;
 
+        // 🟢 FIX: Create a subtle badge for the Invoice Number
+        const invDisplay = e['Invoice Number'] ? `<span class="badge bg-light text-secondary border ms-1 fw-normal" style="font-size: 0.65rem;">INV: ${e['Invoice Number']}</span>` : '';
+
         htmlT1 += `<tr>
-            <td class="text-start fw-bold">${e['Event Name']}</td>
+            <td class="text-start fw-bold">${e['Event Name']} ${invDisplay}</td>
             <td>₱${netVat.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             <td>₱${lessVat.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             <td>₱${gross.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
@@ -7746,6 +7749,8 @@ function computeBillingSales() {
             <td>₱${amtDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             <td class="fw-bold text-success">₱${totalAmtDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
         </tr>`;
+
+        // 🟢 TABLE 2 MATH (Rest Split)
 
         // 🟢 TABLE 2 MATH (Rest Split)
         const e_rest = restTotal * pE;
