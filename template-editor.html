@@ -20,13 +20,13 @@
         
         .app-container { display: flex; height: 100vh; width: 100vw; }
         
-        /* Left: Canvas Area */
-        .canvas-area { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--bg-canvas-wrapper); border-right: 1px solid var(--border-color); position: relative; overflow: hidden; padding: 20px; }
+       /* Left: Canvas Area */
+        .canvas-area { flex: 1; background: var(--bg-canvas-wrapper); border-right: 1px solid var(--border-color); position: relative; overflow: hidden; }
         .back-btn { position: absolute; top: 20px; left: 20px; background: #333333; color: white; border: none; padding: 15px 20px; font-size: 16px; font-weight: bold; cursor: pointer; z-index: 10; border-radius: 4px; }
         .back-btn:hover { background: #444444; }
         
         /* The Actual Canvas */
-        #designCanvas { background: white; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); transform-origin: center; }
+        #designCanvas { background: white; position: absolute; top: 50%; left: 50%; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); transform-origin: center; }
         
         /* Right: Sidebar */
         .sidebar { width: 380px; background: var(--bg-panel); display: flex; flex-direction: column; }
@@ -188,11 +188,17 @@
         
         // Auto-scale to fit window viewing area
         const wrapperRect = canvasWrapper.getBoundingClientRect();
-        const scaleX = (wrapperRect.width - 60) / templateState.CanvasWidth;
-        const scaleY = (wrapperRect.height - 60) / templateState.CanvasHeight;
-        const scale = Math.min(scaleX, scaleY, 1); // Never scale up, only down
+        const availableWidth = wrapperRect.width - 60;
+        const availableHeight = wrapperRect.height - 60;
         
-        designCanvas.style.transform = `scale(${scale})`;
+        const scaleX = availableWidth / templateState.CanvasWidth;
+        const scaleY = availableHeight / templateState.CanvasHeight;
+        
+        // Lock aspect ratio uniformly based on the tightest dimension
+        const scale = Math.min(scaleX, scaleY, 1); 
+        
+        // Translate perfectly centers the absolute coordinates before scaling
+        designCanvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
     }
 
     // --- LAYER CREATION ---
