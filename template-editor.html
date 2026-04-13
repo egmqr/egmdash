@@ -168,12 +168,12 @@
 
     // --- LOAD & SAVE MECHANISMS ---
     function init() {
-        // 🟢 NEW: Check if Dashboard passed a template to edit
-        const templateToEditStr = localStorage.getItem('egm_template_to_edit');
-        if (templateToEditStr) {
-            const loadedTemplate = JSON.parse(templateToEditStr);
+        // 🟢 Grab directly from the parent window's RAM
+        if (window.opener && window.opener.templateToEdit) {
+            // Deep copy to prevent accidental reference mutations
+            const loadedTemplate = JSON.parse(JSON.stringify(window.opener.templateToEdit));
             loadTemplateData(loadedTemplate);
-            localStorage.removeItem('egm_template_to_edit');
+            window.opener.templateToEdit = null; // Cleanup memory
         } else {
             updateCanvasSize();
         }
@@ -696,8 +696,10 @@ function loadTemplateData(data) {
         document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
 
-        // 🟢 2. Bridge to Dashboard Listbox
-        localStorage.setItem('egm_saved_template', JSON.stringify(exportData));
+        // 🟢 Bridge to Dashboard Listbox (Direct RAM transfer)
+        if (window.opener && window.opener.receiveTemplateFromEditor) {
+            window.opener.receiveTemplateFromEditor(exportData);
+        }
         
         // Slight delay to ensure the browser successfully starts the download before closing the window
         setTimeout(() => {
