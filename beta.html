@@ -1087,9 +1087,13 @@
         </div>
       </div>
 
-      <div class="row g-2 mb-4" id="newAvpHiddenFields">
-        <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+      <div class="row g-2 mb-4">
+        <div class="col-12 col-md-9">
+            <div class="row g-2" id="newAvpHiddenFields">
+                <div class="col-12 col-md-7"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
+                <div class="col-12 col-md-5"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+            </div>
+        </div>
         <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
       </div>
   </div>
@@ -1572,9 +1576,13 @@
         </div>
       </div>
 
-      <div class="row g-2 mb-4" id="editAvpHiddenFields">
-        <div class="col-12 col-md-5"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
-        <div class="col-12 col-md-4"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+      <div class="row g-2 mb-4">
+        <div class="col-12 col-md-9">
+            <div class="row g-2" id="editAvpHiddenFields">
+                <div class="col-12 col-md-7"><label class="form-label-sm">Venue / Location Name</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span><input type="text" name="eventVenue" class="form-control border-start-0 ps-0"></div></div>
+                <div class="col-12 col-md-5"><label class="form-label-sm">Google Maps Link</label><div class="input-group"><span class="input-group-text bg-light border-end-0"><i class="bi bi-map text-muted"></i></span><input type="url" name="venueLink" class="form-control border-start-0 ps-0" placeholder="https://maps.app.goo.gl/..."></div></div>
+            </div>
+        </div>
         <div class="col-12 col-md-3"><label class="form-label-sm">Current Status</label><select name="eventStatus" class="form-select fw-bold text-primary"><option>Pencil Booked</option><option>Confirmed</option><option>Cancelled</option></select></div>
       </div>
   </div>
@@ -3804,14 +3812,8 @@ function generateSingleEventCard(e) {
     }
 
     // 2. Filter the table data based on our smart rules
-    let displayData = [];
-    if (showAllDays) {
-        // Text search WITHOUT specific payment filters: Show Main Days and Added Days
-        displayData = data.filter(item => item['Event Name'] !== 'Crew Leave');
-    } else {
-        // 🟢 THE FIX: ALWAYS show the true Main Day AND any AVPs, bypassing the group-hide
-        displayData = data.filter(item => (item['Doc ID'] === projectMainDays[item['Event ID']] || item['AVP Required'] === 'TRUE') && item['Event Name'] !== 'Crew Leave');
-    }
+    // 🟢 FIX: Always collapse multi-day events down to Day 1 (Main Day), even when actively searching!
+    let displayData = data.filter(item => (item['Doc ID'] === projectMainDays[item['Event ID']] || item['AVP Required'] === 'TRUE') && item['Event Name'] !== 'Crew Leave');
 
     // Sort the final display rows
     displayData.sort((a, b) => {
@@ -7735,8 +7737,11 @@ function computeBillingSales() {
         t1_due += amtDue;
         t1_totalDue += totalAmtDue;
 
+        // 🟢 FIX: Create a subtle badge for the Invoice Number
+        const invDisplay = e['Invoice Number'] ? `<span class="badge bg-light text-secondary border ms-1 fw-normal" style="font-size: 0.65rem;">INV: ${e['Invoice Number']}</span>` : '';
+
         htmlT1 += `<tr>
-            <td class="text-start fw-bold">${e['Event Name']}</td>
+            <td class="text-start fw-bold">${e['Event Name']} ${invDisplay}</td>
             <td>₱${netVat.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             <td>₱${lessVat.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             <td>₱${gross.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
@@ -7744,6 +7749,8 @@ function computeBillingSales() {
             <td>₱${amtDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             <td class="fw-bold text-success">₱${totalAmtDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
         </tr>`;
+
+        // 🟢 TABLE 2 MATH (Rest Split)
 
         // 🟢 TABLE 2 MATH (Rest Split)
         const e_rest = restTotal * pE;
@@ -7878,7 +7885,245 @@ function computeBillingSales() {
                 </table></div>
             </div>
         </div>
+
+        <div class="row mt-4 mb-5">
+            <div class="col-12">
+                <h5 class="fw-bold text-dark mb-3">Fund Transfers</h5>
+
+                <div class="p-3 mb-3 shadow-sm bg-light border border-secondary-subtle rounded-3">
+                    <h6 class="fw-bold mb-3 text-primary" style="font-size: 0.85rem;"><i class="bi bi-arrow-left-right me-2"></i>Manual Fund Adjustments</h6>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label-sm text-secondary">From Account (Subtract)</label>
+                            <select id="t7_adjFrom" class="form-select form-select-sm fw-bold"></select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label-sm text-secondary">To Account (Add)</label>
+                            <select id="t7_adjTo" class="form-select form-select-sm fw-bold"></select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label-sm text-secondary">Amount</label>
+                            <div class="input-group input-group-sm shadow-sm">
+                                <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
+                                <input type="number" id="t7_adjAmt" class="form-control fw-bold text-success border-start-0" placeholder="0.00" onkeyup="if(event.key === 'Enter') applyT7Adjustment();">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-1">
+                            <button class="btn btn-sm btn-primary w-100 fw-bold shadow-sm" onclick="applyT7Adjustment()">APPLY</button>
+                        </div>
+                    </div>
+                    <div id="t7_adjLog" class="mt-3"></div>
+                </div>
+
+                <div class="${wrapperClass.replace('mb-5', 'mb-3')}"><table class="${tblClass}">
+                    <thead class="${headClass}">
+                        <tr><th class="text-start border-0">Account</th><th class="border-0">Account Number</th><th class="border-0 text-end" style="width: 250px;">Amount</th></tr>
+                    </thead>
+                    <tbody id="t7_body">
+                        </tbody>
+                </table></div>
+                
+                <div class="text-start mb-4">
+                    <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm" onclick="addTransferRow()"><i class="bi bi-plus-lg me-1"></i> ADD CUSTOM ROW</button>
+                </div>
+
+                <button class="btn btn-danger w-100 py-3 fw-bold shadow-sm" onclick="generateTable7Image()"><i class="bi bi-receipt me-1"></i> GENERATE TRANSACTION SLIP</button>
+            </div>
+        </div>
     `;
+
+    // 🟢 INITIALIZE TABLE 7 DATA ENGINE
+    window.t7_data = {
+        base: [
+            { name: 'Created PB', acc: '4053 0993 14', amt: t1_totalDue },
+            { name: 'Created Expenses', acc: '4059 5833 31', amt: (t6_TranspoSum + taxIncome + cex_E + (t3_JiniSum * 0.10) + (t4_TinaSum * 0.10) + (t5_JGSum * 0.10) + cex_JG) },
+            { name: 'JiniCis', acc: '4099 5620 94', amt: t3_JiniSum * 0.90 },
+            { name: 'TinaLex', acc: '4059 5957 47', amt: t4_TinaSum * 0.90 },
+            { name: 'JG ATM', acc: '4099 5255 34', amt: ((t5_JGSum * 0.90) + (t2_JG - cex_JG)) },
+            { name: 'JG PB', acc: '4053 0993 06', amt: 0 },
+            { name: 'Grace CC', acc: '020100 3 30 9775743', amt: 0 },
+            { name: 'EGM', acc: 'Cash', amt: t2_E - cex_E }
+        ],
+        custom: [],
+        adjustments: []
+    };
+
+    // 🟢 CORE RENDER FUNCTION
+    window.renderTable7 = function() {
+        // 1. Calculate final amounts dynamically
+        let finalAmounts = {};
+        t7_data.base.forEach(a => finalAmounts[a.name] = a.amt);
+        t7_data.custom.forEach(a => { if(a.name) finalAmounts[a.name] = a.amt; });
+
+        // Apply generic adjustments
+        t7_data.adjustments.forEach(adj => {
+            if(finalAmounts[adj.from] !== undefined) finalAmounts[adj.from] -= adj.amt;
+            if(finalAmounts[adj.to] !== undefined) finalAmounts[adj.to] += adj.amt;
+        });
+
+        const tbody = document.getElementById('t7_body');
+        let html = '';
+
+        // 2. Draw Base Rows
+        t7_data.base.forEach(a => {
+            html += `<tr>
+                <td class="text-start fw-bold">${a.name}</td>
+                <td>${a.acc}</td>
+                <td class="fw-bold text-success text-end pe-3">
+                    ₱${finalAmounts[a.name].toLocaleString(undefined, {minimumFractionDigits: 2})}
+                    ${finalAmounts[a.name] !== a.amt ? `<br><span class="small text-muted fw-normal fst-italic">Base: ₱${a.amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>` : ''}
+                </td>
+            </tr>`;
+        });
+
+        // 3. Draw Custom Rows
+        t7_data.custom.forEach((a, idx) => {
+            html += `<tr>
+                <td class="p-2 d-flex align-items-center">
+                    <button class="btn btn-sm text-danger p-0 me-2" onclick="removeT7Custom(${idx})"><i class="bi bi-x-circle-fill"></i></button>
+                    <input type="text" class="form-control form-control-sm fw-bold" placeholder="Account Name" value="${a.name}" onchange="updateT7CustomName(${idx}, this.value)">
+                </td>
+                <td class="p-2"><input type="text" class="form-control form-control-sm" placeholder="Account Number" value="${a.acc}" onchange="updateT7CustomAcc(${idx}, this.value)"></td>
+                <td class="p-2">
+                    <div class="input-group input-group-sm justify-content-end shadow-sm">
+                        <span class="input-group-text bg-white fw-bold border-end-0">₱</span>
+                        <input type="number" class="form-control text-end fw-bold text-success border-start-0" placeholder="0.00" value="${a.amt || ''}" onchange="updateT7CustomAmt(${idx}, this.value)" onkeyup="if(event.key === 'Enter') this.blur();">
+                    </div>
+                    ${a.name && finalAmounts[a.name] !== a.amt ? `<div class="small text-end mt-1 text-primary fw-bold">Adj: ₱${finalAmounts[a.name].toLocaleString(undefined, {minimumFractionDigits: 2})}</div>` : ''}
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+
+        // 4. Update Adjustment Dropdowns
+        const options = [...t7_data.base.map(a=>a.name), ...t7_data.custom.filter(a=>a.name.trim() !== '').map(a=>a.name)];
+        const selectFrom = document.getElementById('t7_adjFrom');
+        const selectTo = document.getElementById('t7_adjTo');
+        const currFrom = selectFrom.value; const currTo = selectTo.value;
+
+        let optHtml = '<option value="">Select Account</option>';
+        options.forEach(o => optHtml += `<option value="${o}">${o}</option>`);
+
+        selectFrom.innerHTML = optHtml; selectTo.innerHTML = optHtml;
+        if (options.includes(currFrom)) selectFrom.value = currFrom;
+        if (options.includes(currTo)) selectTo.value = currTo;
+
+        // 5. Build Adjustment Logs
+        const logDiv = document.getElementById('t7_adjLog');
+        if (t7_data.adjustments.length === 0) {
+            logDiv.innerHTML = '';
+        } else {
+            let logHtml = '<div class="d-flex flex-wrap gap-2 mt-1">';
+            t7_data.adjustments.forEach((adj, i) => {
+                logHtml += `<span class="badge bg-white border border-secondary-subtle text-dark shadow-sm p-2 d-flex align-items-center">
+                    <span class="text-danger me-1">${adj.from}</span> <i class="bi bi-arrow-right text-muted mx-1"></i> <span class="text-success ms-1">${adj.to}</span>
+                    <strong class="ms-2">₱${adj.amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</strong>
+                    <i class="bi bi-x ms-2 text-muted" style="cursor:pointer; font-size:1.1rem;" onclick="removeT7Adjustment(${i})"></i>
+                </span>`;
+            });
+            logHtml += '</div>';
+            logDiv.innerHTML = logHtml;
+        }
+    };
+
+    // 🟢 UI INTERACTIVITY CONTROLLERS
+    window.addTransferRow = function() { window.t7_data.custom.push({ name: '', acc: '', amt: 0 }); window.renderTable7(); };
+    window.removeT7Custom = function(idx) { window.t7_data.custom.splice(idx, 1); window.renderTable7(); };
+    window.updateT7CustomName = function(idx, val) { window.t7_data.custom[idx].name = val; window.renderTable7(); };
+    window.updateT7CustomAcc = function(idx, val) { window.t7_data.custom[idx].acc = val; window.renderTable7(); };
+    window.updateT7CustomAmt = function(idx, val) { window.t7_data.custom[idx].amt = parseFloat(val) || 0; window.renderTable7(); };
+
+    window.applyT7Adjustment = function() {
+        const from = document.getElementById('t7_adjFrom').value;
+        const to = document.getElementById('t7_adjTo').value;
+        const amt = parseFloat(document.getElementById('t7_adjAmt').value);
+
+        if (!from || !to) return window.egmAlert("Please select both 'From' and 'To' accounts.");
+        if (from === to) return window.egmAlert("Cannot transfer to the same account.");
+        if (!amt || amt <= 0) return window.egmAlert("Enter a valid amount to transfer.");
+
+        window.t7_data.adjustments.push({ from, to, amt });
+        document.getElementById('t7_adjAmt').value = '';
+        window.renderTable7();
+    };
+
+    window.removeT7Adjustment = function(idx) { window.t7_data.adjustments.splice(idx, 1); window.renderTable7(); };
+
+    // 🟢 HTML5 CANVAS HIGH-RES EXPORT
+    window.generateTable7Image = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Recalculate final amounts specifically for export drawing
+        let finalAmounts = {};
+        t7_data.base.forEach(a => finalAmounts[a.name] = a.amt);
+        t7_data.custom.forEach(a => { if(a.name) finalAmounts[a.name] = a.amt; });
+        t7_data.adjustments.forEach(adj => {
+            if(finalAmounts[adj.from] !== undefined) finalAmounts[adj.from] -= adj.amt;
+            if(finalAmounts[adj.to] !== undefined) finalAmounts[adj.to] += adj.amt;
+        });
+
+        const rowsToDraw = [];
+        t7_data.base.forEach(a => rowsToDraw.push({ name: a.name, acc: a.acc, amt: finalAmounts[a.name] }));
+        t7_data.custom.forEach(a => { if(a.name) rowsToDraw.push({ name: a.name, acc: a.acc, amt: finalAmounts[a.name] }); });
+
+        const rowHeight = 40;
+        const headerHeight = 120;
+        const footerHeight = 50; 
+        const totalHeight = headerHeight + (rowsToDraw.length * rowHeight) + footerHeight;
+
+        const scale = 3; 
+        canvas.width = 700 * scale; canvas.height = totalHeight * scale;
+        ctx.scale(scale, scale);
+
+        // Background
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 700, totalHeight);
+
+        // Header Title
+        ctx.fillStyle = '#000000'; ctx.font = 'bold 22px Inter, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('EGM FUND TRANSFERS', 350, 40);
+        ctx.font = '14px Inter, sans-serif'; ctx.fillStyle = '#666666';
+        const procDate = document.getElementById('bsProcessDate').value || 'N/A';
+        ctx.fillText('Processed Date: ' + procDate, 350, 65);
+
+        // Table Header Banner
+        ctx.fillStyle = '#0d9488'; 
+        ctx.fillRect(30, 90, 640, 35);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.textAlign = 'left'; ctx.fillText('ACCOUNT', 45, 112);
+        ctx.fillText('ACCOUNT NUMBER', 250, 112);
+        ctx.textAlign = 'right'; ctx.fillText('AMOUNT', 655, 112);
+
+        // Draw the Rows
+        let y = 125;
+        rowsToDraw.forEach((r, i) => {
+            if (i % 2 === 0) { ctx.fillStyle = '#f8fafc'; ctx.fillRect(30, y, 640, rowHeight); }
+            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1; ctx.strokeRect(30, y, 640, rowHeight);
+
+            ctx.fillStyle = '#0f172a'; ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.textAlign = 'left'; ctx.fillText(r.name, 45, y + 25);
+            ctx.font = '14px Inter, sans-serif'; ctx.fillText(r.acc || '-', 250, y + 25);
+            ctx.textAlign = 'right'; ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.fillStyle = '#16a34a'; 
+            ctx.fillText('₱ ' + r.amt.toLocaleString(undefined, {minimumFractionDigits: 2}), 655, y + 25);
+            y += rowHeight;
+        });
+
+        // Watermark / Subtext
+        if (t7_data.adjustments.length > 0) {
+            ctx.textAlign = 'left'; ctx.fillStyle = '#94a3b8'; ctx.font = 'italic 12px Inter, sans-serif';
+            ctx.fillText('* Final amounts include manual transfer adjustments.', 30, y + 25);
+        }
+
+        // Trigger Download
+        const link = document.createElement('a');
+        link.download = `Fund_Transfers_${procDate}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg', 1.0);
+        link.click();
+    };
+
+    // Wake it up instantly!
+    setTimeout(window.renderTable7, 50);
 }
 </script>
 </body>
