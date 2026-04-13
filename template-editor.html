@@ -55,6 +55,10 @@
         
         /* Draggable Elements on Canvas */
         .canvas-element { position: absolute; transform-origin: center center; cursor: move; user-select: none; }
+        
+        /* 🟢 THE FIX: Force the currently selected layer to the absolute front so handles are always clickable */
+        .canvas-element.active { z-index: 9999 !important; } 
+
         .canvas-element img { width: 100%; height: 100%; pointer-events: none; }
         .photo-slot { width: 100%; height: 100%; border: 4px solid; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-size: 24px; color: white; box-sizing: border-box; }
         
