@@ -562,6 +562,10 @@
         if (!layer) return;
 
         layer.isLocked = !layer.isLocked;
+        
+        // 🟢 THE FIX: If locked, let the mouse click right through the bounding box!
+        layer.domElement.style.pointerEvents = layer.isLocked ? 'none' : 'auto';
+        
         selectLayer(layer.id); // Re-triggers UI updates
     }
 
