@@ -268,14 +268,16 @@ function loadTemplateData(data) {
         
         // Auto-scale to fit window viewing area
         const wrapperRect = canvasWrapper.getBoundingClientRect();
-        const availableWidth = wrapperRect.width - 60;
-        const availableHeight = wrapperRect.height - 60;
+        
+        // 🟢 THE FIX: Enforce minimum values so the browser never calculates a negative scale
+        const availableWidth = Math.max(wrapperRect.width - 60, 100);
+        const availableHeight = Math.max(wrapperRect.height - 60, 100);
         
         const scaleX = availableWidth / templateState.CanvasWidth;
         const scaleY = availableHeight / templateState.CanvasHeight;
         
-        // Lock aspect ratio uniformly based on the tightest dimension
-        const scale = Math.min(scaleX, scaleY, 1); 
+        // Lock aspect ratio uniformly, ensuring scale never drops below 0.01
+        const scale = Math.max(Math.min(scaleX, scaleY, 1), 0.01); 
         
         // Translate perfectly centers the absolute coordinates before scaling
         designCanvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
@@ -708,7 +710,14 @@ function loadTemplateData(data) {
 
     // Boot up
     window.onload = init;
-    window.onresize = updateCanvasSize;
+    
+    // 🟢 THE FIX: The ResizeObserver automatically catches the exact millisecond the browser finishes drawing the window!
+    const resizeObserver = new ResizeObserver(() => {
+        updateCanvasSize();
+    });
+    resizeObserver.observe(document.getElementById('canvasWrapper'));
+
+</script>
 
 </script>
 </body>
