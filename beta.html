@@ -938,9 +938,11 @@
                       <span id="viewBoothId" class="badge bg-secondary opacity-75 fw-normal"></span>
                   </div>
                   
-                  <div id="boothCardsList"></div>
+                 <div id="boothCardsList"></div>
                   
                   <button id="boothDownloadAllQRsBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mt-2" style="display:none;" onclick="downloadAllBoothQRs()"><i class="bi bi-download me-1"></i> Download All QR Codes</button>
+                  
+                  <button id="boothDownloadJsonBtn" class="btn btn-outline-dark w-100 py-2 fw-bold shadow-sm mt-2" style="display:none;" onclick="downloadEventJson()"><i class="bi bi-filetype-json me-1"></i> Download Event Config (.json)</button>
               </div>
 
           </div>
@@ -5743,6 +5745,13 @@ for (const personName of peopleToNotify){
               
               if (boothsArr.length > 1) document.getElementById('boothDownloadAllQRsBtn').style.display = 'block'; 
               else document.getElementById('boothDownloadAllQRsBtn').style.display = 'none'; 
+              
+              // 🟢 THE FIX: Bind the JSON File ID and show the new button if an ID exists
+              const jsonBtn = document.getElementById('boothDownloadJsonBtn');
+              if (jsonBtn) {
+                  jsonBtn.dataset.fileId = details.jsonFileIdsStr || "";
+                  jsonBtn.style.display = details.jsonFileIdsStr ? 'block' : 'none';
+              }
           }
       }
   }
@@ -8356,7 +8365,24 @@ function editTemplate() {
       reader.readAsText(file);
       event.target.value = '';
   }
-
+// 🟢 TRIGGER JSON DOWNLOAD
+function downloadEventJson() {
+    const fileId = document.getElementById('boothDownloadJsonBtn').dataset.fileId;
+    if (!fileId) {
+        egmAlert("No JSON configuration file found for this event.");
+        return;
+    }
+    
+    // Using Google Drive's direct export URL
+    const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+    
+    // Create a temporary link to force the browser download
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
   // 🟢 CROSS-WINDOW BRIDGE: Direct memory function called by the Editor window
 window.receiveTemplateFromEditor = function(newTemplate) {
     if (newTemplate) {
