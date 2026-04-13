@@ -4861,6 +4861,20 @@ async function uploadAndScanInvoice(prefix) {
           }
       } else {
           if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
+          
+          // 🟢 NEW: INVOICE VALIDATION GUARDRAIL
+          const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
+          if (requireInvoiceStatuses.includes(obj.billingStatus)) {
+              if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
+                  egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
+                  return;
+              }
+              if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
+                  egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
+                  return;
+              }
+          }
+          
           eventDatesArray.push(obj.eventDate); // Standard events just get 1 date here
       }
       
@@ -5152,6 +5166,19 @@ for (const personName of peopleToNotify){
           obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
       } else {
           if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
+          
+          // 🟢 NEW: INVOICE VALIDATION GUARDRAIL
+          const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
+          if (requireInvoiceStatuses.includes(obj.billingStatus)) {
+              if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
+                  egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
+                  return;
+              }
+              if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
+                  egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
+                  return;
+              }
+          }
       }
 
       // 🟢 CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
