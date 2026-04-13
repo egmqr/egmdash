@@ -3647,12 +3647,14 @@ async function uploadAndScanInvoice(prefix) {
         try {
             // --- 1. OCR SCANNING ---
             const result = await Tesseract.recognize(file, 'eng');
-            const match = result.data.text.match(/No[\.\:\s]*(\d{3,})/i); 
+            
+            // 🟢 THE FIX: Look for EXACTLY 4 digits, and ensure no letters are attached to the end (ignores "045MP")
+            const match = result.data.text.match(/No[\.\:\s]*(\d{4})\b/i); 
             
             if (match && match[1]) {
-                // Rule: Drop the first zero, and retain the last 3 digits
-                let rawNum = match[1].replace(/^0/, ''); // Drop the leading zero
-                finalInvoiceNum = rawNum.slice(-3);      // Keep only the last 3 digits
+                // Match is guaranteed to be a 4-digit number (e.g., "0497"). 
+                // We just drop the first zero, which leaves the exact 3 digits you need.
+                finalInvoiceNum = match[1].replace(/^0/, ''); 
             }
 
             // --- 2. AUTO UPLOAD TO DRIVE ---
