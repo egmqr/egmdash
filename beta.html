@@ -856,6 +856,20 @@
                       <span class="d-block mt-1 small fw-bold text-danger" id="boothCountHint" style="display:none;">Booth count is set by admin.</span>
                   </div>
 
+                  <div class="mb-4 pb-4 border-bottom" id="boothTemplatesBlock">
+                      <label class="form-label-sm text-secondary">Print Templates</label>
+                      <select id="boothTemplateList" size="4" class="form-select form-select-sm mb-2 fw-bold text-dark shadow-sm" onchange="handleTemplateSelection()"></select>
+                      
+                      <div class="d-flex gap-1">
+                          <button type="button" class="btn btn-sm btn-outline-primary fw-bold flex-fill" onclick="openNewTemplate()"><i class="bi bi-plus-lg"></i> New</button>
+                          <button type="button" class="btn btn-sm btn-outline-secondary fw-bold flex-fill" id="btnEditTemplate" style="display:none;" onclick="editTemplate()"><i class="bi bi-pencil"></i> Edit</button>
+                          <button type="button" class="btn btn-sm btn-outline-danger fw-bold flex-fill" id="btnRemoveTemplate" style="display:none;" onclick="removeTemplate()"><i class="bi bi-trash"></i> Remove</button>
+                          <button type="button" class="btn btn-sm btn-outline-success fw-bold flex-fill" onclick="document.getElementById('importTemplateFile').click()"><i class="bi bi-box-arrow-in-down"></i> Import</button>
+                          <button type="button" class="btn btn-sm btn-outline-info fw-bold flex-fill" id="btnExportTemplate" style="display:none;" onclick="exportTemplate()"><i class="bi bi-box-arrow-up"></i> Export</button>
+                          <input type="file" id="importTemplateFile" style="display:none;" accept=".json" onchange="importTemplateFile(event)">
+                      </div>
+                  </div>
+
                   <div class="row g-3 mb-4">
                       <div class="col-12 col-sm-6">
                           <label class="form-label-sm text-secondary">Font & Tab Color</label>
@@ -5923,12 +5937,13 @@ async function fetchExistingLogos(forceRefresh = false) {
       
       const logoOnMain = document.getElementById('boothLogoOnMain').checked;
 
-      // REMOVED existingLogoId and existingQrLogoId
+      // Find this block inside executeBoothAction:
       const payload = {
           action: actionName, eventId, folderName, eventName, boothCount,
           bgData, logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
           fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
-          existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId
+          existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
+          templates: boothTemplates // 🟢 ADD THIS LINE HERE
       };
 
       const res = await callApi(payload, 'POST');
@@ -8265,6 +8280,99 @@ function computeBillingSales() {
     // Wake it up instantly!
     setTimeout(window.renderTable7, 50);
 }
+  // 🟢 BOOTH TEMPLATES LOGIC 🟢
+  let boothTemplates = [];
+
+  function renderTemplateList() {
+      const list = document.getElementById('boothTemplateList');
+      list.innerHTML = '';
+      boothTemplates.forEach((t, i) => {
+          let opt = document.createElement('option');
+          opt.value = i;
+          opt.innerText = t.Name || `Template ${i + 1}`;
+          list.appendChild(opt);
+      });
+      handleTemplateSelection();
+  }
+
+  function handleTemplateSelection() {
+      const hasSelection = document.getElementById('boothTemplateList').selectedIndex !== -1;
+      document.getElementById('btnEditTemplate').style.display = hasSelection ? 'block' : 'none';
+      document.getElementById('btnRemoveTemplate').style.display = hasSelection ? 'block' : 'none';
+      document.getElementById('btnExportTemplate').style.display = hasSelection ? 'block' : 'none';
+  }
+
+  function openNewTemplate() {
+      localStorage.removeItem('egm_template_to_edit');
+      window.open('template-editor.html', '_blank', 'width=1200,height=800');
+  }
+
+  function editTemplate() {
+      const idx = document.getElementById('boothTemplateList').value;
+      if (idx === "") return;
+      // Send the template to the editor window
+      localStorage.setItem('egm_template_to_edit', JSON.stringify(boothTemplates[idx]));
+      window.open('template-editor.html', '_blank', 'width=1200,height=800');
+  }
+
+  function removeTemplate() {
+      const idx = document.getElementById('boothTemplateList').value;
+      if (idx === "") return;
+      boothTemplates.splice(idx, 1);
+      renderTemplateList();
+  }
+
+  function exportTemplate() {
+      const idx = document.getElementById('boothTemplateList').value;
+      if (idx === "") return;
+      const t = boothTemplates[idx];
+      const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${t.Name.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
+      a.click();
+  }
+
+  function importTemplateFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          try {
+              const data = JSON.parse(e.target.result);
+              // Basic validation to ensure it's a EGM Print Template
+              if (!data.Name || !data.Layers || !Array.isArray(data.Layers)) throw new Error("Invalid template format.");
+              
+              // Overwrite if name exists, otherwise append
+              const existingIdx = boothTemplates.findIndex(t => t.Name === data.Name);
+              if (existingIdx >= 0) boothTemplates[existingIdx] = data;
+              else boothTemplates.push(data);
+              
+              renderTemplateList();
+              showToast(`Imported Template: ${data.Name}`);
+          } catch (err) {
+              egmAlert("Failed to import. Ensure the file is a valid Print Template JSON.");
+          }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+  }
+
+  // 🟢 CROSS-WINDOW LISTENER: Catches the template immediately when saved in the Editor
+  window.addEventListener('storage', function(e) {
+      if (e.key === 'egm_saved_template') {
+          const newTemplate = JSON.parse(e.newValue);
+          if (newTemplate) {
+              const existingIdx = boothTemplates.findIndex(t => t.Name === newTemplate.Name);
+              if (existingIdx >= 0) boothTemplates[existingIdx] = newTemplate;
+              else boothTemplates.push(newTemplate);
+              
+              renderTemplateList();
+              showToast(`Template '${newTemplate.Name}' loaded from Editor.`, "success");
+              localStorage.removeItem('egm_saved_template'); // Cleanup
+          }
+      }
+  });
 </script>
 </body>
 </html>
