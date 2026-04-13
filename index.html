@@ -1316,71 +1316,62 @@
       </div>
       
       <div id="newDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-          <div class="row g-3 mb-3" id="newPayAmountGroup">
-              <div class="col-12">
+              <div id="newPayAmountGroup" class="mb-3">
                   <label class="form-label-sm">Amount</label>
                   <div class="input-group input-group-sm">
                       <span class="input-group-text bg-white fw-bold">₱</span>
                       <input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success" value="0">
                   </div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="newPayStatusGroup">
-              <div class="col-12">
+              <div id="newPayStatusGroup" class="mb-3 mt-2">
                   <label class="form-label-sm">Status</label>
                   <select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('new')"></select>
               </div>
-          </div>
 
-          <div id="newPayBillingGroup" style="display:none;" class="mb-3">
-              <div class="row g-3">
-                  <div class="col-12 col-md-4">
-                      <label class="form-label-sm">Status Date</label>
-                      <input type="date" name="billingStatusDate" class="form-control form-control-sm">
-                  </div>
-                  <div class="col-12 col-md-4">
-                      <label class="form-label-sm">GR Number</label>
-                      <input type="text" name="grNumber" class="form-control form-control-sm">
-                  </div>
-                  <div class="col-12 col-md-4">
-                      <label class="form-label-sm">Invoice Number</label>
-                      <input type="text" name="invoiceNumber" class="form-control form-control-sm">
+              <div id="newPayBillingGroup" style="display:none;" class="mb-3 mt-2">
+                  <div class="row g-2">
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm">Status Date</label>
+                          <input type="date" name="billingStatusDate" class="form-control form-control-sm">
+                      </div>
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm">GR Number</label>
+                          <input type="text" name="grNumber" class="form-control form-control-sm">
+                      </div>
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm mb-1">Invoice Number</label>
+                          <input type="text" name="invoiceNumber" id="newInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary" disabled>
+                      </div>
                   </div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="newPayEmailGroup">
-              <div class="col-12">
+              <div id="newPayEmailGroup" class="mb-3 mt-2">
                   <label class="form-label-sm">Email Thread Title</label>
                   <div class="input-group input-group-sm">
                       <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
                       <input type="text" name="emailThread" class="form-control border-start-0">
                   </div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="newPayInvUploadGroup">
-              <div class="col-12">
+              <div id="newPayInvUploadGroup" class="mb-3 mt-2">
                   <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
-                  <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
+                  <div class="input-group input-group-sm shadow-sm">
+                      <input type="url" name="invoiceUrl" id="newInvoiceUrl" class="form-control" placeholder="Link will appear here..." disabled>
+                      <button class="btn btn-primary fw-bold px-3" type="button" onclick="uploadAndScanInvoice('new')"><i class="bi bi-cloud-upload me-1"></i> UPLOAD INVOICE</button>
+                  </div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="newPayCheckUploadGroup">
-              <div class="col-12">
+              <div id="newPayCheckUploadGroup" class="mb-3 mt-2">
                   <label class="form-label-sm text-primary"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
                   <input type="url" name="checkUrl" id="newCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
               </div>
-          </div>
-          
-          <div class="row g-3" id="newPayNotesGroup">
-              <div class="col-12">
+              
+              <div id="newPayNotesGroup" class="mb-2 mt-2">
                   <label class="form-label-sm">Payment Notes</label>
                   <input type="text" name="paymentNotes" id="newPaymentNotes" class="form-control form-control-sm">
               </div>
           </div>
-      </div>
   </div>
   <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="submitBtn"><i class="bi bi-check2-circle me-1"></i> CREATE ENTRY</button>
 </form></div></div></div></div>
@@ -1815,63 +1806,54 @@
       </div>
       
       <div id="editDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-          <div class="row g-3 mb-3" id="editPayAmountGroup">
-              <div class="col-12">
+          <div id="editPayAmountGroup" class="mb-3">
                   <label class="form-label-sm">Amount</label>
                   <div class="input-group input-group-sm">
                       <span class="input-group-text bg-white fw-bold">₱</span>
                       <input type="number" step="0.01" name="amount" id="editAmount" class="form-control border-start-0 fw-bold text-success" value="0">
                   </div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="editPayStatusGroup">
-              <div class="col-12">
+              <div id="editPayStatusGroup" class="mb-3 mt-2">
                   <label class="form-label-sm">Status</label>
                   <select name="billingStatus" id="editBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('edit')"></select>
               </div>
-          </div>
 
-          <div id="editPayBillingGroup" style="display:none;" class="mb-3">
-              <div class="row g-3">
-                  <div class="col-12 col-md-4">
-                      <label class="form-label-sm">Status Date</label>
-                      <input type="date" name="billingStatusDate" class="form-control form-control-sm">
-                  </div>
-                  <div class="col-12 col-md-4">
-                      <label class="form-label-sm">GR Number</label>
-                      <input type="text" name="grNumber" class="form-control form-control-sm">
-                  </div>
-                  <div class="col-12 col-md-4">
-                      <label class="form-label-sm">Invoice Number</label>
-                      <input type="text" name="invoiceNumber" class="form-control form-control-sm">
+              <div id="editPayBillingGroup" style="display:none;" class="mb-3 mt-2">
+                  <div class="row g-2">
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm">Status Date</label>
+                          <input type="date" name="billingStatusDate" class="form-control form-control-sm">
+                      </div>
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm">GR Number</label>
+                          <input type="text" name="grNumber" class="form-control form-control-sm">
+                      </div>
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm mb-1">Invoice Number</label>
+                          <input type="text" name="invoiceNumber" id="editInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary" disabled>
+                      </div>
                   </div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="editPayEmailGroup">
-              <div class="col-12">
+              <div id="editPayEmailGroup" class="mb-3 mt-2">
                   <label class="form-label-sm">Email Thread Title</label>
                   <div class="input-group input-group-sm">
                       <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
                       <input type="text" name="emailThread" class="form-control border-start-0">
                   </div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="editPayInvUploadGroup">
-              <div class="col-12">
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                      <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
-                      <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
+              <div id="editPayInvUploadGroup" class="mb-3 mt-2">
+                  <label class="form-label-sm text-primary mb-1"><i class="bi bi-link-45deg"></i> Google Drive Invoice Link</label>
+                  <div class="input-group input-group-sm shadow-sm">
+                      <input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control" placeholder="Link will appear here..." disabled>
+                      <button class="btn btn-primary fw-bold px-3" type="button" onclick="uploadAndScanInvoice('edit')"><i class="bi bi-cloud-upload me-1"></i> UPLOAD INVOICE</button>
                   </div>
-                  <input type="url" name="invoiceUrl" id="editInvoiceUrl" class="form-control form-control-sm" placeholder="Paste link here...">
                   <div id="editInvoiceLinkDisplay" class="mt-1"></div>
               </div>
-          </div>
 
-          <div class="row g-3 mb-3" id="editPayCheckUploadGroup">
-              <div class="col-12">
+              <div id="editPayCheckUploadGroup" class="mb-3 mt-2">
                   <div class="d-flex justify-content-between align-items-center mb-1">
                       <label class="form-label-sm text-primary mb-0"><i class="bi bi-link-45deg"></i> Google Drive Check Link</label>
                       <a href="https://drive.google.com/drive/folders/1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX?usp=sharing" target="_blank" class="badge bg-primary text-white text-decoration-none shadow-sm" style="font-size:0.65rem;"><i class="bi bi-cloud-arrow-up me-1"></i> UPLOAD FILES HERE</a>
@@ -1879,14 +1861,11 @@
                   <input type="url" name="checkUrl" id="editCheckUrl" class="form-control form-control-sm" placeholder="Paste link here...">
                   <div id="editCheckLinkDisplay" class="mt-1"></div>
               </div>
-          </div>
-          
-          <div class="row g-3" id="editPayNotesGroup">
-              <div class="col-12">
+              
+              <div id="editPayNotesGroup" class="mb-2 mt-2">
                   <label class="form-label-sm">Payment Notes</label>
                   <input type="text" name="paymentNotes" id="editPaymentNotes" class="form-control form-control-sm">
               </div>
-          </div>
       </div>
   </div>
   <button type="submit" class="btn btn-warning w-100 py-3 fw-bold shadow-sm mb-2" id="editSubmitBtn"><i class="bi bi-cloud-arrow-up me-1"></i> SAVE CHANGES</button>
@@ -2037,6 +2016,7 @@
     </div>
   </div>
 </div>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
@@ -3602,6 +3582,131 @@ function generateSingleEventCard(e) {
         </div>
     </div>`;
 }
+
+// 🟢 UNIFIED OCR SCANNER & UPLOADER (With Filename Verification) 🟢
+async function uploadAndScanInvoice(prefix) {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*,application/pdf';
+    
+    fileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const ov = document.getElementById('submitOverlay');
+        document.getElementById('overlayText').innerText = "Uploading & Scanning... Please wait.";
+        ov.style.display = 'flex';
+
+        let finalInvoiceNum = "";
+        let ocrNum = "";
+        let fileNum = "";
+        let toastMsg = "";
+        let toastType = "success";
+
+        try {
+            // --- 1. FILENAME EXTRACTION (For Verification & Fallback) ---
+            // Grabs the last 3 digits of the filename before the extension
+            const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+            const allFileDigits = baseName.replace(/\D/g, ''); // Strips all letters/symbols
+            if (allFileDigits.length >= 3) {
+                fileNum = allFileDigits.slice(-3); // Keeps only the last 3 digits
+            } else if (allFileDigits.length > 0) {
+                fileNum = allFileDigits;
+            }
+
+            // --- 2. OCR SCANNING ---
+            const result = await Tesseract.recognize(file, 'eng');
+            const scannedText = result.data.text;
+            
+            // Hunts for ANY standalone 4-digit number starting with a zero (or 'O')
+            const match = scannedText.match(/\b([0O]\d{3})\b/i); 
+            if (match && match[1]) {
+                ocrNum = match[1].substring(1); 
+            }
+
+            // --- 3. VERIFICATION LOGIC ---
+            if (ocrNum && fileNum) {
+                if (ocrNum === fileNum) {
+                    finalInvoiceNum = ocrNum;
+                    toastMsg = `Verified! Scan (${ocrNum}) perfectly matches filename.`;
+                } else {
+                    finalInvoiceNum = ocrNum; // Trust the OCR's specific pattern over random filenames
+                    toastMsg = `Warning: OCR found ${ocrNum}, but filename ends in ${fileNum}.`;
+                    toastType = "warning";
+                }
+            } else if (ocrNum) {
+                finalInvoiceNum = ocrNum;
+                toastMsg = `Scanned successfully: ${finalInvoiceNum}`;
+            } else if (fileNum) {
+                finalInvoiceNum = fileNum;
+                toastMsg = `OCR missed, but safely grabbed ${finalInvoiceNum} from filename!`;
+            }
+
+            // --- 4. AUTO UPLOAD TO DRIVE ---
+            const b64Data = await readFileAsBase64(file);
+            
+            const uploadRes = await callApi({
+                action: 'uploadDirectToFolder',
+                base64Data: b64Data.base64,
+                filename: b64Data.filename,
+                mimeType: b64Data.mimeType,
+                folderId: '1tSGjB3tbwx-N638JZ4DxTRarMXth4jEX'
+            }, 'POST');
+
+            if (uploadRes && uploadRes.success && uploadRes.url) {
+                const urlInput = document.getElementById(`${prefix}InvoiceUrl`);
+                const numInput = document.getElementById(`${prefix}InvoiceNumberInput`);
+                
+                // Populate and UNLOCK the URL field
+                if (urlInput) {
+                    urlInput.value = uploadRes.url;
+                    urlInput.disabled = false; 
+                    
+                    if (prefix === 'edit') {
+                        const invDisplay = document.getElementById('editInvoiceLinkDisplay');
+                        if (invDisplay) {
+                            invDisplay.innerHTML = `
+                                <div class="d-flex align-items-center mt-1">
+                                    <a href="${uploadRes.url}" target="_blank" class="small fw-bold text-success text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> Current Invoice Link</a>
+                                    <span class="badge bg-danger ms-3 shadow-sm admin-remove-btn" style="cursor:pointer; font-size:0.6rem; letter-spacing: 0.5px;" onclick="document.getElementById('editInvoiceUrl').value=''; document.getElementById('editInvoiceLinkDisplay').innerHTML='';"><i class="bi bi-trash3 me-1"></i>REMOVE</span>
+                                </div>`;
+                        }
+                    }
+                }
+                
+                // Populate and UNLOCK the Invoice Number field
+                if (numInput) {
+                    if (finalInvoiceNum) {
+                        numInput.value = finalInvoiceNum;
+                        numInput.classList.replace('text-primary', 'text-success');
+                        setTimeout(() => numInput.classList.replace('text-success', 'text-primary'), 2000);
+                    }
+                    numInput.disabled = false; 
+                }
+
+                // Fire the dynamic Verification/Fallback Toast message
+                if (finalInvoiceNum) {
+                    showToast(toastMsg, toastType);
+                } else {
+                    showToast("Uploaded successfully, but couldn't detect the number from OCR or filename.", "warning");
+                }
+            } else {
+                const errMsg = uploadRes ? (uploadRes.error || "Unknown error") : "Check if Apps Script backend is deployed as a New Version.";
+                if (uploadRes) {
+                    egmAlert("Upload failed: " + errMsg);
+                }
+            }
+
+        } catch (err) {
+            console.error("Scan/Upload Error:", err);
+            egmAlert("Error processing document: " + err.message);
+        }
+        
+        ov.style.display = 'none';
+    };
+    
+    fileInput.click();
+}
   function renderEvents(data, isDefault) {
     let html = '';
     const todayDate = new Date();
@@ -4392,6 +4497,10 @@ function generateSingleEventCard(e) {
             form.elements['invoiceUrl'].value = currentInv;
             form.elements['checkUrl'].value = currentChk;
             
+            // 🟢 NEW: Unlock fields if data already exists!
+            document.getElementById('editInvoiceUrl').disabled = !currentInv;
+            document.getElementById('editInvoiceNumberInput').disabled = !paymentSourceEvent['Invoice Number'];
+            
             // 2. Create the "View" and "Remove" badges for the Invoice
             const invDisplay = document.getElementById('editInvoiceLinkDisplay');
             if (invDisplay) {
@@ -4752,6 +4861,20 @@ function generateSingleEventCard(e) {
           }
       } else {
           if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
+          
+          // 🟢 NEW: INVOICE VALIDATION GUARDRAIL
+          const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
+          if (requireInvoiceStatuses.includes(obj.billingStatus)) {
+              if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
+                  egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
+                  return;
+              }
+              if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
+                  egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
+                  return;
+              }
+          }
+          
           eventDatesArray.push(obj.eventDate); // Standard events just get 1 date here
       }
       
@@ -5043,6 +5166,19 @@ for (const personName of peopleToNotify){
           obj.eventName = 'Crew Leave'; obj.eventStatus = 'Confirmed'; obj.avp = "false"; obj.paymentType = '';
       } else {
           if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
+          
+          // 🟢 NEW: INVOICE VALIDATION GUARDRAIL
+          const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
+          if (requireInvoiceStatuses.includes(obj.billingStatus)) {
+              if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
+                  egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
+                  return;
+              }
+              if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
+                  egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
+                  return;
+              }
+          }
       }
 
       // 🟢 CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
