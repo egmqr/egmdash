@@ -167,15 +167,17 @@
     const canvasWrapper = document.getElementById('canvasWrapper');
    function wireHandles() {
         document.querySelectorAll('.resize-handle').forEach(handle => {
-            // Clone the node to wipe any duplicate event listeners safely
             const newHandle = handle.cloneNode(true);
             handle.parentNode.replaceChild(newHandle, handle);
             
-            newHandle.addEventListener('mousedown', (e) => {
+            const startDrag = (e) => {
                 if (!selectedLayerId) return;
                 const layer = templateState.Layers.find(ly => ly.id === selectedLayerId);
                 if (layer && !layer.isLocked) handleMouseDown(e, layer, true, newHandle.dataset.pos);
-            });
+            };
+            
+            newHandle.addEventListener('mousedown', startDrag);
+            newHandle.addEventListener('touchstart', startDrag, { passive: false });
         });
     }
 
@@ -202,7 +204,9 @@
         }
         
         canvasWrapper.removeEventListener('mousedown', onCanvasClick);
+        canvasWrapper.removeEventListener('touchstart', onCanvasClick);
         canvasWrapper.addEventListener('mousedown', onCanvasClick);
+        canvasWrapper.addEventListener('touchstart', onCanvasClick, { passive: false });
 
         setTimeout(() => {
             updateCanvasSize();
@@ -258,6 +262,15 @@ async function loadTemplateData(data) {
         
         wireHandles();
         updateCanvasSize();
+    }
+    // 🟢 HELPER: Get X/Y from either a mouse click or a finger touch
+    function getPointerPos(e) {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
     }
     // --- CANVAS SIZING ---
     function handlePresetChange() {
@@ -376,6 +389,8 @@ async function loadTemplateData(data) {
         applyTransform(container, layer);
         container.style.pointerEvents = layer.isLocked ? 'none' : 'auto';
 
+        const startDrag = (e) => handleMouseDown(e, layer, false, null);
+
         if (layer.LayerType === 'PhotoSlot') {
             const inner = document.createElement('div');
             inner.className = 'photo-slot';
@@ -384,16 +399,19 @@ async function loadTemplateData(data) {
             inner.innerHTML = `${layer.DisplayName.toUpperCase()}<br>(Drag & Resize)`;
             container.appendChild(inner);
             
-            container.addEventListener('mousedown', (e) => handleMouseDown(e, layer, false, null));
+            container.addEventListener('mousedown', startDrag);
+            container.addEventListener('touchstart', startDrag, { passive: false }); // 🟢 Touch support
+            
             layer.domElement = container;
             designCanvas.appendChild(container);
         } else {
-            // 🟢 THE FIX: Force Mac Chrome to wait for the image to decode BEFORE trying to map it to the DOM
             await new Promise((resolve) => {
                 const img = document.createElement('img');
                 img.onload = () => {
                     container.appendChild(img);
-                    container.addEventListener('mousedown', (e) => handleMouseDown(e, layer, false, null));
+                    container.addEventListener('mousedown', startDrag);
+                    container.addEventListener('touchstart', startDrag, { passive: false }); // 🟢 Touch support
+                    
                     layer.domElement = container;
                     designCanvas.appendChild(container);
                     resolve();
@@ -424,22 +442,23 @@ async function loadTemplateData(data) {
             overlay.style.transform = `rotate(${layer.Rotation}deg)`;
         }
     }
-    // 🟢 Updated to accept global handle parameters
     function handleMouseDown(e, layer, isGlobalResize = false, handlePos = null) {
         if (layer.isLocked) return;
         e.stopPropagation();
         
-        // 🟢 THE FIX: Prevent the browser from starting a native text/image drag!
-        e.preventDefault(); 
+        // 🟢 Prevent screen scrolling/bouncing on mobile when dragging an element
+        if (e.cancelable) e.preventDefault(); 
         
         selectLayer(layer.id);
+
+        const pos = getPointerPos(e);
 
         dragState = {
             layer: layer,
             isResize: isGlobalResize,
             handle: handlePos,
-            startX: e.clientX,
-            startY: e.clientY,
+            startX: pos.x,
+            startY: pos.y,
             startW: layer.Width,
             startH: layer.Height,
             startLeft: layer.X,
@@ -447,19 +466,25 @@ async function loadTemplateData(data) {
             ratio: layer.Width / layer.Height
         };
 
+        // 🟢 Listen for both mouse and touch movements
         document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('touchmove', handleMouseMove, { passive: false });
         document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('touchend', handleMouseUp);
     }
 
     function handleMouseMove(e) {
         if (!dragState) return;
+        
+        // 🟢 Prevent default to stop mobile browsers from trying to scroll the page
+        if (e.cancelable) e.preventDefault(); 
 
+        const pos = getPointerPos(e);
         const scale = designCanvas.getBoundingClientRect().width / templateState.CanvasWidth;
-        const dx = (e.clientX - dragState.startX) / scale;
-        const dy = (e.clientY - dragState.startY) / scale;
+        const dx = (pos.x - dragState.startX) / scale;
+        const dy = (pos.y - dragState.startY) / scale;
 
         const l = dragState.layer;
-        // 🟢 FORCE aspect ratio for Photo Slots, otherwise check the UI checkbox
         const lockRatio = (l.LayerType === 'PhotoSlot') ? true : document.getElementById('chkLockAspectRatio').checked;
 
         if (dragState.isResize) {
@@ -474,7 +499,6 @@ async function loadTemplateData(data) {
             if (dragState.handle.includes('n')) { newH -= dy; newY += dy; }
 
             if (lockRatio) {
-                // Determine dominating axis or use fixed 1.5 ratio for Photo Slots
                 const targetRatio = (l.LayerType === 'PhotoSlot') ? l.Width / l.Height : dragState.ratio;
                 
                 if (Math.abs(dx) > Math.abs(dy)) {
@@ -495,7 +519,6 @@ async function loadTemplateData(data) {
                 l.Y = Math.round(newY);
             }
         } else {
-            // Dragging with edge snapping logic remains intact
             let newX = Math.round(dragState.startLeft + dx);
             let newY = Math.round(dragState.startTop + dy);
             const snapThreshold = 20.0;
@@ -516,7 +539,9 @@ async function loadTemplateData(data) {
 
     function handleMouseUp() {
         document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('touchmove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchend', handleMouseUp);
         dragState = null;
     }
 
