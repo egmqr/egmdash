@@ -446,10 +446,20 @@ async function loadTemplateData(data) {
         if (layer.isLocked) return;
         e.stopPropagation();
         
-        // 🟢 Prevent screen scrolling/bouncing on mobile when dragging an element
         if (e.cancelable) e.preventDefault(); 
         
         selectLayer(layer.id);
+
+        // 🟢 NEW: Detect multi-touch for pinch-zooming
+        let isPinch = false;
+        let pinchDist = 0;
+        if (e.touches && e.touches.length === 2) {
+            isPinch = true;
+            pinchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        }
 
         const pos = getPointerPos(e);
 
@@ -463,10 +473,11 @@ async function loadTemplateData(data) {
             startH: layer.Height,
             startLeft: layer.X,
             startTop: layer.Y,
-            ratio: layer.Width / layer.Height
+            ratio: layer.Width / layer.Height,
+            isPinch: isPinch,
+            initialPinchDist: pinchDist
         };
 
-        // 🟢 Listen for both mouse and touch movements
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('touchmove', handleMouseMove, { passive: false });
         document.addEventListener('mouseup', handleMouseUp);
@@ -475,17 +486,65 @@ async function loadTemplateData(data) {
 
     function handleMouseMove(e) {
         if (!dragState) return;
-        
-        // 🟢 Prevent default to stop mobile browsers from trying to scroll the page
         if (e.cancelable) e.preventDefault(); 
 
+        const l = dragState.layer;
+        const lockRatio = (l.LayerType === 'PhotoSlot') ? true : document.getElementById('chkLockAspectRatio').checked;
+
+        // 🟢 THE MAGIC: Pinch-to-Zoom Logic
+        if (e.touches && e.touches.length === 2) {
+            const currentDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+
+            // If we just transitioned from 1 finger to 2, reset the starting distance memory
+            if (!dragState.isPinch) {
+                dragState.isPinch = true;
+                dragState.initialPinchDist = currentDist;
+                dragState.startW = l.Width;
+                dragState.startH = l.Height;
+                dragState.startLeft = l.X;
+                dragState.startTop = l.Y;
+                return;
+            }
+
+            // Calculate how far the fingers moved apart
+            const pinchScale = currentDist / dragState.initialPinchDist;
+            let newW = dragState.startW * pinchScale;
+            let newH = dragState.startH * pinchScale;
+
+            if (newW > 20 && newH > 20) {
+                l.Width = Math.round(newW);
+                l.Height = Math.round(newH);
+                
+                // Keep the layer perfectly centered while expanding/shrinking
+                l.X = Math.round(dragState.startLeft - (newW - dragState.startW) / 2);
+                l.Y = Math.round(dragState.startTop - (newH - dragState.startH) / 2);
+            }
+
+            applyTransform(l.domElement, l);
+            syncPropertyPanel(l);
+            return; // Skip normal drag logic
+            
+        } else if (dragState.isPinch && (!e.touches || e.touches.length < 2)) {
+            // 🟢 Transitioned from 2 fingers back to 1: Reset normal drag coordinates so it doesn't jump
+            dragState.isPinch = false;
+            const pos = getPointerPos(e);
+            dragState.startX = pos.x;
+            dragState.startY = pos.y;
+            dragState.startLeft = l.X;
+            dragState.startTop = l.Y;
+            dragState.startW = l.Width;
+            dragState.startH = l.Height;
+            return;
+        }
+
+        // --- STANDARD 1-FINGER DRAG & RESIZE ---
         const pos = getPointerPos(e);
         const scale = designCanvas.getBoundingClientRect().width / templateState.CanvasWidth;
         const dx = (pos.x - dragState.startX) / scale;
         const dy = (pos.y - dragState.startY) / scale;
-
-        const l = dragState.layer;
-        const lockRatio = (l.LayerType === 'PhotoSlot') ? true : document.getElementById('chkLockAspectRatio').checked;
 
         if (dragState.isResize) {
             let newW = dragState.startW;
@@ -500,7 +559,6 @@ async function loadTemplateData(data) {
 
             if (lockRatio) {
                 const targetRatio = (l.LayerType === 'PhotoSlot') ? l.Width / l.Height : dragState.ratio;
-                
                 if (Math.abs(dx) > Math.abs(dy)) {
                     let oldH = newH;
                     newH = newW / targetRatio;
@@ -537,7 +595,10 @@ async function loadTemplateData(data) {
         syncPropertyPanel(l);
     }
 
-    function handleMouseUp() {
+    function handleMouseUp(e) {
+        // 🟢 If there are still fingers touching the screen, don't end the drag completely!
+        if (e && e.touches && e.touches.length > 0) return;
+
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('touchmove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -676,8 +737,26 @@ async function loadTemplateData(data) {
         const layer = templateState.Layers.find(l => l.id === selectedLayerId);
         if (!layer || layer.isLocked) return;
 
-        layer[prop.charAt(0).toUpperCase() + prop.slice(1)] = parseFloat(value);
+        let newValue = parseFloat(value);
+        if (isNaN(newValue)) return;
+
+        const lockRatio = (layer.LayerType === 'PhotoSlot') || document.getElementById('chkLockAspectRatio').checked;
+        const currentRatio = layer.Width / layer.Height;
+
+        if (prop === 'width') {
+            layer.Width = Math.max(newValue, 20); // 20px minimum safety
+            if (lockRatio) layer.Height = Math.round(layer.Width / currentRatio);
+        } else if (prop === 'height') {
+            layer.Height = Math.max(newValue, 20);
+            if (lockRatio) layer.Width = Math.round(layer.Height * currentRatio);
+        } else if (prop === 'rotation') {
+            layer.Rotation = newValue;
+        }
+
         applyTransform(layer.domElement, layer);
+        
+        // 🟢 Force the text boxes to instantly show the new calculated values
+        syncPropertyPanel(layer); 
     }
 
     function scaleToCanvas() {
