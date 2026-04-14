@@ -1341,7 +1341,7 @@
                       </div>
                       <div class="col-12 col-md-4">
                           <label class="form-label-sm mb-1">Invoice Number</label>
-                          <input type="text" name="invoiceNumber" id="newInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary" disabled>
+                          <input type="text" name="invoiceNumber" id="newInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary">
                       </div>
                   </div>
               </div>
@@ -1831,7 +1831,7 @@
                       </div>
                       <div class="col-12 col-md-4">
                           <label class="form-label-sm mb-1">Invoice Number</label>
-                          <input type="text" name="invoiceNumber" id="editInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary" disabled>
+                          <input type="text" name="invoiceNumber" id="editInvoiceNumberInput" class="form-control form-control-sm fw-bold text-primary">
                       </div>
                   </div>
               </div>
@@ -4503,7 +4503,6 @@ async function uploadAndScanInvoice(prefix) {
             
             // 🟢 NEW: Unlock fields if data already exists!
             document.getElementById('editInvoiceUrl').disabled = !currentInv;
-            document.getElementById('editInvoiceNumberInput').disabled = !paymentSourceEvent['Invoice Number'];
             
             // 2. Create the "View" and "Remove" badges for the Invoice
             const invDisplay = document.getElementById('editInvoiceLinkDisplay');
