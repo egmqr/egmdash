@@ -165,13 +165,28 @@
 
     const designCanvas = document.getElementById('designCanvas');
     const canvasWrapper = document.getElementById('canvasWrapper');
+   function wireHandles() {
+        document.querySelectorAll('.resize-handle').forEach(handle => {
+            // Clone the node to wipe any duplicate event listeners safely
+            const newHandle = handle.cloneNode(true);
+            handle.parentNode.replaceChild(newHandle, handle);
+            
+            newHandle.addEventListener('mousedown', (e) => {
+                if (!selectedLayerId) return;
+                const layer = templateState.Layers.find(ly => ly.id === selectedLayerId);
+                if (layer && !layer.isLocked) handleMouseDown(e, layer, true, newHandle.dataset.pos);
+            });
+        });
+    }
 
-    function init() {
-        // 🟢 Grab directly from the parent window's RAM without stringifying!
+    function onCanvasClick(e) {
+        if (e.target === canvasWrapper || e.target === designCanvas) {
+            selectLayer(null);
+        }
+    }
+    async function init() {
         if (window.opener && window.opener.templateToEdit) {
             const source = window.opener.templateToEdit;
-            
-            // 🟢 THE FIX: Shallow copy. This uses references instead of duplicating huge 20MB Base64 strings.
             const loadedTemplate = {
                 Name: source.Name,
                 CanvasWidth: source.CanvasWidth,
@@ -179,50 +194,49 @@
                 Layers: source.Layers.map(l => Object.assign({}, l))
             };
             
-            loadTemplateData(loadedTemplate);
-            window.opener.templateToEdit = null; // Cleanup memory
+            await loadTemplateData(loadedTemplate);
+            window.opener.templateToEdit = null; 
         } else {
             updateCanvasSize();
+            wireHandles();
         }
         
-        canvasWrapper.addEventListener('mousedown', (e) => {
-            if (e.target === canvasWrapper || e.target === designCanvas) {
-                selectLayer(null);
-            }
-        });
+        canvasWrapper.removeEventListener('mousedown', onCanvasClick);
+        canvasWrapper.addEventListener('mousedown', onCanvasClick);
 
-        // Re-wire global handles
-        document.querySelectorAll('.resize-handle').forEach(handle => {
-            handle.addEventListener('mousedown', (e) => {
-                if (!selectedLayerId) return;
-                const layer = templateState.Layers.find(ly => ly.id === selectedLayerId);
-                if (layer && !layer.isLocked) handleMouseDown(e, layer, true, handle.dataset.pos);
-            });
-        });
-
-        // 🟢 THE FIX: Force the browser to finish rendering the HTML layout before calculating the scale
         setTimeout(() => {
             updateCanvasSize();
         }, 50);
     }
-function loadTemplateData(data) {
+async function loadTemplateData(data) {
         templateState.Name = data.Name;
         templateState.CanvasWidth = data.CanvasWidth;
         templateState.CanvasHeight = data.CanvasHeight;
         
+        // 🟢 FIX 1: Match dimensions to preset dropdown, otherwise use Custom
+        const presetVal = `${data.CanvasWidth}x${data.CanvasHeight}`;
+        const presetDropdown = document.getElementById('cmbCanvasPreset');
+        const optionExists = Array.from(presetDropdown.options).some(opt => opt.value === presetVal);
+        
+        if (optionExists) {
+            presetDropdown.value = presetVal;
+            document.getElementById('panelCustomSize').style.display = 'none';
+        } else {
+            presetDropdown.value = "Custom";
+            document.getElementById('panelCustomSize').style.display = 'grid';
+        }
+        
         document.getElementById('txtCanvasWidth').value = data.CanvasWidth;
         document.getElementById('txtCanvasHeight').value = data.CanvasHeight;
-        document.getElementById('cmbCanvasPreset').value = "Custom";
-        
-        // 🟢 THE FIX: Removed the immediate updateCanvasSize() from here
 
         designCanvas.innerHTML = '<div id="selectionOverlay"><div class="resize-handle handle-nw" data-pos="nw"></div><div class="resize-handle handle-ne" data-pos="ne"></div><div class="resize-handle handle-sw" data-pos="sw"></div><div class="resize-handle handle-se" data-pos="se"></div></div>';
         templateState.Layers = [];
 
-        // Reverse back to DOM Top-to-Bottom mapping
         const layersToLoad = [...data.Layers].reverse();
 
-        layersToLoad.forEach((l, index) => {
+        // 🟢 FIX 2: Use an async for-loop to ensure Mac Chrome paints correctly
+        for (let i = 0; i < layersToLoad.length; i++) {
+            const l = layersToLoad[i];
             const layerData = {
                 id: generateId(),
                 LayerType: l.LayerType,
@@ -232,18 +246,18 @@ function loadTemplateData(data) {
             };
             
             if (l.LayerType === 'PhotoSlot') {
-                const theme = getSlotTheme(index);
+                const theme = getSlotTheme(i);
                 layerData.themeBg = theme.bg; layerData.themeBorder = theme.border;
             }
-            createDOMElement(layerData);
+            await createDOMElement(layerData);
             templateState.Layers.push(layerData);
-        });
+        }
 
         refreshLayers();
         if (templateState.Layers.length > 0) selectLayer(templateState.Layers[0].id);
         
-        // Re-wire selection overlay
-        init(); 
+        wireHandles();
+        updateCanvasSize();
     }
     // --- CANVAS SIZING ---
     function handlePresetChange() {
@@ -354,7 +368,7 @@ function loadTemplateData(data) {
         event.target.value = ''; // Reset input
     }
 
-  function createDOMElement(layer) {
+  async function createDOMElement(layer) {
         const container = document.createElement('div');
         container.className = 'canvas-element';
         container.id = layer.id;
@@ -369,17 +383,28 @@ function loadTemplateData(data) {
             inner.style.borderColor = layer.themeBorder || '#fff';
             inner.innerHTML = `${layer.DisplayName.toUpperCase()}<br>(Drag & Resize)`;
             container.appendChild(inner);
+            
+            container.addEventListener('mousedown', (e) => handleMouseDown(e, layer, false, null));
+            layer.domElement = container;
+            designCanvas.appendChild(container);
         } else {
-            const img = document.createElement('img');
-            img.src = layer.ImagePath;
-            container.appendChild(img);
+            // 🟢 THE FIX: Force Mac Chrome to wait for the image to decode BEFORE trying to map it to the DOM
+            await new Promise((resolve) => {
+                const img = document.createElement('img');
+                img.onload = () => {
+                    container.appendChild(img);
+                    container.addEventListener('mousedown', (e) => handleMouseDown(e, layer, false, null));
+                    layer.domElement = container;
+                    designCanvas.appendChild(container);
+                    resolve();
+                };
+                img.onerror = () => {
+                    console.error("Failed to decode template image.");
+                    resolve();
+                };
+                img.src = layer.ImagePath;
+            });
         }
-
-        // 🟢 Event Listener for Dragging (Notice handles are gone!)
-        container.addEventListener('mousedown', (e) => handleMouseDown(e, layer, false, null));
-
-        layer.domElement = container;
-        designCanvas.appendChild(container);
     }
 
     function applyTransform(element, layer) {
