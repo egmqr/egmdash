@@ -5357,7 +5357,7 @@ for (const personName of peopleToNotify){
       ov.style.display = 'none'; btn.disabled = false;
   };
 
-  window.onload = () => {
+  /*window.onload = () => {
       localStorage.removeItem('egm_auth_exp'); 
       const stickyHeaderEl = document.querySelector('.sticky-header');
       if (stickyHeaderEl && window.ResizeObserver) {
@@ -5381,6 +5381,7 @@ for (const personName of peopleToNotify){
       currentTab = activeTab; 
       setTimeout(() => handleTabClick(activeTab), 400); 
   };
+  */
 
 
   // ==============================================================================
@@ -5853,18 +5854,6 @@ async function fetchExistingLogos(forceRefresh = false) {
       document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
       croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
   }
-  function renderExistingLogos(logos) {
-      const container = document.getElementById('existingLogoGallery');
-      if (logos.length === 0) {
-          container.innerHTML = '<span class="small text-muted fst-italic">No existing logos found.</span>';
-          return;
-      }
-      let html = '';
-      logos.forEach(logo => {
-          html += `<img src="${logo.url}" class="logo-gallery-item" title="${logo.name}" onclick="selectExistingLogo('${logo.id}', '${logo.qrId}', this)">`;
-      });
-      container.innerHTML = html;
-  }
 
   function selectExistingLogo(id, qrId, el) {
       selectedExistingLogoId = id;
@@ -6164,7 +6153,15 @@ db.collection("settings").doc("rates").onSnapshot((doc) => {
     }
 });
 // THE MAGIC REAL-TIME LISTENER (Now with Cache Detection!)
-db.collection("dashboard_events").onSnapshot({ includeMetadataChanges: true }, (snapshot) => {
+// 🟢 THE FIX: Calculate 60 days ago
+const pastDateLimit = new Date();
+pastDateLimit.setDate(pastDateLimit.getDate() - 60);
+const pastDateStr = pastDateLimit.getFullYear() + '-' + String(pastDateLimit.getMonth() + 1).padStart(2, '0') + '-' + String(pastDateLimit.getDate()).padStart(2, '0');
+
+// 🟢 THE FIX: Only listen to events from the last 60 days + future
+db.collection("dashboard_events")
+  .where("eventDate", ">=", pastDateStr)
+  .onSnapshot({ includeMetadataChanges: true }, (snapshot) => { includeMetadataChanges: true }, (snapshot) => {
     // Track if this data is old local memory or fresh server data!
     window.isDataFromCache = snapshot.metadata.fromCache;
     
