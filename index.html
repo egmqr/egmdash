@@ -5544,30 +5544,41 @@ for (const personName of peopleToNotify){
   }
 
   async function fetchBoothEvents(forceRefresh = false) {
-      // 1. If we already have the list and aren't forcing a refresh, load instantly from memory!
-      if (!forceRefresh && allFetchedBoothEvents.length > 0) {
-          if (currentBoothMode === 'edit' || currentBoothMode === 'view') {
-              renderBoothDropdown(allFetchedBoothEvents);
-          }
-          return;
-      }
+    if (!forceRefresh && allFetchedBoothEvents.length > 0) {
+        if (currentBoothMode === 'edit' || currentBoothMode === 'view') {
+            renderBoothDropdown(allFetchedBoothEvents);
+        }
+        return;
+    }
 
-      // 2. Otherwise, fetch from the database
-      const res = await callApi({ action: "getBoothList" }, 'POST', true);
-      if (res && res.success === false) return;
-      
-      const select = document.getElementById('boothEventSelect');
-      if (!Array.isArray(res)) {
-          if (select) select.innerHTML = '<option value="">Error loading booths</option>';
-          return;
-      }
-      
-      // 3. Save to memory
-      allFetchedBoothEvents = res; 
-      if (currentBoothMode === 'edit' || currentBoothMode === 'view') {
-          renderBoothDropdown(allFetchedBoothEvents);
-      }
-  }
+    const select = document.getElementById('boothEventSelect');
+    if (select) select.innerHTML = '<option value="">Loading booths...</option>';
+
+    try {
+        // 🟢 THE FIX: Query the 50 most recent booths directly from the frontend SDK!
+        const snapshot = await db.collection("events")
+            .orderBy("timestamp", "desc")
+            .limit(50)
+            .get();
+
+        let events = [];
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            events.push({ 
+                id: doc.id, 
+                name: d.eventName || "Unnamed" 
+            });
+        });
+
+        allFetchedBoothEvents = events; 
+        if (currentBoothMode === 'edit' || currentBoothMode === 'view') {
+            renderBoothDropdown(allFetchedBoothEvents);
+        }
+    } catch (err) {
+        console.error("Error fetching booths:", err);
+        if (select) select.innerHTML = '<option value="">Error loading booths</option>';
+    }
+}
 
   async function fetchExistingLogos(forceRefresh = false) {
       // 1. Check memory first
@@ -7208,20 +7219,18 @@ async function processExpenseAction(docId, newStatus) {
     document.getElementById('overlayText').innerText = `Marking as ${newStatus}...`;
     ov.style.display = 'flex';
 
-    // Call the backend function we built in Step 1!
-    const res = await callApi({ 
-        action: 'updateExpenseStatus', 
-        docId: docId, 
-        status: newStatus 
-    }, 'POST');
-
-    ov.style.display = 'none';
-
-    if (res && res.success) {
+    try {
+        // 🟢 THE FIX: Write directly to Firestore in 50ms instead of calling Apps Script!
+        await db.collection("dashboard_expenses").doc(docId).update({
+            status: newStatus
+        });
+        
+        ov.style.display = 'none';
         showToast(`Expense ${newStatus}!`, newStatus === 'Approved' ? 'success' : 'danger');
-        // The Firebase real-time listener will automatically remove it from the screen!
-    } else {
-        egmAlert("Error updating expense: " + (res ? res.error || res.message : "Unknown error"));
+        
+    } catch (e) {
+        ov.style.display = 'none';
+        egmAlert("Error updating expense: " + e.message);
     }
 }
 
