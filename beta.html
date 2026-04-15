@@ -2112,10 +2112,10 @@ if (!isStandalone) {
 
 const messaging = firebase.messaging();
 
-  // 🟢 IN-APP FOREGROUND TOASTS & UNIFIED CARD OPENER 🟢
+  // IN-APP FOREGROUND TOASTS & UNIFIED CARD OPENER 🟢
   let isOpeningCard = false; // Locks the function to prevent double-taps!
 
-  // 🟢 NOTIFICATION ROUTER & FILTERING 🟢
+  // NOTIFICATION ROUTER & FILTERING 🟢
   window.handleNotificationClick = function(eventId, toastId = null) {
       // 1. Hide and destroy the toast notification cleanly
       if (toastId) {
@@ -2144,7 +2144,7 @@ const messaging = firebase.messaging();
 
       document.getElementById('bgSyncIndicator').style.display = 'inline-flex';
 
-      // 5. 🟢 THE FIX: Wait for Firebase to actually load the data before filtering!
+      // 5. THE FIX: Wait for Firebase to actually load the data before filtering!
       let waitAttempts = 0;
       const waitForData = setInterval(() => {
           waitAttempts++;
@@ -2163,7 +2163,7 @@ const messaging = firebase.messaging();
               document.getElementById('fName').value = formattedId;
               applyFilters();
 
-              // 🟢 THE FIX: Wait 300ms so the DOM has time to actually draw the filtered cards!
+              // THE FIX: Wait 300ms so the DOM has time to actually draw the filtered cards!
               setTimeout(() => {
                   const visibleCards = document.querySelectorAll('#events-list .card');
                   visibleCards.forEach(card => {
@@ -2193,7 +2193,7 @@ const messaging = firebase.messaging();
   // Resets the view when they click the floating button
   window.resetFromNotification = function() {
       clearFilters();
-      lastOpenedEventId = null; // 🟢 Clear the memory so they can click it again later!
+      lastOpenedEventId = null; // Clear the memory so they can click it again later!
       document.getElementById('floatingBackBtn').style.display = 'none';
       window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -2229,7 +2229,7 @@ const messaging = firebase.messaging();
       new bootstrap.Toast(document.getElementById(toastId), { delay: 8000 }).show();
   });
 
-  // 🟢 DEEP LINKING CONTROLLER 🟢
+  // DEEP LINKING CONTROLLER 🟢
   
   let lastOpenedEventId = null; // Prevents the app from looping the same click
 
@@ -2254,7 +2254,7 @@ const messaging = firebase.messaging();
           // Check immediately
           checkUrlForDeepLink();
           
-          // 🟢 THE FIX: Poll the URL every 250ms for 2 seconds. 
+          // THE FIX: Poll the URL every 250ms for 2 seconds. 
           // This catches the delayed URL injection from iOS and Android!
           let pollCount = 0;
           const urlPoller = setInterval(() => {
@@ -2345,7 +2345,7 @@ const messaging = firebase.messaging();
   }
 
 async function subscribeToNotifications() {
-    // 🟢 NEW: iOS / Unsupported Browser Check 🟢
+    // NEW: iOS / Unsupported Browser Check 🟢
     if (!('Notification' in window)) {
         egmAlert("Push notifications are not supported in this browser.\n\nIf you are on an iPhone, you MUST open this site in Safari, tap 'Share', and select 'Add to Home Screen' to enable notifications.");
         return;
@@ -2378,7 +2378,7 @@ async function subscribeToNotifications() {
             });
 
             if (currentToken) {
-                // 🟢 THE FIX: Save as an Array of tokens instead of a single string
+                // THE FIX: Save as an Array of tokens instead of a single string
                 await db.collection("crew_tokens").doc(crewName).set({
                     tokens: firebase.firestore.FieldValue.arrayUnion(currentToken),
                     lastUpdatedDevice: navigator.userAgent,
@@ -2539,7 +2539,7 @@ async function subscribeToNotifications() {
   let selectedExistingQrLogoId = "";
   let existingLogosCache = null;
 
-  // 🟢 HIERARCHICAL ACCESS CONTROL 🟢
+  // HIERARCHICAL ACCESS CONTROL 🟢
   function getUserRole() {
       return localStorage.getItem('egm_auth_role') || null;
   }
@@ -2841,7 +2841,7 @@ function handleAddCustomService(inputId, containerId) {
 
 
  function togglePaymentUI(prefix) {
-    const role = getUserRole(); // 🟢 Added role check
+    const role = getUserRole(); // Added role check
     const typeEl = document.getElementById(prefix + 'PaymentType');
     const type = typeEl ? typeEl.value : '';
     const box = document.getElementById(prefix + 'DynamicPayBox');
@@ -2882,7 +2882,7 @@ function handleAddCustomService(inputId, containerId) {
         if (statGrp) statGrp.style.display = 'block'; 
         if (invUpGrp) invUpGrp.style.display = 'block';
         
-        // 🟢 THE FIX: Ensure the text field group (billGrp) is visible for ORCR types
+        // THE FIX: Ensure the text field group (billGrp) is visible for ORCR types
         if (billGrp) billGrp.style.display = 'block'; 
         
         if (type === 'Check ORCR' && chkUpGrp) chkUpGrp.style.display = 'block';
@@ -2893,7 +2893,7 @@ function handleAddCustomService(inputId, containerId) {
         if (invUpGrp) invUpGrp.style.display = 'block';
         if (statusSel) statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
         
-        // 🟢 THE FIX: Only show "No Withheld" if the user is an Admin or Superadmin
+        // THE FIX: Only show "No Withheld" if the user is an Admin or Superadmin
         if (noWithheldWrapper && (role === 'admin' || role === 'superadmin')) {
             noWithheldWrapper.style.display = 'block';
         }
@@ -3058,7 +3058,7 @@ function handleAddCustomService(inputId, containerId) {
             else dateInput.setAttribute('required', 'required');
         }
         
-        // 🟢 AUTO-TOGGLE PRE-PROD BASED ON AVP SWITCH
+        // AUTO-TOGGLE PRE-PROD BASED ON AVP SWITCH
         const preProdCheckbox = document.getElementById(prefix + 'SrvPreProd');
         if (preProdCheckbox) {
             preProdCheckbox.checked = isAvp;
@@ -3225,7 +3225,7 @@ function handleEqSearch() {
       
       currentCalendarDate = new Date(); 
       
-      // 🟢 NEW: Hide the floating button if they manually clear filters
+      // NEW: Hide the floating button if they manually clear filters
       const floatBtn = document.getElementById('floatingBackBtn');
       if (floatBtn) floatBtn.style.display = 'none';
       
@@ -3318,7 +3318,7 @@ function handleEqSearch() {
     if(q) filtered = filtered.filter(e => e['Event ID'].toLowerCase().includes(q) || e['Event Name'].toLowerCase().includes(q));
     if(grInv) filtered = filtered.filter(e => (e['GR Number'] && e['GR Number'].toLowerCase().includes(grInv)) || (e['Invoice Number'] && e['Invoice Number'].toLowerCase().includes(grInv)));
     
-    // 🟢 NEW: If searching by ID/Name (q), bypass the Payment Type, Billing Status, and Cancelled/Pencil filters entirely!
+    // NEW: If searching by ID/Name (q), bypass the Payment Type, Billing Status, and Cancelled/Pencil filters entirely!
     if (!q) {
         if(t) filtered = filtered.filter(e => e['Payment Type'] === t);
         
@@ -3435,7 +3435,7 @@ function handleEqSearch() {
 
   // Smart router for Edit buttons
 function handleEditClick(docId) {
-    // 🟢 NEW: Strictly require at least 'editor' access BEFORE opening the modal!
+    // NEW: Strictly require at least 'editor' access BEFORE opening the modal!
     requireAuth(() => {
         const cardModalEl = document.getElementById('eventCardModal');
         if (cardModalEl && cardModalEl.classList.contains('show')) {
@@ -3499,7 +3499,7 @@ function generateSingleEventCard(e) {
     else if (e['Event Status'] === 'Pencil Booked') { cardCustomClass = 'card-pencil'; stampHtml = `<div class="stamp-container"><div class="status-stamp stamp-pencil">PENCIL BOOKED</div></div>`; } 
     else { statusPillHtml = `<span class="badge badge-soft-dark px-2 py-1 shadow-sm rounded-pill">${e['Event Status']}</span>`; }
 
-    // 🟢 FIX 1: Swapped text-truncate for text-break so long addresses wrap perfectly
+    // FIX 1: Swapped text-truncate for text-break so long addresses wrap perfectly
     let venueDisplay = `<span class="fw-medium text-dark text-break">${e['Event Venue'] || 'No Venue Set'}</span>`;
     if (e['Event Venue Link']) venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold text-break">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
     
@@ -3601,7 +3601,7 @@ function generateSingleEventCard(e) {
     </div>`;
 }
 
-// 🟢 UNIFIED OCR SCANNER & UPLOADER (With Filename Verification) 🟢
+// UNIFIED OCR SCANNER & UPLOADER (With Filename Verification) 🟢
 async function uploadAndScanInvoice(prefix) {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -3781,7 +3781,7 @@ async function uploadAndScanInvoice(prefix) {
             });
 
             evs.forEach(e => {
-                // 🟢 We add the class directly into the generation string here
+                // We add the class directly into the generation string here
                 html += `<div class="col-12 col-md-6 col-lg-4">
                             ${generateSingleEventCard(e)}
                          </div>`;
@@ -3796,7 +3796,7 @@ async function uploadAndScanInvoice(prefix) {
     document.getElementById('events-list').innerHTML = html;
     setTimeout(checkStickyHeaders, 50); 
 
-    // 🟢 BULLETPROOF BLINK TRIGGER
+    // BULLETPROOF BLINK TRIGGER
     const searchVal = document.getElementById('fName').value;
     const crewVal = document.getElementById('fCrew').value;
 
@@ -3935,7 +3935,7 @@ async function uploadAndScanInvoice(prefix) {
     }
 
     // 2. Filter the table data based on our smart rules
-    // 🟢 FIX: Always collapse multi-day events down to Day 1 (Main Day), even when actively searching!
+    // FIX: Always collapse multi-day events down to Day 1 (Main Day), even when actively searching!
     let displayData = data.filter(item => (item['Doc ID'] === projectMainDays[item['Event ID']] || item['AVP Required'] === 'TRUE') && item['Event Name'] !== 'Crew Leave');
 
     // Sort the final display rows
@@ -3958,7 +3958,7 @@ async function uploadAndScanInvoice(prefix) {
       // UX BONUS: Add a badge if this payment covers multiple days/locations
       const multiBadge = multiDayCount > 1 ? `<span class="badge badge-teal ms-1" style="font-size: 0.65rem;">+${multiDayCount - 1} Day/Loc</span>` : '';
       
-      // 🟢 FIX: Add explicit warning badges for Cancelled or Pencil Booked
+      // FIX: Add explicit warning badges for Cancelled or Pencil Booked
       let statusWarningBadge = '';
       if (p['Event Status'] === 'Cancelled') {
           statusWarningBadge = `<span class="badge bg-danger ms-1 shadow-sm" style="font-size: 0.65rem;"><i class="bi bi-x-circle-fill"></i> CANCELLED</span>`;
@@ -4479,7 +4479,7 @@ async function uploadAndScanInvoice(prefix) {
             }
         });
         
-        // 🟢 NEW: Restore the saved Service Amounts to the text boxes!
+        // NEW: Restore the saved Service Amounts to the text boxes!
         try {
             // CRITICAL FIX: Read from paymentSourceEvent first (for multi-day consistency)
             let jsonString = paymentSourceEvent['Service Amounts JSON'] || e['Service Amounts JSON'] || "{}";
@@ -4515,7 +4515,7 @@ async function uploadAndScanInvoice(prefix) {
             form.elements['invoiceUrl'].value = currentInv;
             form.elements['checkUrl'].value = currentChk;
             
-            // 🟢 NEW: Unlock fields if data already exists!
+            // NEW: Unlock fields if data already exists!
             document.getElementById('editInvoiceUrl').disabled = !currentInv;
             document.getElementById('editInvoiceNumberInput').disabled = !paymentSourceEvent['Invoice Number'];
             
@@ -4817,7 +4817,7 @@ async function uploadAndScanInvoice(prefix) {
       const fd = new FormData(e.target);
       const obj = Object.fromEntries(fd.entries());
       
-      // 🟢 BULLETPROOF CAPTURE: Scrape amounts directly from the DOM
+      // BULLETPROOF CAPTURE: Scrape amounts directly from the DOM
       let serviceAmounts = {};
       e.target.querySelectorAll('input[name^="amt_"]').forEach(input => {
           let val = parseFloat(input.value);
@@ -4880,7 +4880,7 @@ async function uploadAndScanInvoice(prefix) {
       } else {
           if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
           
-          // 🟢 NEW: INVOICE VALIDATION GUARDRAIL
+          // NEW: INVOICE VALIDATION GUARDRAIL
           const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
           if (requireInvoiceStatuses.includes(obj.billingStatus)) {
               if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
@@ -4949,7 +4949,7 @@ async function uploadAndScanInvoice(prefix) {
 
           await batch.commit(); // Execute the bulk upload
           
-          // 🟢 NEW: SEND PUSH NOTIFICATIONS (Status Aware) 🟢
+          // NEW: SEND PUSH NOTIFICATIONS (Status Aware) 🟢
           if (obj.eventStatus === 'Confirmed' || obj.eventStatus === 'Cancelled') {
               try {
                   const tokens = [];
@@ -5067,7 +5067,7 @@ async function uploadAndScanInvoice(prefix) {
               grNumber: "", invoiceNumber: "", amount: "0", paymentNotes: "", invoiceUrl: "", checkUrl: ""
           });
           
-          // 🟢 NEW: SEND PUSH NOTIFICATION FOR ADDED DAY (Status Aware) 🟢
+          // NEW: SEND PUSH NOTIFICATION FOR ADDED DAY (Status Aware) 🟢
           // Only send notifications if the event is NOT Pencil Booked
           if (obj.eventStatus === 'Confirmed' || obj.eventStatus === 'Cancelled') {
               try {
@@ -5138,7 +5138,7 @@ for (const personName of peopleToNotify){
       disabledElements.forEach(el => el.disabled = true);
       // -----------------------------------------------------------------------------------------------
       
-      // 🟢 NEW: Capture all service amounts
+      // NEW: Capture all service amounts
       let serviceAmounts = {};
       for (let key in obj) {
           if (key.startsWith('amt_') && obj[key]) {
@@ -5185,7 +5185,7 @@ for (const personName of peopleToNotify){
       } else {
           if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
           
-          // 🟢 NEW: INVOICE VALIDATION GUARDRAIL
+          // NEW: INVOICE VALIDATION GUARDRAIL
           const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
           if (requireInvoiceStatuses.includes(obj.billingStatus)) {
               if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
@@ -5199,7 +5199,7 @@ for (const personName of peopleToNotify){
           }
       }
 
-      // 🟢 CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
+      // CAPTURE OLD STATE AS LOCKED STRINGS BEFORE FIREBASE SYNC! 🟢
       const oldEvent = rawEvents.find(ev => ev['Doc ID'] === obj.firestoreDocId);
       const cachedOldStatus = oldEvent ? String(oldEvent['Event Status'] || "").trim() : "";
       const cachedOldCrew = oldEvent ? String(oldEvent['Manpower'] || "").trim() : "";
@@ -5251,7 +5251,7 @@ for (const personName of peopleToNotify){
               serviceAmountsJson: JSON.stringify(serviceAmounts)
           });
 
-          // 🟢 SMART DUAL-LANE NOTIFIER 🟢
+          // SMART DUAL-LANE NOTIFIER 🟢
           try {
               const newStatus = String(obj.eventStatus || "Pencil Booked").trim();
               const newDate = String(obj.eventDate || "").trim();
@@ -5274,7 +5274,7 @@ for (const personName of peopleToNotify){
               const isStatusChanged = cachedOldStatus !== newStatus;
               const isScheduleChanged = cachedOldDate !== newDate || cachedOldCall !== newCall;
               
-              // 🟢 ISOLATE EXACTLY WHO WAS ADDED OR REMOVED
+              // ISOLATE EXACTLY WHO WAS ADDED OR REMOVED
               const addedCrew = newCrewArray.filter(name => !oldCrewArray.includes(name));
               const removedCrew = oldCrewArray.filter(name => !newCrewArray.includes(name));
               
@@ -5293,7 +5293,7 @@ for (const personName of peopleToNotify){
                   let crewTitle = `Event Updated: ${obj.eventName}`;
                   let crewBody = `The schedule/details for #${obj.eventId} have been updated.`;
                   
-                  // 🟢 Target BOTH the new crew and the old crew so removed members get the alert!
+                  // Target BOTH the new crew and the old crew so removed members get the alert!
                   let targetCrew = [...new Set([...newCrewArray, ...oldCrewArray])];
 
                   if (isStatusChanged && cachedOldStatus !== "Confirmed") {
@@ -5305,7 +5305,7 @@ for (const personName of peopleToNotify){
                       let addedStr = formatNames(addedCrew);
                       let removedStr = formatNames(removedCrew);
                       
-                      // 🟢 DYNAMIC NOTIFICATION TEXT FOR MULTIPLE ADD/REMOVE
+                      // DYNAMIC NOTIFICATION TEXT FOR MULTIPLE ADD/REMOVE
                       let bodyText = "";
                       if (isCrewAdded && !isCrewRemoved) {
                           bodyText = `${addedStr} ${addedCrew.length > 1 ? 'have' : 'has'} been added to this event.`;
@@ -5397,7 +5397,7 @@ for (const personName of peopleToNotify){
 
       switchTab('booth');
 
-      // 🟢 THE SMART ROUTER: Check if this booth already exists in our memory!
+      // THE SMART ROUTER: Check if this booth already exists in our memory!
       const existingBooth = allFetchedBoothEvents.find(b => String(b.id) === String(eventId));
 
       if (existingBooth) {
@@ -5634,7 +5634,7 @@ for (const personName of peopleToNotify){
       if (details && details.success === false) return;
 
       if (details) {
-          // 🟢 THE FIX: Always load the templates into memory immediately, regardless of which tab you are currently viewing!
+          // THE FIX: Always load the templates into memory immediately, regardless of which tab you are currently viewing!
           try {
               boothTemplates = JSON.parse(details.templatesStr || "[]");
           } catch (e) {
@@ -5681,7 +5681,7 @@ for (const personName of peopleToNotify){
               
               const boothsArr = details.boothsStr ? details.boothsStr.split('|') : [];
               const qrIdsArr = details.qrFileIdsStr ? details.qrFileIdsStr.split('|') : [];
-              const jsonIdsArr = details.jsonFileIdsStr ? details.jsonFileIdsStr.split('|') : []; // 🟢 NEW: Map out the JSON File IDs
+              const jsonIdsArr = details.jsonFileIdsStr ? details.jsonFileIdsStr.split('|') : []; // NEW: Map out the JSON File IDs
               const dynamicFolderName = details.folderName || 'Booth ';
               
               boothsArr.forEach((link, i) => {
@@ -5693,7 +5693,7 @@ for (const personName of peopleToNotify){
                   const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${boothNum}`;
                   const driveUrl = `https://drive.google.com/drive/folders/${folderId}`;
                   
-                  // 🟢 NEW: BOOTH CLOUD LINK (With Hardcoded Backend) 🟢
+                  // NEW: BOOTH CLOUD LINK (With Hardcoded Backend) 🟢
                   const boothCloudUrl = `https://webqr.createdbyegm.com/gallery?folderId=${folderId}&backend=https://script.google.com/macros/s/AKfycbwjQbyGEoK5HkmIOmVmGsYbYntYiA9Jg5YRuQAOpJ35m98BIN8EJtKC3lEAsmqVIFuQ/exec`;
                   
                   const qrFileId = qrIdsArr[i] || "";
@@ -5929,7 +5929,7 @@ async function fetchExistingLogos(forceRefresh = false) {
   async function executeBoothAction(actionName) {
       let eventId = actionName === 'generateBoothSetup' ? document.getElementById('boothEventId').value : document.getElementById('boothEventSelect').value;
       
-      // 🟢 THE FIX: Generate an egm ID instead of EVT!
+      // THE FIX: Generate an egm ID instead of EVT!
       if (actionName === 'generateBoothSetup' && (!eventId || eventId.trim() === '')) {
           eventId = "egm" + Math.floor(10000 + Math.random() * 90000);
           document.getElementById('boothEventId').value = eventId;
@@ -5960,14 +5960,14 @@ async function fetchExistingLogos(forceRefresh = false) {
           bgData, logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
           fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
-          templates: boothTemplates // 🟢 ADD THIS LINE HERE
+          templates: boothTemplates // ADD THIS LINE HERE
       };
 
       const res = await callApi(payload, 'POST');
       ov.style.display = 'none';
       
       if (res && res.success) {
-          // 🟢 THE FIX: Wipe only this specific event's memory, keeping the rest of the cache intact!
+          // THE FIX: Wipe only this specific event's memory, keeping the rest of the cache intact!
           if (eventId) {
               delete boothDetailsCache[eventId];
           }
@@ -5992,7 +5992,7 @@ async function fetchExistingLogos(forceRefresh = false) {
   async function runBoothDelete() {
       const selectedId = document.getElementById('boothEventSelect').value;
       if (!selectedId) { 
-          // 🟢 THE FIX: Wipe the memory clean if no event is selected
+          // THE FIX: Wipe the memory clean if no event is selected
           boothTemplates = [];
           if (document.getElementById('boothTemplateList')) renderTemplateList();
           setBoothMode(currentBoothMode); 
@@ -6055,7 +6055,7 @@ window.onload = () => {
       if (prModalEl) {
           prModalEl.addEventListener('hidden.bs.modal', function () {
               if (!isHistoricalView && activePayrollPerson) {
-                  // 🟢 THE REVERT TRIGGER: If snapshot exists, they clicked 'X' without saving!
+                  // THE REVERT TRIGGER: If snapshot exists, they clicked 'X' without saving!
                   if (activePayrollSnapshot) {
                       currentPayrollData[activePayrollPerson] = JSON.parse(activePayrollSnapshot);
                       activePayrollSnapshot = null; // Clear it
@@ -6165,7 +6165,7 @@ db.collection("settings").doc("rates").onSnapshot((doc) => {
 });
 // THE MAGIC REAL-TIME LISTENER (Now with Cache Detection!)
 db.collection("dashboard_events").onSnapshot({ includeMetadataChanges: true }, (snapshot) => {
-    // 🟢 Track if this data is old local memory or fresh server data!
+    // Track if this data is old local memory or fresh server data!
     window.isDataFromCache = snapshot.metadata.fromCache;
     
     if (window.isDataFromCache) {
@@ -6227,7 +6227,7 @@ db.collection("dashboard_events").onSnapshot({ includeMetadataChanges: true }, (
         populateExpenseEventsDropdown();
         applyFilters();
         
-        // 🟢 THE FIX: LIVE-UPDATING EVENT CARDS 🟢
+        // THE FIX: LIVE-UPDATING EVENT CARDS 🟢
         // If the card modal is currently open, refresh it with the newest data instantly!
         const cardModalEl = document.getElementById('eventCardModal');
         if (cardModalEl && cardModalEl.classList.contains('show') && window.currentOpenModalEventId) {
@@ -6342,7 +6342,7 @@ async function getNextEventId() {
           eqData = eqData.filter(e => e['Sent to Client']);
       }
 
-      // 🟢 THE FIX: Smart Timestamp Sorting (Newest to Oldest)
+      // THE FIX: Smart Timestamp Sorting (Newest to Oldest)
       eqData.sort((a, b) => {
           function getSortTime(ev) {
               let timeStr = "";
@@ -6354,7 +6354,7 @@ async function getNextEventId() {
 
               // If a timestamp exists, use it!
               if (timeStr) {
-                  // 🟢 SAFARI/APPLE FIX: Remove "at" and commas, and append the current year for perfect math!
+                  // SAFARI/APPLE FIX: Remove "at" and commas, and append the current year for perfect math!
                   let cleanTime = timeStr.replace(/\s*at\s*/i, ' ').replace(/,/g, '').trim();
                   let currentYear = new Date().getFullYear();
                   let parsed = new Date(`${cleanTime} ${currentYear}`).getTime();
@@ -6449,7 +6449,7 @@ async function getNextEventId() {
       document.getElementById('prStartDate').value = sDate.toISOString().split('T')[0];
       document.getElementById('prEndDate').value = eDate.toISOString().split('T')[0];
       
-      // 🟢 NEW: Force the Expense Queue to check the auto-calculated dates!
+      // NEW: Force the Expense Queue to check the auto-calculated dates!
       renderExpenseQueue();
   }
 // Engine: Save the current session to Firebase Cloud
@@ -6578,7 +6578,7 @@ if (!isConfirmed) return;
               egmAlert("Error parsing saved session data.");
           }
           
-          // 🟢 SAFETY SWEEPER: 400ms later, forcefully scrub the DOM of any stranded overlays
+          // SAFETY SWEEPER: 400ms later, forcefully scrub the DOM of any stranded overlays
           setTimeout(() => {
               document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
               document.body.classList.remove('modal-open');
@@ -6597,7 +6597,7 @@ if (!isConfirmed) return;
       const names = Object.keys(currentPayrollData).sort();
       if (names.length === 0) return showToast("No payroll data to export.", "warning");
 
-      // 🟢 NEW: TENTATIVE LOCKDOWN 🟢
+      // NEW: TENTATIVE LOCKDOWN 🟢
       // Find anyone who currently has the tentative checkbox checked
       const tentativeCrew = names.filter(name => currentPayrollData[name].isTentative);
       if (tentativeCrew.length > 0) {
@@ -6722,7 +6722,7 @@ async function runPayrollEngine(forceNewRates = false) {
     
     const currentRange = `${start}_${end}`;
 
-    // 🟢 OVERLAP PROTECTION LOGIC
+    // OVERLAP PROTECTION LOGIC
     if (!forceNewRates) {
         const ov = document.getElementById('submitOverlay');
         document.getElementById('overlayText').innerText = "Validating Cutoff Period...";
@@ -6773,7 +6773,7 @@ async function runPayrollEngine(forceNewRates = false) {
     lastComputedRange = currentRange;
     currentPayrollData = {};
 
-    // 🟢 PHASE 4: FETCH AUTOMATIC APPROVED EXPENSES 🟢
+    // PHASE 4: FETCH AUTOMATIC APPROVED EXPENSES 🟢
     let autoExpenses = {};
     let autoExpenseNotes = {};
     
@@ -6798,7 +6798,7 @@ async function runPayrollEngine(forceNewRates = false) {
         );
     }
 
-    // 🟢 THE SMART MERGER: Separates manual typing from Cloud Auto-Expenses!
+    // THE SMART MERGER: Separates manual typing from Cloud Auto-Expenses!
     function restorePersonGlobals(personName) {
         let newAutoExp = autoExpenses[personName] || 0;
         let newAutoNotes = autoExpenseNotes[personName] ? autoExpenseNotes[personName].join(', ') : "";
@@ -6991,7 +6991,7 @@ function initPayrollPerson(name) {
 }
 
 // ==============================================================================
-// 🟢 UNIVERSAL DIALOG ENGINE (Toasts, Alerts, Confirms) 🟢
+// UNIVERSAL DIALOG ENGINE (Toasts, Alerts, Confirms) 🟢
 // ==============================================================================
 
 // 1. Upgraded Stacking Toasts
@@ -7053,7 +7053,7 @@ window.egmConfirm = function(message, title = "Confirm Action", confirmBtnText =
         document.getElementById('globalConfirmMessage').innerHTML = message.replace(/\n/g, '<br>');
         
         const okBtn = document.getElementById('globalConfirmOkBtn');
-        // 🟢 FIX: Added text-nowrap to prevent two-line buttons
+        // FIX: Added text-nowrap to prevent two-line buttons
         okBtn.className = `btn btn-${confirmBtnColor} fw-bold shadow-sm w-50 rounded-3 text-nowrap`;
         okBtn.innerText = confirmBtnText;
 
@@ -7070,7 +7070,7 @@ window.egmConfirm = function(message, title = "Confirm Action", confirmBtnText =
         const hiddenHandler = () => {
             okBtn.removeEventListener('click', handleOk);
             modalEl.removeEventListener('hidden.bs.modal', hiddenHandler);
-            resolve(isResolved); // 🟢 THE FIX: Resolve ONLY after the modal has completely faded away!
+            resolve(isResolved); // THE FIX: Resolve ONLY after the modal has completely faded away!
         };
 
         okBtn.addEventListener('click', handleOk);
@@ -7168,7 +7168,7 @@ function renderExpenseQueue() {
     let html = '';
     pendingExpenses.forEach(exp => {
         
-        // 🟢 THE FIX: Split the Date and the Event Name into two variables
+        // THE FIX: Split the Date and the Event Name into two variables
         let datePart = exp.expenseDate;
         let eventPart = '';
         if (exp.expenseDate && exp.expenseDate.includes(' - ')) {
@@ -7233,7 +7233,7 @@ async function processExpenseAction(docId, newStatus) {
       isHistoricalView = isHistorical;
       const data = isHistorical ? histData : currentPayrollData[name];
       
-      // 🟢 CREATE A SNAPSHOT TO REVERT IF THEY CANCEL 🟢
+      // CREATE A SNAPSHOT TO REVERT IF THEY CANCEL 🟢
       if (!isHistorical) {
           activePayrollSnapshot = JSON.stringify(data);
       }
@@ -7416,7 +7416,7 @@ window.savePayrollModalChanges = function() {
           const isTentative = document.getElementById('prModalTentative').checked;
           currentPayrollData[activePayrollPerson].isTentative = isTentative;
           
-          // 🟢 NEW: Instantly disable/enable the Generate button!
+          // NEW: Instantly disable/enable the Generate button!
           document.getElementById('prGenerateBtn').disabled = isTentative;
           
           renderPayrollTable(); // Updates the background color instantly!
@@ -7448,7 +7448,7 @@ window.savePayrollModalChanges = function() {
       
       let total = 0;
 
-      // 🟢 Helper to allocate funds cleanly, handling the SDE split
+      // Helper to allocate funds cleanly, handling the SDE split
       function allocateFunds(amount, payerCode) {
           if (!amount) return;
           if (payerCode === 'SDE') {
@@ -7530,7 +7530,7 @@ window.savePayrollModalChanges = function() {
       
       const collapsedItems = getCollapsedEvents(data.events);
       
-      // 🟢 BULLETPROOF HEIGHT CALCULATION 🟢
+      // BULLETPROOF HEIGHT CALCULATION 🟢
       // Calculate exactly how many pixels we need BEFORE creating the canvas
       let dynamicHeight = 215; // Top header down to the first item
       dynamicHeight += (collapsedItems.length * 40); // 40px per item row
@@ -7785,7 +7785,7 @@ window.savePayrollModalChanges = function() {
       const row = payrollHistoryCache[index];
       bootstrap.Modal.getInstance(document.getElementById('payrollHistoryModal')).hide();
       
-      // 🟢 THE FIX: Wait for the History Vault to close before popping open the Payslip
+      // THE FIX: Wait for the History Vault to close before popping open the Payslip
       setTimeout(() => {
           let items = [];
           try { items = JSON.parse(row.itemizedEvents); } catch(e) {}
@@ -7817,7 +7817,7 @@ window.savePayrollModalChanges = function() {
   }
 });
   // ==============================================================================
-// 🟢 BOOTSTRAP 5 GLOBAL MODAL COLLISION & BACKDROP PATCH 🟢
+// BOOTSTRAP 5 GLOBAL MODAL COLLISION & BACKDROP PATCH 🟢
 // ==============================================================================
 
 document.addEventListener('show.bs.modal', function (e) {
@@ -7858,7 +7858,7 @@ document.addEventListener('hidden.bs.modal', function () {
     }
 });
   // ==============================================================================
-// 🟢 BILLING SALES COMPUTATION ENGINE 🟢
+// BILLING SALES COMPUTATION ENGINE 🟢
 // ==============================================================================
 function computeBillingSales() {
     const procDate = document.getElementById('bsProcessDate').value;
@@ -7904,7 +7904,7 @@ function computeBillingSales() {
             }
         }
 
-        // 🟢 TABLE 1 MATH (With "No Withheld" Bypass Logic)
+        // TABLE 1 MATH (With "No Withheld" Bypass Logic)
         const netVat = sde + doc + preprod + high + vstudio + transpo + restTotal; // Column 2
         const noWithheld = e['No Withheld'] === true;
         
@@ -7919,7 +7919,7 @@ function computeBillingSales() {
         t1_due += amtDue;
         t1_totalDue += totalAmtDue;
 
-        // 🟢 FIX: Create a subtle badge for the Invoice Number
+        // FIX: Create a subtle badge for the Invoice Number
         const invDisplay = e['Invoice Number'] ? `<span class="badge bg-light text-secondary border ms-1 fw-normal" style="font-size: 0.65rem;">INV: ${e['Invoice Number']}</span>` : '';
 
         htmlT1 += `<tr>
@@ -7932,9 +7932,9 @@ function computeBillingSales() {
             <td class="fw-bold text-success">₱${totalAmtDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
         </tr>`;
 
-        // 🟢 TABLE 2 MATH (Rest Split)
+        // TABLE 2 MATH (Rest Split)
 
-        // 🟢 TABLE 2 MATH (Rest Split)
+        // TABLE 2 MATH (Rest Split)
         const e_rest = restTotal * pE;
         const ji_rest = restTotal * pJi;
         const t_rest = restTotal * pT;
@@ -7947,21 +7947,21 @@ function computeBillingSales() {
        // Tables 3, 4, 5, 6 Row Generation
         const sdeThird = sde / 3;
         
-        // 🟢 JiniCis Rows (T2 Share + SDE Share)
+        // JiniCis Rows (T2 Share + SDE Share)
         htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${ji_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         if (sdeThird > 0) {
             htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }
         t3_JiniSum += (ji_rest + sdeThird);
 
-        // 🟢 TinaLex Rows (T2 Share + SDE Share)
+        // TinaLex Rows (T2 Share + SDE Share)
         htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${t_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         if (sdeThird > 0) {
             htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }
         t4_TinaSum += (t_rest + sdeThird);
 
-        // 🟢 JG Rows (Specific Services + SDE Share)
+        // JG Rows (Specific Services + SDE Share)
         const jgSpecificOther = doc + preprod + high + vstudio;
         if (jgSpecificOther > 0 || sdeThird === 0) { // Always show at least one row for JG
             htmlT5 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-muted fw-normal" style="font-size: 0.75rem;">(Specifics)</span></td><td class="fw-bold text-success">₱${jgSpecificOther.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
@@ -7975,7 +7975,7 @@ function computeBillingSales() {
         htmlT6 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${transpo.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
     });
 
-    // 🟢 FINAL TOTALS MATH
+    // FINAL TOTALS MATH
     const taxIncome = t1_totalDue - t1_net;
     
     // 10% deductions from Table 2 splits
@@ -8114,7 +8114,7 @@ function computeBillingSales() {
         </div>
     `;
 
-    // 🟢 INITIALIZE TABLE 7 DATA ENGINE
+    // INITIALIZE TABLE 7 DATA ENGINE
     window.t7_data = {
         base: [
             { name: 'Created PB', acc: '4053 0993 14', amt: t1_totalDue },
@@ -8130,7 +8130,7 @@ function computeBillingSales() {
         adjustments: []
     };
 
-    // 🟢 CORE RENDER FUNCTION
+    // CORE RENDER FUNCTION
     window.renderTable7 = function() {
         // 1. Calculate final amounts dynamically
         let finalAmounts = {};
@@ -8208,7 +8208,7 @@ function computeBillingSales() {
         }
     };
 
-    // 🟢 UI INTERACTIVITY CONTROLLERS
+    // UI INTERACTIVITY CONTROLLERS
     window.addTransferRow = function() { window.t7_data.custom.push({ name: '', acc: '', amt: 0 }); window.renderTable7(); };
     window.removeT7Custom = function(idx) { window.t7_data.custom.splice(idx, 1); window.renderTable7(); };
     window.updateT7CustomName = function(idx, val) { window.t7_data.custom[idx].name = val; window.renderTable7(); };
@@ -8231,7 +8231,7 @@ function computeBillingSales() {
 
     window.removeT7Adjustment = function(idx) { window.t7_data.adjustments.splice(idx, 1); window.renderTable7(); };
 
-    // 🟢 HTML5 CANVAS HIGH-RES EXPORT
+    // HTML5 CANVAS HIGH-RES EXPORT
     window.generateTable7Image = function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -8307,7 +8307,7 @@ function computeBillingSales() {
     // Wake it up instantly!
     setTimeout(window.renderTable7, 50);
 }
-  // 🟢 BOOTH TEMPLATES LOGIC 🟢
+  // BOOTH TEMPLATES LOGIC 🟢
   let boothTemplates = [];
 
   function renderTemplateList() {
@@ -8330,14 +8330,14 @@ function computeBillingSales() {
   }
 
  function openNewTemplate() {
-    window.templateToEdit = null; // 🟢 Clear memory
+    window.templateToEdit = null; // Clear memory
     window.open('template-editor.html', '_blank', 'width=1200,height=800');
 }
 
 function editTemplate() {
     const idx = document.getElementById('boothTemplateList').value;
     if (idx === "") return;
-    window.templateToEdit = boothTemplates[idx]; // 🟢 Store directly in RAM! Bypasses 5MB limit.
+    window.templateToEdit = boothTemplates[idx]; // Store directly in RAM! Bypasses 5MB limit.
     window.open('template-editor.html', '_blank', 'width=1200,height=800');
 }
 
@@ -8383,7 +8383,7 @@ function editTemplate() {
       reader.readAsText(file);
       event.target.value = '';
   }
-// 🟢 TRIGGER JSON DOWNLOAD
+// TRIGGER JSON DOWNLOAD
 function downloadEventJson(fileId) {
     if (!fileId) {
         egmAlert("No JSON configuration file found for this booth.");
@@ -8400,7 +8400,7 @@ function downloadEventJson(fileId) {
     a.click();
     document.body.removeChild(a);
 }
-  // 🟢 CROSS-WINDOW BRIDGE: Direct memory function called by the Editor window
+  // CROSS-WINDOW BRIDGE: Direct memory function called by the Editor window
 window.receiveTemplateFromEditor = function(newTemplate) {
     if (newTemplate) {
         const existingIdx = boothTemplates.findIndex(t => t.Name === newTemplate.Name);
