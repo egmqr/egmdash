@@ -5372,8 +5372,6 @@ for (const personName of peopleToNotify){
           document.getElementById('filterCollapse').classList.add('show');
       }
 
-      setTimeout(() => { fetchBoothEvents(); fetchExistingLogos(); }, 1500);
-
       // Just grab the tab and load it! The filter inputs are handled before this now.
       const urlParams = new URLSearchParams(window.location.search);
       const activeTab = urlParams.get('tab') || 'events';
