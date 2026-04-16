@@ -869,12 +869,20 @@
                           <input type="file" id="importTemplateFile" style="display:none;" accept=".json" onchange="importTemplateFile(event)">
                       </div>
                   </div>
-                  <div class="form-check form-switch mt-3 mb-4 p-3 bg-light border border-secondary-subtle rounded-3">
-                      <input class="form-check-input ms-1" type="checkbox" id="boothEnableCommunity" checked>
-                      <label class="form-check-label small fw-bold text-dark ms-2" for="boothEnableCommunity">
-                          <i class="bi bi-people-fill text-primary me-1"></i> Add Community Booth
-                      </label>
-                      <div class="small text-muted ms-2 mt-1" style="font-size: 0.7rem;">Generates an extra QR code for guests to upload their own photos. <span class="text-danger fw-bold" id="communityEditHint" style="display:none;">(Must delete and re-generate to change)</span></div>
+                  <div class="mt-3 mb-4 p-3 bg-light border border-secondary-subtle rounded-3">
+                      <div class="form-check form-switch mb-2">
+                          <input class="form-check-input ms-1" type="checkbox" id="boothEnableCommunity" onchange="handleCommunityToggle()">
+                          <label class="form-check-label small fw-bold text-dark ms-2" for="boothEnableCommunity">
+                              <i class="bi bi-people-fill text-primary me-1"></i> Add Community Booth
+                          </label>
+                      </div>
+                      <div class="form-check form-switch ms-3">
+                          <input class="form-check-input border-secondary" type="checkbox" id="boothCommunityOnly" disabled onchange="handleCommunityOnlyToggle()">
+                          <label class="form-check-label small fw-bold text-secondary ms-2" for="boothCommunityOnly" id="boothCommunityOnlyLabel">
+                              Community Booth Only
+                          </label>
+                      </div>
+                      <div class="small text-muted ms-2 mt-2" style="font-size: 0.7rem;">Generates an extra QR code for guests to upload their own photos. <span class="text-danger fw-bold" id="communityEditHint" style="display:none;">(Must delete and re-generate to change)</span></div>
                   </div>
                   <div class="row g-3 mb-4">
                       <div class="col-12 col-sm-6">
@@ -5456,7 +5464,9 @@ async function uploadAndScanInvoice(prefix) {
       if (mode === 'new' || mode === 'edit') { fetchExistingLogos(); }
 
       document.getElementById('boothLogoOnMain').checked = false; document.getElementById('boothSearch').value = ""; 
-      document.getElementById('boothEnableCommunity').checked = true; // 🟢 Reset community toggle
+      document.getElementById('boothEnableCommunity').checked = false;
+      document.getElementById('boothCommunityOnly').checked = false;
+      handleCommunityToggle(); // 🟢 Resets states safely
       
       const eventSelectDropdown = document.getElementById('boothEventSelect');
       if(eventSelectDropdown) eventSelectDropdown.value = "";
@@ -5511,9 +5521,10 @@ async function uploadAndScanInvoice(prefix) {
   }
 
   function toggleBoothEditFields(isEnabled) {
-    // 🟢 Lock the community toggle during Edit Setup so we don't break Drive folders
+    // 🟢 Lock the community toggles during Edit Setup so we don't break Drive folders
       const isEditMode = (currentBoothMode === 'edit');
       document.getElementById('boothEnableCommunity').disabled = isEditMode;
+      document.getElementById('boothCommunityOnly').disabled = isEditMode || !document.getElementById('boothEnableCommunity').checked;
       document.getElementById('communityEditHint').style.display = isEditMode ? 'inline' : 'none';
 
     
@@ -5534,6 +5545,39 @@ async function uploadAndScanInvoice(prefix) {
       document.getElementById('boothSaveBtn').disabled = !isEnabled;
       document.getElementById('boothDeleteBtn').disabled = !isEnabled;
       
+  }
+  // 🟢 SMART TOGGLE CONTROLLERS
+  function handleCommunityToggle() {
+      const isEnabled = document.getElementById('boothEnableCommunity').checked;
+      const onlyToggle = document.getElementById('boothCommunityOnly');
+      const onlyLabel = document.getElementById('boothCommunityOnlyLabel');
+      
+      if (isEnabled) {
+          onlyToggle.disabled = false;
+          onlyToggle.classList.replace('border-secondary', 'border-primary');
+          onlyLabel.classList.replace('text-secondary', 'text-dark');
+      } else {
+          onlyToggle.checked = false;
+          onlyToggle.disabled = true;
+          onlyToggle.classList.replace('border-primary', 'border-secondary');
+          onlyLabel.classList.replace('text-dark', 'text-secondary');
+          
+          if (currentBoothMode === 'new') {
+              document.getElementById('boothCountInput').disabled = false;
+          }
+      }
+  }
+
+  function handleCommunityOnlyToggle() {
+      const isOnly = document.getElementById('boothCommunityOnly').checked;
+      const countInput = document.getElementById('boothCountInput');
+      if (isOnly) {
+          countInput.value = "";
+          countInput.disabled = true;
+      } else {
+          countInput.disabled = false;
+          countInput.value = 1; 
+      }
   }
   function syncBoothColor(sourceId, targetId) {
       let val = document.getElementById(sourceId).value;
@@ -5672,7 +5716,9 @@ async function uploadAndScanInvoice(prefix) {
               document.getElementById('boothEventName').value = details.eventName || "";
               document.getElementById('boothCountInput').value = details.boothCount || "";
               document.getElementById('boothLogoOnMain').checked = details.logoOnMain === true;
-              document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true; // 🟢 Set toggle
+              document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
+              document.getElementById('boothCommunityOnly').checked = details.communityOnly === true;
+              handleCommunityToggle(); // Visually update the UI instantly
               
               const loadedFontColor = details.fontColor || "#ffffff";
               const loadedBgColor = details.bgColor || "#000000";
@@ -5981,7 +6027,8 @@ async function fetchExistingLogos(forceRefresh = false) {
       if (bgFile) bgData = await readFileAsBase64(bgFile);
       
       const logoOnMain = document.getElementById('boothLogoOnMain').checked;
-      const enableCommunity = document.getElementById('boothEnableCommunity').checked; // 🟢 Grab toggle state
+      const enableCommunity = document.getElementById('boothEnableCommunity').checked;
+      const communityOnly = document.getElementById('boothCommunityOnly').checked; // 🟢 Grab new toggle state
 
       const payload = {
           action: actionName, eventId, folderName, eventName, boothCount,
@@ -5989,7 +6036,8 @@ async function fetchExistingLogos(forceRefresh = false) {
           fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
           templates: boothTemplates,
-          enableCommunity: enableCommunity // 🟢 Add to payload
+          enableCommunity: enableCommunity, 
+          communityOnly: communityOnly // 🟢 Pass to backend
       };
 
       const res = await callApi(payload, 'POST');
