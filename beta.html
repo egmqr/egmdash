@@ -5762,7 +5762,7 @@ async function uploadAndScanInvoice(prefix) {
               boothsArr.forEach((link, i) => {
                   const isCommunity = hadCommunity && (i === boothsArr.length - 1); 
                   const boothNum = isCommunity ? 'Community' : (i + 1);
-                  const tabParam = i + 1; // 🟢 THE FIX: ALWAYS use a number for the Master Router link!
+                  const tabParam = isCommunity ? 'community' : (i + 1); // 🟢 Routes Community to the correct tab!
                   
                   const match = link.match(/folderId=([a-zA-Z0-9_-]+)/);
                   const folderId = match ? match[1] : '';
