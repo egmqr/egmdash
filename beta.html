@@ -5079,15 +5079,16 @@ async function uploadAndScanInvoice(prefix) {
               try {
                   const tokens = [];
                   if (obj.manpower && obj.manpower.length > 0) {
-                    let peopleToNotify = [...(obj.manpower || [])];
-// We pull the editor from the base project data we fetched earlier in the function
-if (baseData.editorAssigned && !peopleToNotify.includes(baseData.editorAssigned)) {
-    peopleToNotify.push(baseData.editorAssigned);
-}
+                      let peopleToNotify = [...(obj.manpower || [])];
+                      
+                      // We pull the editor from the base project data we fetched earlier
+                      if (baseData.editorAssigned && !peopleToNotify.includes(baseData.editorAssigned)) {
+                          peopleToNotify.push(baseData.editorAssigned);
+                      }
 
-// Then change your loop to:
-for (const personName of peopleToNotify){
-                          const tokenDoc = await db.collection("crew_tokens").doc(crewName).get();
+                      // Clean loop with the correct personName variable
+                      for (const personName of peopleToNotify) {
+                          const tokenDoc = await db.collection("crew_tokens").doc(personName).get();
                           if (tokenDoc.exists) {
                               const data = tokenDoc.data();
                               if (data.tokens && Array.isArray(data.tokens)) tokens.push(...data.tokens); 
@@ -5533,10 +5534,6 @@ for (const personName of peopleToNotify){
       document.getElementById('boothSaveBtn').disabled = !isEnabled;
       document.getElementById('boothDeleteBtn').disabled = !isEnabled;
       
-      // 🟢 Lock the community toggle during Edit Setup so we don't break Drive folders
-      const isEditMode = (currentBoothMode === 'edit');
-      document.getElementById('boothEnableCommunity').disabled = isEditMode;
-      document.getElementById('communityEditHint').style.display = isEditMode ? 'inline' : 'none';
   }
   function syncBoothColor(sourceId, targetId) {
       let val = document.getElementById(sourceId).value;
