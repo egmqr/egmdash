@@ -5806,7 +5806,7 @@ for (const personName of peopleToNotify){
       for (let i = 0; i < currentViewBooths.length; i++) {
           const booth = currentViewBooths[i];
           if (booth.isDrive) window.open(`https://drive.google.com/uc?export=download&id=${booth.fileId}`, '_blank');
-          else downloadBoothImage(booth.url, `Booth_${booth.boothNum}_QR.png`);
+          else downloadBoothImage(booth.url, booth.filename);
           await new Promise(resolve => setTimeout(resolve, 800)); 
       }
       ov.style.display = 'none';
