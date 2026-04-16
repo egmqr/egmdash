@@ -869,7 +869,13 @@
                           <input type="file" id="importTemplateFile" style="display:none;" accept=".json" onchange="importTemplateFile(event)">
                       </div>
                   </div>
-
+                  <div class="form-check form-switch mt-3 mb-4 p-3 bg-light border border-secondary-subtle rounded-3">
+                      <input class="form-check-input ms-1" type="checkbox" id="boothEnableCommunity" checked>
+                      <label class="form-check-label small fw-bold text-dark ms-2" for="boothEnableCommunity">
+                          <i class="bi bi-people-fill text-primary me-1"></i> Add Community Booth
+                      </label>
+                      <div class="small text-muted ms-2 mt-1" style="font-size: 0.7rem;">Generates an extra QR code for guests to upload their own photos. <span class="text-danger fw-bold" id="communityEditHint" style="display:none;">(Must delete and re-generate to change)</span></div>
+                  </div>
                   <div class="row g-3 mb-4">
                       <div class="col-12 col-sm-6">
                           <label class="form-label-sm text-secondary">Font & Tab Color</label>
@@ -5428,7 +5434,7 @@ for (const personName of peopleToNotify){
 
   function setBoothMode(mode) {
       currentBoothMode = mode;
-      
+      document.getElementById('boothEnableCommunity').checked = true;
       if (mode !== 'new') {
           document.getElementById('btnModeNew').style.display = 'none';
       }
@@ -5503,6 +5509,12 @@ for (const personName of peopleToNotify){
   }
 
   function toggleBoothEditFields(isEnabled) {
+    // 🟢 Lock the community toggle during Edit Setup so we don't break Drive folders
+      const isEditMode = (currentBoothMode === 'edit');
+      document.getElementById('boothEnableCommunity').disabled = isEditMode;
+      document.getElementById('communityEditHint').style.display = isEditMode ? 'inline' : 'none';
+
+    
       document.getElementById('boothFolderName').disabled = !isEnabled;
       document.getElementById('boothEventName').disabled = !isEnabled;
       
@@ -5652,6 +5664,7 @@ for (const personName of peopleToNotify){
           if (document.getElementById('boothTemplateList')) renderTemplateList();
 
           if (currentBoothMode === 'edit') {
+            document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
               document.getElementById('boothEventId').value = selectedId;
               document.getElementById('boothFolderName').value = details.folderName || "";
               document.getElementById('boothEventName').value = details.eventName || "";
@@ -5693,8 +5706,11 @@ for (const personName of peopleToNotify){
               const jsonIdsArr = details.jsonFileIdsStr ? details.jsonFileIdsStr.split('|') : []; // NEW: Map out the JSON File IDs
               const dynamicFolderName = details.folderName || 'Booth ';
               
+              const hadCommunity = details.enableCommunity === true;
+
               boothsArr.forEach((link, i) => {
-                  const isCommunity = (i === boothsArr.length - 1);
+                  // 🟢 Determine if this specific card is the Community Booth
+                  const isCommunity = hadCommunity && (i === boothsArr.length - 1);
                   const boothNum = isCommunity ? 'Community' : (i + 1);
                   const tabParam = isCommunity ? 'community' : boothNum;
                   
@@ -5704,15 +5720,33 @@ for (const personName of peopleToNotify){
                   const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}`;
                   const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}`;
                   const driveUrl = `https://drive.google.com/drive/folders/${folderId}`;
-                  
                   const boothCloudUrl = `https://webqr.createdbyegm.com/gallery?folderId=${folderId}&backend=https://script.google.com/macros/s/AKfycbwjQbyGEoK5HkmIOmVmGsYbYntYiA9Jg5YRuQAOpJ35m98BIN8EJtKC3lEAsmqVIFuQ/exec`;
                   
                   const qrFileId = qrIdsArr[i] || "";
                   let qrCodeActionHtml = '';
-                  // ... (Leave the rest of the loop intact!)
+                  const fileName = isCommunity ? 'Community_QRCode.png' : `Booth_${boothNum}_QR.png`;
+
+                  if (qrFileId) {
+                     const qrDriveViewerUrl = `https://drive.google.com/file/d/${qrFileId}/view`;
+                     currentViewBooths.push({ boothNum, fileId: qrFileId, isDrive: true, filename: fileName });
+                     qrCodeActionHtml = `
+                        <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qrDriveViewerUrl}')">Copy link</button>
+                        <button class="booth-mini-btn" onclick="window.open('https://drive.google.com/uc?export=download&id=${qrFileId}', '_blank')">Download</button>
+                     `;
+                  } else {
+                     let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
+                     if (details.qrLogoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.qrLogoId)}&centerImageSizeRatio=0.15`;
+                     else if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.logoId)}&centerImageSizeRatio=0.15`;
+                     
+                     currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false, filename: fileName });
+                     qrCodeActionHtml = `
+                        <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qcApiUrl}')">Copy link</button>
+                        <button class="booth-mini-btn" onclick="downloadBoothImage('${qcApiUrl}', '${fileName}')">Download</button>
+                     `;
+                  }
                   
-                  const titleHtml = isCommunity ? `<i class="bi bi-people-fill text-primary me-2"></i>Community Booth` : `${dynamicFolderName}${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span>`;
-                  
+                  const titleHtml = isCommunity ? `<i class="bi bi-people-fill text-primary me-2"></i>Community Booth` : `${dynamicFolderName} ${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span>`;
+
                   const card = document.createElement('div');
                   card.className = 'booth-card';
                   card.innerHTML = `
@@ -5725,13 +5759,6 @@ for (const personName of peopleToNotify){
                            <button class="booth-mini-btn" onclick="window.open('${mainGalleryUrl}', '_blank')">Go</button>
                         </div>
                      </div>
-                     <!--<div class="booth-link-row">
-                        <span>Booth Cloud Link</span>
-                        <div class="booth-link-actions">
-                           <button class="booth-mini-btn" onclick="copyBoothLink(this, '${boothCloudUrl}')">Copy link</button>
-                           <button class="booth-mini-btn" onclick="window.open('${boothCloudUrl}', '_blank')">Go</button>
-                        </div>
-                     </div>-->
                      <div class="booth-link-row">
                         <span>Drive Folder</span>
                         <div class="booth-link-actions">
@@ -5948,6 +5975,7 @@ async function fetchExistingLogos(forceRefresh = false) {
       if (bgFile) bgData = await readFileAsBase64(bgFile);
       
       const logoOnMain = document.getElementById('boothLogoOnMain').checked;
+      const enableCommunity = document.getElementById('boothEnableCommunity').checked; // 🟢 Grab toggle state
 
       // Find this block inside executeBoothAction:
       const payload = {
@@ -5955,7 +5983,8 @@ async function fetchExistingLogos(forceRefresh = false) {
           bgData, logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
           fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
-          templates: boothTemplates // ADD THIS LINE HERE
+          templates: boothTemplates,
+          enableCommunity: enableCommunity // 🟢 Add to payload
       };
 
       const res = await callApi(payload, 'POST');
