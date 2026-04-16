@@ -7497,37 +7497,27 @@ window.savePayrollModalChanges = function() {
       document.getElementById('prPayerBreakdown').innerHTML = breakdownHtml;
   }
 
-  // Helper to collapse multi-day events into a single line item for printing/logging
+  // Helper to map events line-by-line (Preserves breakdown instead of collapsing)
   function getCollapsedEvents(events) {
-      const collapsed = {}; const result = [];
-      events.forEach(ev => {
+      return events.map(ev => {
           const id = ev.doc ? ev.doc['Event ID'] : ev.id;
-          const role = ev.role;
-          const p = ev.payer || 'Edgar(EGM)';
-          const key = `${id}_${role}_${p}`; // Group by Event, Role, AND Payer
-
-          if (!collapsed[key]) {
-              collapsed[key] = {
-                  id: id, name: ev.doc ? ev.doc['Event Name'] : ev.name,
-                  date: ev.doc ? ev.doc['Event Date'] : ev.date, role: role,
-                  basePay: ev.basePay || ev.base || 0, extraPay: ev.extraPay || ev.extra || 0,
-                  payer: p, dayCount: 1, lastDate: ev.doc ? ev.doc['Event Date'] : ev.date
-              };
-              result.push(collapsed[key]);
-          } else {
-              collapsed[key].basePay += (ev.basePay || ev.base || 0);
-              collapsed[key].extraPay += (ev.extraPay || ev.extra || 0);
-              collapsed[key].dayCount += 1;
-              let d = ev.doc ? ev.doc['Event Date'] : ev.date;
-              if (d > collapsed[key].lastDate) collapsed[key].lastDate = d;
-          }
+          let dateStr = ev.doc ? ev.doc['Event Date'] : ev.date;
+          
+          return {
+              id: id,
+              name: ev.doc ? ev.doc['Event Name'] : ev.name,
+              dateString: dateStr,
+              role: ev.role,
+              basePay: ev.basePay || ev.base || 0,
+              extraPay: ev.extraPay || ev.extra || 0,
+              payer: ev.payer || 'Edgar(EGM)',
+              dayCount: 1 // Legacy property kept so we don't break drawing logic
+          };
+      }).sort((a, b) => {
+          if (!a.dateString) return 1;
+          if (!b.dateString) return -1;
+          return a.dateString.localeCompare(b.dateString);
       });
-
-      result.forEach(item => {
-          if (item.dayCount > 1 && item.date !== item.lastDate) item.dateString = `${item.date} to ${item.lastDate}`;
-          else item.dateString = item.date;
-      });
-      return result;
   }
 
   // Graphic Generator: Draws the minimalist receipt and triggers a download
@@ -7536,6 +7526,7 @@ window.savePayrollModalChanges = function() {
       const ctx = canvas.getContext('2d');
       
       const collapsedItems = getCollapsedEvents(data.events);
+      const activePayers = Object.entries(data.payerBreakdown || {}).filter(([_, amt]) => amt > 0);
       
       // BULLETPROOF HEIGHT CALCULATION 🟢
       // Calculate exactly how many pixels we need BEFORE creating the canvas
@@ -7545,6 +7536,13 @@ window.savePayrollModalChanges = function() {
       if (data.misc > 0) dynamicHeight += 30; // 30px for misc
       dynamicHeight += 60; // Space for the Total Net Pay line and text
       if (data.payslipNote) dynamicHeight += 40; // Space for notes
+      
+      // 🟢 ADD SPACE FOR FUNDING SOURCE SUMMARY
+      if (activePayers.length > 0) {
+          dynamicHeight += 40; // Header space
+          dynamicHeight += (activePayers.length * 20); // 20px per payer
+      }
+      
       dynamicHeight += 50; // Generous extra padding at the very bottom
       
       const baseWidth = 600;
@@ -7580,16 +7578,15 @@ window.savePayrollModalChanges = function() {
       collapsedItems.forEach(item => {
           ctx.textAlign = 'left';
           let desc = item.id === 'FIXED' ? `${item.name} (${item.role})` : `#${item.id} - ${item.name} (${item.role})`;
-          if (item.dayCount > 1) desc += ` [${item.dayCount} Days]`;
-
           ctx.fillText(desc.substring(0, 45), 40, y);
           
-          // Draw a tiny tag for the Payer source
+          // Draw a tiny tag for the Date and Payer source
           ctx.font = '10px Inter, sans-serif'; ctx.fillStyle = '#999999';
-          ctx.fillText(`Source: ${item.payer}`, 40, y + 14);
+          let dateNote = item.dateString ? `${item.dateString} • ` : "";
+          ctx.fillText(`${dateNote}Source: ${item.payer}`, 40, y + 14);
 
           ctx.textAlign = 'right'; ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
-          ctx.fillText('₱ ' + (item.basePay + item.extraPay).toLocaleString(), 560, y);
+          ctx.fillText('₱ ' + (item.basePay + item.extraPay).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}), 560, y);
           
           // Move Y down by exactly 40 pixels for the next row
           y += 40; 
@@ -7598,12 +7595,12 @@ window.savePayrollModalChanges = function() {
       // --- Draw Add-ons ---
       if (data.expenses > 0) {
           ctx.textAlign = 'left'; ctx.fillText('Reimbursements / Expenses', 40, y);
-          ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.expenses.toLocaleString(), 560, y);
+          ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.expenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}), 560, y);
           y += 30;
       }
       if (data.misc > 0) {
           ctx.textAlign = 'left'; ctx.fillText('Misc Bonus', 40, y);
-          ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.misc.toLocaleString(), 560, y);
+          ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.misc.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}), 560, y);
           y += 30;
       }
 
@@ -7611,7 +7608,7 @@ window.savePayrollModalChanges = function() {
       ctx.beginPath(); ctx.moveTo(40, y - 10); ctx.lineTo(560, y - 10); ctx.stroke();
       y += 25;
       ctx.textAlign = 'left'; ctx.font = 'bold 18px Inter, sans-serif'; ctx.fillText('TOTAL NET PAY', 40, y);
-      ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.finalTotal.toLocaleString(), 560, y);
+      ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.finalTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}), 560, y);
 
       // --- Draw Payslip Notes ---
       if (data.payslipNote) {
@@ -7619,6 +7616,29 @@ window.savePayrollModalChanges = function() {
           ctx.textAlign = 'left';
           ctx.fillStyle = '#666666'; ctx.font = 'italic 12px Inter, sans-serif';
           ctx.fillText('Notes: ' + data.payslipNote.substring(0, 85), 40, y);
+      }
+
+      // --- 🟢 DRAW FUNDING SOURCE BREAKDOWN 🟢 ---
+      if (activePayers.length > 0) {
+          y += 40;
+          ctx.beginPath(); ctx.moveTo(40, y - 20); ctx.lineTo(560, y - 20); ctx.strokeStyle = '#eeeeee'; ctx.stroke();
+          
+          ctx.textAlign = 'left';
+          ctx.fillStyle = '#000000';
+          ctx.font = 'bold 14px Inter, sans-serif';
+          ctx.fillText('FUNDING SOURCE', 40, y);
+          
+          ctx.font = '13px Inter, sans-serif';
+          activePayers.forEach(([person, amount]) => {
+              y += 20;
+              ctx.textAlign = 'left';
+              ctx.fillStyle = '#666666';
+              ctx.fillText(person, 40, y);
+              
+              ctx.textAlign = 'right';
+              ctx.fillStyle = '#000000';
+              ctx.fillText('₱ ' + amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}), 560, y);
+          });
       }
 
       // --- Export Image ---
