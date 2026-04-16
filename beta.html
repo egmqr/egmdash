@@ -5490,8 +5490,8 @@ async function uploadAndScanInvoice(prefix) {
           document.getElementById('boothCountInput').disabled = true;
           document.getElementById('boothCountHint').style.display = 'none';
           toggleBoothEditFields(true);
-        boothTemplates = [];
-          if (document.getElementById('boothTemplateList')) renderTemplateList();
+        boothTemplates = JSON.parse(JSON.stringify(defaultBoothTemplates)); // 🟢 THE FIX: Load defaults on New Setup!
+        if (document.getElementById('boothTemplateList')) renderTemplateList();
           
       } else if (mode === 'edit' || mode === 'view') {
           document.getElementById('btnModeEdit').classList.toggle('active', mode === 'edit');
@@ -5704,11 +5704,14 @@ async function uploadAndScanInvoice(prefix) {
       if (details && details.success === false) return;
 
       if (details) {
-          // THE FIX: Always load the templates into memory immediately, regardless of which tab you are currently viewing!
+          // 🟢 THE FIX: Parse templates, but fallback to defaults if the event has none!
           try {
               boothTemplates = JSON.parse(details.templatesStr || "[]");
+              if (!Array.isArray(boothTemplates) || boothTemplates.length === 0) {
+                  boothTemplates = JSON.parse(JSON.stringify(defaultBoothTemplates));
+              }
           } catch (e) {
-              boothTemplates = [];
+              boothTemplates = JSON.parse(JSON.stringify(defaultBoothTemplates));
           }
           if (document.getElementById('boothTemplateList')) renderTemplateList();
 
@@ -8413,6 +8416,25 @@ function computeBillingSales() {
     setTimeout(window.renderTable7, 50);
 }
   // BOOTH TEMPLATES LOGIC 🟢
+  const defaultBoothTemplates = [
+    {
+      "Name": "portrait",
+      "CanvasWidth": 1200,
+      "CanvasHeight": 1800,
+      "Layers": [
+        { "LayerType": "PhotoSlot", "X": 0, "Y": 0, "Width": 1200, "Height": 1800, "ImagePath": null, "Rotation": 0, "DisplayName": "Photo Slot 1" }
+      ]
+    },
+    {
+      "Name": "landscape",
+      "CanvasWidth": 1800,
+      "CanvasHeight": 1200,
+      "Layers": [
+        { "LayerType": "PhotoSlot", "X": 0, "Y": 0, "Width": 1800, "Height": 1200, "ImagePath": null, "Rotation": 0, "DisplayName": "Photo Slot 1" }
+      ]
+    }
+  ];
+
   let boothTemplates = [];
 
   function renderTemplateList() {
