@@ -6015,9 +6015,11 @@ async function fetchExistingLogos(forceRefresh = false) {
       const folderName = document.getElementById('boothFolderName').value.trim();
       const eventName = document.getElementById('boothEventName').value.trim();
       const boothCount = document.getElementById('boothCountInput').value;
-      
-      if (!eventId || !folderName || !eventName || !boothCount) {
-          egmAlert("Required fields missing! Ensure an Event ID and Folder Name are set.");
+      const communityOnly = document.getElementById('boothCommunityOnly').checked; // 🟢 Grab the toggle state
+
+      // 🟢 THE FIX: Ignore the missing boothCount if Community Only is ON!
+      if (!folderName || !eventName || (!boothCount && !communityOnly)) {
+          alert("Required fields missing! Ensure an Event ID and Folder Name are set.");
           return;
       }
 
