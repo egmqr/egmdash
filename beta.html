@@ -5455,6 +5455,7 @@ for (const personName of peopleToNotify){
       if (mode === 'new' || mode === 'edit') { fetchExistingLogos(); }
 
       document.getElementById('boothLogoOnMain').checked = false; document.getElementById('boothSearch').value = ""; 
+      document.getElementById('boothEnableCommunity').checked = true; // 🟢 Reset community toggle
       
       const eventSelectDropdown = document.getElementById('boothEventSelect');
       if(eventSelectDropdown) eventSelectDropdown.value = "";
@@ -5531,8 +5532,12 @@ for (const personName of peopleToNotify){
 
       document.getElementById('boothSaveBtn').disabled = !isEnabled;
       document.getElementById('boothDeleteBtn').disabled = !isEnabled;
+      
+      // 🟢 Lock the community toggle during Edit Setup so we don't break Drive folders
+      const isEditMode = (currentBoothMode === 'edit');
+      document.getElementById('boothEnableCommunity').disabled = isEditMode;
+      document.getElementById('communityEditHint').style.display = isEditMode ? 'inline' : 'none';
   }
-
   function syncBoothColor(sourceId, targetId) {
       let val = document.getElementById(sourceId).value;
       if (sourceId.includes('Picker')) { document.getElementById(targetId).value = val; } 
@@ -5670,6 +5675,7 @@ for (const personName of peopleToNotify){
               document.getElementById('boothEventName').value = details.eventName || "";
               document.getElementById('boothCountInput').value = details.boothCount || "";
               document.getElementById('boothLogoOnMain').checked = details.logoOnMain === true;
+              document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true; // 🟢 Set toggle
               
               const loadedFontColor = details.fontColor || "#ffffff";
               const loadedBgColor = details.bgColor || "#000000";
@@ -5706,11 +5712,9 @@ for (const personName of peopleToNotify){
               const jsonIdsArr = details.jsonFileIdsStr ? details.jsonFileIdsStr.split('|') : []; // NEW: Map out the JSON File IDs
               const dynamicFolderName = details.folderName || 'Booth ';
               
-              const hadCommunity = details.enableCommunity === true;
-
+              const hadCommunity = details.enableCommunity === true; // 🟢 Check if this event had community enabled
               boothsArr.forEach((link, i) => {
-                  // 🟢 Determine if this specific card is the Community Booth
-                  const isCommunity = hadCommunity && (i === boothsArr.length - 1);
+                  const isCommunity = hadCommunity && (i === boothsArr.length - 1); // 🟢 Identify the last item
                   const boothNum = isCommunity ? 'Community' : (i + 1);
                   const tabParam = isCommunity ? 'community' : boothNum;
                   
@@ -5745,7 +5749,7 @@ for (const personName of peopleToNotify){
                      `;
                   }
                   
-                  const titleHtml = isCommunity ? `<i class="bi bi-people-fill text-primary me-2"></i>Community Booth` : `${dynamicFolderName} ${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span>`;
+                  const titleHtml = isCommunity ? `<i class="bi bi-people-fill text-primary me-2"></i>Community Booth` : `${dynamicFolderName}${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span>`;
 
                   const card = document.createElement('div');
                   card.className = 'booth-card';
@@ -5806,7 +5810,7 @@ for (const personName of peopleToNotify){
       for (let i = 0; i < currentViewBooths.length; i++) {
           const booth = currentViewBooths[i];
           if (booth.isDrive) window.open(`https://drive.google.com/uc?export=download&id=${booth.fileId}`, '_blank');
-          else downloadBoothImage(booth.url, booth.filename);
+          else downloadBoothImage(booth.url, booth.filename); // 🟢 Use mapped filename
           await new Promise(resolve => setTimeout(resolve, 800)); 
       }
       ov.style.display = 'none';
@@ -5977,7 +5981,6 @@ async function fetchExistingLogos(forceRefresh = false) {
       const logoOnMain = document.getElementById('boothLogoOnMain').checked;
       const enableCommunity = document.getElementById('boothEnableCommunity').checked; // 🟢 Grab toggle state
 
-      // Find this block inside executeBoothAction:
       const payload = {
           action: actionName, eventId, folderName, eventName, boothCount,
           bgData, logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
