@@ -871,18 +871,21 @@
                   </div>
                   <div class="mt-3 mb-4 p-3 bg-light border border-secondary-subtle rounded-3">
                       <div class="form-check form-switch mb-2">
-                          <input class="form-check-input ms-1" type="checkbox" id="boothEnableCommunity" onchange="handleCommunityToggle()">
-                          <label class="form-check-label small fw-bold text-dark ms-2" for="boothEnableCommunity">
+                          <input class="form-check-input" type="checkbox" id="boothEnableCommunity" onchange="handleCommunityToggle()" style="cursor: pointer;">
+                          <label class="form-check-label small fw-bold text-dark" for="boothEnableCommunity" style="cursor: pointer;">
                               <i class="bi bi-people-fill text-primary me-1"></i> Add Community Booth
                           </label>
                       </div>
-                      <div class="form-check form-switch ms-3">
-                          <input class="form-check-input border-secondary" type="checkbox" id="boothCommunityOnly" disabled onchange="handleCommunityOnlyToggle()">
-                          <label class="form-check-label small fw-bold text-secondary ms-2" for="boothCommunityOnly" id="boothCommunityOnlyLabel">
-                              Community Booth Only
+                      <div class="form-check form-switch mb-2">
+                          <input class="form-check-input border-secondary" type="checkbox" id="boothCommunityOnly" disabled onchange="handleCommunityOnlyToggle()" style="cursor: pointer;">
+                          <label class="form-check-label small fw-bold text-secondary" for="boothCommunityOnly" id="boothCommunityOnlyLabel" style="cursor: pointer;">
+                              Community Booth Only <span class="fw-normal fst-italic text-muted">(No standard iPads)</span>
                           </label>
                       </div>
-                      <div class="small text-muted ms-2 mt-2" style="font-size: 0.7rem;">Generates an extra QR code for guests to upload their own photos. <span class="text-danger fw-bold" id="communityEditHint" style="display:none;">(Must delete and re-generate to change)</span></div>
+                      <div class="small text-muted mt-2 border-top pt-2" style="font-size: 0.75rem;">
+                          Generates an extra QR code for guests to upload their own photos. 
+                          <span class="text-danger fw-bold" id="communityEditHint" style="display:none;"><br>(Must delete and re-generate to change)</span>
+                      </div>
                   </div>
                   <div class="row g-3 mb-4">
                       <div class="col-12 col-sm-6">
