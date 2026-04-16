@@ -6014,11 +6014,15 @@ async function fetchExistingLogos(forceRefresh = false) {
 
       const folderName = document.getElementById('boothFolderName').value.trim();
       const eventName = document.getElementById('boothEventName').value.trim();
-      const boothCount = document.getElementById('boothCountInput').value;
-      const communityOnly = document.getElementById('boothCommunityOnly').checked; // 🟢 Grab the toggle state
-
-      // 🟢 THE FIX: Ignore the missing boothCount if Community Only is ON!
-      if (!folderName || !eventName || (!boothCount && !communityOnly)) {
+      const communityOnly = document.getElementById('boothCommunityOnly').checked;
+      
+      // 🟢 THE FIX: Send a dummy "1" to bypass backend validation, the backend will still override it to 0!
+      let boothCount = document.getElementById('boothCountInput').value;
+      if (communityOnly) {
+          boothCount = "1"; 
+      }
+      
+      if (!folderName || !eventName || !boothCount) {
           alert("Required fields missing! Ensure an Event ID and Folder Name are set.");
           return;
       }
