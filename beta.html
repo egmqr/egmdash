@@ -5797,15 +5797,15 @@ async function uploadAndScanInvoice(prefix) {
                   
                   const titleHtml = isCommunity ? `<i class="bi bi-people-fill text-primary me-2"></i>Community Booth` : `${dynamicFolderName}${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span>`;
 
-                  // 🟢 THE FIX: Dynamically remove the Config Row if it's the Community Booth
-                  const configRowHtml = isCommunity ? '' : `
-                     <div class="booth-link-row">
-                        <span>Event Config (.json)</span>
-                        <div class="booth-link-actions">
-                            ${jsonIdsArr[i] ? `<button class="booth-mini-btn" onclick="downloadEventJson('${jsonIdsArr[i]}')"><i class="bi bi-download me-1"></i>Download</button>` : `<span class="text-muted small fst-italic">Unavailable</span>`}
-                        </div>
-                     </div>
-                  `;
+                  // 🟢 This hides the row from the UI while it quietly exists in the background
+      const configRowHtml = isCommunity ? '' : `
+         <div class="booth-link-row">
+            <span>Event Config (.json)</span>
+            <div class="booth-link-actions">
+                ${jsonIdsArr[i] ? `<button class="booth-mini-btn" onclick="downloadEventJson('${jsonIdsArr[i]}')">Download</button>` : `<span class="text-muted small">Unavailable</span>`}
+            </div>
+         </div>
+      `;
 
                   const card = document.createElement('div');
                   card.className = 'booth-card';
