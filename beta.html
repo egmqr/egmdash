@@ -5758,11 +5758,12 @@ async function uploadAndScanInvoice(prefix) {
               const jsonIdsArr = details.jsonFileIdsStr ? details.jsonFileIdsStr.split('|') : []; // NEW: Map out the JSON File IDs
               const dynamicFolderName = details.folderName || 'Booth ';
               
-              const hadCommunity = details.enableCommunity === true; 
+              const hadCommunity = details.communityOnly === true || details.enableCommunity === true; 
+              
               boothsArr.forEach((link, i) => {
                   const isCommunity = hadCommunity && (i === boothsArr.length - 1); 
                   const boothNum = isCommunity ? 'Community' : (i + 1);
-                  const tabParam = isCommunity ? 'community' : (i + 1); // 🟢 THE FIX: Correctly route the Community tab!
+                  const tabParam = isCommunity ? 'community' : (i + 1);
                   
                   const match = link.match(/folderId=([a-zA-Z0-9_-]+)/);
                   const folderId = match ? match[1] : '';
