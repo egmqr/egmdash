@@ -5758,18 +5758,19 @@ async function uploadAndScanInvoice(prefix) {
               const jsonIdsArr = details.jsonFileIdsStr ? details.jsonFileIdsStr.split('|') : []; // NEW: Map out the JSON File IDs
               const dynamicFolderName = details.folderName || 'Booth ';
               
-              const hadCommunity = details.communityOnly === true || details.enableCommunity === true; 
+              const hadCommunity = (details.communityOnly === true || details.enableCommunity === true); 
               
               boothsArr.forEach((link, i) => {
                   const isCommunity = hadCommunity && (i === boothsArr.length - 1); 
-                  const boothNum = isCommunity ? 'Community' : (i + 1);
-                  const tabParam = isCommunity ? 'community' : (i + 1);
+                  const boothNum = isCommunity ? 'Community' : (i + 1); // Keep the UI title friendly
+                  const tabParam = i + 1; // 🟢 ALWAYS a number
                   
                   const match = link.match(/folderId=([a-zA-Z0-9_-]+)/);
                   const folderId = match ? match[1] : '';
                   
-                  const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}`;
-                  const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}`;
+                  // 🟢 Construct the URL matching the new backend logic
+                  const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}`;
+                  const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}`;
                   const driveUrl = `https://drive.google.com/drive/folders/${folderId}`;
                   const boothCloudUrl = `https://webqr.createdbyegm.com/gallery?folderId=${folderId}&backend=https://script.google.com/macros/s/AKfycbwjQbyGEoK5HkmIOmVmGsYbYntYiA9Jg5YRuQAOpJ35m98BIN8EJtKC3lEAsmqVIFuQ/exec`;
                   
