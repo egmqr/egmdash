@@ -532,7 +532,9 @@
           <button id="installAppBtn" class="btn btn-warning border-warning-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center gap-1 fw-bold" style="display: none !important; height: 34px;">
             <i class="bi bi-download"></i>
           </button>
-          
+          <button id="loginBtn" class="btn btn-outline-primary btn-sm shadow-sm align-items-center justify-content-center" onclick="openSignInModal()" title="Sign In" style="width: 38px; height: 34px;">
+                <i class="bi bi-person-lock fs-6"></i>
+              </button>
           <button id="logoutBtn" class="btn btn-outline-danger btn-sm shadow-sm align-items-center justify-content-center" onclick="signOut()" title="Sign Out / Switch Account" style="width: 38px; height: 34px; display: none;">
             <i class="bi bi-box-arrow-right fs-6"></i>
           </button>
@@ -2645,7 +2647,21 @@ async function subscribeToNotifications() {
           btn.disabled = false;
       }
   }
-
+// 🟢 NEW: Manual Sign-In Trigger
+  function openSignInModal() {
+      pendingAuthAction = () => { showToast("Signed in successfully!", "success"); };
+      
+      document.getElementById('authPassword').value = '';
+      document.getElementById('authError').style.display = 'none';
+      
+      const authPromptText = document.querySelector('#authModal .text-muted');
+      if (authPromptText) {
+          authPromptText.innerText = "Please enter your password to sign in.";
+      }
+      
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('authModal')).show();
+      setTimeout(() => document.getElementById('authPassword').focus(), 500);
+  }
   function finalizeAuth(btn, originalText) {
       bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
       if (pendingAuthAction) {
@@ -2670,17 +2686,21 @@ async function subscribeToNotifications() {
 
       const newEntryBtn = document.getElementById('newEntryBtn');
       const logoutBtn = document.getElementById('logoutBtn');
+      const loginBtn = document.getElementById('loginBtn'); // 🟢 NEW
       
       if (newEntryBtn) {
-          // Rule: Hidden for non-admin (0) and editor (1). Visible for admin (2) and superadmin (3)
           newEntryBtn.style.display = (actVal >= 2) ? 'flex' : 'none';
       }
       
       if (logoutBtn) {
           logoutBtn.style.display = activeRole ? 'flex' : 'none';
       }
+
+      // 🟢 THE FIX: Show Login button ONLY when the user is logged out!
+      if (loginBtn) {
+          loginBtn.style.display = activeRole ? 'none' : 'flex';
+      }
       
-      // 🟢 THE FIX: Unhide the New Setup tab on load for Superadmins
       const btnModeNew = document.getElementById('btnModeNew');
       if (btnModeNew) {
           if (actVal >= 3) {
