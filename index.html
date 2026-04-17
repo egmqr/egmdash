@@ -5501,7 +5501,8 @@ async function uploadAndScanInvoice(prefix) {
           document.getElementById('boothSaveBtn').style.display = 'none';
           document.getElementById('boothDeleteBtn').style.display = 'none';
           
-          document.getElementById('boothCountInput').disabled = true;
+          // 🟢 THE FIX: Unlock Booth Count for Superadmins so they can generate standalone events!
+          document.getElementById('boothCountInput').disabled = (getUserRole() !== 'superadmin');
           document.getElementById('boothCountHint').style.display = 'none';
           toggleBoothEditFields(true);
         boothTemplates = JSON.parse(JSON.stringify(defaultBoothTemplates)); // 🟢 THE FIX: Load defaults on New Setup!
