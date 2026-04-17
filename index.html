@@ -5704,14 +5704,14 @@ async function uploadAndScanInvoice(prefix) {
       if (details && details.success === false) return;
 
       if (details) {
-          // 🟢 THE FIX: Parse templates, but fallback to defaults if the event has none!
+          // 🟢 THE FIX: Strictly load ONLY what the event has. No forced defaults on Edit Setup!
           try {
               boothTemplates = JSON.parse(details.templatesStr || "[]");
-              if (!Array.isArray(boothTemplates) || boothTemplates.length === 0) {
-                  boothTemplates = JSON.parse(JSON.stringify(defaultBoothTemplates));
+              if (!Array.isArray(boothTemplates)) {
+                  boothTemplates = [];
               }
           } catch (e) {
-              boothTemplates = JSON.parse(JSON.stringify(defaultBoothTemplates));
+              boothTemplates = [];
           }
           if (document.getElementById('boothTemplateList')) renderTemplateList();
 
