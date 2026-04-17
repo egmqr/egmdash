@@ -352,57 +352,45 @@ async function loadTemplateData(data) {
         const file = fileInput.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
+        // 🟢 THE FIX: Create a temporary, instant local URL for the canvas
+        const objectUrl = URL.createObjectURL(file);
         
-        reader.onload = function(e) {
-            const rawBase64 = e.target.result; 
+        const img = new Image();
+        img.onload = function() { 
+            let startW = img.width;
+            let startH = img.height;
             
-            const img = new Image();
-            img.onload = function() { 
-                let startW = img.width;
-                let startH = img.height;
-                
-                // Visually scale it down so it fits on your screen comfortably
-                if (startW > 1000) {
-                    const ratio = 1000 / startW;
-                    startW = 1000;
-                    startH = startH * ratio;
-                }
+            if (startW > 1000) {
+                const ratio = 1000 / startW;
+                startW = 1000;
+                startH = startH * ratio;
+            }
 
-                const layerData = {
-                    id: generateId(),
-                    LayerType: 'ImageLayer',
-                    DisplayName: file.name,
-                    ImagePath: rawBase64, 
-                    Width: Math.round(startW), 
-                    Height: Math.round(startH),
-                    X: 100, Y: 100, Rotation: 0, isLocked: false
-                };
+            const layerData = {
+                id: generateId(),
+                LayerType: 'ImageLayer',
+                DisplayName: file.name,
+                ImagePath: objectUrl, // 🟢 Render using the instant local URL
+                FileObj: file, // 🟢 Save the raw file in RAM so we can Base64 it later
+                Width: Math.round(startW), 
+                Height: Math.round(startH),
+                X: 100, Y: 100, Rotation: 0, isLocked: false
+            };
 
-                createDOMElement(layerData); 
-                templateState.Layers.unshift(layerData);
-                refreshLayers();
-                selectLayer(layerData.id);
-                
-                // 🟢 THE FIX: Reset the input ONLY after the image has successfully loaded onto the canvas!
-                fileInput.value = ''; 
-            };
+            createDOMElement(layerData); 
+            templateState.Layers.unshift(layerData);
+            refreshLayers();
+            selectLayer(layerData.id);
             
-            img.onerror = function() {
-                alert("Failed to read the image file.");
-                fileInput.value = ''; // Reset on error too
-            };
-            
-            img.src = rawBase64;
+            fileInput.value = ''; 
         };
         
-        reader.onerror = function() {
-            alert("FileReader failed to load the file.");
-            fileInput.value = '';
+        img.onerror = function() {
+            alert("Failed to read the image file.");
+            fileInput.value = ''; 
         };
-
-        // Start reading the file
-        reader.readAsDataURL(file);
+        
+        img.src = objectUrl;
     }
 
   function createDOMElement(layer) {
@@ -822,11 +810,23 @@ async function loadTemplateData(data) {
         selectLayer(templateState.Layers.length > 0 ? templateState.Layers[0].id : null);
     }
 
-    function saveTemplate() {
+    async function saveTemplate() {
         let templateName = prompt("Enter template name:", templateState.Name || "multi-port");
         if (!templateName) return; 
 
         templateState.Name = templateName;
+
+        // 🟢 THE FIX: Convert images to Base64 ONLY when saving!
+        for (let l of templateState.Layers) {
+            if (l.LayerType === 'ImageLayer' && l.FileObj) {
+                l.ImagePath = await new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.readAsDataURL(l.FileObj);
+                });
+                delete l.FileObj; // Clean up RAM
+            }
+        }
 
         const exportData = {
             Name: templateName,
@@ -844,12 +844,11 @@ async function loadTemplateData(data) {
             })).reverse() // Format exactly for Engine
         };
 
-        // 🟢 Bridge to Dashboard Listbox (Direct RAM transfer only)
+        // Bridge to Dashboard Listbox
         if (window.opener && window.opener.receiveTemplateFromEditor) {
             window.opener.receiveTemplateFromEditor(exportData);
         }
         
-        // Close the window instantly
         window.close();
     }
 
