@@ -2679,6 +2679,16 @@ async function subscribeToNotifications() {
       if (logoutBtn) {
           logoutBtn.style.display = activeRole ? 'flex' : 'none';
       }
+      
+      // 🟢 THE FIX: Unhide the New Setup tab on load for Superadmins
+      const btnModeNew = document.getElementById('btnModeNew');
+      if (btnModeNew) {
+          if (actVal >= 3) {
+              btnModeNew.style.display = 'block';
+          } else if (currentBoothMode !== 'new') {
+              btnModeNew.style.display = 'none';
+          }
+      }
   }
 
   function signOut() {
@@ -5447,8 +5457,12 @@ async function uploadAndScanInvoice(prefix) {
   function setBoothMode(mode) {
       currentBoothMode = mode;
       document.getElementById('boothEnableCommunity').checked = true;
-      if (mode !== 'new') {
+      
+      // 🟢 THE FIX: Keep 'New Setup' visible at all times for Superadmins
+      if (mode !== 'new' && getUserRole() !== 'superadmin') {
           document.getElementById('btnModeNew').style.display = 'none';
+      } else {
+          document.getElementById('btnModeNew').style.display = 'block';
       }
 
       document.getElementById('boothFolderName').value = ""; document.getElementById('boothEventName').value = "";
