@@ -353,34 +353,27 @@ async function loadTemplateData(data) {
 
         const reader = new FileReader();
         reader.onload = function(e) {
+            const rawBase64 = e.target.result; // 🟢 Grab the pure, unadulterated file data immediately
+            
             const img = new Image();
             img.onload = function() { 
                 let startW = img.width;
                 let startH = img.height;
                 
-                // 🟢 Cap massive 4K overlays down to a safe max width
-                if (startW > 1200) {
-                    const ratio = 1200 / startW;
-                    startW = 1200;
+                // Visually scale it down so it fits on your screen comfortably
+                if (startW > 1000) {
+                    const ratio = 1000 / startW;
+                    startW = 1000;
                     startH = startH * ratio;
                 }
-
-                // 🟢 THE FIX: Compress the image instantly using an invisible Canvas
-                const canvas = document.createElement('canvas');
-                canvas.width = startW;
-                canvas.height = startH;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, startW, startH);
-                
-                // Compress to a lightweight PNG to preserve transparency
-                const compressedBase64 = canvas.toDataURL('image/png');
 
                 const layerData = {
                     id: generateId(),
                     LayerType: 'ImageLayer',
                     DisplayName: file.name,
-                    ImagePath: compressedBase64, // 🟢 Save the tiny version!
-                    Width: startW, Height: startH,
+                    ImagePath: rawBase64, // 🟢 Pass the raw data directly! No compression.
+                    Width: Math.round(startW), 
+                    Height: Math.round(startH),
                     X: 100, Y: 100, Rotation: 0, isLocked: false
                 };
 
@@ -389,7 +382,10 @@ async function loadTemplateData(data) {
                 refreshLayers();
                 selectLayer(layerData.id);
             };
-            img.src = e.target.result;
+            img.onerror = function() {
+                alert("Failed to read the image file.");
+            };
+            img.src = rawBase64;
         };
         reader.readAsDataURL(file);
         event.target.value = ''; // Reset input
@@ -405,7 +401,6 @@ async function loadTemplateData(data) {
 
         const startDrag = (e) => handleMouseDown(e, layer, false, null);
 
-        // 🟢 Link it immediately to prevent freezing!
         layer.domElement = container;
         designCanvas.appendChild(container);
 
@@ -420,11 +415,14 @@ async function loadTemplateData(data) {
             container.addEventListener('mousedown', startDrag);
             container.addEventListener('touchstart', startDrag, { passive: false }); 
         } else {
-            // 🟢 Instantly draw the compressed image!
+            // 🟢 The absolute simplest way to draw an image to the DOM
             const img = document.createElement('img');
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.pointerEvents = 'none'; // Prevents the image from stealing the drag clicks
             img.src = layer.ImagePath; 
-            container.appendChild(img);
             
+            container.appendChild(img);
             container.addEventListener('mousedown', startDrag);
             container.addEventListener('touchstart', startDrag, { passive: false }); 
         }
