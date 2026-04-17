@@ -347,13 +347,15 @@ async function loadTemplateData(data) {
         selectLayer(layerData.id);
     }
 
-    function addImageLayer(event) {
-        const file = event.target.files[0];
+   function addImageLayer(event) {
+        const fileInput = event.target;
+        const file = fileInput.files[0];
         if (!file) return;
 
         const reader = new FileReader();
+        
         reader.onload = function(e) {
-            const rawBase64 = e.target.result; // 🟢 Grab the pure, unadulterated file data immediately
+            const rawBase64 = e.target.result; 
             
             const img = new Image();
             img.onload = function() { 
@@ -371,7 +373,7 @@ async function loadTemplateData(data) {
                     id: generateId(),
                     LayerType: 'ImageLayer',
                     DisplayName: file.name,
-                    ImagePath: rawBase64, // 🟢 Pass the raw data directly! No compression.
+                    ImagePath: rawBase64, 
                     Width: Math.round(startW), 
                     Height: Math.round(startH),
                     X: 100, Y: 100, Rotation: 0, isLocked: false
@@ -381,14 +383,26 @@ async function loadTemplateData(data) {
                 templateState.Layers.unshift(layerData);
                 refreshLayers();
                 selectLayer(layerData.id);
+                
+                // 🟢 THE FIX: Reset the input ONLY after the image has successfully loaded onto the canvas!
+                fileInput.value = ''; 
             };
+            
             img.onerror = function() {
                 alert("Failed to read the image file.");
+                fileInput.value = ''; // Reset on error too
             };
+            
             img.src = rawBase64;
         };
+        
+        reader.onerror = function() {
+            alert("FileReader failed to load the file.");
+            fileInput.value = '';
+        };
+
+        // Start reading the file
         reader.readAsDataURL(file);
-        event.target.value = ''; // Reset input
     }
 
   function createDOMElement(layer) {
@@ -415,11 +429,10 @@ async function loadTemplateData(data) {
             container.addEventListener('mousedown', startDrag);
             container.addEventListener('touchstart', startDrag, { passive: false }); 
         } else {
-            // 🟢 The absolute simplest way to draw an image to the DOM
             const img = document.createElement('img');
             img.style.width = '100%';
             img.style.height = '100%';
-            img.style.pointerEvents = 'none'; // Prevents the image from stealing the drag clicks
+            img.style.pointerEvents = 'none'; 
             img.src = layer.ImagePath; 
             
             container.appendChild(img);
