@@ -357,6 +357,7 @@ async function loadTemplateData(data) {
             img.onload = function() { 
                 let startW = img.width;
                 let startH = img.height;
+                // Auto-scale massive images down so they fit on the screen
                 if (startW > 800) {
                     const ratio = 800 / startW;
                     startW = 800;
@@ -372,7 +373,7 @@ async function loadTemplateData(data) {
                     X: 100, Y: 100, Rotation: 0, isLocked: false
                 };
 
-                // 🟢 We no longer need 'await' here because the container is linked instantly!
+                // 🟢 Because createDOMElement is instant now, this executes perfectly in order!
                 createDOMElement(layerData); 
                 templateState.Layers.unshift(layerData);
                 refreshLayers();
@@ -381,10 +382,10 @@ async function loadTemplateData(data) {
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
-        event.target.value = ''; // Reset input
+        event.target.value = ''; // Reset the input so you can upload the same file twice if needed
     }
 
-  async function createDOMElement(layer) {
+  function createDOMElement(layer) {
         const container = document.createElement('div');
         container.className = 'canvas-element';
         container.id = layer.id;
@@ -394,7 +395,7 @@ async function loadTemplateData(data) {
 
         const startDrag = (e) => handleMouseDown(e, layer, false, null);
 
-        // 🟢 THE FIX: Link the container immediately! This prevents the sidebar from crashing while the image loads.
+        // 🟢 Link it immediately!
         layer.domElement = container;
         designCanvas.appendChild(container);
 
@@ -409,20 +410,13 @@ async function loadTemplateData(data) {
             container.addEventListener('mousedown', startDrag);
             container.addEventListener('touchstart', startDrag, { passive: false }); 
         } else {
-            return new Promise((resolve) => {
-                const img = document.createElement('img');
-                img.onload = () => {
-                    container.appendChild(img);
-                    container.addEventListener('mousedown', startDrag);
-                    container.addEventListener('touchstart', startDrag, { passive: false }); 
-                    resolve();
-                };
-                img.onerror = () => {
-                    console.error("Failed to decode template image.");
-                    resolve();
-                };
-                img.src = layer.ImagePath;
-            });
+            // 🟢 THE FIX: It's a local Base64 string, so just draw it instantly! No Promises needed.
+            const img = document.createElement('img');
+            img.src = layer.ImagePath; 
+            container.appendChild(img);
+            
+            container.addEventListener('mousedown', startDrag);
+            container.addEventListener('touchstart', startDrag, { passive: false }); 
         }
     }
 
