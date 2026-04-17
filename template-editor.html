@@ -354,8 +354,7 @@ async function loadTemplateData(data) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
-            // 🟢 THE FIX: Make this inner function async!
-            img.onload = async function() { 
+            img.onload = function() { 
                 let startW = img.width;
                 let startH = img.height;
                 if (startW > 800) {
@@ -368,13 +367,13 @@ async function loadTemplateData(data) {
                     id: generateId(),
                     LayerType: 'ImageLayer',
                     DisplayName: file.name,
-                    ImagePath: e.target.result, // Base64 for web portability
+                    ImagePath: e.target.result, 
                     Width: startW, Height: startH,
                     X: 100, Y: 100, Rotation: 0, isLocked: false
                 };
 
-                // 🟢 THE FIX: Add 'await' so it waits for the image to finish building before updating the UI!
-                await createDOMElement(layerData); 
+                // 🟢 We no longer need 'await' here because the container is linked instantly!
+                createDOMElement(layerData); 
                 templateState.Layers.unshift(layerData);
                 refreshLayers();
                 selectLayer(layerData.id);
@@ -395,6 +394,10 @@ async function loadTemplateData(data) {
 
         const startDrag = (e) => handleMouseDown(e, layer, false, null);
 
+        // 🟢 THE FIX: Link the container immediately! This prevents the sidebar from crashing while the image loads.
+        layer.domElement = container;
+        designCanvas.appendChild(container);
+
         if (layer.LayerType === 'PhotoSlot') {
             const inner = document.createElement('div');
             inner.className = 'photo-slot';
@@ -404,20 +407,14 @@ async function loadTemplateData(data) {
             container.appendChild(inner);
             
             container.addEventListener('mousedown', startDrag);
-            container.addEventListener('touchstart', startDrag, { passive: false }); // 🟢 Touch support
-            
-            layer.domElement = container;
-            designCanvas.appendChild(container);
+            container.addEventListener('touchstart', startDrag, { passive: false }); 
         } else {
-            await new Promise((resolve) => {
+            return new Promise((resolve) => {
                 const img = document.createElement('img');
                 img.onload = () => {
                     container.appendChild(img);
                     container.addEventListener('mousedown', startDrag);
-                    container.addEventListener('touchstart', startDrag, { passive: false }); // 🟢 Touch support
-                    
-                    layer.domElement = container;
-                    designCanvas.appendChild(container);
+                    container.addEventListener('touchstart', startDrag, { passive: false }); 
                     resolve();
                 };
                 img.onerror = () => {
