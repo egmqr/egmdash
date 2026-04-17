@@ -114,7 +114,7 @@
 
             <button class="btn btn-dark" onclick="addPhotoSlot()">📷 ADD PHOTO SLOT</button>
             <button class="btn btn-dark" onclick="document.getElementById('fileUpload').click()">🖼️ ADD IMAGE OVERLAY</button>
-            <input type="file" id="fileUpload" style="display:none;" accept="image/png, image/jpeg" onchange="addImageLayer(event)">
+            <input type="file" id="fileUpload" style="display:none;" accept="image/png, image/jpeg" onchange="(event)">
 
             <div class="divider"></div>
 
@@ -325,7 +325,8 @@ async function loadTemplateData(data) {
         return themes[index % themes.length];
     }
 
-    function addPhotoSlot() {
+    // 🟢 Added 'async' here
+    async function addPhotoSlot() {
         let slotCount = templateState.Layers.filter(l => l.LayerType === 'PhotoSlot').length;
         const theme = getSlotTheme(slotCount);
         
@@ -333,14 +334,15 @@ async function loadTemplateData(data) {
             id: generateId(),
             LayerType: 'PhotoSlot',
             DisplayName: `Photo Slot ${slotCount + 1}`,
-            Width: templateState.CanvasWidth > 0 ? templateState.CanvasWidth : 1200,
-            Height: templateState.CanvasHeight > 0 ? templateState.CanvasHeight : 1800,
-            X: 0, Y: 0, Rotation: 0, isLocked: false,
+            Width: 600,
+            Height: 400,
+            X: 50, Y: 50, Rotation: 0, isLocked: false,
             themeBg: theme.bg, themeBorder: theme.border
         };
 
-        createDOMElement(layerData);
-        templateState.Layers.unshift(layerData); // Add to top
+        // 🟢 Added 'await' here
+        await createDOMElement(layerData);
+        templateState.Layers.unshift(layerData);
         refreshLayers();
         selectLayer(layerData.id);
     }
@@ -352,7 +354,8 @@ async function loadTemplateData(data) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
-            img.onload = function() {
+            // 🟢 THE FIX: Make this inner function async!
+            img.onload = async function() { 
                 let startW = img.width;
                 let startH = img.height;
                 if (startW > 800) {
@@ -370,7 +373,8 @@ async function loadTemplateData(data) {
                     X: 100, Y: 100, Rotation: 0, isLocked: false
                 };
 
-                createDOMElement(layerData);
+                // 🟢 THE FIX: Add 'await' so it waits for the image to finish building before updating the UI!
+                await createDOMElement(layerData); 
                 templateState.Layers.unshift(layerData);
                 refreshLayers();
                 selectLayer(layerData.id);
