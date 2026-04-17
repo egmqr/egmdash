@@ -357,23 +357,33 @@ async function loadTemplateData(data) {
             img.onload = function() { 
                 let startW = img.width;
                 let startH = img.height;
-                // Auto-scale massive images down so they fit on the screen
-                if (startW > 800) {
-                    const ratio = 800 / startW;
-                    startW = 800;
+                
+                // 🟢 Cap massive 4K overlays down to a safe max width
+                if (startW > 1200) {
+                    const ratio = 1200 / startW;
+                    startW = 1200;
                     startH = startH * ratio;
                 }
+
+                // 🟢 THE FIX: Compress the image instantly using an invisible Canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = startW;
+                canvas.height = startH;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, startW, startH);
+                
+                // Compress to a lightweight PNG to preserve transparency
+                const compressedBase64 = canvas.toDataURL('image/png');
 
                 const layerData = {
                     id: generateId(),
                     LayerType: 'ImageLayer',
                     DisplayName: file.name,
-                    ImagePath: e.target.result, 
+                    ImagePath: compressedBase64, // 🟢 Save the tiny version!
                     Width: startW, Height: startH,
                     X: 100, Y: 100, Rotation: 0, isLocked: false
                 };
 
-                // 🟢 Because createDOMElement is instant now, this executes perfectly in order!
                 createDOMElement(layerData); 
                 templateState.Layers.unshift(layerData);
                 refreshLayers();
@@ -382,7 +392,7 @@ async function loadTemplateData(data) {
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
-        event.target.value = ''; // Reset the input so you can upload the same file twice if needed
+        event.target.value = ''; // Reset input
     }
 
   function createDOMElement(layer) {
@@ -395,7 +405,7 @@ async function loadTemplateData(data) {
 
         const startDrag = (e) => handleMouseDown(e, layer, false, null);
 
-        // 🟢 Link it immediately!
+        // 🟢 Link it immediately to prevent freezing!
         layer.domElement = container;
         designCanvas.appendChild(container);
 
@@ -410,7 +420,7 @@ async function loadTemplateData(data) {
             container.addEventListener('mousedown', startDrag);
             container.addEventListener('touchstart', startDrag, { passive: false }); 
         } else {
-            // 🟢 THE FIX: It's a local Base64 string, so just draw it instantly! No Promises needed.
+            // 🟢 Instantly draw the compressed image!
             const img = document.createElement('img');
             img.src = layer.ImagePath; 
             container.appendChild(img);
