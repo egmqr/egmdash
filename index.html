@@ -6101,14 +6101,15 @@ async function fetchExistingLogos(forceRefresh = false) {
       const eventName = document.getElementById('boothEventName').value.trim();
       const communityOnly = document.getElementById('boothCommunityOnly').checked;
       
-      // 🟢 THE FIX: Send a dummy "1" to bypass backend validation, the backend will still override it to 0!
+      // 🟢 THE FIX: Safely default boothCount to "1" if it is empty (disabled for admins, or missing during edit)
       let boothCount = document.getElementById('boothCountInput').value;
-      if (communityOnly) {
+      if (!boothCount || communityOnly) {
           boothCount = "1"; 
       }
       
-      if (!folderName || !eventName || !boothCount) {
-          alert("Required fields missing! Ensure an Event ID and Folder Name are set.");
+      // 🟢 Updated validation to stop checking the empty booth count
+      if (!folderName || !eventName || !eventId) {
+          egmAlert("Required fields missing! Ensure the Page Title and Folder Name are set.");
           return;
       }
 
