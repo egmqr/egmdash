@@ -5772,7 +5772,7 @@ async function uploadAndScanInvoice(prefix) {
           if (document.getElementById('boothTemplateList')) renderTemplateList();
 
           if (currentBoothMode === 'edit') {
-            document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
+              document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
               document.getElementById('boothEventId').value = selectedId;
               document.getElementById('boothFolderName').value = details.folderName || "";
               document.getElementById('boothEventName').value = details.eventName || "";
@@ -5780,6 +5780,10 @@ async function uploadAndScanInvoice(prefix) {
               document.getElementById('boothLogoOnMain').checked = details.logoOnMain === true;
               document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
               document.getElementById('boothCommunityOnly').checked = details.communityOnly === true;
+              
+              // 🟢 THE FIX: Tell the dashboard to remember and physically check the toggle!
+              document.getElementById('boothUserStickers').checked = details.userStickers === true;
+              
               handleCommunityToggle(); // Visually update the UI instantly
               
               const loadedFontColor = details.fontColor || "#ffffff";
@@ -5826,12 +5830,13 @@ async function uploadAndScanInvoice(prefix) {
                   
                   const match = link.match(/folderId=([a-zA-Z0-9_-]+)/);
                   const folderId = match ? match[1] : '';
-                  // 🟢 NEW: Read the saved state and append it to the URL if enabled!
+                  // 🟢 THE FIX: Read the saved state and append it to the Gallery URLs!
                   const hasUserStickers = details.userStickers === true;
                   const stickerParam = hasUserStickers ? '&userStickers=true' : '';
-                  // 🟢 Construct the URL matching the new backend logic
-                  const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}`;
-                  const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}`;
+                  
+                  const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}${stickerParam}`;
+                  const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}${stickerParam}`;
+                  
                   const driveUrl = `https://drive.google.com/drive/folders/${folderId}`;
                   const boothCloudUrl = `https://webqr.createdbyegm.com/gallery?folderId=${folderId}&backend=https://script.google.com/macros/s/AKfycbwjQbyGEoK5HkmIOmVmGsYbYntYiA9Jg5YRuQAOpJ35m98BIN8EJtKC3lEAsmqVIFuQ/exec`;
                   
