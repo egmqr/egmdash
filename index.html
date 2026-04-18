@@ -5830,12 +5830,13 @@ async function uploadAndScanInvoice(prefix) {
                   
                   const match = link.match(/folderId=([a-zA-Z0-9_-]+)/);
                   const folderId = match ? match[1] : '';
-                  // 🟢 THE FIX: Read the saved state and append it to the Gallery URLs!
+                  // 🟢 THE FIX: Extract the EGM code and inject it!
                   const hasUserStickers = details.userStickers === true;
                   const stickerParam = hasUserStickers ? '&userStickers=true' : '';
+                  const eventCode = (details.folderName || "").split(' ')[0].toLowerCase();
                   
-                  const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}${stickerParam}`;
-                  const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}${stickerParam}`;
+                  const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&code=${eventCode}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}${stickerParam}`;
+                  const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&code=${eventCode}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}${stickerParam}`;
                   
                   const driveUrl = `https://drive.google.com/drive/folders/${folderId}`;
                   const boothCloudUrl = `https://webqr.createdbyegm.com/gallery?folderId=${folderId}&backend=https://script.google.com/macros/s/AKfycbwjQbyGEoK5HkmIOmVmGsYbYntYiA9Jg5YRuQAOpJ35m98BIN8EJtKC3lEAsmqVIFuQ/exec`;
