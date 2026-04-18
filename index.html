@@ -2993,8 +2993,15 @@ function handleAddCustomService(inputId, containerId) {
   function checkInvoiceRequired(prefix) {
       const status = document.getElementById(prefix + 'BillingStatus').value;
       const invoiceInput = document.getElementById(prefix + 'InvoiceUrl');
+      const role = getUserRole(); 
       
       if (!invoiceInput) return;
+
+      // 🟢 THE FIX: If Superadmin, absolutely never enforce the HTML required attribute!
+      if (role === 'superadmin') {
+          invoiceInput.removeAttribute('required');
+          return; 
+      }
 
       // If the status is any of these, lock the field as REQUIRED
       const requiredStatuses = [
@@ -4927,16 +4934,19 @@ async function uploadAndScanInvoice(prefix) {
       } else {
           if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
           
-          // NEW: INVOICE VALIDATION GUARDRAIL
-          const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
-          if (requireInvoiceStatuses.includes(obj.billingStatus)) {
-              if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
-                  egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
-                  return;
-              }
-              if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
-                  egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
-                  return;
+         // NEW: INVOICE VALIDATION GUARDRAIL
+          // 🟢 THE FIX: Superadmins completely bypass this check!
+          if (getUserRole() !== 'superadmin') {
+              const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
+              if (requireInvoiceStatuses.includes(obj.billingStatus)) {
+                  if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
+                      egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
+                      return;
+                  }
+                  if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
+                      egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
+                      return;
+                  }
               }
           }
           
@@ -5234,15 +5244,18 @@ async function uploadAndScanInvoice(prefix) {
           if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
           
           // NEW: INVOICE VALIDATION GUARDRAIL
-          const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
-          if (requireInvoiceStatuses.includes(obj.billingStatus)) {
-              if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
-                  egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
-                  return;
-              }
-              if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
-                  egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
-                  return;
+          // 🟢 THE FIX: Superadmins completely bypass this check!
+          if (getUserRole() !== 'superadmin') {
+              const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
+              if (requireInvoiceStatuses.includes(obj.billingStatus)) {
+                  if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
+                      egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
+                      return;
+                  }
+                  if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
+                      egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
+                      return;
+                  }
               }
           }
       }
