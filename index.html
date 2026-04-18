@@ -5583,7 +5583,10 @@ async function uploadAndScanInvoice(prefix) {
       const isEditMode = (currentBoothMode === 'edit');
       document.getElementById('boothEnableCommunity').disabled = isEditMode;
       document.getElementById('boothCommunityOnly').disabled = isEditMode || !document.getElementById('boothEnableCommunity').checked;
-    document.getElementById('boothUserStickers').disabled = !isEnabled;
+      
+      // The stickers toggle is only enabled if Community is ON AND we are allowed to edit!
+      document.getElementById('boothUserStickers').disabled = !isEnabled || !document.getElementById('boothEnableCommunity').checked;
+      
       document.getElementById('communityEditHint').style.display = isEditMode ? 'inline' : 'none';
 
     
@@ -5608,18 +5611,32 @@ async function uploadAndScanInvoice(prefix) {
   // 🟢 SMART TOGGLE CONTROLLERS
   function handleCommunityToggle() {
       const isEnabled = document.getElementById('boothEnableCommunity').checked;
+      
       const onlyToggle = document.getElementById('boothCommunityOnly');
       const onlyLabel = document.getElementById('boothCommunityOnlyLabel');
+      
+      const stickersToggle = document.getElementById('boothUserStickers');
       
       if (isEnabled) {
           onlyToggle.disabled = false;
           onlyToggle.classList.replace('border-secondary', 'border-primary');
           onlyLabel.classList.replace('text-secondary', 'text-dark');
+          
+          // Unlock the User Stickers toggle if Community is ON
+          stickersToggle.disabled = false;
+          stickersToggle.classList.replace('border-secondary', 'border-warning');
+          stickersToggle.nextElementSibling.classList.replace('text-secondary', 'text-dark');
       } else {
           onlyToggle.checked = false;
           onlyToggle.disabled = true;
           onlyToggle.classList.replace('border-primary', 'border-secondary');
           onlyLabel.classList.replace('text-dark', 'text-secondary');
+          
+          // Lock and Uncheck User Stickers if Community is OFF
+          stickersToggle.checked = false;
+          stickersToggle.disabled = true;
+          stickersToggle.classList.replace('border-warning', 'border-secondary');
+          stickersToggle.nextElementSibling.classList.replace('text-dark', 'text-secondary');
           
           if (currentBoothMode === 'new') {
               document.getElementById('boothCountInput').disabled = false;
