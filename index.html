@@ -8064,12 +8064,13 @@ function computeBillingSales() {
         const netVat = sde + doc + preprod + high + vstudio + transpo + restTotal; // Column 2
         const noWithheld = e['No Withheld'] === true;
         
-        const lessVat = noWithheld ? 0 : (netVat * 0.12); // Column 3: 12% of Col 2
-        const gross = netVat + lessVat;                   // Column 4: Col 2 + Col 3
-        const wh = noWithheld ? 0 : (netVat * 0.02);      // Column 5: 2% of Col 2
+        // 🟢 THE FIX: Always calculate VAT! Only zero out the 2% Withholding if the switch is ON.
+        const lessVat = netVat * 0.12;                                    // Column 3: Always 12% of Col 2
+        const gross = netVat + lessVat;                                   // Column 4: Col 2 + Col 3
+        const wh = noWithheld ? 0 : (netVat * 0.02);                      // Column 5: 0 if No Withheld, else 2%
         
-        const amtDue = netVat - wh;                       // Column 6: Col 2 - Col 5
-        const totalAmtDue = amtDue + lessVat;             // Column 7: Col 6 + Col 3
+        const amtDue = netVat - wh;                                       // Column 6: Col 2 - Col 5
+        const totalAmtDue = amtDue + lessVat;                             // Column 7: Col 6 + Col 3
 
         t1_net += netVat;
         t1_due += amtDue;
