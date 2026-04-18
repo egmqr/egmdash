@@ -884,6 +884,12 @@
                               Community Booth Only <span class="fw-normal fst-italic text-muted">(No Studio Setup)</span>
                           </label>
                       </div>
+                      <div class="form-check form-switch mb-2">
+                          <input class="form-check-input border-warning" type="checkbox" id="boothUserStickers" style="cursor: pointer;">
+                          <label class="form-check-label small fw-bold text-dark" for="boothUserStickers" style="cursor: pointer;">
+                              <i class="bi bi-stars text-warning me-1"></i> Enable User Stickers <span class="fw-normal fst-italic text-muted">(Dynamic GitHub Folder)</span>
+                          </label>
+                      </div>
                       <div class="small text-muted mt-2 border-top pt-2" style="font-size: 0.75rem;">
                           Generates an extra QR code for guests to upload their own photos. 
                           <span class="text-danger fw-bold" id="communityEditHint" style="display:none;"><br>(Must delete and re-generate to change)</span>
@@ -5516,6 +5522,7 @@ async function uploadAndScanInvoice(prefix) {
       document.getElementById('boothLogoOnMain').checked = false; document.getElementById('boothSearch').value = ""; 
       document.getElementById('boothEnableCommunity').checked = false;
       document.getElementById('boothCommunityOnly').checked = false;
+    document.getElementById('boothUserStickers').checked = false;
       handleCommunityToggle(); // 🟢 Resets states safely
       
       const eventSelectDropdown = document.getElementById('boothEventSelect');
@@ -5576,6 +5583,7 @@ async function uploadAndScanInvoice(prefix) {
       const isEditMode = (currentBoothMode === 'edit');
       document.getElementById('boothEnableCommunity').disabled = isEditMode;
       document.getElementById('boothCommunityOnly').disabled = isEditMode || !document.getElementById('boothEnableCommunity').checked;
+    document.getElementById('boothUserStickers').disabled = !isEnabled;
       document.getElementById('communityEditHint').style.display = isEditMode ? 'inline' : 'none';
 
     
@@ -5818,7 +5826,9 @@ async function uploadAndScanInvoice(prefix) {
                   
                   const match = link.match(/folderId=([a-zA-Z0-9_-]+)/);
                   const folderId = match ? match[1] : '';
-                  
+                  // 🟢 NEW: Read the saved state and append it to the URL if enabled!
+                  const hasUserStickers = details.userStickers === true;
+                  const stickerParam = hasUserStickers ? '&userStickers=true' : '';
                   // 🟢 Construct the URL matching the new backend logic
                   const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}`;
                   const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}`;
@@ -6098,7 +6108,8 @@ async function fetchExistingLogos(forceRefresh = false) {
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
           templates: boothTemplates,
           enableCommunity: enableCommunity, 
-          communityOnly: communityOnly // 🟢 Pass to backend
+          communityOnly: communityOnly,
+        userStickers: document.getElementById('boothUserStickers').checked // 🟢 NEW
       };
 
       const res = await callApi(payload, 'POST');
