@@ -8565,7 +8565,7 @@ function editTemplate() {
       const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `${t.Name.replace(/[^a-zA-Z0-9]/g, '-')}.json`;
+      a.download = `${t.Name.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
       a.click();
   }
 
