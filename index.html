@@ -756,7 +756,7 @@
                   <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
                   <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
                   <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
-                  <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm" onclick="exportSessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> EXPORT</button>
+                  <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm" onclick="SessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> </button>
                   <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm" id="prRatesBtn" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
                   <button class="btn btn-secondary btn-sm fw-bold px-3 shadow-sm" onclick="openPayrollHistory()"><i class="bi bi-clock-history me-1"></i> HISTORY</button>
               </div>
@@ -867,7 +867,7 @@
                           <button type="button" class="btn btn-sm btn-outline-secondary fw-bold flex-fill" id="btnEditTemplate" style="display:none;" onclick="editTemplate()"><i class="bi bi-pencil"></i> Edit</button>
                           <button type="button" class="btn btn-sm btn-outline-danger fw-bold flex-fill" id="btnRemoveTemplate" style="display:none;" onclick="removeTemplate()"><i class="bi bi-trash"></i> Remove</button>
                           <button type="button" class="btn btn-sm btn-outline-success fw-bold flex-fill" onclick="document.getElementById('importTemplateFile').click()"><i class="bi bi-box-arrow-in-down"></i> Import</button>
-                          <button type="button" class="btn btn-sm btn-outline-info fw-bold flex-fill" id="btnExportTemplate" style="display:none;" onclick="exportTemplate()"><i class="bi bi-box-arrow-up"></i> Export</button>
+                          <button type="button" class="btn btn-sm btn-outline-info fw-bold flex-fill" id="btnTemplate" style="display:none;" onclick="exportTemplate()"><i class="bi bi-box-arrow-up"></i> Export</button>
                           <input type="file" id="importTemplateFile" style="display:none;" accept=".json" onchange="importTemplateFile(event)">
                       </div>
                   </div>
@@ -8565,7 +8565,7 @@ function editTemplate() {
       const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `${t.Name.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
+      a.download = `${t.Name.replace(/[^a-zA-Z0-9]/g, '-')}.json`;
       a.click();
   }
 
