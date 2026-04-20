@@ -3563,11 +3563,26 @@ function generateSingleEventCard(e) {
     let venueDisplay = `<span class="fw-medium text-dark text-break">${e['Event Venue'] || 'No Venue Set'}</span>`;
     if (e['Event Venue Link']) venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold text-break">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
     
+    // 🟢 SMART DAY INDEXER: Calculate which day this is so multi-day booths don't overwrite each other!
+    let projectRowsArr = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
+    projectRowsArr.sort((a, b) => {
+        let dateA = a['Event Date'] || '9999-99-99';
+        let dateB = b['Event Date'] || '9999-99-99';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
+        let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
+        return timeA.localeCompare(timeB);
+    });
+    
+    let dayIndex = projectRowsArr.findIndex(r => r['Doc ID'] === e['Doc ID']) + 1;
+    let smartBoothId = projectRowsArr.length > 1 ? `${e['Event ID']}_D${dayIndex}` : e['Event ID'];
+
     let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
         let sTrim = s.trim();
         if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only') || sTrim.startsWith('Photo souvenir')) {
             let match = sTrim.match(/\[(\d+)\s+booth/); let booths = match ? match[1] : 1; let cleanName = e['Event Name'].replace(/'/g, "\\'");
-            return `<span class="badge badge-teal opacity-100 border fw-bold px-2 py-1 text-start shadow-sm text-wrap" style="font-size: 0.75rem; cursor: pointer;" onclick="goToBoothQR('${e['Event ID']}', '${booths}', '${cleanName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
+            // 🟢 THE FIX: Pass the smartBoothId instead of the base Event ID!
+            return `<span class="badge badge-teal opacity-100 border fw-bold px-2 py-1 text-start shadow-sm text-wrap" style="font-size: 0.75rem; cursor: pointer;" onclick="goToBoothQR('${smartBoothId}', '${booths}', '${cleanName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
         } else { return `<span class="badge bg-secondary opacity-75 border fw-medium px-2 py-1 text-start text-wrap" style="font-size: 0.75rem;">${sTrim}</span>`; }
     }).join('') : '-';
 
