@@ -848,7 +848,7 @@
                   </div>
 
                   <div class="mb-3">
-                      <label class="form-label-sm text-secondary">FOLDER NAME <span class="fw-normal text-muted" style="text-transform: none;">(SYNC TO DSLRBOOTH)</span></label>
+                      <label class="form-label-sm text-secondary">FOLDER NAME</label>
                       <input type="text" id="boothFolderName" class="form-control form-control-sm fw-bold" placeholder="e.g. Smith Wedding" required>
                   </div>
                   
@@ -5488,8 +5488,8 @@ async function uploadAndScanInvoice(prefix) {
           document.getElementById('boothEventName').value = eventName;
           document.getElementById('boothCountInput').value = booths;
           
-          const shortName = eventName.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
-          document.getElementById('boothFolderName').value = shortName;
+          // 🟢 THE FIX: Make the Folder Name exactly match the Event Name / Page Title!
+          document.getElementById('boothFolderName').value = eventName;
       }
   }
 
@@ -5589,8 +5589,8 @@ async function uploadAndScanInvoice(prefix) {
       
       document.getElementById('communityEditHint').style.display = isEditMode ? 'inline' : 'none';
 
-    
-      document.getElementById('boothFolderName').disabled = !isEnabled;
+      // 🟢 THE FIX: Permanently disable Folder Name during Edit Setup!
+      document.getElementById('boothFolderName').disabled = isEditMode ? true : !isEnabled;
       document.getElementById('boothEventName').disabled = !isEnabled;
       
       document.getElementById('boothFontColorPicker').disabled = !isEnabled;
