@@ -532,7 +532,9 @@
           <button id="installAppBtn" class="btn btn-warning border-warning-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center gap-1 fw-bold" style="display: none !important; height: 34px;">
             <i class="bi bi-download"></i>
           </button>
-          
+          <button id="loginBtn" class="btn btn-outline-primary btn-sm shadow-sm align-items-center justify-content-center" onclick="openSignInModal()" title="Sign In" style="width: 38px; height: 34px;">
+                <i class="bi bi-person-lock fs-6"></i>
+              </button>
           <button id="logoutBtn" class="btn btn-outline-danger btn-sm shadow-sm align-items-center justify-content-center" onclick="signOut()" title="Sign Out / Switch Account" style="width: 38px; height: 34px; display: none;">
             <i class="bi bi-box-arrow-right fs-6"></i>
           </button>
@@ -846,7 +848,7 @@
                   </div>
 
                   <div class="mb-3">
-                      <label class="form-label-sm text-secondary">FOLDER NAME <span class="fw-normal text-muted" style="text-transform: none;">(SYNC TO DSLRBOOTH)</span></label>
+                      <label class="form-label-sm text-secondary">FOLDER NAME</label>
                       <input type="text" id="boothFolderName" class="form-control form-control-sm fw-bold" placeholder="e.g. Smith Wedding" required>
                   </div>
                   
@@ -880,6 +882,12 @@
                           <input class="form-check-input border-secondary" type="checkbox" id="boothCommunityOnly" disabled onchange="handleCommunityOnlyToggle()" style="cursor: pointer;">
                           <label class="form-check-label small fw-bold text-secondary" for="boothCommunityOnly" id="boothCommunityOnlyLabel" style="cursor: pointer;">
                               Community Booth Only <span class="fw-normal fst-italic text-muted">(No Studio Setup)</span>
+                          </label>
+                      </div>
+                      <div class="form-check form-switch mb-2">
+                          <input class="form-check-input border-warning" type="checkbox" id="boothUserStickers" style="cursor: pointer;">
+                          <label class="form-check-label small fw-bold text-dark" for="boothUserStickers" style="cursor: pointer;">
+                              <i class="bi bi-stars text-warning me-1"></i> Enable User Stickers <span class="fw-normal fst-italic text-muted">(Dynamic GitHub Folder)</span>
                           </label>
                       </div>
                       <div class="small text-muted mt-2 border-top pt-2" style="font-size: 0.75rem;">
@@ -2645,7 +2653,21 @@ async function subscribeToNotifications() {
           btn.disabled = false;
       }
   }
-
+// 🟢 NEW: Manual Sign-In Trigger
+  function openSignInModal() {
+      pendingAuthAction = () => { showToast("Signed in successfully!", "success"); };
+      
+      document.getElementById('authPassword').value = '';
+      document.getElementById('authError').style.display = 'none';
+      
+      const authPromptText = document.querySelector('#authModal .text-muted');
+      if (authPromptText) {
+          authPromptText.innerText = "Please enter your password to sign in.";
+      }
+      
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('authModal')).show();
+      setTimeout(() => document.getElementById('authPassword').focus(), 500);
+  }
   function finalizeAuth(btn, originalText) {
       bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
       if (pendingAuthAction) {
@@ -2670,14 +2692,28 @@ async function subscribeToNotifications() {
 
       const newEntryBtn = document.getElementById('newEntryBtn');
       const logoutBtn = document.getElementById('logoutBtn');
+      const loginBtn = document.getElementById('loginBtn'); // 🟢 NEW
       
       if (newEntryBtn) {
-          // Rule: Hidden for non-admin (0) and editor (1). Visible for admin (2) and superadmin (3)
           newEntryBtn.style.display = (actVal >= 2) ? 'flex' : 'none';
       }
       
       if (logoutBtn) {
           logoutBtn.style.display = activeRole ? 'flex' : 'none';
+      }
+
+      // 🟢 THE FIX: Show Login button ONLY when the user is logged out!
+      if (loginBtn) {
+          loginBtn.style.display = activeRole ? 'none' : 'flex';
+      }
+      
+      const btnModeNew = document.getElementById('btnModeNew');
+      if (btnModeNew) {
+          if (actVal >= 3) {
+              btnModeNew.style.display = 'block';
+          } else if (currentBoothMode !== 'new') {
+              btnModeNew.style.display = 'none';
+          }
       }
   }
 
@@ -2963,8 +2999,15 @@ function handleAddCustomService(inputId, containerId) {
   function checkInvoiceRequired(prefix) {
       const status = document.getElementById(prefix + 'BillingStatus').value;
       const invoiceInput = document.getElementById(prefix + 'InvoiceUrl');
+      const role = getUserRole(); 
       
       if (!invoiceInput) return;
+
+      // 🟢 THE FIX: If Superadmin, absolutely never enforce the HTML required attribute!
+      if (role === 'superadmin') {
+          invoiceInput.removeAttribute('required');
+          return; 
+      }
 
       // If the status is any of these, lock the field as REQUIRED
       const requiredStatuses = [
@@ -3520,11 +3563,31 @@ function generateSingleEventCard(e) {
     let venueDisplay = `<span class="fw-medium text-dark text-break">${e['Event Venue'] || 'No Venue Set'}</span>`;
     if (e['Event Venue Link']) venueDisplay = `<a href="${e['Event Venue Link']}" target="_blank" class="map-link fw-bold text-break">${e['Event Venue'] || 'View Map'} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>`;
     
+    // 🟢 SMART DAY INDEXER: Calculate which day this is so multi-day booths don't overwrite each other!
+    let projectRowsArr = rawEvents.filter(r => r['Event ID'] === e['Event ID']);
+    projectRowsArr.sort((a, b) => {
+        let dateA = a['Event Date'] || '9999-99-99';
+        let dateB = b['Event Date'] || '9999-99-99';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
+        let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
+        return timeA.localeCompare(timeB);
+    });
+    
+    let dayIndex = projectRowsArr.findIndex(r => r['Doc ID'] === e['Doc ID']) + 1;
+    let smartBoothId = projectRowsArr.length > 1 ? `${e['Event ID']}_D${dayIndex}` : e['Event ID'];
+
     let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
         let sTrim = s.trim();
         if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only') || sTrim.startsWith('Photo souvenir')) {
-            let match = sTrim.match(/\[(\d+)\s+booth/); let booths = match ? match[1] : 1; let cleanName = e['Event Name'].replace(/'/g, "\\'");
-            return `<span class="badge badge-teal opacity-100 border fw-bold px-2 py-1 text-start shadow-sm text-wrap" style="font-size: 0.75rem; cursor: pointer;" onclick="goToBoothQR('${e['Event ID']}', '${booths}', '${cleanName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
+            let match = sTrim.match(/\[(\d+)\s+booth/); let booths = match ? match[1] : 1; 
+            let cleanName = e['Event Name'].replace(/'/g, "\\'");
+            
+            // 🟢 THE FIX: Automatically append -D2, -D3 to the event name!
+            let smartEventName = projectRowsArr.length > 1 ? `${cleanName}-D${dayIndex}` : cleanName;
+
+            // Pass the smartEventName into the goToBoothQR function
+            return `<span class="badge badge-teal opacity-100 border fw-bold px-2 py-1 text-start shadow-sm text-wrap" style="font-size: 0.75rem; cursor: pointer;" onclick="goToBoothQR('${smartBoothId}', '${booths}', '${smartEventName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
         } else { return `<span class="badge bg-secondary opacity-75 border fw-medium px-2 py-1 text-start text-wrap" style="font-size: 0.75rem;">${sTrim}</span>`; }
     }).join('') : '-';
 
@@ -4897,16 +4960,19 @@ async function uploadAndScanInvoice(prefix) {
       } else {
           if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
           
-          // NEW: INVOICE VALIDATION GUARDRAIL
-          const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
-          if (requireInvoiceStatuses.includes(obj.billingStatus)) {
-              if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
-                  egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
-                  return;
-              }
-              if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
-                  egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
-                  return;
+         // NEW: INVOICE VALIDATION GUARDRAIL
+          // 🟢 THE FIX: Superadmins completely bypass this check!
+          if (getUserRole() !== 'superadmin') {
+              const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
+              if (requireInvoiceStatuses.includes(obj.billingStatus)) {
+                  if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
+                      egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
+                      return;
+                  }
+                  if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
+                      egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
+                      return;
+                  }
               }
           }
           
@@ -5204,15 +5270,18 @@ async function uploadAndScanInvoice(prefix) {
           if (!obj.eventName || obj.eventName.trim() === '') { egmAlert("Please enter an Event Name."); return; }
           
           // NEW: INVOICE VALIDATION GUARDRAIL
-          const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
-          if (requireInvoiceStatuses.includes(obj.billingStatus)) {
-              if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
-                  egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
-                  return;
-              }
-              if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
-                  egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
-                  return;
+          // 🟢 THE FIX: Superadmins completely bypass this check!
+          if (getUserRole() !== 'superadmin') {
+              const requireInvoiceStatuses = ['Invoice Uploaded', 'Invoice Sent', 'GR Pending', 'GR Received', 'GR Processed', 'Payment released'];
+              if (requireInvoiceStatuses.includes(obj.billingStatus)) {
+                  if (!obj.invoiceUrl || obj.invoiceUrl.trim() === '') {
+                      egmAlert(`Status is set to '${obj.billingStatus}', but no Invoice Link was found. Please upload an invoice before saving.`);
+                      return;
+                  }
+                  if (!obj.invoiceNumber || obj.invoiceNumber.trim() === '') {
+                      egmAlert(`Status is set to '${obj.billingStatus}', but the Invoice Number is missing.`);
+                      return;
+                  }
               }
           }
       }
@@ -5439,16 +5508,20 @@ async function uploadAndScanInvoice(prefix) {
           document.getElementById('boothEventName').value = eventName;
           document.getElementById('boothCountInput').value = booths;
           
-          const shortName = eventName.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
-          document.getElementById('boothFolderName').value = shortName;
+          // 🟢 THE FIX: Make the Folder Name exactly match the Event Name / Page Title!
+          document.getElementById('boothFolderName').value = eventName;
       }
   }
 
   function setBoothMode(mode) {
       currentBoothMode = mode;
       document.getElementById('boothEnableCommunity').checked = true;
-      if (mode !== 'new') {
+      
+      // 🟢 THE FIX: Keep 'New Setup' visible at all times for Superadmins
+      if (mode !== 'new' && getUserRole() !== 'superadmin') {
           document.getElementById('btnModeNew').style.display = 'none';
+      } else {
+          document.getElementById('btnModeNew').style.display = 'block';
       }
 
       document.getElementById('boothFolderName').value = ""; document.getElementById('boothEventName').value = "";
@@ -5469,6 +5542,7 @@ async function uploadAndScanInvoice(prefix) {
       document.getElementById('boothLogoOnMain').checked = false; document.getElementById('boothSearch').value = ""; 
       document.getElementById('boothEnableCommunity').checked = false;
       document.getElementById('boothCommunityOnly').checked = false;
+    document.getElementById('boothUserStickers').checked = false;
       handleCommunityToggle(); // 🟢 Resets states safely
       
       const eventSelectDropdown = document.getElementById('boothEventSelect');
@@ -5487,7 +5561,8 @@ async function uploadAndScanInvoice(prefix) {
           document.getElementById('boothSaveBtn').style.display = 'none';
           document.getElementById('boothDeleteBtn').style.display = 'none';
           
-          document.getElementById('boothCountInput').disabled = true;
+          // 🟢 THE FIX: Unlock Booth Count for Superadmins so they can generate standalone events!
+          document.getElementById('boothCountInput').disabled = (getUserRole() !== 'superadmin');
           document.getElementById('boothCountHint').style.display = 'none';
           toggleBoothEditFields(true);
         boothTemplates = JSON.parse(JSON.stringify(defaultBoothTemplates)); // 🟢 THE FIX: Load defaults on New Setup!
@@ -5528,10 +5603,14 @@ async function uploadAndScanInvoice(prefix) {
       const isEditMode = (currentBoothMode === 'edit');
       document.getElementById('boothEnableCommunity').disabled = isEditMode;
       document.getElementById('boothCommunityOnly').disabled = isEditMode || !document.getElementById('boothEnableCommunity').checked;
+      
+      // The stickers toggle is only enabled if Community is ON AND we are allowed to edit!
+      document.getElementById('boothUserStickers').disabled = !isEnabled || !document.getElementById('boothEnableCommunity').checked;
+      
       document.getElementById('communityEditHint').style.display = isEditMode ? 'inline' : 'none';
 
-    
-      document.getElementById('boothFolderName').disabled = !isEnabled;
+      // 🟢 THE FIX: Permanently disable Folder Name during Edit Setup!
+      document.getElementById('boothFolderName').disabled = isEditMode ? true : !isEnabled;
       document.getElementById('boothEventName').disabled = !isEnabled;
       
       document.getElementById('boothFontColorPicker').disabled = !isEnabled;
@@ -5552,18 +5631,32 @@ async function uploadAndScanInvoice(prefix) {
   // 🟢 SMART TOGGLE CONTROLLERS
   function handleCommunityToggle() {
       const isEnabled = document.getElementById('boothEnableCommunity').checked;
+      
       const onlyToggle = document.getElementById('boothCommunityOnly');
       const onlyLabel = document.getElementById('boothCommunityOnlyLabel');
+      
+      const stickersToggle = document.getElementById('boothUserStickers');
       
       if (isEnabled) {
           onlyToggle.disabled = false;
           onlyToggle.classList.replace('border-secondary', 'border-primary');
           onlyLabel.classList.replace('text-secondary', 'text-dark');
+          
+          // Unlock the User Stickers toggle if Community is ON
+          stickersToggle.disabled = false;
+          stickersToggle.classList.replace('border-secondary', 'border-warning');
+          stickersToggle.nextElementSibling.classList.replace('text-secondary', 'text-dark');
       } else {
           onlyToggle.checked = false;
           onlyToggle.disabled = true;
           onlyToggle.classList.replace('border-primary', 'border-secondary');
           onlyLabel.classList.replace('text-dark', 'text-secondary');
+          
+          // Lock and Uncheck User Stickers if Community is OFF
+          stickersToggle.checked = false;
+          stickersToggle.disabled = true;
+          stickersToggle.classList.replace('border-warning', 'border-secondary');
+          stickersToggle.nextElementSibling.classList.replace('text-dark', 'text-secondary');
           
           if (currentBoothMode === 'new') {
               document.getElementById('boothCountInput').disabled = false;
@@ -5704,19 +5797,19 @@ async function uploadAndScanInvoice(prefix) {
       if (details && details.success === false) return;
 
       if (details) {
-          // 🟢 THE FIX: Parse templates, but fallback to defaults if the event has none!
+          // 🟢 THE FIX: Strictly load ONLY what the event has. No forced defaults on Edit Setup!
           try {
               boothTemplates = JSON.parse(details.templatesStr || "[]");
-              if (!Array.isArray(boothTemplates) || boothTemplates.length === 0) {
-                  boothTemplates = JSON.parse(JSON.stringify(defaultBoothTemplates));
+              if (!Array.isArray(boothTemplates)) {
+                  boothTemplates = [];
               }
           } catch (e) {
-              boothTemplates = JSON.parse(JSON.stringify(defaultBoothTemplates));
+              boothTemplates = [];
           }
           if (document.getElementById('boothTemplateList')) renderTemplateList();
 
           if (currentBoothMode === 'edit') {
-            document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
+              document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
               document.getElementById('boothEventId').value = selectedId;
               document.getElementById('boothFolderName').value = details.folderName || "";
               document.getElementById('boothEventName').value = details.eventName || "";
@@ -5724,6 +5817,10 @@ async function uploadAndScanInvoice(prefix) {
               document.getElementById('boothLogoOnMain').checked = details.logoOnMain === true;
               document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
               document.getElementById('boothCommunityOnly').checked = details.communityOnly === true;
+              
+              // 🟢 THE FIX: Tell the dashboard to remember and physically check the toggle!
+              document.getElementById('boothUserStickers').checked = details.userStickers === true;
+              
               handleCommunityToggle(); // Visually update the UI instantly
               
               const loadedFontColor = details.fontColor || "#ffffff";
@@ -5770,10 +5867,13 @@ async function uploadAndScanInvoice(prefix) {
                   
                   const match = link.match(/folderId=([a-zA-Z0-9_-]+)/);
                   const folderId = match ? match[1] : '';
+                  // 🟢 Stripped out 'code' - strictly using 'id'
+                  const hasUserStickers = details.userStickers === true;
+                  const stickerParam = hasUserStickers ? '&userStickers=true' : '';
                   
-                  // 🟢 Construct the URL matching the new backend logic
-                  const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}`;
-                  const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}`;
+                  const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}${stickerParam}`;
+                  const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}${stickerParam}`;
+                  
                   const driveUrl = `https://drive.google.com/drive/folders/${folderId}`;
                   const boothCloudUrl = `https://webqr.createdbyegm.com/gallery?folderId=${folderId}&backend=https://script.google.com/macros/s/AKfycbwjQbyGEoK5HkmIOmVmGsYbYntYiA9Jg5YRuQAOpJ35m98BIN8EJtKC3lEAsmqVIFuQ/exec`;
                   
@@ -6021,14 +6121,15 @@ async function fetchExistingLogos(forceRefresh = false) {
       const eventName = document.getElementById('boothEventName').value.trim();
       const communityOnly = document.getElementById('boothCommunityOnly').checked;
       
-      // 🟢 THE FIX: Send a dummy "1" to bypass backend validation, the backend will still override it to 0!
+      // 🟢 THE FIX: Safely default boothCount to "1" if it is empty (disabled for admins, or missing during edit)
       let boothCount = document.getElementById('boothCountInput').value;
-      if (communityOnly) {
+      if (!boothCount || communityOnly) {
           boothCount = "1"; 
       }
       
-      if (!folderName || !eventName || !boothCount) {
-          alert("Required fields missing! Ensure an Event ID and Folder Name are set.");
+      // 🟢 Updated validation to stop checking the empty booth count
+      if (!folderName || !eventName || !eventId) {
+          egmAlert("Required fields missing! Ensure the Page Title and Folder Name are set.");
           return;
       }
 
@@ -6050,7 +6151,8 @@ async function fetchExistingLogos(forceRefresh = false) {
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
           templates: boothTemplates,
           enableCommunity: enableCommunity, 
-          communityOnly: communityOnly // 🟢 Pass to backend
+          communityOnly: communityOnly,
+        userStickers: document.getElementById('boothUserStickers').checked // 🟢 NEW
       };
 
       const res = await callApi(payload, 'POST');
@@ -8016,12 +8118,13 @@ function computeBillingSales() {
         const netVat = sde + doc + preprod + high + vstudio + transpo + restTotal; // Column 2
         const noWithheld = e['No Withheld'] === true;
         
-        const lessVat = noWithheld ? 0 : (netVat * 0.12); // Column 3: 12% of Col 2
-        const gross = netVat + lessVat;                   // Column 4: Col 2 + Col 3
-        const wh = noWithheld ? 0 : (netVat * 0.02);      // Column 5: 2% of Col 2
+        // 🟢 THE FIX: Always calculate VAT! Only zero out the 2% Withholding if the switch is ON.
+        const lessVat = netVat * 0.12;                                    // Column 3: Always 12% of Col 2
+        const gross = netVat + lessVat;                                   // Column 4: Col 2 + Col 3
+        const wh = noWithheld ? 0 : (netVat * 0.02);                      // Column 5: 0 if No Withheld, else 2%
         
-        const amtDue = netVat - wh;                       // Column 6: Col 2 - Col 5
-        const totalAmtDue = amtDue + lessVat;             // Column 7: Col 6 + Col 3
+        const amtDue = netVat - wh;                                       // Column 6: Col 2 - Col 5
+        const totalAmtDue = amtDue + lessVat;                             // Column 7: Col 6 + Col 3
 
         t1_net += netVat;
         t1_due += amtDue;
@@ -8490,25 +8593,51 @@ function editTemplate() {
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
+      
       reader.onload = (e) => {
           try {
               const data = JSON.parse(e.target.result);
-              // Basic validation to ensure it's a EGM Print Template
-              if (!data.Name || !data.Layers || !Array.isArray(data.Layers)) throw new Error("Invalid template format.");
               
-              // Overwrite if name exists, otherwise append
-              const existingIdx = boothTemplates.findIndex(t => t.Name === data.Name);
-              if (existingIdx >= 0) boothTemplates[existingIdx] = data;
-              else boothTemplates.push(data);
+              // 🟢 SCENARIO 1: User uploaded a Full Event Config JSON (Contains a "Templates" array)
+              if (data.Templates && Array.isArray(data.Templates)) {
+                  let importedCount = 0;
+                  data.Templates.forEach(template => {
+                      // Validate each template inside the config
+                      if (template.Name && template.Layers && Array.isArray(template.Layers)) {
+                          const existingIdx = boothTemplates.findIndex(t => t.Name === template.Name);
+                          if (existingIdx >= 0) boothTemplates[existingIdx] = template;
+                          else boothTemplates.push(template);
+                          importedCount++;
+                      }
+                  });
+                  
+                  if (importedCount === 0) throw new Error("No valid templates found inside config.");
+                  
+                  renderTemplateList();
+                  showToast(`Imported ${importedCount} template(s) from Event Config.`);
+              } 
+              // 🟢 SCENARIO 2: User uploaded a Single Template JSON (Exported directly via the dashboard)
+              else if (data.Name && data.Layers && Array.isArray(data.Layers)) {
+                  const existingIdx = boothTemplates.findIndex(t => t.Name === data.Name);
+                  if (existingIdx >= 0) boothTemplates[existingIdx] = data;
+                  else boothTemplates.push(data);
+                  
+                  renderTemplateList();
+                  showToast(`Imported Template: ${data.Name}`);
+              } 
+              // 🔴 SCENARIO 3: Totally unrecognized format
+              else {
+                  throw new Error("Invalid template format.");
+              }
               
-              renderTemplateList();
-              showToast(`Imported Template: ${data.Name}`);
           } catch (err) {
-              egmAlert("Failed to import. Ensure the file is a valid Print Template JSON.");
+              console.error("Import Error:", err);
+              egmAlert("Failed to import. Ensure the file is a valid Print Template or Event Config JSON.");
           }
       };
+      
       reader.readAsText(file);
-      event.target.value = '';
+      event.target.value = ''; // Reset the file input so they can upload the same file again if needed
   }
 // TRIGGER JSON DOWNLOAD
 function downloadEventJson(fileId) {
