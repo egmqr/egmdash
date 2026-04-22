@@ -3580,9 +3580,14 @@ function generateSingleEventCard(e) {
     let servicesBadges = e['Services'] ? e['Services'].split(/\s*,\s*(?![^\[]*\])/).map(s => {
         let sTrim = s.trim();
         if (sTrim.startsWith('QR with Prints') || sTrim.startsWith('QR only') || sTrim.startsWith('Photo souvenir')) {
-            let match = sTrim.match(/\[(\d+)\s+booth/); let booths = match ? match[1] : 1; let cleanName = e['Event Name'].replace(/'/g, "\\'");
-            // 🟢 THE FIX: Pass the smartBoothId instead of the base Event ID!
-            return `<span class="badge badge-teal opacity-100 border fw-bold px-2 py-1 text-start shadow-sm text-wrap" style="font-size: 0.75rem; cursor: pointer;" onclick="goToBoothQR('${smartBoothId}', '${booths}', '${cleanName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
+            let match = sTrim.match(/\[(\d+)\s+booth/); let booths = match ? match[1] : 1; 
+            let cleanName = e['Event Name'].replace(/'/g, "\\'");
+            
+            // 🟢 THE FIX: Automatically append -D2, -D3 to the event name!
+            let smartEventName = projectRowsArr.length > 1 ? `${cleanName}-D${dayIndex}` : cleanName;
+
+            // Pass the smartEventName into the goToBoothQR function
+            return `<span class="badge badge-teal opacity-100 border fw-bold px-2 py-1 text-start shadow-sm text-wrap" style="font-size: 0.75rem; cursor: pointer;" onclick="goToBoothQR('${smartBoothId}', '${booths}', '${smartEventName}')"><i class="bi bi-qr-code me-1"></i>${sTrim}</span>`;
         } else { return `<span class="badge bg-secondary opacity-75 border fw-medium px-2 py-1 text-start text-wrap" style="font-size: 0.75rem;">${sTrim}</span>`; }
     }).join('') : '-';
 
