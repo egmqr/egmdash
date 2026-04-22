@@ -8588,25 +8588,51 @@ function editTemplate() {
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
+      
       reader.onload = (e) => {
           try {
               const data = JSON.parse(e.target.result);
-              // Basic validation to ensure it's a EGM Print Template
-              if (!data.Name || !data.Layers || !Array.isArray(data.Layers)) throw new Error("Invalid template format.");
               
-              // Overwrite if name exists, otherwise append
-              const existingIdx = boothTemplates.findIndex(t => t.Name === data.Name);
-              if (existingIdx >= 0) boothTemplates[existingIdx] = data;
-              else boothTemplates.push(data);
+              // 🟢 SCENARIO 1: User uploaded a Full Event Config JSON (Contains a "Templates" array)
+              if (data.Templates && Array.isArray(data.Templates)) {
+                  let importedCount = 0;
+                  data.Templates.forEach(template => {
+                      // Validate each template inside the config
+                      if (template.Name && template.Layers && Array.isArray(template.Layers)) {
+                          const existingIdx = boothTemplates.findIndex(t => t.Name === template.Name);
+                          if (existingIdx >= 0) boothTemplates[existingIdx] = template;
+                          else boothTemplates.push(template);
+                          importedCount++;
+                      }
+                  });
+                  
+                  if (importedCount === 0) throw new Error("No valid templates found inside config.");
+                  
+                  renderTemplateList();
+                  showToast(`Imported ${importedCount} template(s) from Event Config.`);
+              } 
+              // 🟢 SCENARIO 2: User uploaded a Single Template JSON (Exported directly via the dashboard)
+              else if (data.Name && data.Layers && Array.isArray(data.Layers)) {
+                  const existingIdx = boothTemplates.findIndex(t => t.Name === data.Name);
+                  if (existingIdx >= 0) boothTemplates[existingIdx] = data;
+                  else boothTemplates.push(data);
+                  
+                  renderTemplateList();
+                  showToast(`Imported Template: ${data.Name}`);
+              } 
+              // 🔴 SCENARIO 3: Totally unrecognized format
+              else {
+                  throw new Error("Invalid template format.");
+              }
               
-              renderTemplateList();
-              showToast(`Imported Template: ${data.Name}`);
           } catch (err) {
-              egmAlert("Failed to import. Ensure the file is a valid Print Template JSON.");
+              console.error("Import Error:", err);
+              egmAlert("Failed to import. Ensure the file is a valid Print Template or Event Config JSON.");
           }
       };
+      
       reader.readAsText(file);
-      event.target.value = '';
+      event.target.value = ''; // Reset the file input so they can upload the same file again if needed
   }
 // TRIGGER JSON DOWNLOAD
 function downloadEventJson(fileId) {
