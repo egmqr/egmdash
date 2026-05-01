@@ -7156,8 +7156,7 @@ function renderEgmComputation() {
     <div class="card p-3 p-md-4 shadow-sm">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
             <h5 class="fw-bold mb-0 text-dark d-flex align-items-center">
-                <i class="bi bi-calculator-fill text-primary me-2"></i>EGM Fund Source Computation
-                <span class="badge bg-light text-secondary border ms-2 fw-normal" style="font-size: 0.7rem;">Edgar (EGM) Only</span>
+                <i class="bi bi-calculator-fill text-primary me-2"></i>Cash OnHand / Online Sales
             </h5>
         </div>
 
@@ -7187,8 +7186,8 @@ function renderEgmComputation() {
                 <thead class="bg-light">
                     <tr>
                         <th class="py-2">Owner</th>
-                        <th class="py-2 text-end">Total A Share</th>
-                        <th class="py-2 text-end">Total B Share</th>
+                        <th class="py-2 text-end">Sales In Share</th>
+                        <th class="py-2 text-end">Payouts Share</th>
                         <th class="py-2 text-end">Balance</th>
                     </tr>
                 </thead>
@@ -7204,7 +7203,7 @@ function renderEgmComputation() {
         const icon = isLeft ? 'bi-arrow-up-circle-fill' : 'bi-arrow-down-circle-fill';
 
         html += `<tr>
-            <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2"></i>${s.name} <span class="badge bg-light border text-muted fw-normal ms-1" style="font-size: 0.7rem;">${(s.pct*100).toFixed(0)}%</span></td>
+            <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2"></i>${s.name}</td>
             <td class="text-end">₱${aShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             <td class="text-end">₱${bShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             <td class="text-end fw-bold ${colorClass}"><i class="bi ${icon} me-1"></i>₱${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${label}</td>
