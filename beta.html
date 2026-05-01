@@ -7092,6 +7092,7 @@ function renderEgmComputation() {
 
     // ---- Total A: Cash + Check + Online Transfer payments in cutoff window ----
     // Skips Crew Leave, Cancelled, Pencil Booked. Counts each Event ID only once.
+    // STRICT RULE: Only includes events with a 'Paid' Billing Status.
     const seenEventIds = new Set();
     let totalA = 0;
 
@@ -7100,6 +7101,9 @@ function renderEgmComputation() {
         if (e['Event Name'] === 'Crew Leave') return;
         if (e['Event Status'] === 'Cancelled' || e['Event Status'] === 'Pencil Booked') return;
         if (!e['Event Date'] || e['Event Date'] < start || e['Event Date'] > end) return;
+        
+        // --- NEW STATUS CHECK ADDED HERE ---
+        if (e['Billing Status'] !== 'Paid') return; 
 
         const pType = e['Payment Type'] || '';
         const isQualified =
@@ -7224,7 +7228,7 @@ function renderEgmComputation() {
         </table>
     </div>
     <div class="small text-muted mt-3 fst-italic" style="line-height: 1.5;">
-        <i class="bi bi-info-circle me-1"></i><strong>Total A:</strong> All Cash, Check & Online Transfer payments for events in this cutoff period.<br>
+        <i class="bi bi-info-circle me-1"></i><strong>Total A:</strong> All Cash, Check & Online Transfer payments for events in this cutoff period <strong>that are marked as 'Paid'</strong>.<br>
         <i class="bi bi-info-circle me-1"></i><strong>Total B:</strong> All payouts assigned to Edgar (EGM) fund source.
     </div>
     </div>`;
