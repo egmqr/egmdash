@@ -7511,7 +7511,7 @@ function renderPayrollTable() {
         const shootCount = data.events.filter(e => e.role === 'Crew').length;
         const editCount = data.events.filter(e => e.role === 'Editor').length;
         
-        const isFullyExempt = owners.includes(name) && data.totalBase === 0 && editCount === 0;
+        const isFullyExempt = owners.includes(name) && name !== 'Francis' && data.totalBase === 0 && editCount === 0;
         const estBasePayHtml = isFullyExempt ? '<span class="badge bg-secondary text-white shadow-sm">N/A (Exempt)</span>' : `₱${data.finalTotal.toLocaleString()}`;
         
         // 🔴 NEW: Color the row and add a badge if it is marked as Tentative!
@@ -7670,7 +7670,7 @@ async function processExpenseAction(docId, newStatus) {
       }
 
       document.getElementById('prModalName').innerText = name + (isHistorical ? ' (Historical)' : '');
-      const isFullyExempt = owners.includes(name) && !data.events.some(e => e.role === 'Editor');
+      const isFullyExempt = owners.includes(name) && name !== 'Francis' && !data.events.some(e => e.role === 'Editor');
       
       if (!isHistorical) {
           const start = document.getElementById('prStartDate').value;
