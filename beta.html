@@ -6942,7 +6942,7 @@ if (!isConfirmed) return;
                   const color = isLeft ? '#16a34a' : '#dc2626';
                   const label = isLeft ? 'left' : 'deficit';
                   rowsHtml += `<tr>
-                      <td><strong>${s.name}</strong> (${(s.pct*100).toFixed(0)}%)</td>
+                      <td><strong>${s.name}</strong></td>
                       <td class="text-right">₱${aShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                       <td class="text-right">₱${bShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                       <td class="text-right" style="color: ${color}; font-weight: bold;">₱${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${label}</td>
