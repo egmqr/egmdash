@@ -6970,17 +6970,21 @@ async function runPayrollEngine(forceNewRates = false) {
     let autoExpenseNotes = {};
     
     if (typeof rawExpenses !== 'undefined') {
-        rawExpenses.forEach(exp => {
-            if (exp.status === 'Approved' && exp.expenseDate >= start && exp.expenseDate <= end) {
-                let pName = exp.submittedBy;
-                if (!autoExpenses[pName]) autoExpenses[pName] = 0;
-                if (!autoExpenseNotes[pName]) autoExpenseNotes[pName] = [];
-                
-                autoExpenses[pName] += Number(exp.amount) || 0;
-                autoExpenseNotes[pName].push(`${exp.category} (₱${Number(exp.amount).toLocaleString()})`);
-            }
-        });
-    }
+    rawExpenses.forEach(exp => {
+        // Strip the " - EventName" suffix so date comparison works correctly
+        let exactDate = exp.expenseDate || "";
+        if (exactDate.includes(' - ')) exactDate = exactDate.split(' - ')[0];
+        
+        if (exp.status === 'Approved' && exactDate >= start && exactDate <= end) {
+            let pName = exp.submittedBy;
+            if (!autoExpenses[pName]) autoExpenses[pName] = 0;
+            if (!autoExpenseNotes[pName]) autoExpenseNotes[pName] = [];
+            
+            autoExpenses[pName] += Number(exp.amount) || 0;
+            autoExpenseNotes[pName].push(`${exp.category} (₱${Number(exp.amount).toLocaleString()})`);
+        }
+    });
+}
 
     function getOldEvent(personName, eventId, role) {
         if (!existingData[personName]) return null;
