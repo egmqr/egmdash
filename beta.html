@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -764,18 +763,7 @@
 
           </div>
 
-          <div id="onlineSalesDisplay" class="alert alert-primary py-2 px-3 mb-3 shadow-sm" style="display:none;">
-              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                  <div>
-                      <i class="bi bi-wallet2 me-2"></i>
-                      <strong>Online Sales Current Balance:</strong>
-                      <span class="fw-bold text-success ms-1">₱<span id="onlineSalesAmount">0.00</span></span>
-                  </div>
-                  <button class="btn btn-sm btn-outline-primary fw-bold py-1 px-3 shadow-sm" onclick="editOnlineSalesBalance()" style="font-size: 0.75rem;">
-                      <i class="bi bi-pencil-square me-1"></i>EDIT
-                  </button>
-              </div>
-          </div>
+
 
           <div class="table-custom bg-white shadow-sm">
               <div class="table-responsive">
@@ -1956,24 +1944,7 @@
   </div>
   <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="submitPaymentDocUpload()">UPLOAD</button>
 </div></div></div></div>
-  <div class="modal fade" id="onlineSalesModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true" style="z-index: 10800;">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-primary text-white border-0">
-                <h6 class="fw-bold mb-0"><i class="bi bi-wallet2 me-2"></i>Online Sales Balance</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <p class="small text-secondary mb-3">Enter the current Online Sales account balance before computing payroll:</p>
-                <div class="input-group input-group-sm shadow-sm mb-3">
-                    <span class="input-group-text bg-white fw-bold">₱</span>
-                    <input type="number" id="onlineSalesBalanceInput" class="form-control fw-bold text-success" placeholder="0.00" step="0.01">
-                </div>
-                <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm" id="onlineSalesProceedBtn">PROCEED <i class="bi bi-arrow-right-circle-fill ms-1"></i></button>
-            </div>
-        </div>
-    </div>
-</div>
+
   <div class="modal fade" id="ratesModal" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
   <div class="modal-header bg-warning border-bottom">
       <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-sliders me-1"></i> Manage Base Rates</h6>
@@ -6954,9 +6925,6 @@ if (!isConfirmed) return;
               return `
               <div class="page-break"></div>
               <h2 style="margin-top: 40px;">CASH ONHAND / ONLINE SALES</h2>
-              <p style="background-color: #e0f2fe; padding: 12px; border-radius: 6px; border-left: 4px solid #0284c7; margin: 20px 0;">
-                  <strong>Online Sales Current Balance:</strong> ₱${onlineSalesBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}
-              </p>
               <table>
                   <thead>
                       <tr>
@@ -7008,75 +6976,9 @@ function markPayrollEdited() {
 // EGM FUND SOURCE COMPUTATION (Online Sales Balance + Total A vs Total B)
 // ==============================================================================
 
-function askOnlineSalesBalance() {
-    return new Promise((resolve) => {
-        const modalEl = document.getElementById('onlineSalesModal');
-        const input = document.getElementById('onlineSalesBalanceInput');
-        const btn = document.getElementById('onlineSalesProceedBtn');
-
-        // Pre-fill with the last known value
-        input.value = currentOnlineSalesBalance > 0 ? currentOnlineSalesBalance : '';
-
-        let resolved = false;
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-
-        const onProceed = () => {
-            resolved = true;
-            const val = parseFloat(input.value) || 0;
-            modal.hide();
-            cleanup();
-            resolve(val);
-        };
-
-        const onHidden = () => {
-            cleanup();
-            if (!resolved) resolve(null);
-        };
-
-        const onKeydown = (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); onProceed(); }
-        };
-
-        const cleanup = () => {
-            btn.removeEventListener('click', onProceed);
-            modalEl.removeEventListener('hidden.bs.modal', onHidden);
-            input.removeEventListener('keydown', onKeydown);
-        };
-
-        btn.addEventListener('click', onProceed);
-        modalEl.addEventListener('hidden.bs.modal', onHidden);
-        input.addEventListener('keydown', onKeydown);
-
-        modal.show();
-        setTimeout(() => { input.focus(); input.select(); }, 500);
-    });
-}
-
-async function editOnlineSalesBalance() {
-    const balance = await askOnlineSalesBalance();
-    if (balance === null) return;
-    currentOnlineSalesBalance = balance;
-    renderEgmComputation();
-
-    // Persist updated balance to the active saved session, if one exists
-    const start = document.getElementById('prStartDate').value;
-    const end = document.getElementById('prEndDate').value;
-    if (start && end) {
-        try {
-            const sessionRef = db.collection("payroll_sessions").doc(`${start}_${end}`);
-            const snap = await sessionRef.get();
-            if (snap.exists) {
-                await sessionRef.update({ onlineSalesBalance: currentOnlineSalesBalance });
-            }
-        } catch (err) { console.warn("Could not auto-persist balance:", err); }
-    }
-
-    showToast("Online Sales Balance updated.", "success");
-}
 
 function renderEgmComputation() {
     const container = document.getElementById('egmComputationContainer');
-    const display = document.getElementById('onlineSalesDisplay');
     const start = document.getElementById('prStartDate').value;
     const end = document.getElementById('prEndDate').value;
 
@@ -7084,7 +6986,6 @@ function renderEgmComputation() {
 
     if (!start || !end || Object.keys(currentPayrollData || {}).length === 0) {
         container.innerHTML = '';
-        if (display) display.style.display = 'none';
         currentEgmComputation = null;
         return;
     }
@@ -7144,12 +7045,6 @@ function renderEgmComputation() {
         totalA, totalB, splits
     };
 
-    // Show the top banner
-    if (display) {
-        display.style.display = 'block';
-        document.getElementById('onlineSalesAmount').innerText =
-            currentOnlineSalesBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    }
 
     // Build the computation card
     let html = `
@@ -7161,19 +7056,13 @@ function renderEgmComputation() {
         </div>
 
         <div class="row g-3 mb-3">
-            <div class="col-12 col-md-4">
-                <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
-                    <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Online Sales Balance</div>
-                    <div class="fw-bold fs-5 text-primary">₱${currentOnlineSalesBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-4">
+            <div class="col-6 col-md-6">
                 <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
                     <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total A (Sales In)</div>
                     <div class="fw-bold fs-5 text-success">₱${totalA.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
                 </div>
             </div>
-            <div class="col-6 col-md-4">
+            <div class="col-6 col-md-6">
                 <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
                     <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total B (Payouts)</div>
                     <div class="fw-bold fs-5 text-danger">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
@@ -7277,13 +7166,6 @@ async function runPayrollEngine(forceNewRates = false) {
         ov.style.display = 'none';
     }
 
-    // Ask for the current Online Sales balance before computing
-    // (Skip when re-applying rates so we don't re-prompt unnecessarily)
-    if (!forceNewRates) {
-        const balance = await askOnlineSalesBalance();
-        if (balance === null) return; // User cancelled
-        currentOnlineSalesBalance = balance;
-    }
 
     // 1. THE FIX: ONLY SAVE EXISTING DATA IF RE-COMPUTING THE EXACT SAME DATES
     let existingData = {};
