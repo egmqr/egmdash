@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -764,6 +763,8 @@
 
           </div>
 
+
+
           <div class="table-custom bg-white shadow-sm">
               <div class="table-responsive">
                   <table class="table table-hover mb-0 align-middle">
@@ -782,6 +783,8 @@
                   </table>
               </div>
           </div>
+
+          <div id="egmComputationContainer" class="mt-4"></div>
       </div>
       <div id="events-view" style="display:none;">
          
@@ -1941,6 +1944,7 @@
   </div>
   <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="submitPaymentDocUpload()">UPLOAD</button>
 </div></div></div></div>
+
   <div class="modal fade" id="ratesModal" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
   <div class="modal-header bg-warning border-bottom">
       <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-sliders me-1"></i> Manage Base Rates</h6>
@@ -2449,6 +2453,10 @@ async function subscribeToNotifications() {
   let lastComputedRange = "";
   let activePayrollPerson = null;
   let isHistoricalView = false;
+
+  // EGM Fund Source Computation
+  let currentOnlineSalesBalance = 0;
+  let currentEgmComputation = null;
 
   function getCrewRate(name, role) {
       if (role === 'Editor') {
@@ -6669,6 +6677,7 @@ async function getNextEventId() {
               startDate: start,
               endDate: end,
               sessionData: JSON.stringify(currentPayrollData),
+              onlineSalesBalance: currentOnlineSalesBalance,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
           showToast(`Cloud Session for ${start} to ${end} saved successfully!`, "success");
@@ -6766,8 +6775,9 @@ if (!isConfirmed) return;
           
           try {
               currentPayrollData = JSON.parse(data.sessionData);
-              lastComputedRange = `${data.startDate}_${data.endDate}`; 
-              
+              currentOnlineSalesBalance = data.onlineSalesBalance || 0;
+              lastComputedRange = `${data.startDate}_${data.endDate}`;
+
               renderPayrollTable();
               showToast("Cloud Session loaded successfully!", "success");
               
@@ -6882,12 +6892,63 @@ if (!isConfirmed) return;
           
           <div class="page-break"></div> <div class="breakdown-box">
               <h4>Funding Source Breakdown</h4>
-              <div class="breakdown-row"><span>Edgar (EGM)</span><span>₱${grandBreakdown['Edgar(EGM)'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-              <div class="breakdown-row"><span>Francis</span><span>₱${grandBreakdown['Francis'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-              <div class="breakdown-row"><span>Tina</span><span>₱${grandBreakdown['Tina'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-              <div class="breakdown-row"><span>Grace</span><span>₱${grandBreakdown['Grace'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+              <div class="breakdown-row"><span>Edgar (EGM)</span></div>
+              <div class="breakdown-row"><span>Francis</span></div>
+              <div class="breakdown-row"><span>Tina</span></div>
+              <div class="breakdown-row"><span>Grace</span></div>
               <div class="breakdown-row" style="color: #0d9488;"><span><strong>TOTAL</strong></span><span><strong>₱${totalPayout.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></span></div>
           </div>
+
+          ${(function(){
+              // Make sure currentEgmComputation has the latest numbers
+              renderEgmComputation();
+              if (!currentEgmComputation) return '';
+              const { onlineSalesBalance, totalA, totalB, splits } = currentEgmComputation;
+              let rowsHtml = '';
+              splits.forEach(s => {
+                  const aShare = totalA * s.pct;
+                  const bShare = totalB * s.pct;
+                  const diff = aShare - bShare;
+                  const isLeft = diff >= 0;
+                  const color = isLeft ? '#16a34a' : '#dc2626';
+                  const label = isLeft ? 'left' : 'deficit';
+                  rowsHtml += `<tr>
+                      <td><strong>${s.name}</strong></td>
+                      <td class="text-right">₱${aShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                      <td class="text-right">₱${bShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                      <td class="text-right" style="color: ${color}; font-weight: bold;">₱${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${label}</td>
+                  </tr>`;
+              });
+              const grandDiff = totalA - totalB;
+              const grandColor = grandDiff >= 0 ? '#16a34a' : '#dc2626';
+              const grandLabel = grandDiff >= 0 ? 'left' : 'deficit';
+              return `
+              <div class="page-break"></div>
+              <h2 style="margin-top: 40px;">AR SALES</h2>
+              <table>
+                  <thead>
+                      <tr>
+                          <th>Owner</th>
+                          <th class="text-right">Sales In Share</th>
+                          <th class="text-right">Payout Share</th>
+                          <th class="text-right">Balance</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      ${rowsHtml}
+                      <tr class="total-row">
+                          <td>TOTAL</td>
+                          <td class="text-right">₱${totalA.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                          <td class="text-right">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                          <td class="text-right" style="color: ${grandColor};">₱${Math.abs(grandDiff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${grandLabel}</td>
+                      </tr>
+                  </tbody>
+              </table>
+              <p style="margin-top: 15px; font-size: 0.85em; color: #666; font-style: italic;">
+                  <strong>Total A:</strong> All Cash, Check & Online Transfer payments for events in this cutoff period.<br>
+                  <strong>Total B:</strong> All payouts assigned to Edgar (EGM) fund source.
+              </p>`;
+          })()}
 
           <p style="margin-top:40px; font-size:0.8em; color:#999; text-align: center;">Generated automatically from EGM Ops Dashboard on ${new Date().toLocaleString()}</p>
       </body></html>`;
@@ -6911,6 +6972,157 @@ function markPayrollEdited() {
         ratesBtn.title = "Disabled because manual edits have been made. Refresh the page to reset.";
     }
 }
+// ==============================================================================
+// EGM FUND SOURCE COMPUTATION (Online Sales Balance + Total A vs Total B)
+// ==============================================================================
+
+
+function renderEgmComputation() {
+    const container = document.getElementById('egmComputationContainer');
+    const start = document.getElementById('prStartDate').value;
+    const end = document.getElementById('prEndDate').value;
+
+    if (!container) return;
+
+    if (!start || !end || Object.keys(currentPayrollData || {}).length === 0) {
+        container.innerHTML = '';
+        currentEgmComputation = null;
+        return;
+    }
+
+    // ---- Total A: Cash + Check + Online Transfer payments in cutoff window ----
+    // Skips Crew Leave, Cancelled, Pencil Booked. Counts each Event ID only once.
+    // STRICT RULE: Only includes events with a 'Paid' Billing Status.
+    const seenEventIds = new Set();
+    let totalA = 0;
+
+    rawEvents.forEach(e => {
+        if (seenEventIds.has(e['Event ID'])) return;
+        if (e['Event Name'] === 'Crew Leave') return;
+        if (e['Event Status'] === 'Cancelled' || e['Event Status'] === 'Pencil Booked') return;
+        if (!e['Event Date'] || e['Event Date'] < start || e['Event Date'] > end) return;
+        
+        // --- NEW STATUS CHECK ADDED HERE ---
+        if (e['Billing Status'] !== 'Paid') return; 
+
+        const pType = e['Payment Type'] || '';
+        const isQualified =
+            pType.includes('Cash') ||
+            pType.includes('Check') ||
+            pType.includes('Online Transfer');
+
+        if (isQualified) {
+            const amt = parseFloat(e['Amount']) || 0;
+            if (amt > 0) {
+                seenEventIds.add(e['Event ID']);
+                totalA += amt;
+            }
+        }
+    });
+
+    // ---- Total B: All payouts assigned to Edgar (EGM) fund source only ----
+    let totalB = 0;
+    Object.keys(currentPayrollData).forEach(pName => {
+        const person = currentPayrollData[pName];
+        person.events.forEach(ev => {
+            if (ev.payer === 'Edgar(EGM)') {
+                totalB += (ev.basePay || 0) + (ev.extraPay || 0);
+            }
+        });
+        if (person.expensePayer === 'Edgar(EGM)') totalB += person.expenses || 0;
+        if (person.miscPayer === 'Edgar(EGM)') totalB += person.misc || 0;
+    });
+
+    const splits = [
+        { name: 'Edgar',   pct: 0.40 },
+        { name: 'Francis', pct: 0.30 },
+        { name: 'Tina',    pct: 0.20 },
+        { name: 'Grace',   pct: 0.10 }
+    ];
+
+    currentEgmComputation = {
+        onlineSalesBalance: currentOnlineSalesBalance,
+        totalA, totalB, splits
+    };
+
+
+    // Build the computation card
+    let html = `
+    <div class="card p-3 p-md-4 shadow-sm">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center">
+                <i class="bi bi-calculator-fill text-primary me-2"></i>Cash OnHand / Online Sales
+            </h5>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-6">
+                <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
+                    <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total A (Sales In)</div>
+                    <div class="fw-bold fs-5 text-success">₱${totalA.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-6">
+                <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
+                    <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total B (Payouts)</div>
+                    <div class="fw-bold fs-5 text-danger">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="py-2">Owner</th>
+                        <th class="py-2 text-end">Sales In Share</th>
+                        <th class="py-2 text-end">Payouts Share</th>
+                        <th class="py-2 text-end">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+    splits.forEach(s => {
+        const aShare = totalA * s.pct;
+        const bShare = totalB * s.pct;
+        const diff = aShare - bShare;
+        const isLeft = diff >= 0;
+        const colorClass = isLeft ? 'text-success' : 'text-danger';
+        const label = isLeft ? 'left' : 'deficit';
+        const icon = isLeft ? 'bi-arrow-up-circle-fill' : 'bi-arrow-down-circle-fill';
+
+        html += `<tr>
+            <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2"></i>${s.name}</td>
+            <td class="text-end">₱${aShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td class="text-end">₱${bShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td class="text-end fw-bold ${colorClass}"><i class="bi ${icon} me-1"></i>₱${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${label}</td>
+        </tr>`;
+    });
+
+    const grandDiff = totalA - totalB;
+    const isGrandLeft = grandDiff >= 0;
+    const grandColorClass = isGrandLeft ? 'text-success' : 'text-danger';
+    const grandLabel = isGrandLeft ? 'left' : 'deficit';
+
+    html += `
+                <tr class="bg-secondary bg-opacity-10 fw-bold">
+                    <td class="py-2">TOTAL</td>
+                    <td class="py-2 text-end">₱${totalA.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="py-2 text-end">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="py-2 text-end ${grandColorClass}">₱${Math.abs(grandDiff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${grandLabel}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="small text-muted mt-3 fst-italic" style="line-height: 1.5;">
+        <i class="bi bi-info-circle me-1"></i><strong>Total A:</strong> All Cash, Check & Online Transfer payments for events in this cutoff period <strong>that are marked as 'Paid'</strong>.<br>
+        <i class="bi bi-info-circle me-1"></i><strong>Total B:</strong> All payouts assigned to Edgar (EGM) fund source.
+    </div>
+    </div>`;
+
+    container.innerHTML = html;
+}
+  
 // Engine: Aggregate the data using the Dynamic Rates (With Auto-Expenses & Overlap Protection!)
 async function runPayrollEngine(forceNewRates = false) {
     const start = document.getElementById('prStartDate').value;
@@ -6953,6 +7165,7 @@ async function runPayrollEngine(forceNewRates = false) {
         }
         ov.style.display = 'none';
     }
+
 
     // 1. THE FIX: ONLY SAVE EXISTING DATA IF RE-COMPUTING THE EXACT SAME DATES
     let existingData = {};
@@ -7298,7 +7511,7 @@ function renderPayrollTable() {
         const shootCount = data.events.filter(e => e.role === 'Crew').length;
         const editCount = data.events.filter(e => e.role === 'Editor').length;
         
-        const isFullyExempt = owners.includes(name) && data.totalBase === 0 && editCount === 0;
+        const isFullyExempt = owners.includes(name) && name !== 'Francis' && data.totalBase === 0 && editCount === 0;
         const estBasePayHtml = isFullyExempt ? '<span class="badge bg-secondary text-white shadow-sm">N/A (Exempt)</span>' : `₱${data.finalTotal.toLocaleString()}`;
         
         // 🔴 NEW: Color the row and add a badge if it is marked as Tentative!
@@ -7316,6 +7529,9 @@ function renderPayrollTable() {
         </tr>`;
     });
     tbody.innerHTML = html;
+
+    // Refresh the EGM Fund Source computation table with the latest numbers
+    renderEgmComputation();
 }
 
 // ==============================================================================
@@ -7454,7 +7670,7 @@ async function processExpenseAction(docId, newStatus) {
       }
 
       document.getElementById('prModalName').innerText = name + (isHistorical ? ' (Historical)' : '');
-      const isFullyExempt = owners.includes(name) && !data.events.some(e => e.role === 'Editor');
+      const isFullyExempt = owners.includes(name) && name !== 'Francis' && !data.events.some(e => e.role === 'Editor');
       
       if (!isHistorical) {
           const start = document.getElementById('prStartDate').value;
@@ -8813,6 +9029,7 @@ async function runExpenseRecompute() {
                 startDate: start,
                 endDate: end,
                 sessionData: JSON.stringify(currentPayrollData),
+                onlineSalesBalance: currentOnlineSalesBalance,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 lastSyncedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
