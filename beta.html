@@ -6921,10 +6921,10 @@ if (!isConfirmed) return;
           
           <div class="page-break"></div> <div class="breakdown-box">
               <h4>Funding Source Breakdown</h4>
-              <div class="breakdown-row"><span>Edgar (EGM)</span><span>₱${grandBreakdown['Edgar(EGM)'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-              <div class="breakdown-row"><span>Francis</span><span>₱${grandBreakdown['Francis'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-              <div class="breakdown-row"><span>Tina</span><span>₱${grandBreakdown['Tina'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-              <div class="breakdown-row"><span>Grace</span><span>₱${grandBreakdown['Grace'].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+              <div class="breakdown-row"><span>Edgar (EGM)</span></div>
+              <div class="breakdown-row"><span>Francis</span></div>
+              <div class="breakdown-row"><span>Tina</span></div>
+              <div class="breakdown-row"><span>Grace</span></div>
               <div class="breakdown-row" style="color: #0d9488;"><span><strong>TOTAL</strong></span><span><strong>₱${totalPayout.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></span></div>
           </div>
 
@@ -6953,8 +6953,7 @@ if (!isConfirmed) return;
               const grandLabel = grandDiff >= 0 ? 'left' : 'deficit';
               return `
               <div class="page-break"></div>
-              <h2 style="margin-top: 40px;">EGM FUND SOURCE COMPUTATION</h2>
-              <div class="subtitle"><strong>Edgar (EGM) Fund Source Only</strong></div>
+              <h2 style="margin-top: 40px;">CASH ONHAND / ONLINE SALES</h2>
               <p style="background-color: #e0f2fe; padding: 12px; border-radius: 6px; border-left: 4px solid #0284c7; margin: 20px 0;">
                   <strong>Online Sales Current Balance:</strong> ₱${onlineSalesBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}
               </p>
@@ -6962,8 +6961,8 @@ if (!isConfirmed) return;
                   <thead>
                       <tr>
                           <th>Owner</th>
-                          <th class="text-right">Total A Share</th>
-                          <th class="text-right">Total B Share</th>
+                          <th class="text-right">Sales In Share</th>
+                          <th class="text-right">Payout Share</th>
                           <th class="text-right">Balance</th>
                       </tr>
                   </thead>
