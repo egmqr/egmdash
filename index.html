@@ -753,8 +753,9 @@
               </div>
               
               <div class="d-flex flex-wrap gap-2 justify-content-md-end align-items-end" style="max-width: 450px;">
-                  <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
-                  <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
+    <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
+    <button class="btn btn-outline-danger btn-sm fw-bold px-3 shadow-sm border-2" id="prRecomputeBtn" onclick="runExpenseRecompute()" style="display:none;" title="Superadmin: Refresh only the auto-pulled expenses without touching manual edits"><i class="bi bi-arrow-clockwise me-1"></i> SYNC EXPENSES</button>
+    <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
                   <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
                   <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm" onclick="exportSessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> EXPORT</button>
                   <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm" id="prRatesBtn" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
@@ -2715,6 +2716,11 @@ async function subscribeToNotifications() {
               btnModeNew.style.display = 'none';
           }
       }
+    // 🟢 NEW: Show Sync Expenses button only for Superadmins
+const recomputeBtn = document.getElementById('prRecomputeBtn');
+if (recomputeBtn) {
+    recomputeBtn.style.display = (actVal >= 3) ? 'inline-block' : 'none';
+}
   }
 
   function signOut() {
@@ -8671,6 +8677,136 @@ window.receiveTemplateFromEditor = function(newTemplate) {
         showToast(`Template '${newTemplate.Name}' loaded from Editor.`, "success");
     }
 };
+  // SUPERADMIN ONLY: Surgically refresh ONLY the auto-pulled expenses
+// Preserves all manual edits (base pay, extra, payers, misc, notes, tentative status, manual expense additions)
+// Auto-saves to cloud after sync
+async function runExpenseRecompute() {
+    requireAuth(async () => {
+        const start = document.getElementById('prStartDate').value;
+        const end = document.getElementById('prEndDate').value;
+        
+        if (!start || !end) return egmAlert("Please select a Start and End date for the cutoff.");
+        if (Object.keys(currentPayrollData).length === 0) return egmAlert("No active session. Please LOAD a saved session or click COMPUTE first.");
+        
+        const confirmed = await egmConfirm(
+            `SYNC APPROVED EXPENSES\n\nThis will refresh ONLY the auto-pulled approved expenses for ${start} to ${end}.\n\n✅ Will UPDATE:\n• Auto-reimbursed expense amounts\n• Auto-reimbursement notes\n\n🔒 Will PRESERVE:\n• All manual base pay edits\n• Extra pay & payer assignments\n• Misc bonus pay\n• Manually-added expenses\n• Payslip notes\n• Tentative status flags\n\nThe saved cloud session will be overwritten automatically.\n\nProceed?`,
+            "Sync Expenses",
+            "Yes, Sync",
+            "warning"
+        );
+        
+        if (!confirmed) return;
+        
+        const ov = document.getElementById('submitOverlay');
+        document.getElementById('overlayText').innerText = "Syncing approved expenses...";
+        ov.style.display = 'flex';
+        
+        try {
+            // 1. Re-pull fresh approved expenses for this cutoff
+            let freshAutoExpenses = {};
+            let freshAutoNotes = {};
+            
+            if (typeof rawExpenses !== 'undefined') {
+                rawExpenses.forEach(exp => {
+                    // Strip the " - EventName" suffix so date comparison works correctly
+                    let exactDate = exp.expenseDate || "";
+                    if (exactDate.includes(' - ')) exactDate = exactDate.split(' - ')[0];
+                    
+                    if (exp.status === 'Approved' && exactDate >= start && exactDate <= end) {
+                        let pName = exp.submittedBy;
+                        if (!freshAutoExpenses[pName]) freshAutoExpenses[pName] = 0;
+                        if (!freshAutoNotes[pName]) freshAutoNotes[pName] = [];
+                        
+                        freshAutoExpenses[pName] += Number(exp.amount) || 0;
+                        freshAutoNotes[pName].push(`${exp.category} (₱${Number(exp.amount).toLocaleString()})`);
+                    }
+                });
+            }
+            
+            // 2. Surgically merge into existing currentPayrollData
+            // Get the union of all people: those already in payroll + those with new approved expenses
+            const allPeople = new Set([
+                ...Object.keys(currentPayrollData),
+                ...Object.keys(freshAutoExpenses)
+            ]);
+            
+            let updatedCount = 0;
+            
+            allPeople.forEach(pName => {
+                // Initialize person if they're brand new (only had expenses, no shoots/edits)
+                if (!currentPayrollData[pName]) {
+                    initPayrollPerson(pName);
+                    currentPayrollData[pName].expenses = 0;
+                    currentPayrollData[pName].autoExpenseAmount = 0;
+                    currentPayrollData[pName].misc = 0;
+                    currentPayrollData[pName].isTentative = false;
+                    currentPayrollData[pName].expensePayer = "Edgar(EGM)";
+                    currentPayrollData[pName].miscPayer = "Edgar(EGM)";
+                    currentPayrollData[pName].payslipNote = "";
+                }
+                
+                const person = currentPayrollData[pName];
+                const newAutoExp = freshAutoExpenses[pName] || 0;
+                const newAutoNotes = freshAutoNotes[pName] ? freshAutoNotes[pName].join(', ') : "";
+                
+                // Calculate the manual portion (what admin typed in manually)
+                const oldAutoExp = person.autoExpenseAmount || 0;
+                const oldTotalExp = person.expenses || 0;
+                let manualExp = oldTotalExp - oldAutoExp;
+                if (manualExp < 0) manualExp = 0;
+                
+                // Detect if anything actually changed for this person
+                const expenseChanged = Math.abs(newAutoExp - oldAutoExp) > 0.01;
+                
+                if (expenseChanged) updatedCount++;
+                
+                // Update: new auto expenses + preserved manual additions
+                person.expenses = newAutoExp + manualExp;
+                person.autoExpenseAmount = newAutoExp;
+                
+                // Smart notes merger: strip old auto-notes, keep manual notes, prepend new auto-notes
+                let oldNote = person.payslipNote || "";
+                oldNote = oldNote.replace(/Auto-Reimbursed:.*?(;|$)/g, '').trim();
+                
+                let finalNote = "";
+                if (newAutoNotes) finalNote = "Auto-Reimbursed: " + newAutoNotes + ";";
+                if (oldNote) finalNote += (finalNote ? " " : "") + oldNote;
+                
+                person.payslipNote = finalNote.trim();
+                
+                // Recalculate finalTotal for this person
+                const eventsTotal = person.events.reduce((sum, ev) => sum + (ev.basePay || 0) + (ev.extraPay || 0), 0);
+                person.totalBase = person.events.reduce((sum, ev) => sum + (ev.basePay || 0), 0);
+                person.finalTotal = eventsTotal + person.expenses + person.misc;
+            });
+            
+            // 3. Re-render the table with updated numbers
+            renderPayrollTable();
+            
+            // 4. Auto-save to cloud (overwrites existing session)
+            await db.collection("payroll_sessions").doc(`${start}_${end}`).set({
+                startDate: start,
+                endDate: end,
+                sessionData: JSON.stringify(currentPayrollData),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastSyncedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            ov.style.display = 'none';
+            
+            if (updatedCount > 0) {
+                showToast(`Synced! ${updatedCount} crew member(s) updated. Session saved to cloud.`, "success");
+            } else {
+                showToast("No expense changes detected. Session is already up-to-date.", "info");
+            }
+            
+        } catch (err) {
+            ov.style.display = 'none';
+            console.error("Sync error:", err);
+            egmAlert("Error syncing expenses: " + err.message);
+        }
+    }, 'superadmin');
+}
 </script>
 </body>
 </html>
