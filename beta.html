@@ -764,6 +764,19 @@
 
           </div>
 
+          <div id="onlineSalesDisplay" class="alert alert-primary py-2 px-3 mb-3 shadow-sm" style="display:none;">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <div>
+                      <i class="bi bi-wallet2 me-2"></i>
+                      <strong>Online Sales Current Balance:</strong>
+                      <span class="fw-bold text-success ms-1">₱<span id="onlineSalesAmount">0.00</span></span>
+                  </div>
+                  <button class="btn btn-sm btn-outline-primary fw-bold py-1 px-3 shadow-sm" onclick="editOnlineSalesBalance()" style="font-size: 0.75rem;">
+                      <i class="bi bi-pencil-square me-1"></i>EDIT
+                  </button>
+              </div>
+          </div>
+
           <div class="table-custom bg-white shadow-sm">
               <div class="table-responsive">
                   <table class="table table-hover mb-0 align-middle">
@@ -782,6 +795,8 @@
                   </table>
               </div>
           </div>
+
+          <div id="egmComputationContainer" class="mt-4"></div>
       </div>
       <div id="events-view" style="display:none;">
          
@@ -1941,6 +1956,24 @@
   </div>
   <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="submitPaymentDocUpload()">UPLOAD</button>
 </div></div></div></div>
+  <div class="modal fade" id="onlineSalesModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true" style="z-index: 10800;">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white border-0">
+                <h6 class="fw-bold mb-0"><i class="bi bi-wallet2 me-2"></i>Online Sales Balance</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="small text-secondary mb-3">Enter the current Online Sales account balance before computing payroll:</p>
+                <div class="input-group input-group-sm shadow-sm mb-3">
+                    <span class="input-group-text bg-white fw-bold">₱</span>
+                    <input type="number" id="onlineSalesBalanceInput" class="form-control fw-bold text-success" placeholder="0.00" step="0.01">
+                </div>
+                <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm" id="onlineSalesProceedBtn">PROCEED <i class="bi bi-arrow-right-circle-fill ms-1"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
   <div class="modal fade" id="ratesModal" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg">
   <div class="modal-header bg-warning border-bottom">
       <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-sliders me-1"></i> Manage Base Rates</h6>
@@ -2449,6 +2482,10 @@ async function subscribeToNotifications() {
   let lastComputedRange = "";
   let activePayrollPerson = null;
   let isHistoricalView = false;
+
+  // EGM Fund Source Computation
+  let currentOnlineSalesBalance = 0;
+  let currentEgmComputation = null;
 
   function getCrewRate(name, role) {
       if (role === 'Editor') {
@@ -6669,6 +6706,7 @@ async function getNextEventId() {
               startDate: start,
               endDate: end,
               sessionData: JSON.stringify(currentPayrollData),
+              onlineSalesBalance: currentOnlineSalesBalance,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
           showToast(`Cloud Session for ${start} to ${end} saved successfully!`, "success");
@@ -6766,8 +6804,9 @@ if (!isConfirmed) return;
           
           try {
               currentPayrollData = JSON.parse(data.sessionData);
-              lastComputedRange = `${data.startDate}_${data.endDate}`; 
-              
+              currentOnlineSalesBalance = data.onlineSalesBalance || 0;
+              lastComputedRange = `${data.startDate}_${data.endDate}`;
+
               renderPayrollTable();
               showToast("Cloud Session loaded successfully!", "success");
               
@@ -6889,6 +6928,61 @@ if (!isConfirmed) return;
               <div class="breakdown-row" style="color: #0d9488;"><span><strong>TOTAL</strong></span><span><strong>₱${totalPayout.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></span></div>
           </div>
 
+          ${(function(){
+              // Make sure currentEgmComputation has the latest numbers
+              renderEgmComputation();
+              if (!currentEgmComputation) return '';
+              const { onlineSalesBalance, totalA, totalB, splits } = currentEgmComputation;
+              let rowsHtml = '';
+              splits.forEach(s => {
+                  const aShare = totalA * s.pct;
+                  const bShare = totalB * s.pct;
+                  const diff = aShare - bShare;
+                  const isLeft = diff >= 0;
+                  const color = isLeft ? '#16a34a' : '#dc2626';
+                  const label = isLeft ? 'left' : 'deficit';
+                  rowsHtml += `<tr>
+                      <td><strong>${s.name}</strong> (${(s.pct*100).toFixed(0)}%)</td>
+                      <td class="text-right">₱${aShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                      <td class="text-right">₱${bShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                      <td class="text-right" style="color: ${color}; font-weight: bold;">₱${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${label}</td>
+                  </tr>`;
+              });
+              const grandDiff = totalA - totalB;
+              const grandColor = grandDiff >= 0 ? '#16a34a' : '#dc2626';
+              const grandLabel = grandDiff >= 0 ? 'left' : 'deficit';
+              return `
+              <div class="page-break"></div>
+              <h2 style="margin-top: 40px;">EGM FUND SOURCE COMPUTATION</h2>
+              <div class="subtitle"><strong>Edgar (EGM) Fund Source Only</strong></div>
+              <p style="background-color: #e0f2fe; padding: 12px; border-radius: 6px; border-left: 4px solid #0284c7; margin: 20px 0;">
+                  <strong>Online Sales Current Balance:</strong> ₱${onlineSalesBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}
+              </p>
+              <table>
+                  <thead>
+                      <tr>
+                          <th>Owner</th>
+                          <th class="text-right">Total A Share</th>
+                          <th class="text-right">Total B Share</th>
+                          <th class="text-right">Balance</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      ${rowsHtml}
+                      <tr class="total-row">
+                          <td>TOTAL</td>
+                          <td class="text-right">₱${totalA.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                          <td class="text-right">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                          <td class="text-right" style="color: ${grandColor};">₱${Math.abs(grandDiff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${grandLabel}</td>
+                      </tr>
+                  </tbody>
+              </table>
+              <p style="margin-top: 15px; font-size: 0.85em; color: #666; font-style: italic;">
+                  <strong>Total A:</strong> All Cash, Check & Online Transfer payments for events in this cutoff period.<br>
+                  <strong>Total B:</strong> All payouts assigned to Edgar (EGM) fund source.
+              </p>`;
+          })()}
+
           <p style="margin-top:40px; font-size:0.8em; color:#999; text-align: center;">Generated automatically from EGM Ops Dashboard on ${new Date().toLocaleString()}</p>
       </body></html>`;
 
@@ -6911,6 +7005,233 @@ function markPayrollEdited() {
         ratesBtn.title = "Disabled because manual edits have been made. Refresh the page to reset.";
     }
 }
+// ==============================================================================
+// EGM FUND SOURCE COMPUTATION (Online Sales Balance + Total A vs Total B)
+// ==============================================================================
+
+function askOnlineSalesBalance() {
+    return new Promise((resolve) => {
+        const modalEl = document.getElementById('onlineSalesModal');
+        const input = document.getElementById('onlineSalesBalanceInput');
+        const btn = document.getElementById('onlineSalesProceedBtn');
+
+        // Pre-fill with the last known value
+        input.value = currentOnlineSalesBalance > 0 ? currentOnlineSalesBalance : '';
+
+        let resolved = false;
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+        const onProceed = () => {
+            resolved = true;
+            const val = parseFloat(input.value) || 0;
+            modal.hide();
+            cleanup();
+            resolve(val);
+        };
+
+        const onHidden = () => {
+            cleanup();
+            if (!resolved) resolve(null);
+        };
+
+        const onKeydown = (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); onProceed(); }
+        };
+
+        const cleanup = () => {
+            btn.removeEventListener('click', onProceed);
+            modalEl.removeEventListener('hidden.bs.modal', onHidden);
+            input.removeEventListener('keydown', onKeydown);
+        };
+
+        btn.addEventListener('click', onProceed);
+        modalEl.addEventListener('hidden.bs.modal', onHidden);
+        input.addEventListener('keydown', onKeydown);
+
+        modal.show();
+        setTimeout(() => { input.focus(); input.select(); }, 500);
+    });
+}
+
+async function editOnlineSalesBalance() {
+    const balance = await askOnlineSalesBalance();
+    if (balance === null) return;
+    currentOnlineSalesBalance = balance;
+    renderEgmComputation();
+
+    // Persist updated balance to the active saved session, if one exists
+    const start = document.getElementById('prStartDate').value;
+    const end = document.getElementById('prEndDate').value;
+    if (start && end) {
+        try {
+            const sessionRef = db.collection("payroll_sessions").doc(`${start}_${end}`);
+            const snap = await sessionRef.get();
+            if (snap.exists) {
+                await sessionRef.update({ onlineSalesBalance: currentOnlineSalesBalance });
+            }
+        } catch (err) { console.warn("Could not auto-persist balance:", err); }
+    }
+
+    showToast("Online Sales Balance updated.", "success");
+}
+
+function renderEgmComputation() {
+    const container = document.getElementById('egmComputationContainer');
+    const display = document.getElementById('onlineSalesDisplay');
+    const start = document.getElementById('prStartDate').value;
+    const end = document.getElementById('prEndDate').value;
+
+    if (!container) return;
+
+    if (!start || !end || Object.keys(currentPayrollData || {}).length === 0) {
+        container.innerHTML = '';
+        if (display) display.style.display = 'none';
+        currentEgmComputation = null;
+        return;
+    }
+
+    // ---- Total A: Cash + Check + Online Transfer payments in cutoff window ----
+    // Skips Crew Leave, Cancelled, Pencil Booked. Counts each Event ID only once.
+    const seenEventIds = new Set();
+    let totalA = 0;
+
+    rawEvents.forEach(e => {
+        if (seenEventIds.has(e['Event ID'])) return;
+        if (e['Event Name'] === 'Crew Leave') return;
+        if (e['Event Status'] === 'Cancelled' || e['Event Status'] === 'Pencil Booked') return;
+        if (!e['Event Date'] || e['Event Date'] < start || e['Event Date'] > end) return;
+
+        const pType = e['Payment Type'] || '';
+        const isQualified =
+            pType.includes('Cash') ||
+            pType.includes('Check') ||
+            pType.includes('Online Transfer');
+
+        if (isQualified) {
+            const amt = parseFloat(e['Amount']) || 0;
+            if (amt > 0) {
+                seenEventIds.add(e['Event ID']);
+                totalA += amt;
+            }
+        }
+    });
+
+    // ---- Total B: All payouts assigned to Edgar (EGM) fund source only ----
+    let totalB = 0;
+    Object.keys(currentPayrollData).forEach(pName => {
+        const person = currentPayrollData[pName];
+        person.events.forEach(ev => {
+            if (ev.payer === 'Edgar(EGM)') {
+                totalB += (ev.basePay || 0) + (ev.extraPay || 0);
+            }
+        });
+        if (person.expensePayer === 'Edgar(EGM)') totalB += person.expenses || 0;
+        if (person.miscPayer === 'Edgar(EGM)') totalB += person.misc || 0;
+    });
+
+    const splits = [
+        { name: 'Edgar',   pct: 0.40 },
+        { name: 'Francis', pct: 0.30 },
+        { name: 'Tina',    pct: 0.20 },
+        { name: 'Grace',   pct: 0.10 }
+    ];
+
+    currentEgmComputation = {
+        onlineSalesBalance: currentOnlineSalesBalance,
+        totalA, totalB, splits
+    };
+
+    // Show the top banner
+    if (display) {
+        display.style.display = 'block';
+        document.getElementById('onlineSalesAmount').innerText =
+            currentOnlineSalesBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    // Build the computation card
+    let html = `
+    <div class="card p-3 p-md-4 shadow-sm">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center">
+                <i class="bi bi-calculator-fill text-primary me-2"></i>EGM Fund Source Computation
+                <span class="badge bg-light text-secondary border ms-2 fw-normal" style="font-size: 0.7rem;">Edgar (EGM) Only</span>
+            </h5>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-4">
+                <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
+                    <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Online Sales Balance</div>
+                    <div class="fw-bold fs-5 text-primary">₱${currentOnlineSalesBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4">
+                <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
+                    <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total A (Sales In)</div>
+                    <div class="fw-bold fs-5 text-success">₱${totalA.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4">
+                <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
+                    <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total B (Payouts)</div>
+                    <div class="fw-bold fs-5 text-danger">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="py-2">Owner</th>
+                        <th class="py-2 text-end">Total A Share</th>
+                        <th class="py-2 text-end">Total B Share</th>
+                        <th class="py-2 text-end">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+    splits.forEach(s => {
+        const aShare = totalA * s.pct;
+        const bShare = totalB * s.pct;
+        const diff = aShare - bShare;
+        const isLeft = diff >= 0;
+        const colorClass = isLeft ? 'text-success' : 'text-danger';
+        const label = isLeft ? 'left' : 'deficit';
+        const icon = isLeft ? 'bi-arrow-up-circle-fill' : 'bi-arrow-down-circle-fill';
+
+        html += `<tr>
+            <td class="fw-bold text-dark"><i class="bi bi-person-circle text-secondary me-2"></i>${s.name} <span class="badge bg-light border text-muted fw-normal ms-1" style="font-size: 0.7rem;">${(s.pct*100).toFixed(0)}%</span></td>
+            <td class="text-end">₱${aShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td class="text-end">₱${bShare.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td class="text-end fw-bold ${colorClass}"><i class="bi ${icon} me-1"></i>₱${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${label}</td>
+        </tr>`;
+    });
+
+    const grandDiff = totalA - totalB;
+    const isGrandLeft = grandDiff >= 0;
+    const grandColorClass = isGrandLeft ? 'text-success' : 'text-danger';
+    const grandLabel = isGrandLeft ? 'left' : 'deficit';
+
+    html += `
+                <tr class="bg-secondary bg-opacity-10 fw-bold">
+                    <td class="py-2">TOTAL</td>
+                    <td class="py-2 text-end">₱${totalA.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="py-2 text-end">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="py-2 text-end ${grandColorClass}">₱${Math.abs(grandDiff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${grandLabel}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="small text-muted mt-3 fst-italic" style="line-height: 1.5;">
+        <i class="bi bi-info-circle me-1"></i><strong>Total A:</strong> All Cash, Check & Online Transfer payments for events in this cutoff period.<br>
+        <i class="bi bi-info-circle me-1"></i><strong>Total B:</strong> All payouts assigned to Edgar (EGM) fund source.
+    </div>
+    </div>`;
+
+    container.innerHTML = html;
+}
+  
 // Engine: Aggregate the data using the Dynamic Rates (With Auto-Expenses & Overlap Protection!)
 async function runPayrollEngine(forceNewRates = false) {
     const start = document.getElementById('prStartDate').value;
@@ -6952,6 +7273,14 @@ async function runPayrollEngine(forceNewRates = false) {
             return;
         }
         ov.style.display = 'none';
+    }
+
+    // Ask for the current Online Sales balance before computing
+    // (Skip when re-applying rates so we don't re-prompt unnecessarily)
+    if (!forceNewRates) {
+        const balance = await askOnlineSalesBalance();
+        if (balance === null) return; // User cancelled
+        currentOnlineSalesBalance = balance;
     }
 
     // 1. THE FIX: ONLY SAVE EXISTING DATA IF RE-COMPUTING THE EXACT SAME DATES
@@ -7316,6 +7645,9 @@ function renderPayrollTable() {
         </tr>`;
     });
     tbody.innerHTML = html;
+
+    // Refresh the EGM Fund Source computation table with the latest numbers
+    renderEgmComputation();
 }
 
 // ==============================================================================
@@ -8813,6 +9145,7 @@ async function runExpenseRecompute() {
                 startDate: start,
                 endDate: end,
                 sessionData: JSON.stringify(currentPayrollData),
+                onlineSalesBalance: currentOnlineSalesBalance,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 lastSyncedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
