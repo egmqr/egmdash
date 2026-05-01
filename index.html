@@ -753,7 +753,7 @@
               </div>
               
               <div class="d-flex flex-wrap gap-2 justify-content-md-end align-items-end" style="max-width: 450px;">
-    <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
+    <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" id="prComputeBtn" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
     <button class="btn btn-outline-danger btn-sm fw-bold px-3 shadow-sm border-2" id="prRecomputeBtn" onclick="runExpenseRecompute()" style="display:none;" title="Superadmin: Refresh only the auto-pulled expenses without touching manual edits"><i class="bi bi-arrow-clockwise me-1"></i> SYNC EXPENSES</button>
     <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
                   <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
@@ -7326,57 +7326,72 @@ function renderExpenseQueue() {
     const banner = document.getElementById('expenseApprovalBanner');
     const tbody = document.getElementById('pendingExpensesTableBody');
     const modalEl = document.getElementById('expenseApprovalModal');
+    const computeBtn = document.getElementById('prComputeBtn');
+    
+    // Helper to unlock the Compute button cleanly
+    const enableCompute = () => {
+        if (computeBtn) {
+            computeBtn.disabled = false;
+            computeBtn.title = '';
+            computeBtn.classList.remove('opacity-50');
+        }
+    };
+    
+    // Helper to lock the Compute button with a tooltip explaining why
+    const disableCompute = (count) => {
+        if (computeBtn) {
+            computeBtn.disabled = true;
+            computeBtn.title = `Compute is locked: ${count} pending expense(s) in this cutoff need approval or rejection first.`;
+            computeBtn.classList.add('opacity-50');
+        }
+    };
     
     if (!banner || !tbody) return;
 
     const role = getUserRole();
     if (role !== 'admin' && role !== 'superadmin') {
         banner.style.setProperty('display', 'none', 'important');
+        enableCompute();
         return;
     }
 
     const start = document.getElementById('prStartDate').value;
     const end = document.getElementById('prEndDate').value;
 
-    // RULE 1: Hide banner if BOTH dates are not set yet
     if (!start || !end) {
         banner.style.setProperty('display', 'none', 'important');
         if (modalEl && modalEl.classList.contains('show')) bootstrap.Modal.getInstance(modalEl).hide();
+        enableCompute();
         return;
     }
 
-    // RULE 2: Filter for Pending AND strictly within the chosen date range
     const pendingExpenses = rawExpenses.filter(e => {
-        // Strip out the event name so we strictly compare the YYYY-MM-DD date 
-        // (This prevents a bug where expenses on the exact end-date cutoff are hidden)
         let exactDate = e.expenseDate || "";
         if (exactDate.includes(' - ')) exactDate = exactDate.split(' - ')[0];
-        
         return e.status === 'Pending' && exactDate >= start && exactDate <= end;
     });
 
     if (pendingExpenses.length === 0) {
         banner.style.setProperty('display', 'none', 'important');
-        // Auto-close modal if you just approved/rejected the very last pending expense
         if (modalEl && modalEl.classList.contains('show')) {
             bootstrap.Modal.getInstance(modalEl).hide();
         }
+        enableCompute();
         return;
     }
 
-    // Pass rules: Show banner and build table
+    // Pending expenses exist — show banner AND lock the Compute button
     banner.style.setProperty('display', 'flex', 'important');
+    disableCompute(pendingExpenses.length);
 
     let html = '';
     pendingExpenses.forEach(exp => {
-        
-        // THE FIX: Split the Date and the Event Name into two variables
         let datePart = exp.expenseDate;
         let eventPart = '';
         if (exp.expenseDate && exp.expenseDate.includes(' - ')) {
             const parts = exp.expenseDate.split(' - ');
-            datePart = parts[0]; // Gets the YYYY-MM-DD
-            eventPart = parts.slice(1).join(' - '); // Gets the rest of the text
+            datePart = parts[0];
+            eventPart = parts.slice(1).join(' - ');
         }
 
         html += `
@@ -8686,6 +8701,16 @@ async function runExpenseRecompute() {
         const end = document.getElementById('prEndDate').value;
         
         if (!start || !end) return egmAlert("Please select a Start and End date for the cutoff.");
+        // Block computation if pending expenses exist in this cutoff
+    const pendingInRange = rawExpenses.filter(e => {
+        let exactDate = e.expenseDate || "";
+        if (exactDate.includes(' - ')) exactDate = exactDate.split(' - ')[0];
+        return e.status === 'Pending' && exactDate >= start && exactDate <= end;
+    });
+    if (pendingInRange.length > 0) {
+        egmAlert(`COMPUTATION BLOCKED:\n\nThere ${pendingInRange.length === 1 ? 'is' : 'are'} ${pendingInRange.length} pending expense${pendingInRange.length === 1 ? '' : 's'} in this cutoff (${start} to ${end}) waiting for approval or rejection.\n\nPlease review them in the warning banner above before computing payroll.`);
+        return;
+    }
         if (Object.keys(currentPayrollData).length === 0) return egmAlert("No active session. Please LOAD a saved session or click COMPUTE first.");
         
         const confirmed = await egmConfirm(
