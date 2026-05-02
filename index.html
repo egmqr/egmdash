@@ -8339,7 +8339,7 @@ function computeBillingSales() {
         const frameToken = parseFloat(amts['amt_FrameToken']) || 0;
         const photoStudio = parseFloat(amts['amt_PhotoStudio']) || 0;
         const photoGroup = photo + photoQR + frameToken + photoStudio;
-        const vidOther = doc + high + vstudio + preprod;
+        const vidOther = doc + high + vstudio;
 
         // The Rest (Any field that isn't the specific ones above)
         let restTotal = 0;
