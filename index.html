@@ -1359,14 +1359,6 @@
       </div>
       
       <div id="newDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-              <div id="newPayAmountGroup" class="mb-3">
-                  <label class="form-label-sm">Amount</label>
-                  <div class="input-group input-group-sm">
-                      <span class="input-group-text bg-white fw-bold">₱</span>
-                      <input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold text-success" value="0">
-                  </div>
-              </div>
-
               <div id="newPayStatusGroup" class="mb-3 mt-2">
                   <label class="form-label-sm">Status</label>
                   <select name="billingStatus" id="newBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('new')"></select>
@@ -1849,14 +1841,6 @@
       </div>
       
       <div id="editDynamicPayBox" style="display:none;" class="p-3 border rounded bg-light mb-4">
-          <div id="editPayAmountGroup" class="mb-3">
-                  <label class="form-label-sm">Amount</label>
-                  <div class="input-group input-group-sm">
-                      <span class="input-group-text bg-white fw-bold">₱</span>
-                      <input type="number" step="0.01" name="amount" id="editAmount" class="form-control border-start-0 fw-bold text-success" value="0">
-                  </div>
-              </div>
-
               <div id="editPayStatusGroup" class="mb-3 mt-2">
                   <label class="form-label-sm">Status</label>
                   <select name="billingStatus" id="editBillingStatus" class="form-select form-select-sm fw-bold text-dark" onchange="checkInvoiceRequired('edit')"></select>
@@ -3000,10 +2984,7 @@ function handleAddCustomService(inputId, containerId) {
         const amtInput = container.querySelector(`input[name="${amtName}"]`);
         
         if (amtInput) {
-            // Transpo: Admin and Superadmin can see it. All other billing amounts: Superadmin only.
-            const canSee = cb.value === 'Transpo'
-                ? (role === 'superadmin' || role === 'admin') && pType === 'Billing' && cb.checked
-                : role === 'superadmin' && pType === 'Billing' && cb.checked;
+            const canSee = (role === 'superadmin' || role === 'admin') && cb.checked;
             if (canSee) {
                 amtInput.style.setProperty('display', 'block', 'important');
             } else {
@@ -8335,6 +8316,9 @@ function computeBillingSales() {
     let t1_net = 0, t1_due = 0, t1_totalDue = 0;
     let t2_E = 0, t2_Ji = 0, t2_T = 0, t2_JG = 0, t2_RestSum = 0;
     let t3_JiniSum = 0, t4_TinaSum = 0, t5_JGSum = 0, t6_TranspoSum = 0;
+    // Total A: Fixed-percentage service allocation
+    let tA_Edgar = 0, tA_Francis = 0, tA_Tina = 0, tA_Grace = 0;
+    let htmlTA = '';
 
     let htmlT1 = '', htmlT2 = '', htmlT3 = '', htmlT4 = '', htmlT5 = '', htmlT6 = '';
 
@@ -8349,6 +8333,13 @@ function computeBillingSales() {
         const high = parseFloat(amts['amt_VideoHigh']) || 0;
         const vstudio = parseFloat(amts['amt_VideoStudio']) || 0;
         const transpo = parseFloat(amts['amt_Transpo']) || 0;
+        // Photo group (Total A)
+        const photo = parseFloat(amts['amt_Photo']) || 0;
+        const photoQR = parseFloat(amts['amt_PhotoQR']) || 0;
+        const frameToken = parseFloat(amts['amt_FrameToken']) || 0;
+        const photoStudio = parseFloat(amts['amt_PhotoStudio']) || 0;
+        const photoGroup = photo + photoQR + frameToken + photoStudio;
+        const vidOther = doc + high + vstudio + preprod;
 
         // The Rest (Any field that isn't the specific ones above)
         let restTotal = 0;
@@ -8430,6 +8421,27 @@ function computeBillingSales() {
             t6_TranspoSum += transpo;
             htmlT6 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${transpo.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }
+
+        // TOTAL A: Fixed-percentage service allocation per event
+        const tA_edgar_row   = photoGroup * 0.40;
+        const tA_francis_row = photoGroup * 0.30 + sde / 3;
+        const tA_tina_row    = photoGroup * 0.20 + sde / 3;
+        const tA_grace_row   = photoGroup * 0.10 + sde / 3 + vidOther;
+        const tA_row_total   = tA_edgar_row + tA_francis_row + tA_tina_row + tA_grace_row;
+        tA_Edgar   += tA_edgar_row;
+        tA_Francis += tA_francis_row;
+        tA_Tina    += tA_tina_row;
+        tA_Grace   += tA_grace_row;
+        if (tA_row_total > 0) {
+            htmlTA += `<tr>
+                <td class="text-start fw-bold">${e['Event Name']}</td>
+                <td>₱${tA_edgar_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td>₱${tA_francis_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td>₱${tA_tina_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td>₱${tA_grace_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="fw-bold">₱${tA_row_total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            </tr>`;
+        }
     });
 
     // FINAL TOTALS MATH
@@ -8463,7 +8475,21 @@ function computeBillingSales() {
             </tbody>
         </table></div>
 
-        <h5 class="fw-bold text-dark mt-4 mb-3">Distribution</h5>
+        <h5 class="fw-bold text-dark mt-4 mb-1">Total A <span class="text-muted fw-normal" style="font-size:0.8rem;">— Service Allocation</span></h5>
+        <p class="text-muted mb-2" style="font-size:0.72rem;">
+            Photo / QR / Frame / Studio: Edgar 40% · Francis 30% · Tina 20% · Grace 10% &nbsp;|&nbsp;
+            Video SDE: Francis 33.33% · Tina 33.33% · Grace 33.33% &nbsp;|&nbsp;
+            Video Doc / High / Studio / Pre-Prod: Grace 100%
+        </p>
+        <div class="${wrapperClass}"><table class="${tblClass}">
+            <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Edgar</th><th class="border-0">Francis</th><th class="border-0">Tina</th><th class="border-0">Grace</th><th class="border-0">Total</th></tr></thead>
+            <tbody>
+                ${htmlTA || '<tr><td colspan="6" class="text-center text-muted fst-italic py-2">No service amounts for this period</td></tr>'}
+                <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${tA_Edgar.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-success">₱${tA_Francis.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-success">₱${tA_Tina.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="text-success">₱${tA_Grace.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td class="fw-bold text-success">₱${(tA_Edgar + tA_Francis + tA_Tina + tA_Grace).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+            </tbody>
+        </table></div>
+
+        <h5 class="fw-bold text-dark mt-4 mb-3">Total B <span class="text-muted fw-normal" style="font-size:0.8rem;">— Distribution</span></h5>
         <div class="${wrapperClass}"><table class="${tblClass}">
             <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Edgar (${(pE*100).toFixed(0)}%)</th><th class="border-0">JiniCis (${(pJi*100).toFixed(0)}%)</th><th class="border-0">TinaLex (${(pT*100).toFixed(0)}%)</th><th class="border-0">JG (${(pJG*100).toFixed(0)}%)</th><th class="border-0">Total</th></tr></thead>
             <tbody>
