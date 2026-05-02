@@ -4629,7 +4629,7 @@ async function uploadAndScanInvoice(prefix) {
         form.elements['billingStatusDate'].value = toInputDate(paymentSourceEvent['Billing Status Date']);
         form.elements['grNumber'].value = paymentSourceEvent['GR Number'] || '';
         form.elements['invoiceNumber'].value = paymentSourceEvent['Invoice Number'] || '';
-        form.elements['amount'].value = paymentSourceEvent['Amount'] || '0';
+        if (form.elements['amount']) form.elements['amount'].value = paymentSourceEvent['Amount'] || '0';
         if (document.getElementById('editNoWithheld')) {
             document.getElementById('editNoWithheld').checked = paymentSourceEvent['No Withheld'] === true;
         }
