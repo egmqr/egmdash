@@ -2984,7 +2984,7 @@ function handleAddCustomService(inputId, containerId) {
         const amtInput = container.querySelector(`input[name="${amtName}"]`);
         
         if (amtInput) {
-            const canSee = (role === 'superadmin' || role === 'admin') && cb.checked;
+            const canSee = role === 'superadmin' && cb.checked;
             if (canSee) {
                 amtInput.style.setProperty('display', 'block', 'important');
             } else {
