@@ -3000,8 +3000,11 @@ function handleAddCustomService(inputId, containerId) {
         const amtInput = container.querySelector(`input[name="${amtName}"]`);
         
         if (amtInput) {
-            // Rule: Must be Superadmin + Payment is 'Billing' + Checkbox is checked!
-            if (role === 'superadmin' && pType === 'Billing' && cb.checked) {
+            // Transpo: Admin and Superadmin can see it. All other billing amounts: Superadmin only.
+            const canSee = cb.value === 'Transpo'
+                ? (role === 'superadmin' || role === 'admin') && pType === 'Billing' && cb.checked
+                : role === 'superadmin' && pType === 'Billing' && cb.checked;
+            if (canSee) {
                 amtInput.style.setProperty('display', 'block', 'important');
             } else {
                 amtInput.style.setProperty('display', 'none', 'important');
@@ -8423,8 +8426,10 @@ function computeBillingSales() {
         }
         t5_JGSum += (jgSpecificOther + sdeThird);
 
-        t6_TranspoSum += transpo;
-        htmlT6 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${transpo.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        if (transpo > 0) {
+            t6_TranspoSum += transpo;
+            htmlT6 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${transpo.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        }
     });
 
     // FINAL TOTALS MATH
@@ -8509,16 +8514,24 @@ function computeBillingSales() {
             <div class="col-12 col-lg-6">
                 <h5 class="fw-bold text-dark mb-3">Created Ex</h5>
                 <div class="${wrapperClass}"><table class="${tblClass}">
-                    <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Created Expenses Share</th></tr></thead>
+                    <thead class="${headClass}"><tr><th class="text-start border-0">Source</th><th class="border-0">Created Expenses Share</th></tr></thead>
                     <tbody>
-                        ${htmlT6}
                         <tr class="bg-light fw-bold"><td class="text-start text-primary">Tax Share</td><td class="text-primary">₱${taxIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                         <tr class="bg-light fw-bold"><td class="text-start text-info">10% Share (All Services)</td><td class="text-info">₱${(cex_E + (t3_JiniSum * 0.10) + (t4_TinaSum * 0.10) + (t5_JGSum * 0.10) + cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
-                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${(t6_TranspoSum + taxIncome + cex_E + (t3_JiniSum * 0.10) + (t4_TinaSum * 0.10) + (t5_JGSum * 0.10) + cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+                        <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${(taxIncome + cex_E + (t3_JiniSum * 0.10) + (t4_TinaSum * 0.10) + (t5_JGSum * 0.10) + cex_JG).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
                     </tbody>
                 </table></div>
             </div>
         </div>
+
+        <h5 class="fw-bold text-dark mt-4 mb-3">Transpo Total</h5>
+        <div class="${wrapperClass}"><table class="${tblClass}">
+            <thead class="${headClass}"><tr><th class="text-start border-0">Event Name</th><th class="border-0">Transpo Amount</th></tr></thead>
+            <tbody>
+                ${t6_TranspoSum > 0 ? htmlT6 : '<tr><td colspan="2" class="text-center text-muted fst-italic py-2">No transpo amounts for this period</td></tr>'}
+                <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td><td class="text-success">₱${t6_TranspoSum.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>
+            </tbody>
+        </table></div>
 
         <div class="row mt-4 mb-5">
             <div class="col-12">
