@@ -7017,6 +7017,50 @@ function renderEgmComputation() {
         if (person.miscPayer === 'Edgar(EGM)') totalB += person.misc || 0;
     });
 
+    // ---- Service allocation per person (used for Sales In Share) ----
+    let tA_Edgar = 0, tA_Francis = 0, tA_Tina = 0, tA_Grace = 0;
+    let t6_TranspoSum = 0;
+    let htmlT6 = '';
+    const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2});
+
+    rawEvents.forEach(ev => {
+        if (ev['Event Name'] === 'Crew Leave') return;
+        if (ev['Event Status'] === 'Cancelled' || ev['Event Status'] === 'Pencil Booked') return;
+        if (!ev['Event Date'] || ev['Event Date'] < start || ev['Event Date'] > end) return;
+
+        let amts = {};
+        try { amts = JSON.parse(ev['Service Amounts JSON'] || '{}'); } catch(ex) {}
+        if (!Object.values(amts).some(v => parseFloat(v) > 0)) return;
+
+        const sde        = parseFloat(amts['amt_VideoSDE'])    || 0;
+        const doc        = parseFloat(amts['amt_VideoDoc'])    || 0;
+        const high       = parseFloat(amts['amt_VideoHigh'])   || 0;
+        const vstudio    = parseFloat(amts['amt_VideoStudio']) || 0;
+        const transpo    = parseFloat(amts['amt_Transpo'])     || 0;
+        const photo      = parseFloat(amts['amt_Photo'])       || 0;
+        const photoQR    = parseFloat(amts['amt_PhotoQR'])     || 0;
+        const frameToken = parseFloat(amts['amt_FrameToken'])  || 0;
+        const photoStudio= parseFloat(amts['amt_PhotoStudio']) || 0;
+        const photoGroup = photo + photoQR + frameToken + photoStudio;
+        const vidOther   = doc + high + vstudio;
+
+        tA_Edgar   += photoGroup * 0.40;
+        tA_Francis += photoGroup * 0.30 + sde / 3;
+        tA_Tina    += photoGroup * 0.20 + sde / 3;
+        tA_Grace   += photoGroup * 0.10 + sde / 3 + vidOther;
+
+        if (transpo > 0) {
+            t6_TranspoSum += transpo;
+            htmlT6 += `<tr>
+                <td class="text-start fw-bold">${ev['Event Name']}</td>
+                <td class="fw-bold text-success">₱${transpo.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+            </tr>`;
+        }
+    });
+
+    const tA_Total = tA_Edgar + tA_Francis + tA_Tina + tA_Grace;
+    const salesShareMap = { 'Edgar': tA_Edgar, 'Francis': tA_Francis, 'Tina': tA_Tina, 'Grace': tA_Grace };
+
     const splits = [
         { name: 'Edgar',   pct: 0.40 },
         { name: 'Francis', pct: 0.30 },
@@ -7028,7 +7072,6 @@ function renderEgmComputation() {
         onlineSalesBalance: currentOnlineSalesBalance,
         totalA, totalB, splits
     };
-
 
     // Build the computation card
     let html = `
@@ -7043,7 +7086,7 @@ function renderEgmComputation() {
             <div class="col-6 col-md-6">
                 <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
                     <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total A (Sales In)</div>
-                    <div class="fw-bold fs-5 text-success">₱${totalA.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                    <div class="fw-bold fs-5 text-success">₱${tA_Total.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
                 </div>
             </div>
             <div class="col-6 col-md-6">
@@ -7067,7 +7110,7 @@ function renderEgmComputation() {
                 <tbody>`;
 
     splits.forEach(s => {
-        const aShare = totalA * s.pct;
+        const aShare = salesShareMap[s.name] || 0;
         const bShare = totalB * s.pct;
         const diff = aShare - bShare;
         const isLeft = diff >= 0;
@@ -7083,7 +7126,7 @@ function renderEgmComputation() {
         </tr>`;
     });
 
-    const grandDiff = totalA - totalB;
+    const grandDiff = tA_Total - totalB;
     const isGrandLeft = grandDiff >= 0;
     const grandColorClass = isGrandLeft ? 'text-success' : 'text-danger';
     const grandLabel = isGrandLeft ? 'left' : 'deficit';
@@ -7091,7 +7134,7 @@ function renderEgmComputation() {
     html += `
                 <tr class="bg-secondary bg-opacity-10 fw-bold">
                     <td class="py-2">TOTAL</td>
-                    <td class="py-2 text-end">₱${totalA.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="py-2 text-end">₱${fmt(tA_Total)}</td>
                     <td class="py-2 text-end">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td class="py-2 text-end ${grandColorClass}">₱${Math.abs(grandDiff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${grandLabel}</td>
                 </tr>
@@ -7099,152 +7142,22 @@ function renderEgmComputation() {
         </table>
     </div>
     <div class="small text-muted mt-3 fst-italic" style="line-height: 1.5;">
-        <i class="bi bi-info-circle me-1"></i><strong>Total A:</strong> All Cash, Check & Online Transfer payments for events in this cutoff period <strong>that are marked as 'Paid'</strong>.<br>
+        <i class="bi bi-info-circle me-1"></i><strong>Sales In Share:</strong> Service allocation — Photo/QR/Frame/Studio: Edgar 40% · Francis 30% · Tina 20% · Grace 10% | Video SDE: split 3 ways | Video Doc/Highlights/Studio: Grace 100%.<br>
         <i class="bi bi-info-circle me-1"></i><strong>Total B:</strong> All payouts assigned to Edgar (EGM) fund source.
     </div>
     </div>`;
 
-    // ---- Service Allocation Tables (Total A / Total B / Transpo) ----
-    const pE  = parseFloat(document.getElementById('bsPctEdgar').value)  / 100 || 0.40;
-    const pJi = parseFloat(document.getElementById('bsPctJini').value)   / 100 || 0.30;
-    const pT  = parseFloat(document.getElementById('bsPctTina').value)   / 100 || 0.20;
-    const pJG = parseFloat(document.getElementById('bsPctJG').value)     / 100 || 0.10;
-
-    let tA_Edgar = 0, tA_Francis = 0, tA_Tina = 0, tA_Grace = 0;
-    let t2_E = 0, t2_Ji = 0, t2_T = 0, t2_JG = 0, t2_RestSum = 0;
-    let t6_TranspoSum = 0;
-    let htmlTA = '', htmlTBrows = '', htmlT6 = '';
-
-    rawEvents.forEach(ev => {
-        if (ev['Event Name'] === 'Crew Leave') return;
-        if (ev['Event Status'] === 'Cancelled' || ev['Event Status'] === 'Pencil Booked') return;
-        if (!ev['Event Date'] || ev['Event Date'] < start || ev['Event Date'] > end) return;
-
-        let amts = {};
-        try { amts = JSON.parse(ev['Service Amounts JSON'] || '{}'); } catch(ex) {}
-        if (!Object.values(amts).some(v => parseFloat(v) > 0)) return;
-
-        const sde        = parseFloat(amts['amt_VideoSDE'])    || 0;
-        const doc        = parseFloat(amts['amt_VideoDoc'])    || 0;
-        const high       = parseFloat(amts['amt_VideoHigh'])   || 0;
-        const vstudio    = parseFloat(amts['amt_VideoStudio']) || 0;
-        const transpo    = parseFloat(amts['amt_Transpo'])     || 0;
-        const photo      = parseFloat(amts['amt_Photo'])       || 0;
-        const photoQR    = parseFloat(amts['amt_PhotoQR'])     || 0;
-        const frameToken = parseFloat(amts['amt_FrameToken'])  || 0;
-        const photoStudio= parseFloat(amts['amt_PhotoStudio']) || 0;
-        const photoGroup = photo + photoQR + frameToken + photoStudio;
-        const vidOther   = doc + high + vstudio;
-
-        // Total A rows
-        const taE = photoGroup * 0.40;
-        const taF = photoGroup * 0.30 + sde / 3;
-        const taT = photoGroup * 0.20 + sde / 3;
-        const taG = photoGroup * 0.10 + sde / 3 + vidOther;
-        const taRow = taE + taF + taT + taG;
-        tA_Edgar += taE; tA_Francis += taF; tA_Tina += taT; tA_Grace += taG;
-        if (taRow > 0) {
-            htmlTA += `<tr>
-                <td class="text-start fw-bold">${ev['Event Name']}</td>
-                <td>₱${taE.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-                <td>₱${taF.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-                <td>₱${taT.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-                <td>₱${taG.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-                <td class="fw-bold">₱${taRow.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-            </tr>`;
-        }
-
-        // Total B rows (restTotal distribution)
-        let restTotal = 0;
-        for (let key in amts) {
-            if (!['amt_VideoSDE','amt_VideoDoc','amt_PreProd','amt_VideoHigh','amt_VideoStudio','amt_Transpo'].includes(key)) {
-                restTotal += parseFloat(amts[key]) || 0;
-            }
-        }
-        const eR = restTotal * pE, jR = restTotal * pJi, tR = restTotal * pT, gR = restTotal * pJG;
-        t2_E += eR; t2_Ji += jR; t2_T += tR; t2_JG += gR; t2_RestSum += restTotal;
-        if (restTotal > 0) {
-            htmlTBrows += `<tr>
-                <td class="text-start fw-bold">${ev['Event Name']}</td>
-                <td>₱${eR.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-                <td>₱${jR.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-                <td>₱${tR.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-                <td>₱${gR.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-                <td class="fw-bold">₱${restTotal.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-            </tr>`;
-        }
-
-        // Transpo rows
-        if (transpo > 0) {
-            t6_TranspoSum += transpo;
-            htmlT6 += `<tr>
-                <td class="text-start fw-bold">${ev['Event Name']}</td>
-                <td class="fw-bold text-success">₱${transpo.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-            </tr>`;
-        }
-    });
-
-    const tA_Total = tA_Edgar + tA_Francis + tA_Tina + tA_Grace;
-    const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2});
-
-    if (tA_Total > 0 || t2_RestSum > 0 || t6_TranspoSum > 0) {
+    if (t6_TranspoSum > 0) {
         const tblClass = 'table table-bordered table-hover align-middle mb-0';
-        const headClass = 'table-dark';
-
         html += `<div class="card p-3 p-md-4 shadow-sm mt-3">
-        <h5 class="fw-bold text-dark mb-1">Total A <span class="text-muted fw-normal" style="font-size:0.8rem;">— Service Allocation</span></h5>
-        <p class="text-muted mb-2" style="font-size:0.72rem;">
-            Photo / QR / Frame / Studio: Edgar 40% · Francis 30% · Tina 20% · Grace 10% &nbsp;|&nbsp;
-            Video SDE: Francis 33.33% · Tina 33.33% · Grace 33.33% &nbsp;|&nbsp;
-            Video Doc / Highlights / Studio: Grace 100%
-        </p>
+        <h5 class="fw-bold text-dark mb-3">Transpo Total</h5>
         <div class="table-responsive"><table class="${tblClass}">
-            <thead class="${headClass}"><tr>
-                <th class="text-start border-0">Event Name</th>
-                <th class="border-0">Edgar</th><th class="border-0">Francis</th>
-                <th class="border-0">Tina</th><th class="border-0">Grace</th>
-                <th class="border-0">Total</th>
-            </tr></thead>
-            <tbody>
-                ${htmlTA || '<tr><td colspan="6" class="text-center text-muted fst-italic py-2">No service amounts for this period</td></tr>'}
-                <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td>
-                    <td class="text-success">₱${fmt(tA_Edgar)}</td>
-                    <td class="text-success">₱${fmt(tA_Francis)}</td>
-                    <td class="text-success">₱${fmt(tA_Tina)}</td>
-                    <td class="text-success">₱${fmt(tA_Grace)}</td>
-                    <td class="fw-bold text-success">₱${fmt(tA_Total)}</td>
-                </tr>
-            </tbody>
-        </table></div>
-
-        <h5 class="fw-bold text-dark mt-4 mb-3">Total B <span class="text-muted fw-normal" style="font-size:0.8rem;">— Distribution</span></h5>
-        <div class="table-responsive"><table class="${tblClass}">
-            <thead class="${headClass}"><tr>
-                <th class="text-start border-0">Event Name</th>
-                <th class="border-0">Edgar</th><th class="border-0">Francis</th>
-                <th class="border-0">Tina</th><th class="border-0">Grace</th>
-                <th class="border-0">Total</th>
-            </tr></thead>
-            <tbody>
-                ${htmlTBrows || '<tr><td colspan="6" class="text-center text-muted fst-italic py-2">No distribution amounts for this period</td></tr>'}
-                <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td>
-                    <td class="text-success">₱${fmt(t2_E)}</td>
-                    <td class="text-success">₱${fmt(t2_Ji)}</td>
-                    <td class="text-success">₱${fmt(t2_T)}</td>
-                    <td class="text-success">₱${fmt(t2_JG)}</td>
-                    <td class="fw-bold text-success">₱${fmt(t2_RestSum)}</td>
-                </tr>
-            </tbody>
-        </table></div>
-
-        <h5 class="fw-bold text-dark mt-4 mb-3">Transpo Total</h5>
-        <div class="table-responsive"><table class="${tblClass}">
-            <thead class="${headClass}"><tr>
+            <thead class="table-dark"><tr>
                 <th class="text-start border-0">Event Name</th>
                 <th class="border-0">Transpo Amount</th>
             </tr></thead>
             <tbody>
-                ${htmlT6 || '<tr><td colspan="2" class="text-center text-muted fst-italic py-2">No transpo for this period</td></tr>'}
+                ${htmlT6}
                 <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td>
                     <td class="text-success fw-bold">₱${fmt(t6_TranspoSum)}</td>
                 </tr>
