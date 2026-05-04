@@ -6073,10 +6073,15 @@ async function fetchExistingLogos(forceRefresh = false) {
       const reader = new FileReader();
       reader.onload = (e) => {
           const image = document.getElementById('imageToCrop');
-          image.src = e.target.result;
+          // Destroy any existing cropper first
+          if (cropper) { cropper.destroy(); cropper = null; }
+          // Show modal BEFORE setting src so container has layout dimensions
           document.getElementById('cropModal').style.display = 'flex';
-          if (cropper) cropper.destroy();
-          cropper = new Cropper(image, { aspectRatio: 1, viewMode: 1, autoCropArea: 0.9, background: false });
+          // Init Cropper AFTER image has fully loaded and has real dimensions
+          image.onload = () => {
+              cropper = new Cropper(image, { aspectRatio: 1, viewMode: 1, autoCropArea: 0.9, background: false });
+          };
+          image.src = e.target.result;
       };
       reader.readAsDataURL(file);
   }
