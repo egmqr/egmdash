@@ -3613,14 +3613,11 @@ function generateSingleEventCard(e) {
     let amountHtml = '';
 
     if (['Cash AR', 'Cash ORCR', 'Check AR', 'Check ORCR'].includes(pType)) {
-        // Change label to "Collect (AR)" if it's an AR payment
-        let displayType = pType.includes('AR') ? 'AR' : pType;
-        
         amountHtml = `
         <div class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between">
             <div>
-                <i class="bi bi-cash-stack text-success fs-6 me-1 align-middle"></i> 
-                <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect (${displayType})</span>
+                <i class="bi bi-cash-stack text-success fs-6 me-1 align-middle"></i>
+                <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect Amount</span>
             </div>
             <strong class="text-success" style="font-size: 0.9rem;">₱${Number(totalServicesAmount).toLocaleString()}</strong>
         </div>`;
