@@ -825,7 +825,7 @@
                       <a class="nav-link" id="btnModeNew" onclick="setBoothMode('new')" style="display:none;"><i class="bi bi-magic me-1"></i> New Setup</a>
                   </li>
                   <li class="nav-item">
-                      <a class="nav-link active" id="btnModeEdit" onclick="setBoothMode('edit')"><i class="bi bi-pencil me-1"></i> Edit Setup</a>
+                      <a class="nav-link active" id="btnModeEdit" onclick="handleEditSetupClick()"><i class="bi bi-pencil me-1"></i> Edit Setup</a>
                   </li>
                   <li class="nav-item">
                       <a class="nav-link" id="btnModeView" onclick="setBoothMode('view')"><i class="bi bi-eye me-1"></i> View QR</a>
@@ -5528,6 +5528,23 @@ async function uploadAndScanInvoice(prefix) {
           // 🟢 THE FIX: Make the Folder Name exactly match the Event Name / Page Title!
           document.getElementById('boothFolderName').value = eventName;
       }
+  }
+
+  function handleEditSetupClick() {
+      // Check if current event is ProBooth-generated — if so, stay in view mode
+      const selectedId = document.getElementById('boothEventSelect').value;
+      if (selectedId && boothDetailsCache[selectedId]) {
+          const details = boothDetailsCache[selectedId];
+          const bs = details.boothsStr || '';
+          const hasRealFolderId = /folderId=[^&]{5,}/.test(bs);
+          const hasPrefix = bs.includes('prefix=');
+          if (!hasPrefix && !hasRealFolderId) {
+              // ProBooth event — don't allow edit mode
+              showToast('This event was created by ProBooth and cannot be edited here.', 'info');
+              return;
+          }
+      }
+      setBoothMode('edit');
   }
 
   function setBoothMode(mode) {
