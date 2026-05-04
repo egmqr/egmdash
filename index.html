@@ -3597,17 +3597,32 @@ function generateSingleEventCard(e) {
 
     let paymentDoc = projectRows.find(r => r['Payment Type']) || e;
     let pType = paymentDoc['Payment Type'];
-    let pAmount = paymentDoc['Amount'] || 0;
+    
+    // Calculate the total amount from the saved services JSON
+    let totalServicesAmount = 0;
+    try {
+        let jsonString = paymentDoc['Service Amounts JSON'] || e['Service Amounts JSON'] || "{}";
+        let savedAmounts = JSON.parse(jsonString);
+        for (let key in savedAmounts) {
+            totalServicesAmount += parseFloat(savedAmounts[key]) || 0;
+        }
+    } catch(ex) {
+        console.error("Error parsing service amounts:", ex);
+    }
+
     let amountHtml = '';
 
     if (['Cash AR', 'Cash ORCR', 'Check AR', 'Check ORCR'].includes(pType)) {
+        // Change label to "Collect (AR)" if it's an AR payment
+        let displayType = pType.includes('AR') ? 'AR' : pType;
+        
         amountHtml = `
         <div class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between">
             <div>
                 <i class="bi bi-cash-stack text-success fs-6 me-1 align-middle"></i> 
-                <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect (${pType})</span>
+                <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect (${displayType})</span>
             </div>
-            <strong class="text-success" style="font-size: 0.9rem;">₱${Number(pAmount).toLocaleString()}</strong>
+            <strong class="text-success" style="font-size: 0.9rem;">₱${Number(totalServicesAmount).toLocaleString()}</strong>
         </div>`;
     }
 
