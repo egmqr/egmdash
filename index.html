@@ -5535,9 +5535,11 @@ async function uploadAndScanInvoice(prefix) {
       if(mode !== 'new') document.getElementById('boothCountInput').value = ""; 
       
       document.getElementById('boothFontColor').value = "#ffffff"; document.getElementById('boothFontColorPicker').value = "#ffffff"; 
-      document.getElementById('boothBgColor').value = "#000000"; document.getElementById('boothBgColorPicker').value = "#000000"; 
-      document.getElementById('boothBgFile').value = ""; document.getElementById('boothBgFileName').innerText = "No file chosen"; 
-      document.getElementById('boothLogoFile').value = ""; document.getElementById('boothLogoFileName').innerText = "No file chosen";
+      // Only clear file inputs when starting a fresh new event — not during edit/view
+      if (mode === 'new') {
+          document.getElementById('boothBgFile').value = ""; document.getElementById('boothBgFileName').innerText = "No file chosen";
+          document.getElementById('boothLogoFile').value = ""; document.getElementById('boothLogoFileName').innerText = "No file chosen";
+      }
       
       document.getElementById('boothBgPreviewContainer').style.display = "none";
       document.getElementById('boothLogoPreviewContainer').style.display = "none";
@@ -6072,10 +6074,15 @@ async function fetchExistingLogos(forceRefresh = false) {
       const reader = new FileReader();
       reader.onload = (e) => {
           const image = document.getElementById('imageToCrop');
-          image.src = e.target.result;
+          // Destroy any existing cropper first
+          if (cropper) { cropper.destroy(); cropper = null; }
+          // Show modal before setting src so the container has dimensions
           document.getElementById('cropModal').style.display = 'flex';
-          if (cropper) cropper.destroy();
-          cropper = new Cropper(image, { aspectRatio: 1, viewMode: 1, autoCropArea: 0.9, background: false });
+          // Wait for image to fully load before initialising Cropper
+          image.onload = () => {
+              cropper = new Cropper(image, { aspectRatio: 1, viewMode: 1, autoCropArea: 0.9, background: false });
+          };
+          image.src = e.target.result;
       };
       reader.readAsDataURL(file);
   }
