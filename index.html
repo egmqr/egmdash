@@ -15,6 +15,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
   
   <style>
     #editMultiDayNav {
@@ -824,7 +825,7 @@
                       <a class="nav-link" id="btnModeNew" onclick="setBoothMode('new')" style="display:none;"><i class="bi bi-magic me-1"></i> New Setup</a>
                   </li>
                   <li class="nav-item">
-                      <a class="nav-link active" id="btnModeEdit" onclick="setBoothMode('edit')"><i class="bi bi-pencil me-1"></i> Edit Setup</a>
+                      <a class="nav-link active" id="btnModeEdit" onclick="handleEditSetupClick()"><i class="bi bi-pencil me-1"></i> Edit Setup</a>
                   </li>
                   <li class="nav-item">
                       <a class="nav-link" id="btnModeView" onclick="setBoothMode('view')"><i class="bi bi-eye me-1"></i> View QR</a>
@@ -2416,8 +2417,14 @@ async function subscribeToNotifications() {
 }
   //
   let pendingAuthAction = null;
-  // This is your permanently designated Apps Script URL
-  const API_URL = 'https://script.google.com/macros/s/AKfycbxRvLfDG7PRFvvSoqgKcwEF8MJtWPY5OpprfBs917mQ-r1iaMlaYc1YeF0Jcbf3CLubNA/exec';
+  // Apps Script URL — stays forever for: logPayroll, submitExpense, backupToSheets, sendPush, uploadPaymentDoc, uploadEventFile
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxRvLfDG7PRFvvSoqgKcwEF8MJtWPY5OpprfBs917mQ-r1iaMlaYc1YeF0Jcbf3CLubNA/exec';
+  // Cloudflare Worker — handles all booth/gallery/R2 actions
+  const WORKER_URL = 'https://api.createdbyegm.com';
+  // BOOTH_AUTH_TOKEN: set this to the same secret you put in the Worker
+  const BOOTH_AUTH_TOKEN = '4769e10c-e52a-4ab4-bb7f-85bfba16ac94';
+  // Keep API_URL pointing to GAS for the existing callApi() used by payroll/expense/FCM
+  const API_URL = GAS_URL;
   let localLastUpdate = "0";
   let rawEvents = [], rawPayments = [], rawExpenses = [], currentTab = 'events';
   let filteredEventsCache = []; 
@@ -3597,29 +3604,26 @@ function generateSingleEventCard(e) {
 
     let paymentDoc = projectRows.find(r => r['Payment Type']) || e;
     let pType = paymentDoc['Payment Type'];
-    
-    // Calculate the total amount from the saved services JSON
-    let totalServicesAmount = 0;
-    try {
-        let jsonString = paymentDoc['Service Amounts JSON'] || e['Service Amounts JSON'] || "{}";
-        let savedAmounts = JSON.parse(jsonString);
-        for (let key in savedAmounts) {
-            totalServicesAmount += parseFloat(savedAmounts[key]) || 0;
-        }
-    } catch(ex) {
-        console.error("Error parsing service amounts:", ex);
-    }
-
+    let pAmount = paymentDoc['Amount'] || 0;
     let amountHtml = '';
 
     if (['Cash AR', 'Cash ORCR', 'Check AR', 'Check ORCR'].includes(pType)) {
+        // Total all service amounts across project rows; fall back to stored Amount
+        let serviceTotal = 0;
+        projectRows.forEach(row => {
+            try {
+                const amts = JSON.parse(row['Service Amounts JSON'] || '{}');
+                Object.values(amts).forEach(v => { serviceTotal += parseFloat(v) || 0; });
+            } catch(ex) {}
+        });
+        const collectAmount = serviceTotal > 0 ? serviceTotal : Number(pAmount);
         amountHtml = `
         <div class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between">
             <div>
-                <i class="bi bi-cash-stack text-success fs-6 me-1 align-middle"></i>
+                <i class="bi bi-cash-stack text-success fs-6 me-1 align-middle"></i> 
                 <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect Amount</span>
             </div>
-            <strong class="text-success" style="font-size: 0.9rem;">₱${Number(totalServicesAmount).toLocaleString()}</strong>
+            <strong class="text-success" style="font-size: 0.9rem;">₱${collectAmount.toLocaleString()}</strong>
         </div>`;
     }
 
@@ -5526,6 +5530,23 @@ async function uploadAndScanInvoice(prefix) {
       }
   }
 
+  function handleEditSetupClick() {
+      // Check if current event is ProBooth-generated — if so, stay in view mode
+      const selectedId = document.getElementById('boothEventSelect').value;
+      if (selectedId && boothDetailsCache[selectedId]) {
+          const details = boothDetailsCache[selectedId];
+          const bs = details.boothsStr || '';
+          const hasRealFolderId = /folderId=[^&]{5,}/.test(bs);
+          const hasPrefix = bs.includes('prefix=');
+          if (!hasPrefix && !hasRealFolderId) {
+              // ProBooth event — don't allow edit mode
+              showToast('This event was created by ProBooth and cannot be edited here.', 'info');
+              return;
+          }
+      }
+      setBoothMode('edit');
+  }
+
   function setBoothMode(mode) {
       currentBoothMode = mode;
       document.getElementById('boothEnableCommunity').checked = true;
@@ -5755,7 +5776,7 @@ async function uploadAndScanInvoice(prefix) {
       }
       
       document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-muted fst-italic">Loading logos...</span>';
-      const res = await callApi({ action: "getExistingLogos" }, 'POST', true);
+      const res = await callWorkerApi('/api/dashboard/existing-logos', {}, true);
       
       if (res && res.success) {
           existingLogosCache = res.logos;
@@ -5798,7 +5819,7 @@ async function uploadAndScanInvoice(prefix) {
           document.getElementById('overlayText').innerText = "Loading details...";
           ov.style.display = 'flex';
           
-          details = await callApi({ action: "getBoothDetails", eventId: selectedId }, 'POST');
+          details = await callWorkerApi('/api/dashboard/booth-details', { eventId: selectedId }, false);
           ov.style.display = 'none';
           
           // 3. Save it to memory so we never have to load it again!
@@ -5821,6 +5842,21 @@ async function uploadAndScanInvoice(prefix) {
           }
           if (document.getElementById('boothTemplateList')) renderTemplateList();
 
+          // Detect ProBooth-generated events by boothsStr format:
+          // - Dashboard R2 events: boothsStr contains 'prefix='
+          // - Old Drive events: boothsStr contains a real folderId value
+          // - ProBooth events: boothsStr is empty OR has 'folderId=' with empty value
+          const boothsStr = details.boothsStr || '';
+          const hasRealFolderId = /folderId=[^&]{5,}/.test(boothsStr);
+          const hasPrefix = boothsStr.includes('prefix=');
+          const isProBoothEvent = !hasPrefix && !hasRealFolderId;
+          if (isProBoothEvent && currentBoothMode === 'edit') {
+              currentBoothMode = 'view';
+              document.getElementById('boothGenerateBtn').style.display = 'none';
+              document.getElementById('boothSaveBtn').style.display = 'none';
+              document.getElementById('boothDeleteBtn').style.display = 'block';
+          }
+
           if (currentBoothMode === 'edit') {
               document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
               document.getElementById('boothEventId').value = selectedId;
@@ -5842,7 +5878,7 @@ async function uploadAndScanInvoice(prefix) {
               document.getElementById('boothBgColor').value = loadedBgColor; document.getElementById('boothBgColorPicker').value = loadedBgColor;
               
               if (details.bgId) {
-                  document.getElementById('boothBgPreview').src = `https://drive.google.com/thumbnail?id=${details.bgId}&sz=w400`;
+                  document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.png`;
                   document.getElementById('boothBgPreviewContainer').style.display = "flex";
               } else {
                   document.getElementById('boothBgPreviewContainer').style.display = "none";
@@ -5850,7 +5886,7 @@ async function uploadAndScanInvoice(prefix) {
               }
               
               if (details.logoId) {
-                  document.getElementById('boothLogoPreview').src = `https://drive.google.com/thumbnail?id=${details.logoId}&sz=w400`;
+                  document.getElementById('boothLogoPreview').src = `https://cdn.createdbyegm.com/assets/logos/${details.logoId}.png`;
                   document.getElementById('boothLogoPreviewContainer').style.display = "flex";
               } else {
                   document.getElementById('boothLogoPreviewContainer').style.display = "none";
@@ -5867,8 +5903,8 @@ async function uploadAndScanInvoice(prefix) {
               boothList.innerHTML = ''; currentViewBooths = [];
               
               const boothsArr = details.boothsStr ? details.boothsStr.split('|') : [];
-              const qrIdsArr = details.qrFileIdsStr ? details.qrFileIdsStr.split('|') : [];
-              const jsonIdsArr = details.jsonFileIdsStr ? details.jsonFileIdsStr.split('|') : []; // NEW: Map out the JSON File IDs
+              const qrUrlsArr = details.qrUrlsStr ? details.qrUrlsStr.split('|') : [];
+              const configKeysArr = details.configKeysStr ? details.configKeysStr.split('|') : [];
               const dynamicFolderName = details.folderName || 'Booth ';
               
               const hadCommunity = (details.communityOnly === true || details.enableCommunity === true); 
@@ -5887,32 +5923,31 @@ async function uploadAndScanInvoice(prefix) {
                   const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}${stickerParam}`;
                   const backupGalleryUrl = `${BACKUP_NETLIFY_BASE_URL}?id=${details.id}&tab=${tabParam}${isCommunity ? '&isCommunity=true' : ''}${stickerParam}`;
                   
-                  const driveUrl = `https://drive.google.com/drive/folders/${folderId}`;
-                  const boothCloudUrl = `https://webqr.createdbyegm.com/gallery?folderId=${folderId}&backend=https://script.google.com/macros/s/AKfycbwjQbyGEoK5HkmIOmVmGsYbYntYiA9Jg5YRuQAOpJ35m98BIN8EJtKC3lEAsmqVIFuQ/exec`;
-                  
-                  const qrFileId = qrIdsArr[i] || "";
-                  let qrCodeActionHtml = '';
-                  const fileName = isCommunity ? 'Community_QRCode.png' : `Booth_${boothNum}_QR.png`;
+                   // R2: boothPrefix from Firestore replaces Drive folderId
+                   const boothPrefixesArr2 = details.boothPrefixesStr ? details.boothPrefixesStr.split('|') : [];
+                   const boothPrefix = boothPrefixesArr2[i] || '';
 
-                  if (qrFileId) {
-                     const qrDriveViewerUrl = `https://drive.google.com/file/d/${qrFileId}/view`;
-                     currentViewBooths.push({ boothNum, fileId: qrFileId, isDrive: true, filename: fileName });
-                     qrCodeActionHtml = `
-                        <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qrDriveViewerUrl}')">Copy link</button>
-                        <button class="booth-mini-btn" onclick="window.open('https://drive.google.com/uc?export=download&id=${qrFileId}', '_blank')">Download</button>
-                     `;
-                  } else {
-                     let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
-                     if (details.qrLogoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.qrLogoId)}&centerImageSizeRatio=0.15`;
-                     else if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://drive.google.com/uc?id=' + details.logoId)}&centerImageSizeRatio=0.15`;
-                     
-                     currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false, filename: fileName });
-                     qrCodeActionHtml = `
-                        <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qcApiUrl}')">Copy link</button>
-                        <button class="booth-mini-btn" onclick="downloadBoothImage('${qcApiUrl}', '${fileName}')">Download</button>
-                     `;
-                  }
-                  
+                   const qrUrl = qrUrlsArr[i] || "";
+                   let qrCodeActionHtml = '';
+                   const fileName = isCommunity ? 'Community_QRCode.png' : `Booth_${boothNum}_QR.png`;
+
+                   if (qrUrl) {
+                      // R2: qrUrl is a direct CDN URL — no Drive wrapping needed
+                      currentViewBooths.push({ boothNum, url: qrUrl, isDrive: false, filename: fileName });
+                      qrCodeActionHtml = `
+                         <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qrUrl}')">Copy link</button>
+                         <button class="booth-mini-btn" onclick="downloadBoothImage('${qrUrl}', '${fileName}')">Download</button>
+                      `;
+                   } else {
+                      // Fallback: generate QR on-the-fly (event predates R2 or QR upload failed)
+                      let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
+                      if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://cdn.createdbyegm.com/assets/logos/' + details.logoId + '.png')}&centerImageSizeRatio=0.15`;
+                      currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false, filename: fileName });
+                      qrCodeActionHtml = `
+                         <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qcApiUrl}')">Copy link</button>
+                         <button class="booth-mini-btn" onclick="downloadBoothImage('${qcApiUrl}', '${fileName}')">Download</button>
+                      `;
+                   }
                   const titleHtml = isCommunity ? `<i class="bi bi-people-fill text-primary me-2"></i>Community Booth` : `${dynamicFolderName}${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span>`;
 
                   // 🟢 THE FIX: Dynamically remove the Config Row if it's the Community Booth
@@ -5920,7 +5955,7 @@ async function uploadAndScanInvoice(prefix) {
                      <div class="booth-link-row">
                         <span>Event Config (.json)</span>
                         <div class="booth-link-actions">
-                            ${jsonIdsArr[i] ? `<button class="booth-mini-btn" onclick="downloadEventJson('${jsonIdsArr[i]}')"><i class="bi bi-download me-1"></i>Download</button>` : `<span class="text-muted small fst-italic">Unavailable</span>`}
+                            ${configKeysArr[i] ? `<button class="booth-mini-btn" onclick="downloadBoothImage('https://cdn.createdbyegm.com/${configKeysArr[i]}', 'Booth${boothNum}.json')"><i class="bi bi-download me-1"></i>Download</button>` : `<span class="text-muted small fst-italic">Unavailable</span>`}
                         </div>
                      </div>
                   `;
@@ -5937,12 +5972,12 @@ async function uploadAndScanInvoice(prefix) {
                            <button class="booth-mini-btn" onclick="window.open('${mainGalleryUrl}', '_blank')">Go</button>
                         </div>
                      </div>
-                     <div class="booth-link-row">
-                        <span>Drive Folder</span>
-                        <div class="booth-link-actions">
-                           <button class="booth-mini-btn" onclick="copyBoothLink(this, '${driveUrl}')">Copy link</button>
-                           <button class="booth-mini-btn" onclick="window.open('${driveUrl}', '_blank')">Go</button>
-                        </div>
+                      <div class="booth-link-row">
+                         <span>R2 Prefix</span>
+                         <div class="booth-link-actions">
+                            <button class="booth-mini-btn" onclick="copyBoothLink(this, '${boothPrefix}')">Copy prefix</button>
+                         </div>
+                      </div>
                      </div>
                      ${configRowHtml}
                      <div class="booth-link-row">
@@ -5978,8 +6013,7 @@ async function uploadAndScanInvoice(prefix) {
       ov.style.display = 'flex';
       for (let i = 0; i < currentViewBooths.length; i++) {
           const booth = currentViewBooths[i];
-          if (booth.isDrive) window.open(`https://drive.google.com/uc?export=download&id=${booth.fileId}`, '_blank');
-          else downloadBoothImage(booth.url, booth.filename); // 🟢 Use mapped filename
+          downloadBoothImage(booth.url, booth.filename); // R2: always a direct URL
           await new Promise(resolve => setTimeout(resolve, 800)); 
       }
       ov.style.display = 'none';
@@ -6014,7 +6048,7 @@ async function fetchExistingLogos(forceRefresh = false) {
       }
       
       document.getElementById('existingLogoGallery').innerHTML = '<span class="small text-muted fst-italic">Loading logos...</span>';
-      const res = await callApi({ action: "getExistingLogos" }, 'POST', true);
+      const res = await callWorkerApi('/api/dashboard/existing-logos', {}, true);
       
       if (res && res.success) {
           existingLogosCache = res.logos;
@@ -6031,7 +6065,7 @@ async function fetchExistingLogos(forceRefresh = false) {
           return;
       }
       let html = '';
-      logos.forEach(logo => {
+      logos.filter(logo => logo.id && logo.id.trim() !== '').forEach(logo => {
           html += `<img src="${logo.url}" class="logo-gallery-item" title="${logo.name}" onclick="selectExistingLogo('${logo.id}', '${logo.qrId}', this)">`;
       });
       container.innerHTML = html;
@@ -6055,7 +6089,7 @@ async function fetchExistingLogos(forceRefresh = false) {
           return;
       }
       let html = '';
-      logos.forEach(logo => {
+      logos.filter(logo => logo.id && logo.id.trim() !== '').forEach(logo => {
           html += `<img src="${logo.url}" class="logo-gallery-item" title="${logo.name}" onclick="selectExistingLogo('${logo.id}', '${logo.qrId}', this)">`;
       });
       container.innerHTML = html;
@@ -6080,10 +6114,12 @@ async function fetchExistingLogos(forceRefresh = false) {
       const reader = new FileReader();
       reader.onload = (e) => {
           const image = document.getElementById('imageToCrop');
-          image.src = e.target.result;
+          if (cropper) { cropper.destroy(); cropper = null; }
           document.getElementById('cropModal').style.display = 'flex';
-          if (cropper) cropper.destroy();
-          cropper = new Cropper(image, { aspectRatio: 1, viewMode: 1, autoCropArea: 0.9, background: false });
+          image.onload = () => {
+              cropper = new Cropper(image, { aspectRatio: 1, viewMode: 1, autoCropArea: 0.9, background: false });
+          };
+          image.src = e.target.result;
       };
       reader.readAsDataURL(file);
   }
@@ -6168,7 +6204,9 @@ async function fetchExistingLogos(forceRefresh = false) {
         userStickers: document.getElementById('boothUserStickers').checked // 🟢 NEW
       };
 
-      const res = await callApi(payload, 'POST');
+      // Route to Worker for booth actions (not GAS)
+      const workerRoute = actionName === 'generateBoothSetup' ? '/api/dashboard/generate-booth' : '/api/dashboard/update-booth';
+      const res = await callWorkerApi(workerRoute, payload);
       ov.style.display = 'none';
       
       if (res && res.success) {
@@ -6191,6 +6229,44 @@ async function fetchExistingLogos(forceRefresh = false) {
       }
   }
 
+
+  async function callWorkerApi(route, payload, isSilent = false) {
+    if (!isSilent) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'block';
+    }
+    try {
+      const response = await fetch(`${WORKER_URL}${route}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${BOOTH_AUTH_TOKEN}`
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const result = await response.json();
+      if (!isSilent) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+      }
+      if (result.success === false) {
+        console.error('Worker error:', result.error);
+        egmAlert('Worker Error: ' + (result.error || 'Unknown error'));
+        return null;
+      }
+      return result;
+    } catch (error) {
+      if (!isSilent) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+      }
+      console.error('Worker API error:', error);
+      egmAlert('Network Error: ' + error.message);
+      return null;
+    }
+  }
+
   function runBoothGeneration() { executeBoothAction("generateBoothSetup"); }
   function runBoothUpdate() { executeBoothAction("updateBoothSetup"); }
   
@@ -6208,7 +6284,7 @@ async function fetchExistingLogos(forceRefresh = false) {
       document.getElementById('overlayText').innerText = "Deleting Booth Setup...";
       ov.style.display = 'flex';
       
-      const res = await callApi({ action: "deleteBoothEvent", eventId: selectedId }, 'POST');
+      const res = await callWorkerApi('/api/dashboard/delete-booth', { eventId: selectedId });
       ov.style.display = 'none';
       
       if (res && res.success) {
