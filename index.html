@@ -5824,8 +5824,14 @@ async function uploadAndScanInvoice(prefix) {
           }
           if (document.getElementById('boothTemplateList')) renderTemplateList();
 
-          // ProBooth-generated events have no boothCount — switch to view mode
-          const isProBoothEvent = !details.boothCount && details.boothPrefixesStr;
+          // Detect ProBooth-generated events by boothsStr format:
+          // - Dashboard R2 events: boothsStr contains 'prefix='
+          // - Old Drive events: boothsStr contains a real folderId value
+          // - ProBooth events: boothsStr is empty OR has 'folderId=' with empty value
+          const boothsStr = details.boothsStr || '';
+          const hasRealFolderId = /folderId=[^&]{5,}/.test(boothsStr);
+          const hasPrefix = boothsStr.includes('prefix=');
+          const isProBoothEvent = !hasPrefix && !hasRealFolderId;
           if (isProBoothEvent && currentBoothMode === 'edit') {
               currentBoothMode = 'view';
               document.getElementById('boothGenerateBtn').style.display = 'none';
