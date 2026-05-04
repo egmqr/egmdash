@@ -5824,6 +5824,15 @@ async function uploadAndScanInvoice(prefix) {
           }
           if (document.getElementById('boothTemplateList')) renderTemplateList();
 
+          // ProBooth-generated events have no boothCount — switch to view mode
+          const isProBoothEvent = !details.boothCount && details.boothPrefixesStr;
+          if (isProBoothEvent && currentBoothMode === 'edit') {
+              currentBoothMode = 'view';
+              document.getElementById('boothGenerateBtn').style.display = 'none';
+              document.getElementById('boothSaveBtn').style.display = 'none';
+              document.getElementById('boothDeleteBtn').style.display = 'block';
+          }
+
           if (currentBoothMode === 'edit') {
               document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
               document.getElementById('boothEventId').value = selectedId;
