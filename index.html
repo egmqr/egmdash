@@ -5725,7 +5725,10 @@ async function uploadAndScanInvoice(prefix) {
       const fileInput = document.getElementById(inputId);
       const textSpan = document.getElementById(textId);
       if (fileInput.files.length > 0) {
-          textSpan.innerText = fileInput.files[0].name;
+          const file = fileInput.files[0];
+          const kb = Math.round(file.size / 1024);
+          const hint = inputId === 'boothBgFile' ? ' (will resize & upload to R2 on save)' : '';
+          textSpan.innerText = file.name + ' — ' + kb + 'KB' + hint;
           textSpan.style.color = "var(--bs-primary)";
       } else {
           textSpan.innerText = "No file chosen";
@@ -5733,10 +5736,12 @@ async function uploadAndScanInvoice(prefix) {
       }
   }
 
-  // Awaitable helper: resizes bg image to max 1800x1200 and compresses to JPEG 80%
-  // Returns the SAME object format as readFileAsBase64: { filename, mimeType, base64 }
-  function optimizeBgFile(file) {
-      return new Promise((resolve, reject) => {
+  // Uploads background image directly to R2 via presigned PUT — no base64 needed.
+  // Resizes to max 1800x1200 via canvas, then PUTs the raw JPEG blob to R2.
+  // Returns bgId (the R2 key stem) to pass in the booth setup payload.
+  async function uploadBgDirect(file) {
+      // 1. Resize via canvas if needed
+      const blob = await new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = (e) => {
               const img = new Image();
@@ -5745,14 +5750,12 @@ async function uploadAndScanInvoice(prefix) {
                   let w = img.width, h = img.height;
                   if (w > MAX_W || h > MAX_H) {
                       const ratio = Math.min(MAX_W / w, MAX_H / h);
-                      w = Math.round(w * ratio);
-                      h = Math.round(h * ratio);
+                      w = Math.round(w * ratio); h = Math.round(h * ratio);
                   }
                   const canvas = document.createElement('canvas');
                   canvas.width = w; canvas.height = h;
                   canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                  const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                  resolve({ filename: file.name.split('.')[0] + '.jpg', mimeType: 'image/jpeg', base64: dataUrl });
+                  canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/jpeg', 0.8);
               };
               img.onerror = reject;
               img.src = e.target.result;
@@ -5760,6 +5763,27 @@ async function uploadAndScanInvoice(prefix) {
           reader.onerror = reject;
           reader.readAsDataURL(file);
       });
+
+      // 2. Get a presigned PUT URL from the worker
+      const bgId = 'bg_' + Date.now();
+      const filename = bgId + '.jpg';
+      const signRes = await fetch(`${WORKER_URL}/api/sign-upload`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${BOOTH_AUTH_TOKEN}` },
+          body: JSON.stringify({ prefix: 'assets/backgrounds', filename })
+      });
+      if (!signRes.ok) throw new Error('Failed to get presigned URL for background');
+      const { uploadUrl } = await signRes.json();
+
+      // 3. PUT the raw blob directly to R2 — no base64, no Worker hop
+      const putRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'image/jpeg' },
+          body: blob
+      });
+      if (!putRes.ok) throw new Error('R2 upload failed: ' + putRes.status);
+
+      return bgId; // worker will use this as existingBgId to build the CDN URL
   }
 
   async function fetchBoothEvents(forceRefresh = false) {
@@ -6226,20 +6250,21 @@ async function fetchExistingLogos(forceRefresh = false) {
       document.getElementById('overlayText').innerText = "Processing Booth Setup...";
       ov.style.display = 'flex';
 
-      // Optimize bg image (cap 1800x1200, JPEG 80%) — returns same object format as readFileAsBase64
+      // Upload bg image directly to R2 via presigned PUT — returns bgId, not base64
       const bgFile = document.getElementById('boothBgFile').files[0];
-      let bgData = null;
+      let uploadedBgId = null;
       if (bgFile) {
-          try { bgData = await optimizeBgFile(bgFile); }
-          catch (e) { bgData = await readFileAsBase64(bgFile); } // fallback to standard
+          try { uploadedBgId = await uploadBgDirect(bgFile); }
+          catch (e) { console.error('BG upload failed:', e); egmAlert('Background image upload failed: ' + e.message); ov.style.display = 'none'; return; }
       }
-      
+      const resolvedBgId = uploadedBgId || currentBoothBgId || '';
+
       const logoOnMain = document.getElementById('boothLogoOnMain').checked;
       const enableCommunity = document.getElementById('boothEnableCommunity').checked;
 
       const payload = {
           action: actionName, eventId, folderName, eventName, boothCount,
-          bgData, existingBgId: bgData ? null : currentBoothBgId,
+          existingBgId: resolvedBgId,
           logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
           fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
