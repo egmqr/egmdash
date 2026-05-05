@@ -5770,7 +5770,7 @@ async function uploadAndScanInvoice(prefix) {
       const signRes = await fetch(`${WORKER_URL}/api/sign-upload`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${BOOTH_AUTH_TOKEN}` },
-          body: JSON.stringify({ prefix: 'assets/backgrounds', filename })
+          body: JSON.stringify({ prefix: 'assets/backgrounds/', filename })
       });
       if (!signRes.ok) throw new Error('Failed to get presigned URL for background');
       const { uploadUrl } = await signRes.json();
