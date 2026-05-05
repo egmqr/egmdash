@@ -5772,7 +5772,13 @@ async function uploadAndScanInvoice(prefix) {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${BOOTH_AUTH_TOKEN}` },
           body: JSON.stringify({ prefix: 'assets/backgrounds/', filename })
       });
-      if (!signRes.ok) throw new Error('Failed to get presigned URL for background');
+      
+      // 👇 NEW: Extract the exact reason the server rejected it
+      if (!signRes.ok) {
+          const errorText = await signRes.text();
+          throw new Error(`HTTP ${signRes.status}: ${errorText}`);
+      }
+      
       const { uploadUrl } = await signRes.json();
 
       // 3. PUT the raw blob directly to R2 — no base64, no Worker hop
