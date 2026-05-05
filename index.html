@@ -6151,30 +6151,6 @@ async function fetchExistingLogos(forceRefresh = false) {
       document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
       croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
   }
-  function renderExistingLogos(logos) {
-      const container = document.getElementById('existingLogoGallery');
-      if (logos.length === 0) {
-          container.innerHTML = '<span class="small text-muted fst-italic">No existing logos found.</span>';
-          return;
-      }
-      let html = '';
-      logos.filter(logo => logo.id && logo.id.trim() !== '').forEach(logo => {
-          html += `<img src="${logo.url}" class="logo-gallery-item" title="${logo.name}" onclick="selectExistingLogo('${logo.id}', '${logo.qrId}', this)">`;
-      });
-      container.innerHTML = html;
-  }
-
-  function selectExistingLogo(id, qrId, el) {
-      selectedExistingLogoId = id;
-      selectedExistingQrLogoId = qrId;
-      document.querySelectorAll('.logo-gallery-item').forEach(img => img.classList.remove('selected'));
-      el.classList.add('selected');
-      
-      document.getElementById('boothLogoFile').value = ""; 
-      document.getElementById('boothLogoFileName').innerText = "Using existing logo";
-      document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
-      croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
-  }
 
   function handleBoothLogoSelect(event) {
       const file = event.target.files[0];
