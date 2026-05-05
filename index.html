@@ -6286,6 +6286,11 @@ async function fetchExistingLogos(forceRefresh = false) {
       ov.style.display = 'none';
       
       if (res && res.success) {
+          // 👇 NEW: Lock the new background ID into memory so subsequent saves don't break it
+          if (uploadedBgId) {
+              currentBoothBgId = uploadedBgId;
+          }
+          
           // THE FIX: Wipe only this specific event's memory, keeping the rest of the cache intact!
           if (eventId) {
               delete boothDetailsCache[eventId];
