@@ -852,10 +852,8 @@
                       </div>
                   </div>
 
-                  <div class="mb-3">
-                      <label class="form-label-sm text-secondary">FOLDER NAME</label>
-                      <input type="text" id="boothFolderName" class="form-control form-control-sm fw-bold" placeholder="e.g. Smith Wedding" required>
-                  </div>
+                  <!-- Folder Name is auto-synced from Page Title; hidden from UI -->
+                  <input type="hidden" id="boothFolderName">
                   
                   <div class="mb-4 pb-4 border-bottom">
                       <label class="form-label-sm text-secondary">Number of Booths</label>
@@ -5563,7 +5561,8 @@ async function uploadAndScanInvoice(prefix) {
       
       document.getElementById('boothFontColor').value = "#ffffff"; document.getElementById('boothFontColorPicker').value = "#ffffff"; 
       document.getElementById('boothBgColor').value = "#000000"; document.getElementById('boothBgColorPicker').value = "#000000"; 
-      document.getElementById('boothBgFile').value = ""; document.getElementById('boothBgFileName').innerText = "No file chosen"; 
+      document.getElementById('boothBgFile').value = ""; document.getElementById('boothBgFileName').innerText = "No file chosen";
+      currentBoothBgId = null; optimizedBgData = null; 
       document.getElementById('boothLogoFile').value = ""; document.getElementById('boothLogoFileName').innerText = "No file chosen";
       
       document.getElementById('boothBgPreviewContainer').style.display = "none";
@@ -5719,12 +5718,49 @@ async function uploadAndScanInvoice(prefix) {
       }
   }
 
+  // Tracks the bgId already saved on the server so we can retain it when no new file is chosen
+  let currentBoothBgId = null;
+  // Holds the optimized base64 for the bg image, populated on file pick
+  let optimizedBgData = null;
+
   function updateBoothFileName(inputId, textId) {
       const fileInput = document.getElementById(inputId);
       const textSpan = document.getElementById(textId);
       if (fileInput.files.length > 0) {
-          textSpan.innerText = fileInput.files[0].name;
-          textSpan.style.color = "var(--bs-primary)";
+          const file = fileInput.files[0];
+
+          // Optimize background image: cap at 1800x1200 and compress to JPEG <=80%
+          if (inputId === 'boothBgFile') {
+              optimizedBgData = null;
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                  const img = new Image();
+                  img.onload = () => {
+                      const MAX_W = 1800, MAX_H = 1200;
+                      let w = img.width, h = img.height;
+                      if (w > MAX_W || h > MAX_H) {
+                          const ratio = Math.min(MAX_W / w, MAX_H / h);
+                          w = Math.round(w * ratio);
+                          h = Math.round(h * ratio);
+                      }
+                      const canvas = document.createElement('canvas');
+                      canvas.width = w; canvas.height = h;
+                      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                      optimizedBgData = dataUrl.split(',')[1];
+                      const kb = Math.round((optimizedBgData.length * 3 / 4) / 1024);
+                      textSpan.innerText = file.name + ' -> optimized ' + w + 'x' + h + ' (~' + kb + 'KB)';
+                      textSpan.style.color = "var(--bs-primary)";
+                  };
+                  img.src = e.target.result;
+              };
+              reader.readAsDataURL(file);
+              textSpan.innerText = 'Optimizing...';
+              textSpan.style.color = '#64748b';
+          } else {
+              textSpan.innerText = file.name;
+              textSpan.style.color = "var(--bs-primary)";
+          }
       } else {
           textSpan.innerText = "No file chosen";
           textSpan.style.color = "#64748b";
@@ -5877,6 +5913,9 @@ async function uploadAndScanInvoice(prefix) {
               document.getElementById('boothFontColor').value = loadedFontColor; document.getElementById('boothFontColorPicker').value = loadedFontColor;
               document.getElementById('boothBgColor').value = loadedBgColor; document.getElementById('boothBgColorPicker').value = loadedBgColor;
               
+              // Track existing bgId so a save with no new file retains the current background
+              currentBoothBgId = details.bgId || null;
+              optimizedBgData = null;
               if (details.bgId) {
                   document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.png`;
                   document.getElementById('boothBgPreviewContainer').style.display = "flex";
@@ -6177,8 +6216,10 @@ async function fetchExistingLogos(forceRefresh = false) {
       }
       
       // 🟢 Updated validation to stop checking the empty booth count
-      if (!folderName || !eventName || !eventId) {
-          egmAlert("Required fields missing! Ensure the Page Title and Folder Name are set.");
+      // Auto-sync folderName from eventName (field is now hidden)
+      if (!folderName) document.getElementById('boothFolderName').value = eventName;
+      if (!eventName || !eventId) {
+          egmAlert("Required fields missing! Ensure the Page Title is set.");
           return;
       }
 
@@ -6186,16 +6227,16 @@ async function fetchExistingLogos(forceRefresh = false) {
       document.getElementById('overlayText').innerText = "Processing Booth Setup...";
       ov.style.display = 'flex';
 
-      let bgData = null;
-      const bgFile = document.getElementById('boothBgFile').files[0];
-      if (bgFile) bgData = await readFileAsBase64(bgFile);
+      // Use the canvas-optimized version if the user picked a new file; otherwise keep null
+      const bgData = optimizedBgData || null;
       
       const logoOnMain = document.getElementById('boothLogoOnMain').checked;
       const enableCommunity = document.getElementById('boothEnableCommunity').checked;
 
       const payload = {
           action: actionName, eventId, folderName, eventName, boothCount,
-          bgData, logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
+          bgData, existingBgId: bgData ? null : currentBoothBgId,
+          logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
           fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
           templates: boothTemplates,
