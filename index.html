@@ -7128,7 +7128,6 @@ function renderEgmComputation() {
     // STRICT RULE: Only includes events with a 'Paid' Billing Status.
     const seenEventIds = new Set();
     let totalA = 0;
-    let htmlTotalABreakdown = ''; // 🟢 NEW: Stores the breakdown rows
 
     rawEvents.forEach(e => {
         if (seenEventIds.has(e['Event ID'])) return;
@@ -7178,6 +7177,7 @@ function renderEgmComputation() {
     let tA_Edgar = 0, tA_Francis = 0, tA_Tina = 0, tA_Grace = 0;
     let t6_TranspoSum = 0;
     let htmlT6 = '';
+    let htmlTotalABreakdown = ''; // 🟢 NEW: Stores the correct breakdown rows
     const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2});
 
     rawEvents.forEach(ev => {
@@ -7201,10 +7201,25 @@ function renderEgmComputation() {
         const photoGroup = photo + photoQR + frameToken + photoStudio;
         const vidOther   = doc + high + vstudio;
 
-        tA_Edgar   += photoGroup * 0.40;
-        tA_Francis += photoGroup * 0.30 + sde / 3;
-        tA_Tina    += photoGroup * 0.20 + sde / 3;
-        tA_Grace   += photoGroup * 0.10 + sde / 3 + vidOther;
+        const tA_edgar_row   = photoGroup * 0.40;
+        const tA_francis_row = photoGroup * 0.30 + sde / 3;
+        const tA_tina_row    = photoGroup * 0.20 + sde / 3;
+        const tA_grace_row   = photoGroup * 0.10 + sde / 3 + vidOther;
+        const tA_row_total   = tA_edgar_row + tA_francis_row + tA_tina_row + tA_grace_row;
+
+        tA_Edgar   += tA_edgar_row;
+        tA_Francis += tA_francis_row;
+        tA_Tina    += tA_tina_row;
+        tA_Grace   += tA_grace_row;
+
+        // 🟢 NEW: Build the breakdown row
+        if (tA_row_total > 0) {
+            htmlTotalABreakdown += `<tr>
+                <td class="fw-bold text-dark">${ev['Event Name']}</td>
+                <td><span class="badge bg-light text-dark border">${ev['Payment Type'] || 'N/A'}</span></td>
+                <td class="text-end fw-bold text-success">₱${tA_row_total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            </tr>`;
+        }
 
         if (transpo > 0) {
             t6_TranspoSum += transpo;
@@ -7268,7 +7283,7 @@ function renderEgmComputation() {
                     ${htmlTotalABreakdown || '<tr><td colspan="3" class="text-center text-muted py-3 fst-italic">No qualifying sales in for this period</td></tr>'}
                     <tr class="bg-success bg-opacity-10 fw-bold">
                         <td colspan="2" class="text-start py-2 text-dark">TOTAL SALES IN</td>
-                        <td class="text-end text-success py-2">₱${totalA.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td class="text-end text-success py-2">₱${tA_Total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     </tr>
                 </tbody>
             </table>
