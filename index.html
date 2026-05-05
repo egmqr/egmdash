@@ -574,8 +574,8 @@
         <li class="nav-item"><a class="nav-link" id="eq-tab" onclick="handleTabClick('editqueue')"><i class="bi bi-film me-1"></i> Editing Queue</a></li>
         <li class="nav-item"><a class="nav-link" id="ex-tab" onclick="handleTabClick('expenses')"><i class="bi bi-receipt me-1"></i> Expenses</a></li>
         <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
-        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), true)"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
-        <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), true)"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
+        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), 'upperadmin')"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
+        <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), 'upperadmin')"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
        <li class="nav-item"><a class="nav-link" id="bs-tab" onclick="requireAuth(() => handleTabClick('billingsales'), 'superadmin')"><i class="bi bi-shield-lock-fill" style="font-size:0.75rem;"></i></a></li>
       </ul>
       <div class="d-flex gap-2">
@@ -852,8 +852,10 @@
                       </div>
                   </div>
 
-                  <!-- Folder Name is auto-synced from Page Title; hidden from UI -->
-                  <input type="hidden" id="boothFolderName">
+                  <div class="mb-3">
+                      <label class="form-label-sm text-secondary">FOLDER NAME</label>
+                      <input type="text" id="boothFolderName" class="form-control form-control-sm fw-bold" placeholder="e.g. Smith Wedding" required>
+                  </div>
                   
                   <div class="mb-4 pb-4 border-bottom">
                       <label class="form-label-sm text-secondary">Number of Booths</label>
@@ -2568,7 +2570,7 @@ async function subscribeToNotifications() {
   }
 
   function getRoleValue(role) {
-      const roles = { 'superadmin': 3, 'admin': 2, 'editor': 1 };
+      const roles = { 'superadmin': 4, 'upperadmin': 3, 'admin': 2, 'editor': 1 };
       return roles[role] || 0; // 0 = non-admin/unauthenticated
   }
 
@@ -2707,7 +2709,7 @@ async function subscribeToNotifications() {
       
       const btnModeNew = document.getElementById('btnModeNew');
       if (btnModeNew) {
-          if (actVal >= 3) {
+          if (actVal >= 4) { // superadmin only: always show New Setup
               btnModeNew.style.display = 'block';
           } else if (currentBoothMode !== 'new') {
               btnModeNew.style.display = 'none';
@@ -2716,7 +2718,7 @@ async function subscribeToNotifications() {
     // 🟢 NEW: Show Sync Expenses button only for Superadmins
 const recomputeBtn = document.getElementById('prRecomputeBtn');
 if (recomputeBtn) {
-    recomputeBtn.style.display = (actVal >= 3) ? 'inline-block' : 'none';
+    recomputeBtn.style.display = (actVal >= 4) ? 'inline-block' : 'none';
 }
   }
 
@@ -2950,7 +2952,7 @@ function handleAddCustomService(inputId, containerId) {
         if (statusSel) statusSel.innerHTML = '<option value="Pending Invoice">Pending Invoice</option><option value="Invoice Uploaded">Invoice Uploaded</option><option value="GR Pending">GR Pending</option><option value="GR Received">GR Received</option><option value="GR Processed">GR Processed</option><option value="Payment released">Payment released</option>';
         
         // THE FIX: Only show "No Withheld" if the user is an Admin or Superadmin
-        if (noWithheldWrapper && (role === 'admin' || role === 'superadmin')) {
+        if (noWithheldWrapper && (role === 'admin' || role === 'upperadmin' || role === 'superadmin')) {
             noWithheldWrapper.style.display = 'block';
         }
     }
@@ -2989,7 +2991,7 @@ function handleAddCustomService(inputId, containerId) {
         const amtInput = container.querySelector(`input[name="${amtName}"]`);
         
         if (amtInput) {
-            const canSee = cb.checked && (role === 'superadmin' || (role === 'admin' && pType !== 'Billing'));
+            const canSee = cb.checked && (role === 'superadmin' || ((role === 'admin' || role === 'upperadmin') && pType !== 'Billing'));
             if (canSee) {
                 amtInput.style.setProperty('display', 'block', 'important');
             } else {
@@ -4114,8 +4116,8 @@ async function uploadAndScanInvoice(prefix) {
   }
 
   function handleTabClick(tabName) {
-    if (tabName === 'payments') requireAuth(() => switchTab('payments'), 'admin'); 
-    else if (tabName === 'payroll') requireAuth(() => switchTab('payroll'), 'admin'); 
+    if (tabName === 'payments') requireAuth(() => switchTab('payments'), 'upperadmin'); 
+    else if (tabName === 'payroll') requireAuth(() => switchTab('payroll'), 'upperadmin'); 
     else if (tabName === 'billingsales') requireAuth(() => switchTab('billingsales'), 'superadmin'); // NEW
     else if (tabName === 'booth') switchTab('booth'); 
     else switchTab(tabName); 
@@ -5561,8 +5563,7 @@ async function uploadAndScanInvoice(prefix) {
       
       document.getElementById('boothFontColor').value = "#ffffff"; document.getElementById('boothFontColorPicker').value = "#ffffff"; 
       document.getElementById('boothBgColor').value = "#000000"; document.getElementById('boothBgColorPicker').value = "#000000"; 
-      document.getElementById('boothBgFile').value = ""; document.getElementById('boothBgFileName').innerText = "No file chosen";
-      currentBoothBgId = null; 
+      document.getElementById('boothBgFile').value = ""; document.getElementById('boothBgFileName').innerText = "No file chosen"; 
       document.getElementById('boothLogoFile').value = ""; document.getElementById('boothLogoFileName').innerText = "No file chosen";
       
       document.getElementById('boothBgPreviewContainer').style.display = "none";
@@ -5718,9 +5719,6 @@ async function uploadAndScanInvoice(prefix) {
       }
   }
 
-  // Tracks the bgId already saved on the server — retained when no new file is chosen
-  let currentBoothBgId = null;
-
   function updateBoothFileName(inputId, textId) {
       const fileInput = document.getElementById(inputId);
       const textSpan = document.getElementById(textId);
@@ -5731,37 +5729,6 @@ async function uploadAndScanInvoice(prefix) {
           textSpan.innerText = "No file chosen";
           textSpan.style.color = "#64748b";
       }
-  }
-
-  // Awaitable helper: optimizes bg image at save-time (not pick-time) to avoid race conditions
-  function optimizeBgFile(file) {
-      return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-              const img = new Image();
-              img.onload = () => {
-                  const MAX_W = 1800, MAX_H = 1200;
-                  let w = img.width, h = img.height;
-                  if (w > MAX_W || h > MAX_H) {
-                      const ratio = Math.min(MAX_W / w, MAX_H / h);
-                      w = Math.round(w * ratio);
-                      h = Math.round(h * ratio);
-                  }
-                  const canvas = document.createElement('canvas');
-                  canvas.width = w; canvas.height = h;
-                  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                  const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                  const kb = Math.round((dataUrl.length * 3 / 4) / 1024);
-                  document.getElementById('boothBgFileName').innerText =
-                      file.name + ' -> ' + w + 'x' + h + ' (~' + kb + 'KB)';
-                  resolve(dataUrl.split(',')[1]);
-              };
-              img.onerror = reject;
-              img.src = e.target.result;
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-      });
   }
 
   async function fetchBoothEvents(forceRefresh = false) {
@@ -5910,13 +5877,6 @@ async function uploadAndScanInvoice(prefix) {
               document.getElementById('boothFontColor').value = loadedFontColor; document.getElementById('boothFontColorPicker').value = loadedFontColor;
               document.getElementById('boothBgColor').value = loadedBgColor; document.getElementById('boothBgColorPicker').value = loadedBgColor;
               
-              // Retain existing asset IDs — used in the payload when no new file is chosen
-              currentBoothBgId = details.bgId || null;
-              selectedExistingLogoId = details.logoId || "";
-              // qrLogoId follows the naming convention: baseName_qr_whitebg
-              selectedExistingQrLogoId = details.logoId
-                  ? details.logoId.replace('_transparent', '_qr_whitebg')
-                  : "";
               if (details.bgId) {
                   document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.png`;
                   document.getElementById('boothBgPreviewContainer').style.display = "flex";
@@ -6217,10 +6177,8 @@ async function fetchExistingLogos(forceRefresh = false) {
       }
       
       // 🟢 Updated validation to stop checking the empty booth count
-      // Auto-sync folderName from eventName (field is now hidden)
-      if (!folderName) document.getElementById('boothFolderName').value = eventName;
-      if (!eventName || !eventId) {
-          egmAlert("Required fields missing! Ensure the Page Title is set.");
+      if (!folderName || !eventName || !eventId) {
+          egmAlert("Required fields missing! Ensure the Page Title and Folder Name are set.");
           return;
       }
 
@@ -6228,21 +6186,16 @@ async function fetchExistingLogos(forceRefresh = false) {
       document.getElementById('overlayText').innerText = "Processing Booth Setup...";
       ov.style.display = 'flex';
 
-      // Optimize bg image at save-time (awaited so the canvas result is always ready)
-      const bgFile = document.getElementById('boothBgFile').files[0];
       let bgData = null;
-      if (bgFile) {
-          try { bgData = await optimizeBgFile(bgFile); }
-          catch (e) { bgData = await readFileAsBase64(bgFile); } // fallback to raw
-      }
+      const bgFile = document.getElementById('boothBgFile').files[0];
+      if (bgFile) bgData = await readFileAsBase64(bgFile);
       
       const logoOnMain = document.getElementById('boothLogoOnMain').checked;
       const enableCommunity = document.getElementById('boothEnableCommunity').checked;
 
       const payload = {
           action: actionName, eventId, folderName, eventName, boothCount,
-          bgData, existingBgId: bgData ? null : currentBoothBgId,
-          logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
+          bgData, logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
           fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
           templates: boothTemplates,
@@ -6371,7 +6324,7 @@ window.onload = () => {
               const currentUrlTab = urlParams.get('tab');
               
               // If the URL says payments or payroll, and they don't have a valid Admin session, redirect!
-              if ((currentUrlTab === 'payments' || currentUrlTab === 'payroll') && (role !== 'admin' || isExpired)) {
+              if ((currentUrlTab === 'payments' || currentUrlTab === 'payroll') && (!role || isExpired || getRoleValue(role) < getRoleValue('upperadmin'))) {
                   window.location.href = "https://dashboard.createdbyegm.com/?tab=events";
               }
           });
@@ -7745,7 +7698,7 @@ function renderExpenseQueue() {
     if (!banner || !tbody) return;
 
     const role = getUserRole();
-    if (role !== 'admin' && role !== 'superadmin') {
+    if (role !== 'admin' && role !== 'upperadmin' && role !== 'superadmin') {
         banner.style.setProperty('display', 'none', 'important');
         enableCompute();
         return;
