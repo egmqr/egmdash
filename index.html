@@ -7185,8 +7185,11 @@ function renderEgmComputation() {
         if (ev['Event Status'] === 'Cancelled' || ev['Event Status'] === 'Pencil Booked') return;
         if (!ev['Event Date'] || ev['Event Date'] < start || ev['Event Date'] > end) return;
         
-        // 🟢 NEW: Exclude 'Billing' events from the Sales In distribution
+        // Exclude 'Billing' events from the Sales In distribution
         if (ev['Payment Type'] === 'Billing') return;
+
+        // 🟢 NEW: Only include events that are actually marked as 'Paid'
+        if (ev['Billing Status'] !== 'Paid') return;
 
         let amts = {};
         try { amts = JSON.parse(ev['Service Amounts JSON'] || '{}'); } catch(ex) {}
