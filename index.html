@@ -5562,7 +5562,7 @@ async function uploadAndScanInvoice(prefix) {
       document.getElementById('boothFontColor').value = "#ffffff"; document.getElementById('boothFontColorPicker').value = "#ffffff"; 
       document.getElementById('boothBgColor').value = "#000000"; document.getElementById('boothBgColorPicker').value = "#000000"; 
       document.getElementById('boothBgFile').value = ""; document.getElementById('boothBgFileName').innerText = "No file chosen";
-      currentBoothBgId = null; optimizedBgData = null; 
+      currentBoothBgId = null; 
       document.getElementById('boothLogoFile').value = ""; document.getElementById('boothLogoFileName').innerText = "No file chosen";
       
       document.getElementById('boothBgPreviewContainer').style.display = "none";
@@ -5718,53 +5718,50 @@ async function uploadAndScanInvoice(prefix) {
       }
   }
 
-  // Tracks the bgId already saved on the server so we can retain it when no new file is chosen
+  // Tracks the bgId already saved on the server — retained when no new file is chosen
   let currentBoothBgId = null;
-  // Holds the optimized base64 for the bg image, populated on file pick
-  let optimizedBgData = null;
 
   function updateBoothFileName(inputId, textId) {
       const fileInput = document.getElementById(inputId);
       const textSpan = document.getElementById(textId);
       if (fileInput.files.length > 0) {
-          const file = fileInput.files[0];
-
-          // Optimize background image: cap at 1800x1200 and compress to JPEG <=80%
-          if (inputId === 'boothBgFile') {
-              optimizedBgData = null;
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                  const img = new Image();
-                  img.onload = () => {
-                      const MAX_W = 1800, MAX_H = 1200;
-                      let w = img.width, h = img.height;
-                      if (w > MAX_W || h > MAX_H) {
-                          const ratio = Math.min(MAX_W / w, MAX_H / h);
-                          w = Math.round(w * ratio);
-                          h = Math.round(h * ratio);
-                      }
-                      const canvas = document.createElement('canvas');
-                      canvas.width = w; canvas.height = h;
-                      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                      optimizedBgData = dataUrl.split(',')[1];
-                      const kb = Math.round((optimizedBgData.length * 3 / 4) / 1024);
-                      textSpan.innerText = file.name + ' -> optimized ' + w + 'x' + h + ' (~' + kb + 'KB)';
-                      textSpan.style.color = "var(--bs-primary)";
-                  };
-                  img.src = e.target.result;
-              };
-              reader.readAsDataURL(file);
-              textSpan.innerText = 'Optimizing...';
-              textSpan.style.color = '#64748b';
-          } else {
-              textSpan.innerText = file.name;
-              textSpan.style.color = "var(--bs-primary)";
-          }
+          textSpan.innerText = fileInput.files[0].name;
+          textSpan.style.color = "var(--bs-primary)";
       } else {
           textSpan.innerText = "No file chosen";
           textSpan.style.color = "#64748b";
       }
+  }
+
+  // Awaitable helper: optimizes bg image at save-time (not pick-time) to avoid race conditions
+  function optimizeBgFile(file) {
+      return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+              const img = new Image();
+              img.onload = () => {
+                  const MAX_W = 1800, MAX_H = 1200;
+                  let w = img.width, h = img.height;
+                  if (w > MAX_W || h > MAX_H) {
+                      const ratio = Math.min(MAX_W / w, MAX_H / h);
+                      w = Math.round(w * ratio);
+                      h = Math.round(h * ratio);
+                  }
+                  const canvas = document.createElement('canvas');
+                  canvas.width = w; canvas.height = h;
+                  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                  const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                  const kb = Math.round((dataUrl.length * 3 / 4) / 1024);
+                  document.getElementById('boothBgFileName').innerText =
+                      file.name + ' -> ' + w + 'x' + h + ' (~' + kb + 'KB)';
+                  resolve(dataUrl.split(',')[1]);
+              };
+              img.onerror = reject;
+              img.src = e.target.result;
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+      });
   }
 
   async function fetchBoothEvents(forceRefresh = false) {
@@ -5915,7 +5912,6 @@ async function uploadAndScanInvoice(prefix) {
               
               // Track existing bgId so a save with no new file retains the current background
               currentBoothBgId = details.bgId || null;
-              optimizedBgData = null;
               if (details.bgId) {
                   document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.png`;
                   document.getElementById('boothBgPreviewContainer').style.display = "flex";
@@ -6227,8 +6223,13 @@ async function fetchExistingLogos(forceRefresh = false) {
       document.getElementById('overlayText').innerText = "Processing Booth Setup...";
       ov.style.display = 'flex';
 
-      // Use the canvas-optimized version if the user picked a new file; otherwise keep null
-      const bgData = optimizedBgData || null;
+      // Optimize bg image at save-time (awaited so the canvas result is always ready)
+      const bgFile = document.getElementById('boothBgFile').files[0];
+      let bgData = null;
+      if (bgFile) {
+          try { bgData = await optimizeBgFile(bgFile); }
+          catch (e) { bgData = await readFileAsBase64(bgFile); } // fallback to raw
+      }
       
       const logoOnMain = document.getElementById('boothLogoOnMain').checked;
       const enableCommunity = document.getElementById('boothEnableCommunity').checked;
