@@ -7128,6 +7128,7 @@ function renderEgmComputation() {
     // STRICT RULE: Only includes events with a 'Paid' Billing Status.
     const seenEventIds = new Set();
     let totalA = 0;
+    let htmlTotalABreakdown = ''; // 🟢 NEW: Stores the breakdown rows
 
     rawEvents.forEach(e => {
         if (seenEventIds.has(e['Event ID'])) return;
@@ -7149,6 +7150,13 @@ function renderEgmComputation() {
             if (amt > 0) {
                 seenEventIds.add(e['Event ID']);
                 totalA += amt;
+                
+                // 🟢 NEW: Build the breakdown row for this event
+                htmlTotalABreakdown += `<tr>
+                    <td class="fw-bold text-dark">${e['Event Name']}</td>
+                    <td><span class="badge bg-light text-dark border">${pType}</span></td>
+                    <td class="text-end fw-bold text-success">₱${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                </tr>`;
             }
         }
     });
@@ -7246,7 +7254,28 @@ function renderEgmComputation() {
             </div>
         </div>
 
-        <div class="table-responsive">
+        <h6 class="fw-bold text-dark mt-4 mb-2" style="font-size: 0.85rem;">Total A Breakdown (Sales In)</h6>
+        <div class="table-responsive border rounded-3 mb-4 shadow-sm">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                <thead class="bg-light text-secondary">
+                    <tr>
+                        <th class="py-2 border-0">Event Name</th>
+                        <th class="py-2 border-0">Payment Type</th>
+                        <th class="py-2 text-end border-0">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${htmlTotalABreakdown || '<tr><td colspan="3" class="text-center text-muted py-3 fst-italic">No qualifying sales in for this period</td></tr>'}
+                    <tr class="bg-success bg-opacity-10 fw-bold">
+                        <td colspan="2" class="text-start py-2 text-dark">TOTAL SALES IN</td>
+                        <td class="text-end text-success py-2">₱${totalA.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h6 class="fw-bold text-dark mt-2 mb-2" style="font-size: 0.85rem;">AR Sales Distribution</h6>
+        <div class="table-responsive border rounded-3 shadow-sm">
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light">
                     <tr>
