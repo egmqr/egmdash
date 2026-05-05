@@ -6133,7 +6133,8 @@ async function fetchExistingLogos(forceRefresh = false) {
           return;
       }
       let html = '';
-      logos.filter(logo => logo.id && logo.id.trim() !== '').forEach(logo => {
+      // 👇 NEW: Added a check to hide 'egm_fav copy'
+      logos.filter(logo => logo.id && logo.id.trim() !== '' && !logo.id.includes('egm_fav copy')).forEach(logo => {
           html += `<img src="${logo.url}" class="logo-gallery-item" title="${logo.name}" onclick="selectExistingLogo('${logo.id}', '${logo.qrId}', this)">`;
       });
       container.innerHTML = html;
