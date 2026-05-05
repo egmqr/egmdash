@@ -5910,8 +5910,13 @@ async function uploadAndScanInvoice(prefix) {
               document.getElementById('boothFontColor').value = loadedFontColor; document.getElementById('boothFontColorPicker').value = loadedFontColor;
               document.getElementById('boothBgColor').value = loadedBgColor; document.getElementById('boothBgColorPicker').value = loadedBgColor;
               
-              // Track existing bgId so a save with no new file retains the current background
+              // Retain existing asset IDs — used in the payload when no new file is chosen
               currentBoothBgId = details.bgId || null;
+              selectedExistingLogoId = details.logoId || "";
+              // qrLogoId follows the naming convention: baseName_qr_whitebg
+              selectedExistingQrLogoId = details.logoId
+                  ? details.logoId.replace('_transparent', '_qr_whitebg')
+                  : "";
               if (details.bgId) {
                   document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.png`;
                   document.getElementById('boothBgPreviewContainer').style.display = "flex";
