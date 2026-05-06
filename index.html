@@ -143,6 +143,13 @@
     .badge-teal { background-color: #ccfbf1; color: #0f766e; font-weight: 600; border: 1px solid #99f6e4; }
     .badge-avp { background-color: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; font-size: 0.7rem; vertical-align: middle; margin-left: 5px; }
 
+    /* Action Required Banner */
+    .alert-action-required { background-color: #fef8ec; border: 1px solid #f4d99a; color: #78450a; border-radius: 12px; }
+    .alert-action-required h6 { color: #78450a; }
+    .alert-action-required .small { color: #92580e; }
+    .btn-action-required { background-color: #e8a030; border-color: #e8a030; color: #fff; border-radius: 8px; font-weight: 700; letter-spacing: 0.3px; }
+    .btn-action-required:hover { background-color: #d08c20; border-color: #d08c20; color: #fff; }
+
     .nav-pills { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; gap: 8px; padding-bottom: 5px; border-bottom: none; }
     .nav-pills::-webkit-scrollbar { display: none; }
     .nav-pills .nav-link { white-space: nowrap; border-radius: 20px; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 6px 18px; font-weight: 600; color: #64748b; font-size: 0.85rem; cursor: pointer; transition: 0.2s;}
@@ -431,6 +438,14 @@
     .dark-mode .badge-soft-success { background-color: #0f3528; color: #86efac; border-color: #1a5238; }
     .dark-mode .badge-soft-warning { background-color: #3d2608; color: #fcd57a; border-color: #5a3a10; }
     .dark-mode .badge-soft-danger { background-color: #2e0f0f; color: #fca5a5; border-color: #4a1a1a; }
+
+    /* Dark mode: Action Required Banner */
+    .dark-mode .alert-action-required { background-color: #231a08; border-color: #5a3e10; color: #fcd57a; }
+    .dark-mode .alert-action-required h6 { color: #fcd57a; }
+    .dark-mode .alert-action-required .small { color: #c9a44a; }
+    .dark-mode .alert-action-required i { color: #f4a946 !important; }
+    .dark-mode .btn-action-required { background-color: #8a5e20; border-color: #8a5e20; color: #fde8c4; }
+    .dark-mode .btn-action-required:hover { background-color: #9e6d28; border-color: #9e6d28; color: #fff; }
     .dark-mode .badge-apple-green { background-color: #1a3d1a; color: #bbf7d0; border-color: #234f23; }
     .dark-mode .badge-go-green { background-color: #166534; color: #dcfce7; border-color: #15803d; }
     .dark-mode .badge-orange { background-color: #3d1a08; color: #fdba74; border-color: #5a2a10; }
@@ -781,12 +796,12 @@
       </div>
 
       <div id="payroll-view" style="display:none;">
-        <div id="expenseApprovalBanner" style="display:none;" class="alert alert-warning shadow-sm border-warning border-opacity-50 flex-column flex-md-row justify-content-between align-items-md-center mb-4 mt-2">
+        <div id="expenseApprovalBanner" style="display:none;" class="alert alert-action-required shadow-sm flex-column flex-md-row justify-content-between align-items-md-center mb-4 mt-2">
               <div class="mb-2 mb-md-0">
-                  <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i> Action Required</h6>
-                  <span class="small text-dark">You have pending expenses in this cutoff waiting for approval.</span>
+                  <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2" style="color:#c97a10;"></i> Action Required</h6>
+                  <span class="small">You have pending expenses in this cutoff waiting for approval.</span>
               </div>
-              <button class="btn btn-warning btn-sm fw-bold shadow-sm text-dark px-3" onclick="openExpenseModal()">REVIEW EXPENSES</button>
+              <button class="btn btn-action-required btn-sm fw-bold px-3" onclick="openExpenseModal()">REVIEW EXPENSES</button>
           </div>
 
           <div class="modal fade" id="expenseApprovalModal" tabindex="-1">
