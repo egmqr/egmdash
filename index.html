@@ -129,7 +129,7 @@
     .form-control:focus, .form-select:focus { border-color: #0d9488; box-shadow: 0 0 0 0.25rem rgba(13, 148, 136, 0.1); }
     .edit-trigger:hover { color: #0d9488; }
     
-    .card { transition: all 0.3s ease; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); height: 100%; background: #ffffff; }
+    .card { transition: all 0.3s ease; border: 1px solid #e8edf3; border-radius: 16px; box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.06), 0 1px 3px -1px rgba(0, 0, 0, 0.04); height: 100%; background: #ffffff; }
     .leave-card { background-color: #fff1f2; border-color: #fecaca; }
 
     .badge-soft-dark { background-color: #f1f5f9; color: #475569; font-weight: 600; border: 1px solid #e2e8f0;}
@@ -297,113 +297,192 @@
     .logo-gallery-item:hover { border-color: #cbd5e1; transform: translateY(-2px);}
     .logo-gallery-item.selected { border-color: #0d9488; }
     
-    /* DARK MODE */
-    .dark-mode .submit-overlay { background: rgba(18, 18, 18, 0.9); }
-    .dark-mode .loader { background: #1e1e1e; border-color: #333333; }
-    .dark-mode #payrollModal .modal-body { background-color: #121212 !important; }
-    .dark-mode .list-group-item { background-color: #1e1e1e; border-color: #333333; color: #d1d5db; }
-.dark-mode .list-group-item:hover, .dark-mode .list-group-item-action:hover { background-color: #2b2b2b; color: #ffffff; }
-    .dark-mode .form-control:disabled, .dark-mode .form-select:disabled { background-color: #1a1a1a; opacity: 0.6; border-color: #333; }
-    body.dark-mode { background-color: #121212; color: #d1d5db; }
-    .dark-mode .card, .dark-mode .filter-panel, .dark-mode .calendar-container, .dark-mode .table-custom, .dark-mode .modal-content { background: #1e1e1e !important; border-color: #333333 !important; }
-    .dark-mode .sticky-header { background: rgba(18, 18, 18, 0.9); border-bottom-color: #333333; }
-    .dark-mode .sticky-date-header-container { background-color: #121212; }
-    .dark-mode .sticky-date-header { color: #f3f4f6 !important; border-bottom-color: #333333; }
-    .dark-mode .sticky-date-header h5 { color: #f3f4f6 !important; }
+    /* =============================================
+       MODERNIZED BUTTON COLORS — Pastel / Muted
+       ============================================= */
+
+    /* Primary (teal) — already good, slight softening */
+    .btn-primary { background-color: #0d9488; border-color: #0d9488; color: #fff; }
+    .btn-primary:hover { background-color: #0f766e; border-color: #0f766e; color: #fff; }
+    .btn-primary:disabled { background-color: #0d9488; border-color: #0d9488; opacity: 0.6; }
+
+    /* Danger — muted rose instead of fire-engine red */
+    .btn-danger { background-color: #e57373; border-color: #e57373; color: #fff; }
+    .btn-danger:hover { background-color: #ef5350; border-color: #ef5350; color: #fff; }
+    .btn-outline-danger { color: #e57373; border-color: #e57373; }
+    .btn-outline-danger:hover { background-color: #e57373; border-color: #e57373; color: #fff; }
+
+    /* Warning — soft amber instead of loud yellow */
+    .btn-warning { background-color: #f4a946; border-color: #f4a946; color: #fff; }
+    .btn-warning:hover { background-color: #e09633; border-color: #e09633; color: #fff; }
+    .btn-outline-warning { color: #c97a10; border-color: #f4a946; }
+    .btn-outline-warning:hover { background-color: #f4a946; border-color: #f4a946; color: #fff; }
+
+    /* Success — muted sage green */
+    .btn-success { background-color: #5a9e78; border-color: #5a9e78; color: #fff; }
+    .btn-success:hover { background-color: #4a8866; border-color: #4a8866; color: #fff; }
+    .btn-outline-success { color: #4a8866; border-color: #5a9e78; }
+    .btn-outline-success:hover { background-color: #5a9e78; border-color: #5a9e78; color: #fff; }
+
+    /* Info — soft slate-blue */
+    .btn-info { background-color: #7ea8c4; border-color: #7ea8c4; color: #fff; }
+    .btn-info:hover { background-color: #6594b2; border-color: #6594b2; color: #fff; }
+    .btn-outline-info { color: #5580a0; border-color: #7ea8c4; }
+    .btn-outline-info:hover { background-color: #7ea8c4; border-color: #7ea8c4; color: #fff; }
+
+    /* Secondary — cool slate */
+    .btn-secondary { background-color: #78909c; border-color: #78909c; color: #fff; }
+    .btn-secondary:hover { background-color: #607d8b; border-color: #607d8b; color: #fff; }
+
+    /* =============================================
+       DARK MODE
+       ============================================= */
+
+    /* --- Base --- */
+    body.dark-mode { background-color: #111318; color: #cbd5e1; }
+
+    /* --- Surfaces --- */
+    .dark-mode .card,
+    .dark-mode .filter-panel,
+    .dark-mode .calendar-container,
+    .dark-mode .table-custom { background: #1c1f26 !important; border-color: #2e3340 !important; }
+    .dark-mode .modal-content { background: #1c1f26 !important; border-color: #2e3340 !important; color: #cbd5e1 !important; }
+    .dark-mode .modal-body { background-color: #1c1f26 !important; color: #cbd5e1 !important; }
+    .dark-mode .modal-header { background-color: #161920 !important; border-bottom-color: #2e3340 !important; }
+    .dark-mode .modal-footer { background-color: #161920 !important; border-top-color: #2e3340 !important; }
+    .dark-mode #payrollModal .modal-body { background-color: #111318 !important; }
+
+    /* --- Overlays / Loaders --- */
+    .dark-mode .submit-overlay { background: rgba(10, 11, 15, 0.92); }
+    .dark-mode .loader { background: #1c1f26; border-color: #2e3340; color: #cbd5e1; }
+
+    /* --- Sticky headers --- */
+    .dark-mode .sticky-header { background: rgba(17, 19, 24, 0.92); border-bottom-color: #2e3340; }
+    .dark-mode .sticky-date-header-container { background-color: #111318; }
+    .dark-mode .sticky-date-header { color: #e2e8f0 !important; border-bottom-color: #2e3340; }
+    .dark-mode .sticky-date-header h5 { color: #e2e8f0 !important; }
     .dark-mode .sticky-date-header-container.is-pinned .sticky-date-header { background-color: #0d9488; color: #fff !important; }
 
-    .dark-mode .nav-pills .nav-link { background: #2b2b2b; border-color: #333333; color: #9ca3af; }
-    .dark-mode .nav-pills .nav-link.active { background: #0d9488; color: white; border-color: #0d9488; box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3); }
-    .dark-mode .btn-light { background-color: #2b2b2b; border-color: #444444 !important; color: #d1d5db; }
-    .dark-mode .btn-light:hover { background-color: #444444; color: #ffffff; }
-    .dark-mode .card h5 { color: #ffffff !important; }
-    .dark-mode .text-dark { color: #ffffff !important; }
-    .dark-mode .text-secondary { color: #9ca3af !important; }
-    .dark-mode .text-muted { color: #6b7280 !important; }
-    .dark-mode .bg-light { background-color: #2b2b2b !important; }
-    .dark-mode .bg-white { background-color: #1e1e1e !important; }
-    .dark-mode .border, .dark-mode .border-bottom { border-color: #333333 !important; }
-    .dark-mode .leave-card { background-color: #2c1313 !important; border-color: #5c2020 !important; }
-    .dark-mode .file-badge { background-color: #121212; color: #d1d5db; border-color: #333333; }
-    .dark-mode .form-control, .dark-mode .form-select { background-color: #121212; border-color: #333333; color: #f3f4f6; }
-    .dark-mode .form-control:focus, .dark-mode .form-select:focus { background-color: #121212; color: #f3f4f6; border-color: #0d9488;}
-    .dark-mode ::placeholder { color: #6b7280 !important; }
-    .dark-mode .input-group-text { background-color: #2b2b2b !important; border-color: #333333 !important; color: #d1d5db !important; }
-    .dark-mode .form-label-sm { color: #9ca3af; }
-    .dark-mode .modal-header.bg-light { background-color: #1e1e1e !important; border-bottom-color: #333333 !important; }
-    .dark-mode .modal-header .text-secondary { color: #f3f4f6 !important; }
+    /* --- Nav pills --- */
+    .dark-mode .nav-pills .nav-link { background: #252831; border-color: #2e3340; color: #94a3b8; }
+    .dark-mode .nav-pills .nav-link:hover { background: #2e3340; color: #cbd5e1; }
+    .dark-mode .nav-pills .nav-link.active { background: #0d9488; color: #fff; border-color: #0d9488; box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3); }
+
+    /* --- Buttons --- */
+    .dark-mode .btn-light { background-color: #252831; border-color: #3a3f4d !important; color: #cbd5e1; }
+    .dark-mode .btn-light:hover { background-color: #2e3340; color: #f1f5f9; }
     .dark-mode .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
-    .dark-mode .badge-soft-dark { background-color: #333333; color: #d1d5db; border-color: #444444;}
-    .dark-mode .badge-soft-success { background-color: #064e3b; color: #a7f3d0; border-color: #065f46; }
-    .dark-mode .badge-soft-warning { background-color: #78350f; color: #fed7aa; border-color: #92400e; }
-    .dark-mode .badge-apple-green { background-color: #14532d; color: #d9f99d; border-color: #166534; }
-    .dark-mode .badge-orange { background-color: #7c2d12; color: #fdba74; border-color: #9a3412; }
-    .dark-mode .badge-yellow { background-color: #713f12; color: #fef08a; border-color: #854d0e; }
-    .dark-mode .badge-teal { background-color: #134e4a; color: #5eead4; border-color: #115e59; }
-    .dark-mode .badge-avp { background-color: #2e1065; color: #ddd6fe; border-color: #4c1d95; }
-    .dark-mode .badge.bg-light.text-dark { background-color: #2b2b2b !important; color: #f3f4f6 !important; border-color: #444444 !important; }
-    .dark-mode .badge.bg-white { background-color: #121212 !important; }
-    .dark-mode .table, .dark-mode .table th, .dark-mode .table td { background-color: transparent !important; color: #d1d5db !important; border-bottom-color: #333333 !important; }
-    .dark-mode .table-hover tbody tr:hover td { background-color: #2b2b2b !important; color: #f3f4f6 !important; }
-    .dark-mode .calendar-header-row { background-color: #121212; border-bottom-color: #333333; }
-    .dark-mode .calendar-header-cell { border-right-color: #1e1e1e; }
-    .dark-mode .calendar-grid { background: #333333; }
-    .dark-mode .calendar-day { background: #1e1e1e; }
-    .dark-mode .calendar-day:hover { background-color: #2b2b2b; }
-    .dark-mode .calendar-day.empty { background: #121212; }
-    .dark-mode .calendar-day.today { background: #134e4a; } 
-    .dark-mode .date-number { color: #9ca3af; }
-    /* --- DARK MODE CARD STATUS OVERRIDES --- */
-    .dark-mode .card-cancelled {
-        border-color: rgba(220, 53, 69, 0.5) !important;
-        background-color: rgba(220, 53, 69, 0.05) !important; /* Adds a super subtle dark-red tint */
-    }
-    .dark-mode .stamp-cancelled {
-        color: rgba(220, 53, 69, 0.25); /* Dims the stamp so it doesn't neon-burn the screen */
-        border-color: rgba(220, 53, 69, 0.25);
-    }
 
-    .dark-mode .card-pencil {
-        border-color: rgba(108, 117, 125, 0.4) !important;
-        background-color: #121212 !important; /* Sinks it deeper into the background than standard cards (#1e1e1e) */
-        opacity: 0.75;
-        filter: grayscale(50%) brightness(0.8);
-    }
-    .dark-mode .stamp-pencil {
-        color: rgba(156, 163, 175, 0.2); 
-        border-color: rgba(156, 163, 175, 0.2);
-    }
+    /* Dark mode muted button overrides */
+    .dark-mode .btn-danger { background-color: #9b4a4a; border-color: #9b4a4a; color: #fde8e8; }
+    .dark-mode .btn-danger:hover { background-color: #b05252; border-color: #b05252; color: #fff; }
+    .dark-mode .btn-outline-danger { color: #f08080; border-color: #9b4a4a; }
+    .dark-mode .btn-outline-danger:hover { background-color: #9b4a4a; border-color: #9b4a4a; color: #fde8e8; }
+    .dark-mode .btn-warning { background-color: #8a5e20; border-color: #8a5e20; color: #fde8c4; }
+    .dark-mode .btn-warning:hover { background-color: #9e6d28; border-color: #9e6d28; color: #fff; }
+    .dark-mode .btn-success { background-color: #2e6648; border-color: #2e6648; color: #c6ecd8; }
+    .dark-mode .btn-success:hover { background-color: #3a7858; border-color: #3a7858; color: #fff; }
+    .dark-mode .btn-info { background-color: #355c78; border-color: #355c78; color: #c4dded; }
+    .dark-mode .btn-info:hover { background-color: #406e8e; border-color: #406e8e; color: #fff; }
+    .dark-mode .btn-secondary { background-color: #3f4d55; border-color: #3f4d55; color: #cdd8dd; }
+    .dark-mode .btn-secondary:hover { background-color: #4d5d67; border-color: #4d5d67; }
 
-    .dark-mode .card-confirmed {
-        border-color: rgba(13, 148, 136, 0.5) !important;
-        background-color: rgba(13, 148, 136, 0.1) !important; /* Keeps the premium teal glow, but calibrated for dark screens */
-    }
-    /* --------------------------------------- */
-    /* Booth specific dark mode */
-    .dark-mode .booth-color-input-wrapper input[type="color"] { border-color: #333333; }
-    .dark-mode .booth-file-btn { background-color: #2b2b2b; color: #d1d5db; border-color: #444444; }
-    .dark-mode .booth-file-btn:hover { background-color: #444444; }
-    .dark-mode .booth-file-name { color: #9ca3af; }
-    .dark-mode .booth-card { background-color: #1e1e1e; border-color: #333333; }
-    .dark-mode .booth-card h5 { border-bottom-color: #333333; color: #ffffff !important; }
-    .dark-mode .booth-link-row { color: #9ca3af; }
-    .dark-mode .booth-mini-btn { background-color: #2b2b2b; color: #d1d5db; border-color: #444444; }
-    .dark-mode .booth-mini-btn:hover { background-color: #444444; }
-    .dark-mode .logo-gallery-item { background: #333; }
+    /* --- Typography --- */
+    .dark-mode .card h5 { color: #f1f5f9 !important; }
+    .dark-mode h1, .dark-mode h2, .dark-mode h3, .dark-mode h4, .dark-mode h5, .dark-mode h6 { color: #e2e8f0; }
+    .dark-mode .text-dark { color: #e2e8f0 !important; }
+    .dark-mode .text-secondary { color: #94a3b8 !important; }
+    .dark-mode .text-muted { color: #6b7a94 !important; }
+    .dark-mode p, .dark-mode span, .dark-mode label, .dark-mode small { color: inherit; }
+    .dark-mode .modal-header .text-secondary { color: #cbd5e1 !important; }
+    .dark-mode .modal-header .fw-bold { color: #f1f5f9 !important; }
+    .dark-mode .modal-body p, .dark-mode .modal-body span, .dark-mode .modal-body label { color: #cbd5e1; }
+    .dark-mode .modal-body .text-secondary { color: #94a3b8 !important; }
+    .dark-mode .form-label-sm { color: #94a3b8; }
+
+    /* --- Backgrounds --- */
+    .dark-mode .bg-light { background-color: #252831 !important; }
+    .dark-mode .bg-white { background-color: #1c1f26 !important; }
+    .dark-mode .modal-header.bg-light { background-color: #161920 !important; border-bottom-color: #2e3340 !important; }
+
+    /* --- Borders --- */
+    .dark-mode .border, .dark-mode .border-bottom { border-color: #2e3340 !important; }
+
+    /* --- Forms --- */
+    .dark-mode .form-control, .dark-mode .form-select { background-color: #161920; border-color: #2e3340; color: #e2e8f0; }
+    .dark-mode .form-control:focus, .dark-mode .form-select:focus { background-color: #161920; color: #f1f5f9; border-color: #0d9488; box-shadow: 0 0 0 0.2rem rgba(13,148,136,0.18); }
+    .dark-mode .form-control:disabled, .dark-mode .form-select:disabled { background-color: #131619; opacity: 0.55; border-color: #2e3340; color: #64748b; }
+    .dark-mode ::placeholder { color: #4b5668 !important; }
+    .dark-mode .input-group-text { background-color: #252831 !important; border-color: #2e3340 !important; color: #94a3b8 !important; }
+    .dark-mode .form-check-input { background-color: #1c1f26; border-color: #3a3f4d; }
+    .dark-mode .form-check-input:checked { background-color: #0d9488; border-color: #0d9488; }
+
+    /* --- List groups --- */
+    .dark-mode .list-group-item { background-color: #1c1f26; border-color: #2e3340; color: #cbd5e1; }
+    .dark-mode .list-group-item:hover, .dark-mode .list-group-item-action:hover { background-color: #252831; color: #f1f5f9; }
+
+    /* --- Cards: leave & status --- */
+    .dark-mode .leave-card { background-color: #271818 !important; border-color: #4a2222 !important; }
+    .dark-mode .file-badge { background-color: #161920; color: #cbd5e1; border-color: #2e3340; }
+
+    /* --- Badges --- */
+    .dark-mode .badge-soft-dark { background-color: #252831; color: #cbd5e1; border-color: #3a3f4d; }
+    .dark-mode .badge-soft-success { background-color: #0f3528; color: #86efac; border-color: #1a5238; }
+    .dark-mode .badge-soft-warning { background-color: #3d2608; color: #fcd57a; border-color: #5a3a10; }
+    .dark-mode .badge-apple-green { background-color: #1a3d1a; color: #bbf7d0; border-color: #234f23; }
+    .dark-mode .badge-go-green { background-color: #166534; color: #dcfce7; border-color: #15803d; }
+    .dark-mode .badge-orange { background-color: #3d1a08; color: #fdba74; border-color: #5a2a10; }
+    .dark-mode .badge-yellow { background-color: #3a2008; color: #fef08a; border-color: #56320e; }
+    .dark-mode .badge-teal { background-color: #0d2e2b; color: #5eead4; border-color: #134e4a; }
+    .dark-mode .badge-avp { background-color: #1e1035; color: #c4b5fd; border-color: #3b1d6e; }
+    .dark-mode .badge.bg-light.text-dark { background-color: #252831 !important; color: #e2e8f0 !important; border-color: #3a3f4d !important; }
+    .dark-mode .badge.bg-white { background-color: #1c1f26 !important; color: #cbd5e1 !important; }
+
+    /* --- Tables --- */
+    .dark-mode .table, .dark-mode .table th, .dark-mode .table td { background-color: transparent !important; color: #cbd5e1 !important; border-bottom-color: #2e3340 !important; }
+    .dark-mode .table th { background-color: #161920 !important; color: #94a3b8 !important; }
+    .dark-mode .table-hover tbody tr:hover td { background-color: #252831 !important; color: #f1f5f9 !important; }
+
+    /* --- Calendar --- */
+    .dark-mode .calendar-header-row { background-color: #161920; border-bottom-color: #2e3340; }
+    .dark-mode .calendar-header-cell { color: #64748b; border-right-color: #1c1f26; }
+    .dark-mode .calendar-grid { background: #2e3340; }
+    .dark-mode .calendar-day { background: #1c1f26; }
+    .dark-mode .calendar-day:hover { background-color: #252831; }
+    .dark-mode .calendar-day.empty { background: #131619; }
+    .dark-mode .calendar-day.today { background: #0d2e2b; }
+    .dark-mode .date-number { color: #94a3b8; }
+    .dark-mode .cal-status-pencil { background-color: #2a2f3d; color: #94a3b8; border-color: #3a3f4d; border-style: dashed; }
+
+    /* --- Card status stamps --- */
+    .dark-mode .card-cancelled { border-color: rgba(180, 60, 60, 0.45) !important; background-color: rgba(180, 60, 60, 0.06) !important; }
+    .dark-mode .stamp-cancelled { color: rgba(220, 53, 69, 0.22); border-color: rgba(220, 53, 69, 0.22); }
+    .dark-mode .card-pencil { border-color: rgba(108, 117, 125, 0.35) !important; background-color: #131619 !important; opacity: 0.75; filter: grayscale(50%) brightness(0.8); }
+    .dark-mode .stamp-pencil { color: rgba(156, 163, 175, 0.18); border-color: rgba(156, 163, 175, 0.18); }
+    .dark-mode .card-confirmed { border-color: rgba(13, 148, 136, 0.45) !important; background-color: rgba(13, 148, 136, 0.08) !important; }
+
+    /* --- Booth section --- */
+    .dark-mode .booth-color-input-wrapper input[type="color"] { border-color: #2e3340; }
+    .dark-mode .booth-file-btn { background-color: #252831; color: #cbd5e1; border-color: #3a3f4d; }
+    .dark-mode .booth-file-btn:hover { background-color: #2e3340; }
+    .dark-mode .booth-file-name { color: #94a3b8; }
+    .dark-mode .booth-card { background-color: #1c1f26; border-color: #2e3340; }
+    .dark-mode .booth-card h5 { border-bottom-color: #2e3340; color: #f1f5f9 !important; }
+    .dark-mode .booth-link-row { color: #94a3b8; }
+    .dark-mode .booth-mini-btn { background-color: #252831; color: #cbd5e1; border-color: #3a3f4d; }
+    .dark-mode .booth-mini-btn:hover { background-color: #2e3340; }
+    .dark-mode .logo-gallery-item { background: #2e3340; }
     .dark-mode .logo-gallery-item.selected { border-color: #0d9488; }
-    .dark-mode .cal-status-pencil { background-color: #374151; color: #9ca3af; border-color: #4b5563; border-style: dashed; }
-    /* --- CALENDAR LIGHTBOX FIXES --- */
-    
-    /* 1. Force the lightbox event card to be solid #E9F3F4 */
-    #eventCardModal .card {
-        background-color: #ffffff !important;
-        opacity: 1 !important;
-    }
-    /* --- DARK MODE: CALENDAR LIGHTBOX CARD --- */
-    .dark-mode #eventCardModal .card {
-        background-color: #000000 !important;
-        border-color: #333333 !important; /* Keeps the edges looking sharp against the backdrop */
-    }
+
+    /* --- Calendar lightbox event card --- */
+    #eventCardModal .card { background-color: #ffffff !important; opacity: 1 !important; color: #334155 !important; }
+    .dark-mode #eventCardModal .card { background-color: #1c1f26 !important; border-color: #2e3340 !important; color: #cbd5e1 !important; }
+    .dark-mode #eventCardModal .card h5,
+    .dark-mode #eventCardModal .card h6 { color: #f1f5f9 !important; }
+    .dark-mode #eventCardModal .card p,
+    .dark-mode #eventCardModal .card span,
+    .dark-mode #eventCardModal .card small { color: #94a3b8; }
+    .dark-mode #eventCardModal .card .text-dark { color: #e2e8f0 !important; }
 
     /* 2. Force the Auth Password Modal to always be in front of everything */
     #authModal {
