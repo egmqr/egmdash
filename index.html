@@ -1898,7 +1898,12 @@
   </div>
   
   <div id="editEditingSection" class="p-3 mb-4 rounded border border-info border-opacity-25" style="background-color: rgba(13, 202, 240, 0.05);">
-      <div class="section-title text-info mb-3"><i class="bi bi-film me-1"></i> Editing Workflow</div>
+      <div class="section-title text-info mb-3 d-flex align-items-center gap-2">
+          <span><i class="bi bi-film me-1"></i> Editing Workflow</span>
+          <span id="editBackupBadge" style="display:none;" class="badge badge-teal shadow-sm" style="font-size:0.65rem;">
+              <i class="bi bi-cloud-check-fill me-1"></i>Backed Up
+          </span>
+      </div>
       
       <div class="row g-3 mb-3">
           <div class="col-12 col-md-6">
@@ -1912,11 +1917,17 @@
                   <input type="text" name="customEditor" id="editCustomEditor" class="form-control editor-field" placeholder="Or custom name...">
               </div>
           </div>
-          <div class="col-12 col-md-6 d-flex align-items-end pb-1">
+          <div class="col-12 col-md-6 d-flex flex-column align-items-start gap-2 pb-1">
               <div class="form-check form-switch">
                   <input class="form-check-input admin-only-field" type="checkbox" name="sentToClient" id="editSentToClient">
                   <label class="form-check-label small fw-bold text-dark" for="editSentToClient">Mark as Sent to Client</label>
                   <div class="small text-muted" id="editSentStamp" style="font-size:0.65rem;"></div>
+              </div>
+              <div class="form-check form-switch">
+                  <input class="form-check-input editor-field" type="checkbox" name="backupDone" id="editBackupDone" onchange="const b=document.getElementById('editBackupBadge'); if(b) b.style.display=this.checked?'inline-flex':'none';">
+                  <label class="form-check-label small fw-bold" for="editBackupDone" style="color:#0891b2;">
+                      <i class="bi bi-cloud-check-fill me-1"></i>Backup Done
+                  </label>
               </div>
           </div>
       </div>
@@ -2165,6 +2176,7 @@
   </div>
 </div>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
@@ -3757,6 +3769,7 @@ function generateSingleEventCard(e) {
             <div style="z-index: 30;"> <span class="badge badge-soft-dark px-2 py-1 fs-6 border-0 text-muted">#${e['Event ID']}</span>
                 <span onclick="handleEditClick('${e['Doc ID']}')" class="edit-trigger ms-1 px-1 text-muted" title="Edit Event"><i class="bi bi-pencil-square"></i></span>
                 <span onclick="requireAuth(() => openAddDayModal('${e['Event ID']}'), true)" class="edit-trigger ms-1 px-1 text-primary" title="Add Another Shooting Day"><i class="bi bi-calendar-plus"></i></span>
+                <span onclick="screenshotCard(this)" class="edit-trigger ms-1 px-1 text-secondary screenshot-btn" title="Save card as image"><i class="bi bi-camera"></i></span>
             </div>
             ${statusPillHtml}
         </div>
@@ -4785,6 +4798,9 @@ async function uploadAndScanInvoice(prefix) {
         }
         
         if (document.getElementById('editSentToClient')) document.getElementById('editSentToClient').checked = e['Sent to Client'];
+        if (document.getElementById('editBackupDone')) document.getElementById('editBackupDone').checked = !!(e['Backup Done'] === true || String(e['Backup Done']) === 'true');
+        const editBackupBadge = document.getElementById('editBackupBadge');
+        if (editBackupBadge) editBackupBadge.style.display = (e['Backup Done'] === true || String(e['Backup Done']) === 'true') ? 'inline-flex' : 'none';
         form.elements['rawLink'].value = e['RAW Link'] || '';
         form.elements['editedLink'].value = e['Edited Link'] || '';
         
@@ -5455,6 +5471,7 @@ async function uploadAndScanInvoice(prefix) {
               notes: obj.notes || "",
               editorAssigned: obj.customEditor ? obj.customEditor.trim() : (obj.editorAssigned || ""),
               sentToClient: document.getElementById('editSentToClient') ? document.getElementById('editSentToClient').checked : false,
+              backupDone: document.getElementById('editBackupDone') ? document.getElementById('editBackupDone').checked : false,
               rawLink: obj.rawLink || "",
               editedLink: obj.editedLink || "",
               rawTimestamp: (obj.rawLink && !obj.rawTimestamp) ? new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : (obj.rawLink ? obj.rawTimestamp : ""),
@@ -6663,6 +6680,7 @@ db.collection("dashboard_events").onSnapshot({ includeMetadataChanges: true }, (
             'Edited Link': String(d.editedLink || ""),
             'Edited Timestamp': String(d.editedTimestamp || ""),
             'Sent to Client': d.sentToClient === true || String(d.sentToClient) === "true",
+            'Backup Done': d.backupDone === true || String(d.backupDone) === "true",
             'Sent Timestamp': String(d.sentTimestamp || ""),
             'Payment Type': String(d.paymentType || ""),
             'Email Thread': String(d.emailThread || ""),
@@ -7916,6 +7934,74 @@ function renderPayrollTable() {
 
     // Refresh the EGM Fund Source computation table with the latest numbers
     renderEgmComputation();
+}
+
+// ==============================================================================
+// EVENT CARD SCREENSHOT
+// ==============================================================================
+
+async function screenshotCard(btn) {
+    const card = btn.closest('.card');
+    if (!card) return;
+
+    // Elements to hide during screenshot
+    const hideSelectors = [
+        '.screenshot-btn',           // the camera button itself
+        '.edit-trigger',             // edit pencil + add day icons
+        '.card-upload-btn',          // Add Document button
+        '[title="Add Another Shooting Day"]',
+    ];
+
+    // Also hide elements by content/class that match the exclusion list
+    const extraHideSelectors = [
+        '.badge-soft-dark',          // Event ID badge (#123)
+    ];
+
+    // Collect elements to hide
+    const toHide = [];
+
+    // Hide edit triggers (event ID badge row top-left div contains them)
+    const topRow = card.querySelector('.d-flex.justify-content-between');
+    if (topRow) {
+        const leftDiv = topRow.querySelector('div[style*="z-index"]');
+        if (leftDiv) { leftDiv.style.visibility = 'hidden'; toHide.push({ el: leftDiv, prop: 'visibility', orig: '' }); }
+    }
+
+    // Hide editor section
+    const editorSection = card.querySelector('.col-12.col-sm-5');
+    if (editorSection) { editorSection.style.display = 'none'; toHide.push({ el: editorSection, prop: 'display', orig: '' }); }
+
+    // Hide collect amount (amountHtml)
+    const collectBox = card.querySelector('.bg-success.bg-opacity-10');
+    if (collectBox) { collectBox.style.display = 'none'; toHide.push({ el: collectBox, prop: 'display', orig: '' }); }
+
+    // Hide Add Document + files row (mt-auto border-top block)
+    const footerBlock = card.querySelector('.mt-auto.pt-3');
+    if (footerBlock) { footerBlock.style.display = 'none'; toHide.push({ el: footerBlock, prop: 'display', orig: '' }); }
+
+    // Grab event name for filename
+    const eventName = (card.querySelector('h6') || {}).innerText || 'event';
+    const safeFileName = eventName.replace(/[^a-z0-9]/gi, '_').substring(0, 40);
+
+    try {
+        const canvas = await html2canvas(card, {
+            backgroundColor: document.body.classList.contains('dark-mode') ? '#1c1f26' : '#ffffff',
+            scale: 2,
+            useCORS: true,
+            logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `${safeFileName}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg', 0.93);
+        link.click();
+    } catch (err) {
+        showToast('Screenshot failed. Try again.', 'danger');
+        console.error('screenshotCard error:', err);
+    } finally {
+        // Restore all hidden elements
+        toHide.forEach(({ el, prop, orig }) => { el.style[prop] = orig; });
+    }
 }
 
 // ==============================================================================
