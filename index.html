@@ -495,6 +495,8 @@
     #eventCardModal .card { background-color: #ffffff !important; opacity: 1 !important; color: #334155 !important; }
     .dark-mode #eventCardModal .card { background-color: #1c1f26 !important; border-color: #2e3340 !important; color: #cbd5e1 !important; }
     .dark-mode #manualCrewEntryPanel .table-custom { background-color: #1c1f26 !important; border-color: #2e3340 !important; }
+    #screenshotPreviewModal .modal-content { background: transparent !important; }
+    #screenshotPreviewModal .modal-backdrop { backdrop-filter: blur(8px); }
     .dark-mode #manualCrewEntryPanel label { color: #94a3b8; }
     .dark-mode #eventCardModal .card h5,
     .dark-mode #eventCardModal .card h6 { color: #f1f5f9 !important; }
@@ -571,6 +573,21 @@
         </div>
     </div>
 </div>
+<!-- Screenshot Preview Modal (iOS long-press save) -->
+<div class="modal fade" id="screenshotPreviewModal" tabindex="-1" aria-hidden="true" style="z-index: 10800;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="background: transparent;">
+            <div class="modal-body p-3 text-center">
+                <img id="screenshotPreviewImg" src="" alt="Event Card" style="width:100%; border-radius:12px; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                <p class="text-white mt-3 mb-1 fw-bold small" style="text-shadow:0 1px 4px rgba(0,0,0,0.5);">
+                    <i class="bi bi-hand-index-thumb me-1"></i> Long press the image to save
+                </p>
+                <button type="button" class="btn btn-light btn-sm fw-bold mt-2 px-4 shadow-sm" data-bs-dismiss="modal">Done</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 10900;">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow-lg rounded-4">
@@ -8000,10 +8017,25 @@ async function screenshotCard(btn) {
             width: MAX_W
         });
 
-        const link = document.createElement('a');
-        link.download = `${safeFileName}.jpg`;
-        link.href = canvas.toDataURL('image/jpeg', 0.93);
-        link.click();
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.93);
+
+        // iOS detection: Safari/iOS doesn't support <a download> reliably
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (isIOS) {
+            // Show modal with the image so user can long-press to save
+            const previewImg = document.getElementById('screenshotPreviewImg');
+            if (previewImg) {
+                previewImg.src = dataUrl;
+                const modal = new bootstrap.Modal(document.getElementById('screenshotPreviewModal'));
+                modal.show();
+            }
+        } else {
+            const link = document.createElement('a');
+            link.download = `${safeFileName}.jpg`;
+            link.href = dataUrl;
+            link.click();
+        }
     } catch (err) {
         showToast('Screenshot failed. Try again.', 'danger');
         console.error('screenshotCard error:', err);
