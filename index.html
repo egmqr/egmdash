@@ -7944,51 +7944,58 @@ async function screenshotCard(btn) {
     const card = btn.closest('.card');
     if (!card) return;
 
-    // Elements to hide during screenshot
-    const hideSelectors = [
-        '.screenshot-btn',           // the camera button itself
-        '.edit-trigger',             // edit pencil + add day icons
-        '.card-upload-btn',          // Add Document button
-        '[title="Add Another Shooting Day"]',
-    ];
-
-    // Also hide elements by content/class that match the exclusion list
-    const extraHideSelectors = [
-        '.badge-soft-dark',          // Event ID badge (#123)
-    ];
-
-    // Collect elements to hide
     const toHide = [];
+    const hide = (el, prop = 'display') => {
+        if (!el) return;
+        const orig = el.style[prop];
+        el.style[prop] = prop === 'display' ? 'none' : 'hidden';
+        toHide.push({ el, prop, orig });
+    };
 
-    // Hide edit triggers (event ID badge row top-left div contains them)
+    // Hide top-left icon cluster (Event ID badge, edit, add day, camera buttons)
     const topRow = card.querySelector('.d-flex.justify-content-between');
-    if (topRow) {
-        const leftDiv = topRow.querySelector('div[style*="z-index"]');
-        if (leftDiv) { leftDiv.style.visibility = 'hidden'; toHide.push({ el: leftDiv, prop: 'visibility', orig: '' }); }
-    }
+    if (topRow) hide(topRow.querySelector('div[style*="z-index"]'), 'visibility');
 
-    // Hide editor section
-    const editorSection = card.querySelector('.col-12.col-sm-5');
-    if (editorSection) { editorSection.style.display = 'none'; toHide.push({ el: editorSection, prop: 'display', orig: '' }); }
+    // Hide Editor column
+    hide(card.querySelector('.col-12.col-sm-5'));
 
-    // Hide collect amount (amountHtml)
-    const collectBox = card.querySelector('.bg-success.bg-opacity-10');
-    if (collectBox) { collectBox.style.display = 'none'; toHide.push({ el: collectBox, prop: 'display', orig: '' }); }
+    // Hide Collect Amount box (identified by its unique class combo inside the card)
+    card.querySelectorAll('.bg-success.bg-opacity-10').forEach(el => hide(el));
 
-    // Hide Add Document + files row (mt-auto border-top block)
-    const footerBlock = card.querySelector('.mt-auto.pt-3');
-    if (footerBlock) { footerBlock.style.display = 'none'; toHide.push({ el: footerBlock, prop: 'display', orig: '' }); }
+    // Hide Add Document + files footer block
+    hide(card.querySelector('.mt-auto.pt-3'));
 
     // Grab event name for filename
     const eventName = (card.querySelector('h6') || {}).innerText || 'event';
     const safeFileName = eventName.replace(/[^a-z0-9]/gi, '_').substring(0, 40);
 
+    // Constrain render width to 400px via a wrapper
+    const MAX_W = 400;
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `position:fixed; top:-9999px; left:-9999px; width:${MAX_W}px; z-index:-1;`;
+    const clone = card.cloneNode(true);
+    // Re-apply the same hidden states on the clone
+    const cloneTopRow = clone.querySelector('.d-flex.justify-content-between');
+    if (cloneTopRow) { const ld = cloneTopRow.querySelector('div[style*="z-index"]'); if (ld) ld.style.visibility = 'hidden'; }
+    clone.querySelectorAll('.col-12.col-sm-5').forEach(el => el.style.display = 'none');
+    clone.querySelectorAll('.bg-success.bg-opacity-10').forEach(el => el.style.display = 'none');
+    clone.querySelectorAll('.mt-auto.pt-3').forEach(el => el.style.display = 'none');
+    clone.style.width = MAX_W + 'px';
+    clone.style.maxWidth = MAX_W + 'px';
+    clone.style.height = 'auto';
+    clone.style.display = 'block'; // remove flex so mt-auto doesn't create gap
+    clone.style.paddingBottom = '12px'; // compact bottom padding
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
     try {
-        const canvas = await html2canvas(card, {
+        const canvas = await html2canvas(clone, {
             backgroundColor: document.body.classList.contains('dark-mode') ? '#1c1f26' : '#ffffff',
             scale: 2,
             useCORS: true,
-            logging: false
+            logging: false,
+            width: MAX_W,
+            windowWidth: MAX_W
         });
 
         const link = document.createElement('a');
@@ -7999,7 +8006,7 @@ async function screenshotCard(btn) {
         showToast('Screenshot failed. Try again.', 'danger');
         console.error('screenshotCard error:', err);
     } finally {
-        // Restore all hidden elements
+        document.body.removeChild(wrapper);
         toHide.forEach(({ el, prop, orig }) => { el.style[prop] = orig; });
     }
 }
