@@ -7944,76 +7944,60 @@ async function screenshotCard(btn) {
     const card = btn.closest('.card');
     if (!card) return;
 
-    // --- Grab event name before any DOM changes ---
     const eventName = (card.querySelector('h6') || {}).innerText || 'event';
     const safeFileName = eventName.replace(/[^a-z0-9]/gi, '_').substring(0, 40);
-
-    // --- Build a self-contained clone, width-capped at 400px ---
     const MAX_W = 400;
 
-    // Snapshot the card's full rendered HTML (includes all current classes/attrs)
-    const clone = card.cloneNode(true);
-
-    // Helper: hide elements inside clone by selector
-    const hideIn = (sel) => clone.querySelectorAll(sel).forEach(el => el.style.display = 'none');
-
-    // 1. Top-left icon row (Event ID badge, edit, add day, camera)
-    const cloneTopRow = clone.querySelector('.d-flex.justify-content-between');
-    if (cloneTopRow) {
-        const leftDiv = cloneTopRow.querySelector('div[style*="z-index"]');
-        if (leftDiv) leftDiv.style.visibility = 'hidden';
-    }
-
-    // 2. Editor column
-    hideIn('.col-12.col-sm-5');
-
-    // 3. Collect Amount — target by data attribute AND by class as fallback
-    hideIn('[data-screenshot-hide]');
-    hideIn('.bg-success.bg-opacity-10');
-    // Extra: find any child containing "Collect Amount" text and hide its parent
-    clone.querySelectorAll('*').forEach(el => {
-        if (el.children.length === 0 && el.textContent.trim().toUpperCase().includes('COLLECT AMOUNT')) {
-            let p = el;
-            while (p && p !== clone) {
-                if (p.classList && (p.classList.contains('py-1') || p.classList.contains('rounded-3'))) {
-                    p.style.display = 'none';
-                    break;
-                }
-                p = p.parentElement;
-            }
+    // --- Inject a <style> tag to CSS-nuke everything we want hidden ---
+    // This is the most reliable method because html2canvas reads computed CSS.
+    const ssStyle = document.createElement('style');
+    ssStyle.id = 'screenshot-override-css';
+    ssStyle.textContent = `
+        .card.screenshot-mode {
+            width: ${MAX_W}px !important;
+            max-width: ${MAX_W}px !important;
+            height: auto !important;
+            display: block !important;
+            padding-bottom: 12px !important;
         }
-    });
-
-    // 4. Add Document + files footer
-    hideIn('.mt-auto.pt-3');
-
-    // Style the clone for compact 400px rendering
-    clone.style.cssText += `
-        width: ${MAX_W}px !important;
-        max-width: ${MAX_W}px !important;
-        height: auto !important;
-        display: block !important;
-        padding-bottom: 12px !important;
-        box-sizing: border-box;
+        .card.screenshot-mode > .d-flex.justify-content-between > div[style*="z-index"] {
+            visibility: hidden !important;
+        }
+        .card.screenshot-mode .col-12.col-sm-5 {
+            display: none !important;
+        }
+        .card.screenshot-mode [data-screenshot-hide] {
+            display: none !important;
+        }
+        .card.screenshot-mode .mt-auto.pt-3 {
+            display: none !important;
+        }
+        .card.screenshot-mode .card-upload-btn {
+            display: none !important;
+        }
     `;
+    document.head.appendChild(ssStyle);
 
-    // Mount off-screen
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = `position:fixed; top:-99999px; left:-99999px; width:${MAX_W}px; pointer-events:none; z-index:-999;`;
-    wrapper.appendChild(clone);
-    document.body.appendChild(wrapper);
+    // Save original inline styles and dimensions
+    const origStyle = card.getAttribute('style') || '';
+    const origClass = card.className;
+    const parentCol = card.closest('.col-12, .col-md-6, .col-lg-4, [class*="col-"]');
+    const origParentStyle = parentCol ? (parentCol.getAttribute('style') || '') : '';
 
-    // Small delay to let layout settle
-    await new Promise(r => setTimeout(r, 80));
+    // Apply screenshot mode
+    card.classList.add('screenshot-mode');
+    if (parentCol) parentCol.style.width = MAX_W + 'px';
+
+    // Let the browser reflow
+    await new Promise(r => setTimeout(r, 100));
 
     try {
-        const canvas = await html2canvas(clone, {
+        const canvas = await html2canvas(card, {
             backgroundColor: document.body.classList.contains('dark-mode') ? '#1c1f26' : '#ffffff',
             scale: 2,
             useCORS: true,
             logging: false,
-            width: MAX_W,
-            windowWidth: MAX_W + 32
+            width: MAX_W
         });
 
         const link = document.createElement('a');
@@ -8024,7 +8008,12 @@ async function screenshotCard(btn) {
         showToast('Screenshot failed. Try again.', 'danger');
         console.error('screenshotCard error:', err);
     } finally {
-        document.body.removeChild(wrapper);
+        // Restore everything
+        card.classList.remove('screenshot-mode');
+        card.setAttribute('style', origStyle);
+        if (parentCol) parentCol.setAttribute('style', origParentStyle);
+        const injected = document.getElementById('screenshot-override-css');
+        if (injected) injected.remove();
     }
 }
 
