@@ -494,6 +494,8 @@
     /* --- Calendar lightbox event card --- */
     #eventCardModal .card { background-color: #ffffff !important; opacity: 1 !important; color: #334155 !important; }
     .dark-mode #eventCardModal .card { background-color: #1c1f26 !important; border-color: #2e3340 !important; color: #cbd5e1 !important; }
+    .dark-mode #manualCrewEntryPanel .table-custom { background-color: #1c1f26 !important; border-color: #2e3340 !important; }
+    .dark-mode #manualCrewEntryPanel label { color: #94a3b8; }
     .dark-mode #eventCardModal .card h5,
     .dark-mode #eventCardModal .card h6 { color: #f1f5f9 !important; }
     .dark-mode #eventCardModal .card p,
@@ -878,6 +880,29 @@
                           <tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-calendar2-range fs-2 d-block mb-2 opacity-50"></i>Select a cutoff period and click Compute.</td></tr>
                       </tbody>
                   </table>
+              </div>
+          </div>
+
+          <!-- Manual Crew Entry (superadmin only, visible after compute) -->
+          <div id="manualCrewEntryPanel" class="mt-3" style="display:none;">
+              <div class="table-custom bg-white shadow-sm px-3 py-3 d-flex flex-wrap align-items-end gap-2">
+                  <div>
+                      <label class="form-label-sm text-secondary mb-1 d-block">Add crew not in this cutoff</label>
+                      <select id="manualCrewSelect" class="form-select form-select-sm fw-bold" style="min-width:180px;">
+                          <option value="">— Select crew —</option>
+                      </select>
+                  </div>
+                  <div>
+                      <label class="form-label-sm text-secondary mb-1 d-block">Manual salary (₱)</label>
+                      <input type="number" id="manualCrewAmount" class="form-control form-control-sm fw-bold" placeholder="0.00" min="0" step="0.01" style="max-width:140px;">
+                  </div>
+                  <div>
+                      <label class="form-label-sm text-secondary mb-1 d-block">Note (optional)</label>
+                      <input type="text" id="manualCrewNote" class="form-control form-control-sm" placeholder="e.g. Special arrangement" style="min-width:200px;">
+                  </div>
+                  <button class="btn btn-primary btn-sm fw-bold shadow-sm px-3" onclick="addManualCrewEntry()">
+                      <i class="bi bi-person-plus-fill me-1"></i> ADD
+                  </button>
               </div>
           </div>
 
@@ -7837,6 +7862,28 @@ function renderPayrollTable() {
     const tbody = document.getElementById('pr-body');
     let html = '';
     
+    // Show/populate the manual crew panel for superadmin after a compute
+    const manualPanel = document.getElementById('manualCrewEntryPanel');
+    const manualSelect = document.getElementById('manualCrewSelect');
+    const role = getUserRole();
+    if (manualPanel && manualSelect) {
+        const hasData = Object.keys(currentPayrollData).length > 0;
+        if (role === 'superadmin' && hasData) {
+            manualPanel.style.display = 'block';
+            // Populate dropdown with crew NOT already in currentPayrollData
+            let allCrew = new Set(baseCrew);
+            rawEvents.forEach(e => {
+                if (e['Manpower']) e['Manpower'].split(',').map(c => c.trim()).filter(Boolean).forEach(c => allCrew.add(c));
+            });
+            const alreadyIn = new Set(Object.keys(currentPayrollData));
+            const available = Array.from(allCrew).filter(c => !alreadyIn.has(c)).sort();
+            manualSelect.innerHTML = '<option value="">— Select crew —</option>' +
+                available.map(c => `<option value="${c}">${c}</option>`).join('');
+        } else {
+            manualPanel.style.display = 'none';
+        }
+    }
+
     const names = Object.keys(currentPayrollData).sort();
     if (names.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>No crew members had confirmed events in this timeframe.</td></tr>';
@@ -7869,6 +7916,50 @@ function renderPayrollTable() {
 
     // Refresh the EGM Fund Source computation table with the latest numbers
     renderEgmComputation();
+}
+
+// ==============================================================================
+// MANUAL CREW ENTRY (Superadmin only)
+// ==============================================================================
+
+function addManualCrewEntry() {
+    const select = document.getElementById('manualCrewSelect');
+    const amountInput = document.getElementById('manualCrewAmount');
+    const noteInput = document.getElementById('manualCrewNote');
+
+    const name = select.value.trim();
+    const amount = parseFloat(amountInput.value) || 0;
+    const note = noteInput.value.trim();
+
+    if (!name) return showToast('Please select a crew member.', 'warning');
+    if (amount <= 0) return showToast('Please enter a valid salary amount.', 'warning');
+    if (currentPayrollData[name]) return showToast(`${name} is already in this payroll session.`, 'warning');
+
+    // Initialize the person and inject a single "Manual Salary" event
+    initPayrollPerson(name);
+    currentPayrollData[name].events.push({
+        doc: { 'Event ID': 'MANUAL', 'Event Name': 'Manual Salary Entry', 'Event Date': document.getElementById('prStartDate').value },
+        role: 'Crew',
+        basePay: amount,
+        extraPay: 0,
+        payer: 'Edgar(EGM)',
+        isHalfDay: false,
+        isSubsequent: false,
+        isCustom: true
+    });
+    currentPayrollData[name].totalBase = amount;
+    currentPayrollData[name].finalTotal = amount;
+    currentPayrollData[name].payslipNote = note ? `Manual entry: ${note}` : 'Manual salary entry by superadmin.';
+    currentPayrollData[name].isTentative = true; // Flag as tentative so it's reviewed before export
+
+    // Reset the inputs
+    select.value = '';
+    amountInput.value = '';
+    noteInput.value = '';
+
+    markPayrollEdited();
+    renderPayrollTable();
+    showToast(`${name} added with ₱${amount.toLocaleString()} manual salary. Marked TENTATIVE — review before export.`, 'success');
 }
 
 // ==============================================================================
@@ -7934,8 +8025,9 @@ function renderExpenseQueue() {
     }
 
     // Pending expenses exist — show banner AND lock the Compute button
+    // Superadmin can still compute even with pending expenses
     banner.style.setProperty('display', 'flex', 'important');
-    disableCompute(pendingExpenses.length);
+    if (role !== 'superadmin') disableCompute(pendingExpenses.length);
 
     let html = '';
     pendingExpenses.forEach(exp => {
