@@ -748,6 +748,8 @@
                  <option value="All">All Statuses</option>
                  <option value="RAW Uploaded" selected>RAW Uploaded</option>
                  <option value="Completed">Completed</option>
+                 <option value="Backup Done">Backup Done</option>
+                 <option value="Not Backed Up">Not Backed Up</option>
                  <option value="Sent to Client">Sent to Client</option>
              </select>
           </div>
@@ -6833,6 +6835,10 @@ async function getNextEventId() {
           eqData = eqData.filter(e => e['RAW Link'] && !e['Edited Link'] && !e['Sent to Client']);
       } else if (filterStatus === 'Completed') {
           eqData = eqData.filter(e => e['Edited Link'] && !e['Sent to Client']);
+      } else if (filterStatus === 'Backup Done') {
+          eqData = eqData.filter(e => e['Backup Done'] === true);
+      } else if (filterStatus === 'Not Backed Up') {
+          eqData = eqData.filter(e => e['RAW Link'] && !e['Backup Done']);
       } else if (filterStatus === 'Sent to Client') {
           eqData = eqData.filter(e => e['Sent to Client']);
       }
@@ -6911,6 +6917,7 @@ async function getNextEventId() {
                   <span class="fw-bold lh-sm d-inline-block mt-1 mb-1">${e['Event Name']}</span><br>
                   <span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>${e['Event Date']}</span>
                   ${sentUI}
+                  ${e['Backup Done'] ? '<div class="mt-1"><span class="badge badge-teal shadow-sm" style="font-size:0.6rem;"><i class="bi bi-cloud-check-fill me-1"></i>Backed Up</span></div>' : ''}
               </td>
               <td class="fw-bold text-secondary">${e['Editor Assigned'] || '<span class="fst-italic fw-normal opacity-50">Unassigned</span>'}</td>
               <td>${rawUI}</td>
