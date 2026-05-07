@@ -7944,49 +7944,67 @@ async function screenshotCard(btn) {
     const card = btn.closest('.card');
     if (!card) return;
 
-    const toHide = [];
-    const hide = (el, prop = 'display') => {
-        if (!el) return;
-        const orig = el.style[prop];
-        el.style[prop] = prop === 'display' ? 'none' : 'hidden';
-        toHide.push({ el, prop, orig });
-    };
-
-    // Hide top-left icon cluster (Event ID badge, edit, add day, camera buttons)
-    const topRow = card.querySelector('.d-flex.justify-content-between');
-    if (topRow) hide(topRow.querySelector('div[style*="z-index"]'), 'visibility');
-
-    // Hide Editor column
-    hide(card.querySelector('.col-12.col-sm-5'));
-
-    // Hide Collect Amount box
-    card.querySelectorAll('[data-screenshot-hide]').forEach(el => hide(el));
-
-    // Hide Add Document + files footer block
-    hide(card.querySelector('.mt-auto.pt-3'));
-
-    // Grab event name for filename
+    // --- Grab event name before any DOM changes ---
     const eventName = (card.querySelector('h6') || {}).innerText || 'event';
     const safeFileName = eventName.replace(/[^a-z0-9]/gi, '_').substring(0, 40);
 
-    // Constrain render width to 400px via a wrapper
+    // --- Build a self-contained clone, width-capped at 400px ---
     const MAX_W = 400;
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = `position:fixed; top:-9999px; left:-9999px; width:${MAX_W}px; z-index:-1;`;
+
+    // Snapshot the card's full rendered HTML (includes all current classes/attrs)
     const clone = card.cloneNode(true);
-    // Re-apply the same hidden states on the clone
+
+    // Helper: hide elements inside clone by selector
+    const hideIn = (sel) => clone.querySelectorAll(sel).forEach(el => el.style.display = 'none');
+
+    // 1. Top-left icon row (Event ID badge, edit, add day, camera)
     const cloneTopRow = clone.querySelector('.d-flex.justify-content-between');
-    if (cloneTopRow) { const ld = cloneTopRow.querySelector('div[style*="z-index"]'); if (ld) ld.style.visibility = 'hidden'; }
-    clone.querySelectorAll('.col-12.col-sm-5').forEach(el => el.style.display = 'none');
-    clone.querySelectorAll('[data-screenshot-hide]').forEach(el => el.style.display = 'none');
-    clone.querySelectorAll('.mt-auto.pt-3').forEach(el => el.style.display = 'none');
-    clone.style.width = MAX_W + 'px';
-    clone.style.maxWidth = MAX_W + 'px';
-    clone.style.height = 'auto';
-    clone.style.display = 'block'; // remove flex so mt-auto doesn't create gap
-    clone.style.paddingBottom = '12px'; // compact bottom padding
+    if (cloneTopRow) {
+        const leftDiv = cloneTopRow.querySelector('div[style*="z-index"]');
+        if (leftDiv) leftDiv.style.visibility = 'hidden';
+    }
+
+    // 2. Editor column
+    hideIn('.col-12.col-sm-5');
+
+    // 3. Collect Amount — target by data attribute AND by class as fallback
+    hideIn('[data-screenshot-hide]');
+    hideIn('.bg-success.bg-opacity-10');
+    // Extra: find any child containing "Collect Amount" text and hide its parent
+    clone.querySelectorAll('*').forEach(el => {
+        if (el.children.length === 0 && el.textContent.trim().toUpperCase().includes('COLLECT AMOUNT')) {
+            let p = el;
+            while (p && p !== clone) {
+                if (p.classList && (p.classList.contains('py-1') || p.classList.contains('rounded-3'))) {
+                    p.style.display = 'none';
+                    break;
+                }
+                p = p.parentElement;
+            }
+        }
+    });
+
+    // 4. Add Document + files footer
+    hideIn('.mt-auto.pt-3');
+
+    // Style the clone for compact 400px rendering
+    clone.style.cssText += `
+        width: ${MAX_W}px !important;
+        max-width: ${MAX_W}px !important;
+        height: auto !important;
+        display: block !important;
+        padding-bottom: 12px !important;
+        box-sizing: border-box;
+    `;
+
+    // Mount off-screen
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `position:fixed; top:-99999px; left:-99999px; width:${MAX_W}px; pointer-events:none; z-index:-999;`;
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
+
+    // Small delay to let layout settle
+    await new Promise(r => setTimeout(r, 80));
 
     try {
         const canvas = await html2canvas(clone, {
@@ -7995,7 +8013,7 @@ async function screenshotCard(btn) {
             useCORS: true,
             logging: false,
             width: MAX_W,
-            windowWidth: MAX_W
+            windowWidth: MAX_W + 32
         });
 
         const link = document.createElement('a');
@@ -8007,7 +8025,6 @@ async function screenshotCard(btn) {
         console.error('screenshotCard error:', err);
     } finally {
         document.body.removeChild(wrapper);
-        toHide.forEach(({ el, prop, orig }) => { el.style[prop] = orig; });
     }
 }
 
