@@ -6838,7 +6838,7 @@ async function getNextEventId() {
       } else if (filterStatus === 'Backup Done') {
           eqData = eqData.filter(e => e['Backup Done'] === true);
       } else if (filterStatus === 'Not Backed Up') {
-          eqData = eqData.filter(e => e['RAW Link'] && !e['Backup Done']);
+          eqData = eqData.filter(e => !e['Backup Done']);
       } else if (filterStatus === 'Sent to Client') {
           eqData = eqData.filter(e => e['Sent to Client']);
       }
