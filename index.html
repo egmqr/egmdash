@@ -3749,7 +3749,7 @@ function generateSingleEventCard(e) {
         });
         const collectAmount = serviceTotal > 0 ? serviceTotal : Number(pAmount);
         amountHtml = `
-        <div class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between">
+        <div data-screenshot-hide="true" class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between">
             <div>
                 <i class="bi bi-cash-stack text-success fs-6 me-1 align-middle"></i> 
                 <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect Amount</span>
@@ -7959,8 +7959,8 @@ async function screenshotCard(btn) {
     // Hide Editor column
     hide(card.querySelector('.col-12.col-sm-5'));
 
-    // Hide Collect Amount box (identified by its unique class combo inside the card)
-    card.querySelectorAll('.bg-success.bg-opacity-10').forEach(el => hide(el));
+    // Hide Collect Amount box
+    card.querySelectorAll('[data-screenshot-hide]').forEach(el => hide(el));
 
     // Hide Add Document + files footer block
     hide(card.querySelector('.mt-auto.pt-3'));
@@ -7978,7 +7978,7 @@ async function screenshotCard(btn) {
     const cloneTopRow = clone.querySelector('.d-flex.justify-content-between');
     if (cloneTopRow) { const ld = cloneTopRow.querySelector('div[style*="z-index"]'); if (ld) ld.style.visibility = 'hidden'; }
     clone.querySelectorAll('.col-12.col-sm-5').forEach(el => el.style.display = 'none');
-    clone.querySelectorAll('.bg-success.bg-opacity-10').forEach(el => el.style.display = 'none');
+    clone.querySelectorAll('[data-screenshot-hide]').forEach(el => el.style.display = 'none');
     clone.querySelectorAll('.mt-auto.pt-3').forEach(el => el.style.display = 'none');
     clone.style.width = MAX_W + 'px';
     clone.style.maxWidth = MAX_W + 'px';
