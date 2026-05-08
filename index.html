@@ -3758,14 +3758,12 @@ function generateSingleEventCard(e) {
     let amountHtml = '';
 
     if (['Cash AR', 'Cash ORCR', 'Check AR', 'Check ORCR'].includes(pType)) {
-        // Total all service amounts across project rows; fall back to stored Amount
+        // Read service amounts only from the payment source row (not all days, to avoid doubling)
         let serviceTotal = 0;
-        projectRows.forEach(row => {
-            try {
-                const amts = JSON.parse(row['Service Amounts JSON'] || '{}');
-                Object.values(amts).forEach(v => { serviceTotal += parseFloat(v) || 0; });
-            } catch(ex) {}
-        });
+        try {
+            const amts = JSON.parse(paymentDoc['Service Amounts JSON'] || '{}');
+            Object.values(amts).forEach(v => { serviceTotal += parseFloat(v) || 0; });
+        } catch(ex) {}
         const collectAmount = serviceTotal > 0 ? serviceTotal : Number(pAmount);
         amountHtml = `
         <div data-screenshot-hide="true" class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between">
