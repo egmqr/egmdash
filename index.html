@@ -1467,11 +1467,21 @@
       <div class="row g-3">
           <div class="col-12 col-md-6">
               <label class="form-label-sm text-secondary"><i class="bi bi-cloud-arrow-up"></i> RAW Files Link</label>
-              <input type="url" name="rawLink" id="newRawLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+              <div class="input-group input-group-sm shadow-sm">
+                  <input type="url" name="rawLink" id="newRawLink" class="form-control editor-field" placeholder="Paste Google Drive link...">
+                  <button class="btn btn-outline-secondary fw-bold" type="button" onclick="navigator.clipboard.writeText(document.getElementById('newRawLink').value); showToast('Link copied!', 'success');" title="Copy Link">
+                      <i class="bi bi-clipboard"></i>
+                  </button>
+              </div>
           </div>
           <div class="col-12 col-md-6">
               <label class="form-label-sm text-success"><i class="bi bi-check-circle"></i> Completed Files Link</label>
-              <input type="url" name="editedLink" id="newEditedLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+              <div class="input-group input-group-sm shadow-sm">
+                  <input type="url" name="editedLink" id="newEditedLink" class="form-control editor-field" placeholder="Paste Google Drive link...">
+                  <button class="btn btn-outline-secondary fw-bold" type="button" onclick="navigator.clipboard.writeText(document.getElementById('newEditedLink').value); showToast('Link copied!', 'success');" title="Copy Link">
+                      <i class="bi bi-clipboard"></i>
+                  </button>
+              </div>
           </div>
       </div>
   </div>
@@ -1954,12 +1964,22 @@
       <div class="row g-3">
           <div class="col-12 col-md-6">
               <label class="form-label-sm text-secondary"><i class="bi bi-cloud-arrow-up"></i> RAW Files Link</label>
-              <input type="url" name="rawLink" id="editRawLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+              <div class="input-group input-group-sm shadow-sm">
+                  <input type="url" name="rawLink" id="editRawLink" class="form-control editor-field" placeholder="Paste Google Drive link...">
+                  <button class="btn btn-outline-secondary fw-bold" type="button" onclick="navigator.clipboard.writeText(document.getElementById('editRawLink').value); showToast('Link copied!', 'success');" title="Copy Link">
+                      <i class="bi bi-clipboard"></i>
+                  </button>
+              </div>
               <div class="small text-muted mt-1" id="editRawStamp" style="font-size:0.65rem;"></div>
           </div>
           <div class="col-12 col-md-6">
               <label class="form-label-sm text-success"><i class="bi bi-check-circle"></i> Completed Files Link</label>
-              <input type="url" name="editedLink" id="editEditedLink" class="form-control form-control-sm editor-field" placeholder="Paste Google Drive link...">
+              <div class="input-group input-group-sm shadow-sm">
+                  <input type="url" name="editedLink" id="editEditedLink" class="form-control editor-field" placeholder="Paste Google Drive link...">
+                  <button class="btn btn-outline-secondary fw-bold" type="button" onclick="navigator.clipboard.writeText(document.getElementById('editEditedLink').value); showToast('Link copied!', 'success');" title="Copy Link">
+                      <i class="bi bi-clipboard"></i>
+                  </button>
+              </div>
               <div class="small text-muted mt-1" id="editEditedStamp" style="font-size:0.65rem;"></div>
           </div>
       </div>
