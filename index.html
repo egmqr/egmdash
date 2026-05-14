@@ -18,6 +18,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
   
   <style>
+    .sticker-manager-grid { display: flex; flex-wrap: wrap; gap: 10px; max-height: 250px; overflow-y: auto; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; }
+    .dark-mode .sticker-manager-grid { background: #161920; border-color: #2e3340; }
+    .sticker-manager-item { position: relative; width: 80px; height: 80px; border: 1px solid #cbd5e1; border-radius: 8px; background: rgba(255,255,255,0.8); padding: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .dark-mode .sticker-manager-item { background: #252831; border-color: #3a3f4d; }
+    .sticker-manager-item img { width: 100%; height: 100%; object-fit: contain; }
+    .sticker-manager-delete { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: 0.2s; }
+    .dark-mode .sticker-manager-delete { border-color: #1c1f26; }
+    .sticker-manager-delete:hover { transform: scale(1.1); background: #dc2626; }
     #editMultiDayNav {
         display: flex;
         flex-wrap: nowrap;
@@ -1027,12 +1035,29 @@
                               Community Booth Only <span class="fw-normal fst-italic text-muted">(No Studio Setup)</span>
                           </label>
                       </div>
+                      
                       <div class="form-check form-switch mb-2">
-                          <input class="form-check-input border-warning" type="checkbox" id="boothUserStickers" style="cursor: pointer;">
+                          <input class="form-check-input border-warning" type="checkbox" id="boothUserStickers" style="cursor: pointer;" onchange="handleUserStickersToggle()">
                           <label class="form-check-label small fw-bold text-dark" for="boothUserStickers" style="cursor: pointer;">
-                              <i class="bi bi-stars text-warning me-1"></i> Enable User Stickers <span class="fw-normal fst-italic text-muted">(Dynamic GitHub Folder)</span>
+                              <i class="bi bi-stars text-warning me-1"></i> Enable User Stickers <span class="fw-normal fst-italic text-muted">(R2 Hosted)</span>
                           </label>
                       </div>
+
+                      <div id="userStickersManager" style="display:none;" class="mt-3 mb-2 p-3 bg-white border border-warning border-opacity-50 rounded-3 shadow-sm">
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                              <label class="form-label-sm text-secondary mb-0"><i class="bi bi-image text-warning"></i> Event Prop Stickers</label>
+                              <div>
+                                  <input type="file" id="userStickerUploadInput" accept="image/png, image/jpeg" style="display:none;" onchange="uploadUserSticker(event)">
+                                  <button type="button" id="userStickerUploadBtn" class="btn btn-sm btn-outline-primary fw-bold py-1 px-2 shadow-sm" style="font-size: 0.7rem;" onclick="document.getElementById('userStickerUploadInput').click()">
+                                      <i class="bi bi-cloud-upload"></i> UPLOAD PROP
+                                  </button>
+                              </div>
+                          </div>
+                          <div id="userStickersGrid" class="sticker-manager-grid">
+                              <span class="small text-muted fst-italic w-100 text-center my-auto">Loading stickers...</span>
+                          </div>
+                      </div>
+
                       <div class="small text-muted mt-2 border-top pt-2" style="font-size: 0.75rem;">
                           Generates an extra QR code for guests to upload their own photos. 
                           <span class="text-danger fw-bold" id="communityEditHint" style="display:none;"><br>(Must delete and re-generate to change)</span>
@@ -5724,7 +5749,6 @@ async function uploadAndScanInvoice(prefix) {
       currentBoothMode = mode;
       document.getElementById('boothEnableCommunity').checked = true;
       
-      // 🟢 THE FIX: Keep 'New Setup' visible at all times for Superadmins
       if (mode !== 'new' && getUserRole() !== 'superadmin') {
           document.getElementById('btnModeNew').style.display = 'none';
       } else {
@@ -5750,8 +5774,10 @@ async function uploadAndScanInvoice(prefix) {
       document.getElementById('boothLogoOnMain').checked = false; document.getElementById('boothSearch').value = ""; 
       document.getElementById('boothEnableCommunity').checked = false;
       document.getElementById('boothCommunityOnly').checked = false;
-    document.getElementById('boothUserStickers').checked = false;
-      handleCommunityToggle(); // 🟢 Resets states safely
+      document.getElementById('boothUserStickers').checked = false;
+      
+      handleCommunityToggle(); 
+      handleUserStickersToggle(); // 🟢 Ensure manager hides on reset
       
       const eventSelectDropdown = document.getElementById('boothEventSelect');
       if(eventSelectDropdown) eventSelectDropdown.value = "";
@@ -5769,12 +5795,11 @@ async function uploadAndScanInvoice(prefix) {
           document.getElementById('boothSaveBtn').style.display = 'none';
           document.getElementById('boothDeleteBtn').style.display = 'none';
           
-          // 🟢 THE FIX: Unlock Booth Count for Superadmins so they can generate standalone events!
           document.getElementById('boothCountInput').disabled = (getUserRole() !== 'superadmin');
           document.getElementById('boothCountHint').style.display = 'none';
           toggleBoothEditFields(true);
-        boothTemplates = JSON.parse(JSON.stringify(defaultBoothTemplates)); // 🟢 THE FIX: Load defaults on New Setup!
-        if (document.getElementById('boothTemplateList')) renderTemplateList();
+          boothTemplates = JSON.parse(JSON.stringify(defaultBoothTemplates)); 
+          if (document.getElementById('boothTemplateList')) renderTemplateList();
           
       } else if (mode === 'edit' || mode === 'view') {
           document.getElementById('btnModeEdit').classList.toggle('active', mode === 'edit');
@@ -6045,12 +6070,9 @@ async function uploadAndScanInvoice(prefix) {
       if (!selectedId) { setBoothMode(currentBoothMode); return; }
       
       let details;
-
-      // 1. Check if we already downloaded this booth's details
       if (boothDetailsCache[selectedId]) {
           details = boothDetailsCache[selectedId];
       } else {
-          // 2. If not, show the loader and fetch it from the backend
           const ov = document.getElementById('submitOverlay');
           document.getElementById('overlayText').innerText = "Loading details...";
           ov.style.display = 'flex';
@@ -6058,7 +6080,6 @@ async function uploadAndScanInvoice(prefix) {
           details = await callWorkerApi('/api/dashboard/booth-details', { eventId: selectedId }, false);
           ov.style.display = 'none';
           
-          // 3. Save it to memory so we never have to load it again!
           if (details && details.success !== false) {
               boothDetailsCache[selectedId] = details;
           }
@@ -6067,25 +6088,18 @@ async function uploadAndScanInvoice(prefix) {
       if (details && details.success === false) return;
 
       if (details) {
-          // 🟢 THE FIX: Strictly load ONLY what the event has. No forced defaults on Edit Setup!
           try {
               boothTemplates = JSON.parse(details.templatesStr || "[]");
-              if (!Array.isArray(boothTemplates)) {
-                  boothTemplates = [];
-              }
-          } catch (e) {
-              boothTemplates = [];
-          }
+              if (!Array.isArray(boothTemplates)) boothTemplates = [];
+          } catch (e) { boothTemplates = []; }
+          
           if (document.getElementById('boothTemplateList')) renderTemplateList();
 
-          // Detect ProBooth-generated events by boothsStr format:
-          // - Dashboard R2 events: boothsStr contains 'prefix='
-          // - Old Drive events: boothsStr contains a real folderId value
-          // - ProBooth events: boothsStr is empty OR has 'folderId=' with empty value
           const boothsStr = details.boothsStr || '';
           const hasRealFolderId = /folderId=[^&]{5,}/.test(boothsStr);
           const hasPrefix = boothsStr.includes('prefix=');
           const isProBoothEvent = !hasPrefix && !hasRealFolderId;
+          
           if (isProBoothEvent && currentBoothMode === 'edit') {
               currentBoothMode = 'view';
               document.getElementById('boothGenerateBtn').style.display = 'none';
@@ -6103,22 +6117,20 @@ async function uploadAndScanInvoice(prefix) {
               document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
               document.getElementById('boothCommunityOnly').checked = details.communityOnly === true;
               
-              // 🟢 THE FIX: Tell the dashboard to remember and physically check the toggle!
+              // 🟢 THE FIX: Setup user stickers visually
               document.getElementById('boothUserStickers').checked = details.userStickers === true;
               
-              handleCommunityToggle(); // Visually update the UI instantly
+              handleCommunityToggle(); 
+              handleUserStickersToggle(); // Trigger Grid Fetch!
               
               const loadedFontColor = details.fontColor || "#ffffff";
               const loadedBgColor = details.bgColor || "#000000";
               document.getElementById('boothFontColor').value = loadedFontColor; document.getElementById('boothFontColorPicker').value = loadedFontColor;
               document.getElementById('boothBgColor').value = loadedBgColor; document.getElementById('boothBgColorPicker').value = loadedBgColor;
               
-              // Retain existing asset IDs so re-save without new uploads keeps current assets
               currentBoothBgId = details.bgId || null;
               selectedExistingLogoId = details.logoId || "";
-              selectedExistingQrLogoId = details.logoId
-                  ? details.logoId.replace('_transparent', '_qr_whitebg')
-                  : "";
+              selectedExistingQrLogoId = details.logoId ? details.logoId.replace('_transparent', '_qr_whitebg') : "";
 
               if (details.bgId) {
                   document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.jpg`;
@@ -9689,6 +9701,165 @@ async function runExpenseRecompute() {
         }
     }, 'superadmin');
 }
+  function handleUserStickersToggle() {
+      const isEnabled = document.getElementById('boothUserStickers').checked;
+      const manager = document.getElementById('userStickersManager');
+      if (isEnabled) {
+          manager.style.display = 'block';
+          loadUserStickers();
+      } else {
+          manager.style.display = 'none';
+      }
+  }
+
+  async function loadUserStickers() {
+      const grid = document.getElementById('userStickersGrid');
+      
+      let eventId = document.getElementById('boothEventId').value;
+      if (!eventId && currentBoothMode === 'new') {
+          eventId = await getNextEventId();
+          document.getElementById('boothEventId').value = eventId;
+      }
+      if (!eventId) return;
+
+      grid.innerHTML = '<span class="small text-muted fst-italic w-100 text-center my-auto"><div class="spinner-border spinner-border-sm me-2"></div>Loading stickers...</span>';
+
+      try {
+          const prefix = `events/${eventId}/user-stickers`;
+          // R2 lists the files via the existing gallery GET endpoint!
+          const res = await fetch(`${WORKER_URL}/api/gallery?prefix=${encodeURIComponent(prefix)}`);
+          const result = await res.json();
+
+          if (result.status === 'success' && result.data.length > 0) {
+              let html = '';
+              result.data.forEach(item => {
+                  const key = item[0];
+                  const url = item[2];
+                  html += `
+                      <div class="sticker-manager-item shadow-sm">
+                          <img src="${url}">
+                          <button type="button" class="sticker-manager-delete" title="Delete Sticker" onclick="deleteUserSticker('${key}')"><i class="bi bi-x-lg"></i></button>
+                      </div>
+                  `;
+              });
+              grid.innerHTML = html;
+          } else {
+              grid.innerHTML = '<span class="small text-muted fst-italic w-100 text-center my-auto">No stickers uploaded yet.</span>';
+          }
+      } catch (e) {
+          grid.innerHTML = '<span class="small text-danger w-100 text-center my-auto"><i class="bi bi-exclamation-triangle"></i> Error loading stickers.</span>';
+      }
+  }
+
+  async function uploadUserSticker(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+          egmAlert("Only JPG and PNG images are allowed for stickers.");
+          event.target.value = '';
+          return;
+      }
+
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = "Resizing Sticker...";
+      ov.style.display = 'flex';
+
+      try {
+          let eventId = document.getElementById('boothEventId').value;
+          if (!eventId && currentBoothMode === 'new') {
+              eventId = await getNextEventId();
+              document.getElementById('boothEventId').value = eventId;
+          }
+
+          // 1. Client-Side Image Resize (Max 500x500, maintain transparency)
+          const blob = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                  const img = new Image();
+                  img.onload = () => {
+                      let w = img.width;
+                      let h = img.height;
+                      const MAX = 500;
+                      
+                      if (w > MAX || h > MAX) {
+                          const ratio = Math.min(MAX / w, MAX / h);
+                          w = Math.round(w * ratio);
+                          h = Math.round(h * ratio);
+                      }
+                      
+                      const canvas = document.createElement('canvas');
+                      canvas.width = w; canvas.height = h;
+                      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                      
+                      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Canvas conversion failed')), 'image/png');
+                  };
+                  img.onerror = reject;
+                  img.src = e.target.result;
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+          });
+
+          // 2. Fetch Presigned Upload URL from Worker
+          document.getElementById('overlayText').innerText = "Uploading to Cloud...";
+          const prefix = `events/${eventId}/user-stickers`;
+          const filename = `sticker_${Date.now()}.png`;
+
+          const signRes = await fetch(`${WORKER_URL}/api/sign-upload`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${BOOTH_AUTH_TOKEN}` },
+              body: JSON.stringify({ prefix, filename })
+          });
+
+          if (!signRes.ok) throw new Error("Failed to authenticate upload link.");
+          const { uploadUrl } = await signRes.json();
+
+          // 3. PUT the actual file direct to R2!
+          const putRes = await fetch(uploadUrl, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'image/png' },
+              body: blob
+          });
+
+          if (!putRes.ok) throw new Error("Cloudflare R2 rejected the upload.");
+
+          showToast("Sticker added successfully!");
+          await loadUserStickers(); // Refresh Grid!
+
+      } catch (e) {
+          console.error("Sticker upload error:", e);
+          egmAlert("Failed to upload sticker: " + e.message);
+      }
+
+      ov.style.display = 'none';
+      event.target.value = ''; 
+  }
+
+  async function deleteUserSticker(key) {
+      if (!await egmConfirm("Are you sure you want to permanently delete this sticker?")) return;
+
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = "Deleting Sticker...";
+      ov.style.display = 'flex';
+
+      try {
+          // Send request to Worker to kill the file
+          const res = await callWorkerApi('/api/dashboard/delete-file', { key: key });
+          
+          if (res && res.success) {
+              showToast("Sticker deleted.");
+              await loadUserStickers(); // Refresh grid!
+          } else {
+              throw new Error(res ? res.error : "Unknown error");
+          }
+      } catch (e) {
+          console.error("Sticker delete error:", e);
+          egmAlert("Failed to delete sticker: " + e.message);
+      }
+
+      ov.style.display = 'none';
+  }
 </script>
 </body>
 </html>
