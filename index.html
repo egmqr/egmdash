@@ -6131,7 +6131,7 @@ async function uploadAndScanInvoice(prefix) {
               
               currentBoothBgId = details.bgId || null;
               selectedExistingLogoId = details.logoId || "";
-              selectedExistingQrLogoId = details.logoId ? details.logoId.replace('_transparent', '_qr_whitebg') : "";
+              selectedExistingQrLogoId = details.qrLogoId || details.logoId || "";
 
               if (details.bgId) {
                   document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.jpg`;
@@ -6194,10 +6194,18 @@ async function uploadAndScanInvoice(prefix) {
                          <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qrUrl}')">Copy link</button>
                          <button class="booth-mini-btn" onclick="downloadBoothImage('${qrUrl}', '${fileName}')">Download</button>
                       `;
-                   } else {
+                  } else {
                       // Fallback: generate QR on-the-fly (event predates R2 or QR upload failed)
                       let qcApiUrl = `https://quickchart.io/qr?size=1000&errorCorrectionLevel=H&text=${encodeURIComponent(mainGalleryUrl)}`;
-                      const fallbackLogoUrl = details.qrLogoId ? `https://cdn.createdbyegm.com/assets/qr-logos/${details.qrLogoId}.png` : (details.logoId ? `https://cdn.createdbyegm.com/assets/logos/${details.logoId}.png` : '');
+                      
+                      let fallbackLogoUrl = '';
+                      if (details.qrLogoId) {
+                          fallbackLogoUrl = details.qrLogoId.startsWith('qrlogo_') 
+                              ? `https://cdn.createdbyegm.com/assets/qr-logos/${details.qrLogoId}.png`
+                              : `https://cdn.createdbyegm.com/assets/logos/${details.qrLogoId}.png`;
+                      } else if (details.logoId) {
+                          fallbackLogoUrl = `https://cdn.createdbyegm.com/assets/logos/${details.logoId}.png`;
+                      }
                       
                       if (fallbackLogoUrl) qcApiUrl += `&centerImageUrl=${encodeURIComponent(fallbackLogoUrl)}&centerImageSizeRatio=0.22`;
                       
