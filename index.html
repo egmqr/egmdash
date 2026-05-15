@@ -6196,8 +6196,11 @@ async function uploadAndScanInvoice(prefix) {
                       `;
                    } else {
                       // Fallback: generate QR on-the-fly (event predates R2 or QR upload failed)
-                      let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
-                      if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://cdn.createdbyegm.com/assets/logos/' + details.logoId + '.png')}&centerImageSizeRatio=0.15`;
+                      let qcApiUrl = `https://quickchart.io/qr?size=1000&errorCorrectionLevel=H&text=${encodeURIComponent(mainGalleryUrl)}`;
+                      const fallbackLogoUrl = details.qrLogoId ? `https://cdn.createdbyegm.com/assets/qr-logos/${details.qrLogoId}.png` : (details.logoId ? `https://cdn.createdbyegm.com/assets/logos/${details.logoId}.png` : '');
+                      
+                      if (fallbackLogoUrl) qcApiUrl += `&centerImageUrl=${encodeURIComponent(fallbackLogoUrl)}&centerImageSizeRatio=0.22`;
+                      
                       currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false, filename: fileName });
                       qrCodeActionHtml = `
                          <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qcApiUrl}')">Copy link</button>
