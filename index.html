@@ -1009,12 +1009,7 @@
                       <span class="d-block mt-1 small fw-bold text-danger" id="boothCountHint" style="display:none;">Booth count is set by admin.</span>
                   </div>
 
-                  <div class="mb-4 pb-4 border-bottom">
-                        <label class="form-label-sm text-secondary">Gallery Access PIN (Optional)</label>
-                        <input type="text" id="boothPinCode" class="form-control form-control-sm fw-bold" placeholder="e.g. 1234">
-                        <span class="d-block mt-1 small text-muted">Set a PIN code to restrict access to the web gallery</span>
-                    </div>
-                    <div class="mb-4 pb-4 border-bottom" id="boothTemplatesBlock">
+                  <div class="mb-4 pb-4 border-bottom" id="boothTemplatesBlock">
                       <label class="form-label-sm text-secondary">Print Templates</label>
                       <select id="boothTemplateList" size="4" class="form-select form-select-sm mb-2 fw-bold text-dark shadow-sm" onchange="handleTemplateSelection()"></select>
                       
@@ -5761,7 +5756,7 @@ async function uploadAndScanInvoice(prefix) {
       }
 
       document.getElementById('boothFolderName').value = ""; document.getElementById('boothEventName').value = "";
-      if(mode !== 'new') { document.getElementById('boothCountInput').value = ""; if (document.getElementById('boothPinCode')) document.getElementById('boothPinCode').value = ""; } 
+      if(mode !== 'new') document.getElementById('boothCountInput').value = ""; 
       
       document.getElementById('boothFontColor').value = "#ffffff"; document.getElementById('boothFontColorPicker').value = "#ffffff"; 
       document.getElementById('boothBgColor').value = "#000000"; document.getElementById('boothBgColorPicker').value = "#000000"; 
@@ -6118,7 +6113,7 @@ async function uploadAndScanInvoice(prefix) {
               document.getElementById('boothFolderName').value = details.folderName || "";
               document.getElementById('boothEventName').value = details.eventName || "";
               document.getElementById('boothCountInput').value = details.boothCount || "";
-                if (document.getElementById('boothPinCode')) document.getElementById('boothPinCode').value = details.pinCode || "";
+                
               document.getElementById('boothLogoOnMain').checked = details.logoOnMain === true;
               document.getElementById('boothEnableCommunity').checked = details.enableCommunity === true;
               document.getElementById('boothCommunityOnly').checked = details.communityOnly === true;
@@ -6446,7 +6441,7 @@ async function fetchExistingLogos(forceRefresh = false) {
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
           templates: boothTemplates,
           enableCommunity: enableCommunity, 
-          communityOnly: communityOnly, pinCode: document.getElementById('boothPinCode').value.trim(),
+          communityOnly: communityOnly,
         userStickers: document.getElementById('boothUserStickers').checked // 🟢 NEW
       };
 
