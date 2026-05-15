@@ -5721,7 +5721,7 @@ async function uploadAndScanInvoice(prefix) {
           
           document.getElementById('boothEventId').value = eventId;
           document.getElementById('boothEventName').value = eventName;
-          document.getElementById('boothCountInput').value = booths;
+          document.getElementById('boothCountInput').value = booths; document.getElementById('boothPinCode').value = details.pinCode || " \;
           
           // 🟢 THE FIX: Make the Folder Name exactly match the Event Name / Page Title!
           document.getElementById('boothFolderName').value = eventName;
@@ -6440,7 +6440,7 @@ async function fetchExistingLogos(forceRefresh = false) {
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
           templates: boothTemplates,
           enableCommunity: enableCommunity, 
-          communityOnly: communityOnly,
+          communityOnly: communityOnly, pinCode: document.getElementById('boothPinCode').value.trim(),
         userStickers: document.getElementById('boothUserStickers').checked // 🟢 NEW
       };
 
