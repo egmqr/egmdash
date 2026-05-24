@@ -562,6 +562,125 @@
     display: flex; 
   }
 }
+
+  /* ── Service Breakdown Tooltip ── */
+  .svc-breakdown-wrap {
+    position: relative;
+    display: block;
+  }
+  .svc-breakdown-wrap:hover .svc-breakdown-popup,
+  .svc-breakdown-wrap:focus-within .svc-breakdown-popup {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .svc-breakdown-popup {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    translate: -50%;
+    z-index: 500;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 10px 12px;
+    min-width: 180px;
+    max-width: 240px;
+    white-space: nowrap;
+  }
+  .svc-breakdown-popup::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    translate: -50%;
+    border: 6px solid transparent;
+    border-top-color: #e2e8f0;
+  }
+  .svc-breakdown-popup::before {
+    content: '';
+    position: absolute;
+    top: calc(100% - 1px);
+    left: 50%;
+    translate: -50%;
+    border: 6px solid transparent;
+    border-top-color: #ffffff;
+    z-index: 1;
+  }
+  .svc-breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.72rem;
+    padding: 2px 0;
+    color: #334155;
+    border-bottom: 1px dashed #f1f5f9;
+  }
+  .svc-breakdown-row:last-child { border-bottom: none; }
+  .svc-breakdown-row .svc-name { font-weight: 600; color: #475569; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .svc-breakdown-row .svc-amt { font-weight: 700; color: #0d9488; flex-shrink: 0; }
+  .svc-breakdown-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 2px solid #e2e8f0;
+  }
+  .svc-breakdown-header {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+  }
+  /* dark mode */
+  .dark-mode .svc-breakdown-popup {
+    background: #1c1f26;
+    border-color: #2e3340;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .dark-mode .svc-breakdown-popup::after { border-top-color: #2e3340; }
+  .dark-mode .svc-breakdown-popup::before { border-top-color: #1c1f26; }
+  .dark-mode .svc-breakdown-row { color: #cbd5e1; border-bottom-color: #252831; }
+  .dark-mode .svc-breakdown-row .svc-name { color: #94a3b8; }
+  .dark-mode .svc-breakdown-row .svc-amt { color: #5eead4; }
+  .dark-mode .svc-breakdown-total { color: #f1f5f9; border-top-color: #2e3340; }
+  .dark-mode .svc-breakdown-header { color: #475569; }
+  /* payments table: popup opens downward */
+  .svc-breakdown-wrap.down .svc-breakdown-popup {
+    bottom: auto;
+    top: calc(100% + 6px);
+    transform: translateY(-4px);
+  }
+  .svc-breakdown-wrap.down:hover .svc-breakdown-popup,
+  .svc-breakdown-wrap.down:focus-within .svc-breakdown-popup {
+    transform: translateY(0);
+  }
+  .svc-breakdown-wrap.down .svc-breakdown-popup::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: #e2e8f0;
+  }
+  .svc-breakdown-wrap.down .svc-breakdown-popup::before {
+    top: auto;
+    bottom: calc(100% - 1px);
+    border-top-color: transparent;
+    border-bottom-color: #ffffff;
+  }
+  .dark-mode .svc-breakdown-wrap.down .svc-breakdown-popup::after { border-bottom-color: #2e3340; }
+  .dark-mode .svc-breakdown-wrap.down .svc-breakdown-popup::before { border-bottom-color: #1c1f26; }
   </style>
 </head>
 <body>
@@ -613,6 +732,63 @@
         </div>
     </div>
 </div>
+<div id="manageModal"
+  style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); z-index: 10005; justify-content: center; align-items: center; padding: 0; box-sizing: border-box;">
+  <div
+    style="background: #fff; border-radius: 0; width: 100%; max-width: 100%; height: 100%; max-height: 100%; display: flex; flex-direction: column; border: none; box-shadow: none;">
+    <div
+      style="padding: 15px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0; color: #1e293b; font-size: 18px;">Manage Photos</h3>
+      <button onclick="closeManageModal()"
+        style="background: none; border: none; color: #64748b; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+    <div
+      style="padding: 10px 20px; border-bottom: 1px solid #e2e8f0; display: flex; gap: 8px; background: #f8fafc; flex-wrap: wrap;">
+      <button class="btn btn-outline-secondary btn-sm fw-bold"
+        onclick="selectAllManagePhotos()">Select All</button>
+      <button class="btn btn-danger btn-sm fw-bold"
+        onclick="deleteSelectedManagePhotos()">Delete Selected</button>
+      <button class="btn btn-sm fw-bold" style="background: #0d9488; color: #fff; margin-left: auto;"
+        onclick="downloadAllManagePhotos()">Download All</button>
+    </div>
+    <div id="manageUploadSection" style="padding: 12px 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+      <div id="manageDropZone"
+        ondragover="handleManageDragOver(event)"
+        ondragleave="handleManageDragLeave(event)"
+        ondrop="handleManageDrop(event)"
+        onclick="document.getElementById('manageUploadInput').click()"
+        style="border: 2px dashed #cbd5e1; border-radius: 10px; padding: 18px 20px; text-align: center; cursor: pointer; transition: background 0.2s, border-color 0.2s; user-select: none;">
+        <i class="bi bi-cloud-upload" style="font-size: 1.6rem; color: #94a3b8; display: block; margin-bottom: 6px;"></i>
+        <div style="font-size: 0.85rem; font-weight: 600; color: #475569;">Drag &amp; drop images here, or <span style="color: #3b82f6;">click to browse</span></div>
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 3px;">Supports JPG, PNG, WEBP</div>
+        <input type="file" id="manageUploadInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" onchange="handleManageFileSelect(event)">
+      </div>
+      <div id="manageUploadProgress" style="display:none; margin-top: 10px;">
+        <div style="font-size: 0.8rem; font-weight: 600; color: #475569; margin-bottom: 6px;" id="manageUploadStatusText">Uploading...</div>
+        <div style="background: #e2e8f0; border-radius: 999px; height: 6px; overflow: hidden;">
+          <div id="manageUploadBar" style="height: 100%; background: #3b82f6; border-radius: 999px; width: 0%; transition: width 0.3s;"></div>
+        </div>
+      </div>
+    </div>
+    <div id="manageGrid"
+      style="flex-grow: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); grid-auto-rows: 100px; gap: 8px; align-content: start;">
+    </div>
+  </div>
+</div>
+<style>
+  @media (min-width: 768px) {
+    #manageGrid {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+      grid-auto-rows: 200px !important;
+      gap: 12px !important;
+      padding: 20px !important;
+    }
+  }
+  .manage-item img { transition: opacity 0.2s; }
+  .manage-item img:hover { opacity: 1 !important; }
+  #manageDropZone.drag-over { background: #eff6ff !important; border-color: #3b82f6 !important; }
+  #manageDropZone:hover { background: #f1f5f9; }
+</style>
 <div id="submitOverlay" class="submit-overlay">
   <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
   <h5 class="mt-3 fw-bold text-secondary" id="overlayText">Processing...</h5>
@@ -880,6 +1056,7 @@
               <div class="d-flex flex-wrap gap-2 justify-content-md-end align-items-end" style="max-width: 450px;">
     <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" id="prComputeBtn" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
     <button class="btn btn-outline-danger btn-sm fw-bold px-3 shadow-sm border-2" id="prRecomputeBtn" onclick="runExpenseRecompute()" style="display:none;" title="Superadmin: Refresh only the auto-pulled expenses without touching manual edits"><i class="bi bi-arrow-clockwise me-1"></i> SYNC EXPENSES</button>
+    <button class="btn btn-outline-primary btn-sm fw-bold px-3 shadow-sm border-2" onclick="recomputeARSales()" title="Refresh AR Sales data without touching manual payroll edits"><i class="bi bi-graph-up-arrow me-1"></i> SYNC AR SALES</button>
     <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
                   <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
                   <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm" onclick="exportSessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> EXPORT</button>
@@ -976,7 +1153,7 @@
                       <a class="nav-link active" id="btnModeEdit" onclick="handleEditSetupClick()"><i class="bi bi-pencil me-1"></i> Edit Setup</a>
                   </li>
                   <li class="nav-item">
-                      <a class="nav-link" id="btnModeView" onclick="setBoothMode('view')"><i class="bi bi-eye me-1"></i> View QR</a>
+                      <a class="nav-link" id="btnModeView" onclick="setBoothMode('view')"><i class="bi bi-eye me-1"></i> View Event</a>
                   </li>
               </ul>
 
@@ -1026,13 +1203,13 @@
                       <div class="form-check form-switch mb-2">
                           <input class="form-check-input" type="checkbox" id="boothEnableCommunity" onchange="handleCommunityToggle()" style="cursor: pointer;">
                           <label class="form-check-label small fw-bold text-dark" for="boothEnableCommunity" style="cursor: pointer;">
-                              <i class="bi bi-people-fill text-primary me-1"></i> Add Community Booth
+                              <i class="bi bi-people-fill text-primary me-1"></i> Add Virtual Booth
                           </label>
                       </div>
                       <div class="form-check form-switch mb-2">
                           <input class="form-check-input border-secondary" type="checkbox" id="boothCommunityOnly" disabled onchange="handleCommunityOnlyToggle()" style="cursor: pointer;">
                           <label class="form-check-label small fw-bold text-secondary" for="boothCommunityOnly" id="boothCommunityOnlyLabel" style="cursor: pointer;">
-                              Community Booth Only <span class="fw-normal fst-italic text-muted">(No Studio Setup)</span>
+                              Virtual Booth Only <span class="fw-normal fst-italic text-muted">(No Studio Setup)</span>
                           </label>
                       </div>
                       
@@ -1063,6 +1240,26 @@
                           <span class="text-danger fw-bold" id="communityEditHint" style="display:none;"><br>(Must delete and re-generate to change)</span>
                       </div>
                   </div>
+                  <div class="mt-3 mb-4 p-3 bg-light border border-secondary-subtle rounded-3">
+                      <div class="form-check form-switch mb-2">
+                          <input class="form-check-input" type="checkbox" id="boothShowSearchBar" style="cursor: pointer;">
+                          <label class="form-check-label small fw-bold text-dark" for="boothShowSearchBar" style="cursor: pointer;">
+                              <i class="bi bi-search text-primary me-1"></i> Show Search Bar
+                          </label>
+                      </div>
+                      <div class="form-check form-switch mb-3">
+                          <input class="form-check-input" type="checkbox" id="boothShowTime" style="cursor: pointer;">
+                          <label class="form-check-label small fw-bold text-dark" for="boothShowTime" style="cursor: pointer;">
+                              <i class="bi bi-clock text-primary me-1"></i> Show Time
+                          </label>
+                      </div>
+                      <div class="border-top pt-3">
+                          <label class="form-label-sm text-secondary">Custom Term for "Photobooth"</label>
+                          <input type="text" id="boothCustomTerm" class="form-control form-control-sm fw-bold" placeholder='Leave blank to use default: "Photobooth"'>
+                          <div class="small text-muted mt-1" style="font-size: 0.75rem;">Renames the label "Photobooth" across the gallery view.</div>
+                      </div>
+                  </div>
+
                   <div class="row g-3 mb-4">
                       <div class="col-12 col-sm-6">
                           <label class="form-label-sm text-secondary">Font & Tab Color</label>
@@ -3718,6 +3915,46 @@ function handleCalendarPillClick(docId) {
 }
 
 // Extracted Card Builder (Shared by Events Tab & Calendar Lightbox)
+// Helper: build the service breakdown popup HTML from a Service Amounts JSON string
+function buildServiceBreakdown(serviceAmountsJson, totalAmt, colorClass, direction) {
+    let amts = {};
+    try { amts = JSON.parse(serviceAmountsJson || '{}'); } catch(ex) {}
+
+    // Human-readable label map
+    const labelMap = {
+        'amt_Photo': 'Photo',
+        'amt_PhotoQR': 'Photo Souvenir QR',
+        'amt_PhotoStudio': 'Photo Studio',
+        'amt_FrameToken': 'Frame Token',
+        'amt_VideoDoc': 'Video Doc',
+        'amt_VideoSDE': 'Video SDE',
+        'amt_VideoHigh': 'Video Highlights',
+        'amt_VideoStudio': 'Video Studio',
+        'amt_Transpo': 'Transpo',
+        'amt_PreProd': 'Pre-Prod'
+    };
+
+    const entries = Object.entries(amts)
+        .map(([k, v]) => ({ label: labelMap[k] || k.replace(/^amt_/, '').replace(/([A-Z])/g, ' $1').trim(), val: parseFloat(v) || 0 }))
+        .filter(e => e.val > 0);
+
+    if (entries.length === 0) return '';
+
+    const dir = direction === 'down' ? 'down' : '';
+    const rows = entries.map(e =>
+        `<div class="svc-breakdown-row"><span class="svc-name">${e.label}</span><span class="svc-amt">₱${e.val.toLocaleString()}</span></div>`
+    ).join('');
+
+    const totalDisplay = totalAmt > 0 ? totalAmt : entries.reduce((s, e) => s + e.val, 0);
+
+    return `
+    <div class="svc-breakdown-popup">
+        <div class="svc-breakdown-header"><i class="bi bi-list-ul me-1"></i>Service Breakdown</div>
+        ${rows}
+        <div class="svc-breakdown-total"><span>Total</span><span class="${colorClass}">₱${totalDisplay.toLocaleString()}</span></div>
+    </div>`;
+}
+
 function generateSingleEventCard(e) {
     if (e['Event Name'] === 'Crew Leave') {
         let leaveDateString = e['Event Date'];
@@ -3797,27 +4034,74 @@ function generateSingleEventCard(e) {
         displayDateString = new Date(dParts[0], dParts[1]-1, dParts[2]).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
     }
 
-    let paymentDoc = projectRows.find(r => r['Payment Type']) || e;
+    let paymentDoc =
+    projectRows.find(r => r['Payment Type'] && getServiceTotal(r['Service Amounts JSON']) > 0) ||
+    projectRows.find(r => r['Payment Type']) ||
+    e;
     let pType = paymentDoc['Payment Type'];
     let pAmount = paymentDoc['Amount'] || 0;
     let amountHtml = '';
 
-    if (['Cash AR', 'Cash ORCR', 'Check AR', 'Check ORCR'].includes(pType)) {
-        // Read service amounts only from the payment source row (not all days, to avoid doubling)
+<<<<<<< HEAD
+    const isNonBillingPayment = pType && pType !== 'Billing';
+    const isBillingPayment = pType === 'Billing';
+
+    if (isNonBillingPayment) {
+        // For AR and ORCR types: show the total from service amounts entered in the form
         let serviceTotal = 0;
         try {
             const amts = JSON.parse(paymentDoc['Service Amounts JSON'] || '{}');
             Object.values(amts).forEach(v => { serviceTotal += parseFloat(v) || 0; });
         } catch(ex) {}
         const collectAmount = serviceTotal > 0 ? serviceTotal : Number(pAmount);
+        const breakdownPopup = buildServiceBreakdown(paymentDoc['Service Amounts JSON'], collectAmount, 'text-success', 'up');
+        const hasBreakdown = breakdownPopup.length > 0;
         amountHtml = `
-        <div data-screenshot-hide="true" class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between">
+        <div data-screenshot-hide="true" class="svc-breakdown-wrap${hasBreakdown ? '' : ' pe-none'}">
+            <div class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between${hasBreakdown ? ' cursor-help' : ''}" style="${hasBreakdown ? 'cursor:help;' : ''}">
+                <div>
+                    <i class="bi bi-cash-stack text-success fs-6 me-1 align-middle"></i> 
+                    <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect Amount</span>
+                    ${hasBreakdown ? '<i class="bi bi-chevron-down text-muted ms-1 opacity-50" style="font-size:0.6rem;"></i>' : ''}
+                </div>
+                <strong class="text-success" style="font-size: 0.9rem;">₱${collectAmount.toLocaleString()}</strong>
+            </div>
+            ${breakdownPopup}
+=======
+    if (['Cash AR', 'Cash ORCR', 'Check AR', 'Check ORCR'].includes(pType)) {
+        amountHtml = `
+        <div class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between">
             <div>
                 <i class="bi bi-cash-stack text-success fs-6 me-1 align-middle"></i> 
-                <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect Amount</span>
+                <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect (${pType})</span>
             </div>
-            <strong class="text-success" style="font-size: 0.9rem;">₱${collectAmount.toLocaleString()}</strong>
+            <strong class="text-success" style="font-size: 0.9rem;">₱${Number(pAmount).toLocaleString()}</strong>
+>>>>>>> 11a2296 (R2 migration: route booth actions to Cloudflare Worker)
         </div>`;
+    } else if (isBillingPayment && getUserRole() === 'superadmin') {
+        // Billing amount: only visible to superadmin
+        let serviceTotal = 0;
+        try {
+            const amts = JSON.parse(paymentDoc['Service Amounts JSON'] || '{}');
+            Object.values(amts).forEach(v => { serviceTotal += parseFloat(v) || 0; });
+        } catch(ex) {}
+        const billingAmount = serviceTotal > 0 ? serviceTotal : Number(pAmount);
+        if (billingAmount > 0) {
+            const breakdownPopup = buildServiceBreakdown(paymentDoc['Service Amounts JSON'], billingAmount, 'text-warning', 'up');
+            const hasBreakdown = breakdownPopup.length > 0;
+            amountHtml = `
+            <div data-screenshot-hide="true" class="svc-breakdown-wrap${hasBreakdown ? '' : ' pe-none'}">
+                <div class="bg-warning bg-opacity-10 py-1 px-2 rounded-3 border border-warning border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between" style="${hasBreakdown ? 'cursor:help;' : ''}">
+                    <div>
+                        <i class="bi bi-file-earmark-text text-warning fs-6 me-1 align-middle"></i> 
+                        <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Billing Amount</span>
+                        ${hasBreakdown ? '<i class="bi bi-chevron-down text-muted ms-1 opacity-50" style="font-size:0.6rem;"></i>' : ''}
+                    </div>
+                    <strong class="text-warning" style="font-size: 0.9rem;">₱${billingAmount.toLocaleString()}</strong>
+                </div>
+                ${breakdownPopup}
+            </div>`;
+        }
     }
 
     let editorBadge = e['Editor Assigned'] 
@@ -3888,7 +4172,11 @@ function generateSingleEventCard(e) {
         </div>
     </div>`;
 }
-
+function getServiceTotal(serviceAmountsJson) {
+    let amts = {};
+    try { amts = JSON.parse(serviceAmountsJson || '{}'); } catch(ex) {}
+    return Object.values(amts).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+}
 // UNIFIED OCR SCANNER & UPLOADER (With Filename Verification) 🟢
 async function uploadAndScanInvoice(prefix) {
     const fileInput = document.createElement('input');
@@ -4285,7 +4573,44 @@ async function uploadAndScanInvoice(prefix) {
           }
       }
 
-      let amountStr = payData['Amount'] ? `<br><strong class="text-success">₱${Number(payData['Amount']).toLocaleString()}</strong>` : '';
+      // Calculate service total from Service Amounts JSON for non-billing payments
+      let amountStr = '';
+      const payType = payData['Payment Type'] || '';
+      const isBilling = payType === 'Billing';
+      
+      if (!isBilling && payType) {
+          // AR and ORCR: show service amounts total, fallback to Amount field
+          let svcTotal = 0;
+          try {
+              const svcAmts = JSON.parse(payData['Service Amounts JSON'] || '{}');
+              Object.values(svcAmts).forEach(v => { svcTotal += parseFloat(v) || 0; });
+          } catch(ex) {}
+          const displayAmt = svcTotal > 0 ? svcTotal : Number(payData['Amount'] || 0);
+          if (displayAmt > 0) {
+              const breakdownPopup = buildServiceBreakdown(payData['Service Amounts JSON'], displayAmt, 'text-success', 'down');
+              const hasBreakdown = breakdownPopup.length > 0;
+              amountStr = `<br><span class="svc-breakdown-wrap down d-inline-block${hasBreakdown ? '' : ' pe-none'}" style="${hasBreakdown ? 'cursor:help;' : ''}">
+                  <strong class="text-success">₱${displayAmt.toLocaleString()}${hasBreakdown ? ' <i class="bi bi-info-circle opacity-50" style="font-size:0.65rem;"></i>' : ''}</strong>
+                  ${breakdownPopup}
+              </span>`;
+          }
+      } else if (isBilling && getUserRole() === 'superadmin') {
+          // Billing: only visible to superadmin
+          let svcTotal = 0;
+          try {
+              const svcAmts = JSON.parse(payData['Service Amounts JSON'] || '{}');
+              Object.values(svcAmts).forEach(v => { svcTotal += parseFloat(v) || 0; });
+          } catch(ex) {}
+          const displayAmt = svcTotal > 0 ? svcTotal : Number(payData['Amount'] || 0);
+          if (displayAmt > 0) {
+              const breakdownPopup = buildServiceBreakdown(payData['Service Amounts JSON'], displayAmt, 'text-warning', 'down');
+              const hasBreakdown = breakdownPopup.length > 0;
+              amountStr = `<br><span class="svc-breakdown-wrap down d-inline-block${hasBreakdown ? '' : ' pe-none'}" style="${hasBreakdown ? 'cursor:help;' : ''}">
+                  <strong class="text-warning">₱${displayAmt.toLocaleString()}${hasBreakdown ? ' <i class="bi bi-info-circle opacity-50" style="font-size:0.65rem;"></i>' : ''}</strong>
+                  ${breakdownPopup}
+              </span>`;
+          }
+      }
 
       html += `<tr>
         <td class="fw-bold text-nowrap text-secondary">
@@ -5727,7 +6052,22 @@ async function uploadAndScanInvoice(prefix) {
           document.getElementById('boothFolderName').value = eventName;
       }
   }
-
+// ==============================================================================
+// QUICK AR SALES SYNC 
+// ==============================================================================
+window.recomputeARSales = function() {
+    const start = document.getElementById('prStartDate').value;
+    const end = document.getElementById('prEndDate').value;
+    
+    if (!start || !end) return egmAlert("Please select a Start and End date first.");
+    if (Object.keys(currentPayrollData).length === 0) return egmAlert("Please load or compute a payroll session first.");
+    
+    // Safely recalculate and redraw the AR Sales table based on live Firebase data 
+    // without altering the currentPayrollData object (preserves manual edits).
+    renderEgmComputation();
+    
+    showToast("AR Sales successfully synced with the latest payments!", "success");
+};
   function handleEditSetupClick() {
       // Check if current event is ProBooth-generated — if so, stay in view mode
       const selectedId = document.getElementById('boothEventSelect').value;
@@ -5791,6 +6131,7 @@ async function uploadAndScanInvoice(prefix) {
           document.getElementById('boothSelectContainer').style.display = 'none';
           document.getElementById('boothFormFields').style.display = 'block';
           document.getElementById('boothViewContainer').style.display = 'none';
+          document.getElementById('boothTemplatesBlock').style.display = 'block';
           document.getElementById('boothGenerateBtn').style.display = 'block';
           document.getElementById('boothSaveBtn').style.display = 'none';
           document.getElementById('boothDeleteBtn').style.display = 'none';
@@ -5808,6 +6149,7 @@ async function uploadAndScanInvoice(prefix) {
           document.getElementById('boothSelectContainer').style.display = 'block';
           document.getElementById('boothFormFields').style.display = mode === 'edit' ? 'block' : 'none';
           document.getElementById('boothViewContainer').style.display = mode === 'view' ? 'block' : 'none';
+          document.getElementById('boothTemplatesBlock').style.display = mode === 'edit' ? 'none' : 'block';
           
           document.getElementById('boothGenerateBtn').style.display = 'none';
           document.getElementById('boothSaveBtn').style.display = mode === 'edit' ? 'block' : 'none';
@@ -6121,6 +6463,11 @@ async function uploadAndScanInvoice(prefix) {
               // 🟢 THE FIX: Setup user stickers visually
               document.getElementById('boothUserStickers').checked = details.userStickers === true;
               
+              // Load new display toggles and custom term
+              document.getElementById('boothShowSearchBar').checked = details.showSearchBar === true;
+              document.getElementById('boothShowTime').checked = details.showTime === true;
+              document.getElementById('boothCustomTerm').value = details.customTerm || '';
+              
               handleCommunityToggle(); 
               handleUserStickersToggle(); // Trigger Grid Fetch!
               
@@ -6134,7 +6481,11 @@ async function uploadAndScanInvoice(prefix) {
               selectedExistingQrLogoId = details.qrLogoId || details.logoId || "";
 
               if (details.bgId) {
+<<<<<<< HEAD
                   document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.jpg`;
+=======
+                  document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.png`;
+>>>>>>> 11a2296 (R2 migration: route booth actions to Cloudflare Worker)
                   document.getElementById('boothBgPreviewContainer').style.display = "flex";
               } else {
                   document.getElementById('boothBgPreviewContainer').style.display = "none";
@@ -6194,6 +6545,7 @@ async function uploadAndScanInvoice(prefix) {
                          <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qrUrl}')">Copy link</button>
                          <button class="booth-mini-btn" onclick="downloadBoothImage('${qrUrl}', '${fileName}')">Download</button>
                       `;
+<<<<<<< HEAD
                   } else {
                       // Fallback: generate QR on-the-fly (event predates R2 or QR upload failed)
                       let qcApiUrl = `https://quickchart.io/qr?size=1000&errorCorrectionLevel=H&text=${encodeURIComponent(mainGalleryUrl)}`;
@@ -6209,12 +6561,23 @@ async function uploadAndScanInvoice(prefix) {
                       
                       if (fallbackLogoUrl) qcApiUrl += `&centerImageUrl=${encodeURIComponent(fallbackLogoUrl)}&centerImageSizeRatio=0.22`;
                       
+=======
+                   } else {
+                      // Fallback: generate QR on-the-fly (event predates R2 or QR upload failed)
+                      let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
+                      if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://cdn.createdbyegm.com/assets/logos/' + details.logoId + '.png')}&centerImageSizeRatio=0.15`;
+>>>>>>> 11a2296 (R2 migration: route booth actions to Cloudflare Worker)
                       currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false, filename: fileName });
                       qrCodeActionHtml = `
                          <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qcApiUrl}')">Copy link</button>
                          <button class="booth-mini-btn" onclick="downloadBoothImage('${qcApiUrl}', '${fileName}')">Download</button>
                       `;
                    }
+<<<<<<< HEAD
+                  const titleHtml = isCommunity ? `<i class="bi bi-people-fill text-primary me-2"></i>Virtual Booth` : `${dynamicFolderName}${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span>`;
+
+                  const configRowHtml = '';
+=======
                   const titleHtml = isCommunity ? `<i class="bi bi-people-fill text-primary me-2"></i>Community Booth` : `${dynamicFolderName}${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span>`;
 
                   // 🟢 THE FIX: Dynamically remove the Config Row if it's the Community Booth
@@ -6226,6 +6589,7 @@ async function uploadAndScanInvoice(prefix) {
                         </div>
                      </div>
                   `;
+>>>>>>> 11a2296 (R2 migration: route booth actions to Cloudflare Worker)
 
                   const card = document.createElement('div');
                   card.className = 'booth-card';
@@ -6235,10 +6599,12 @@ async function uploadAndScanInvoice(prefix) {
                         <span>Main Gallery</span>
                         <div class="booth-link-actions">
                            <button class="booth-mini-btn" onclick="copyBoothLink(this, '${mainGalleryUrl}')">Copy link</button>
-                           <button class="booth-mini-btn backup" title="Fallback link" onclick="copyBoothLink(this, '${backupGalleryUrl}')">Backup</button>
+                           <button class="booth-mini-btn backup" onclick="openManageModal('${boothPrefix}')">Manage</button>
                            <button class="booth-mini-btn" onclick="window.open('${mainGalleryUrl}', '_blank')">Go</button>
                         </div>
                      </div>
+<<<<<<< HEAD
+=======
                       <div class="booth-link-row">
                          <span>R2 Prefix</span>
                          <div class="booth-link-actions">
@@ -6246,6 +6612,7 @@ async function uploadAndScanInvoice(prefix) {
                          </div>
                       </div>
                      </div>
+>>>>>>> 11a2296 (R2 migration: route booth actions to Cloudflare Worker)
                      ${configRowHtml}
                      <div class="booth-link-row">
                         <span>QR Code</span>
@@ -6296,6 +6663,135 @@ async function uploadAndScanInvoice(prefix) {
               btn.classList.remove("text-success");
           }, 1500);
       });
+  }
+
+  // ==========================================
+  // MANAGE PHOTOS MODAL (R2 Gallery)
+  // ==========================================
+  let managePhotosData = [];
+
+  async function openManageModal(prefix) {
+    currentManagePrefix = prefix;
+    document.getElementById('manageUploadProgress').style.display = 'none';
+    document.getElementById('manageUploadBar').style.width = '0%';
+    document.getElementById('manageModal').style.display = 'flex';
+    document.getElementById('manageGrid').innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #64748b; padding: 40px 0;"><div class="spinner-border text-primary" style="width:2rem;height:2rem;" role="status"></div><div class="mt-2">Loading photos...</div></div>';
+    managePhotosData = [];
+
+    try {
+      const res = await fetch(`${WORKER_URL}/api/gallery?prefix=${encodeURIComponent(prefix)}`);
+      const result = await res.json();
+      if (result && result.status === 'success') {
+        managePhotosData = result.data;
+        renderManageGrid();
+      } else {
+        document.getElementById('manageGrid').innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ef4444; padding: 20px;">Failed to load photos.</div>';
+      }
+    } catch (e) {
+      document.getElementById('manageGrid').innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ef4444; padding: 20px;">Error connecting to Cloudflare R2.</div>';
+    }
+  }
+
+  function renderManageGrid() {
+    const grid = document.getElementById('manageGrid');
+    if (!managePhotosData || managePhotosData.length === 0) {
+      grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #64748b; padding: 40px 0;">No photos found in this booth.</div>';
+      return;
+    }
+    let html = '';
+    managePhotosData.forEach((item, index) => {
+      const key = item[0];
+      const url = item[2];
+      html += `
+      <div class="manage-item" style="position: relative; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; background: #000; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+          <img src="${url}?w=400" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer; opacity: 0.9; transition: opacity 0.2s;" onclick="toggleManageSelection(${index})" onload="this.style.opacity=1">
+          <input type="checkbox" id="manage_cb_${index}" data-key="${key}" data-url="${url}" style="position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; cursor: pointer; accent-color: #3b82f6;">
+          <button onclick="deleteSingleManagePhoto('${key}')" style="position: absolute; bottom: 10px; right: 10px; background: rgba(239, 68, 68, 0.92); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 13px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"><i class="bi bi-trash"></i></button>
+      </div>`;
+    });
+    grid.innerHTML = html;
+  }
+
+  function closeManageModal() {
+    document.getElementById('manageModal').style.display = 'none';
+  }
+
+  function selectAllManagePhotos() {
+    const checkboxes = document.querySelectorAll('input[id^="manage_cb_"]');
+    let allChecked = true;
+    checkboxes.forEach(cb => { if (!cb.checked) allChecked = false; });
+    checkboxes.forEach(cb => { cb.checked = !allChecked; });
+  }
+
+  function toggleManageSelection(index) {
+    const cb = document.getElementById(`manage_cb_${index}`);
+    cb.checked = !cb.checked;
+  }
+
+  async function deleteSingleManagePhoto(key) {
+    if (!confirm('Permanently delete this photo?')) return;
+    const ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = 'Deleting...';
+    ov.style.display = 'flex';
+
+    const res = await callWorkerApi('/api/dashboard/delete-file', { key });
+    if (res && res.success) {
+      managePhotosData = managePhotosData.filter(item => item[0] !== key);
+      renderManageGrid();
+      showToast('Photo deleted', 'success');
+    } else {
+      showToast('Failed to delete photo', 'danger');
+    }
+    ov.style.display = 'none';
+  }
+
+  async function deleteSelectedManagePhotos() {
+    const checkboxes = document.querySelectorAll('input[id^="manage_cb_"]:checked');
+    if (checkboxes.length === 0) return showToast('No photos selected', 'warning');
+    if (!confirm(`Permanently delete ${checkboxes.length} selected photos?`)) return;
+
+    const ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = 'Deleting files from R2...';
+    ov.style.display = 'flex';
+
+    for (const cb of checkboxes) {
+      const key = cb.getAttribute('data-key');
+      await callWorkerApi('/api/dashboard/delete-file', { key });
+      managePhotosData = managePhotosData.filter(item => item[0] !== key);
+    }
+    renderManageGrid();
+    ov.style.display = 'none';
+    showToast('Selected photos deleted', 'success');
+  }
+
+  async function downloadImageSilent(url, f) {
+    try {
+      const r = await fetch(url);
+      const b = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = f;
+      a.click();
+    } catch (e) {
+      window.open(url, '_blank');
+    }
+  }
+
+  async function downloadAllManagePhotos() {
+    if (!managePhotosData || managePhotosData.length === 0) return showToast('No photos to download', 'warning');
+
+    const ov = document.getElementById('submitOverlay');
+    document.getElementById('overlayText').innerText = `Downloading ${managePhotosData.length} photos...`;
+    ov.style.display = 'flex';
+
+    for (let i = 0; i < managePhotosData.length; i++) {
+      const url = managePhotosData[i][2];
+      const filename = url.split('/').pop().split('?')[0] || `photo_${i}.jpg`;
+      await downloadImageSilent(url, filename);
+      await new Promise(r => setTimeout(r, 600));
+    }
+    ov.style.display = 'none';
+    showToast('Downloads complete', 'success');
   }
 
   function openLightbox(src) {
@@ -6453,10 +6949,13 @@ async function fetchExistingLogos(forceRefresh = false) {
           logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
           fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
-          templates: boothTemplates,
+          templates: actionName === 'generateBoothSetup' ? boothTemplates : [],
           enableCommunity: enableCommunity, 
           communityOnly: communityOnly,
-        userStickers: document.getElementById('boothUserStickers').checked // 🟢 NEW
+          userStickers: document.getElementById('boothUserStickers').checked,
+          showSearchBar: document.getElementById('boothShowSearchBar').checked,
+          showTime: document.getElementById('boothShowTime').checked,
+          customTerm: document.getElementById('boothCustomTerm').value.trim()
       };
 
       // Route to Worker for booth actions (not GAS)
@@ -7157,7 +7656,7 @@ if (!isConfirmed) return;
       if (!await egmConfirm(`Generate a printable PDF summary report for ${start} to ${end}?`)) return;
 
       let totalPayout = 0;
-      let grandBreakdown = { 'Edgar(EGM)': 0, 'Francis': 0, 'Tina': 0, 'Grace': 0 };
+      let grandBreakdown = { 'Edgar(EGM)': 0, 'Francis': 0, 'Tina': 0, 'Grace': 0, 'CreatED Expenses': 0 };
 
       // Helper for the PDF Master Loop
       function allocateGrand(amount, payerCode) {
@@ -7237,6 +7736,7 @@ if (!isConfirmed) return;
               <div class="breakdown-row"><span>Francis</span></div>
               <div class="breakdown-row"><span>Tina</span></div>
               <div class="breakdown-row"><span>Grace</span></div>
+              <div class="breakdown-row"><span>CreatED Expenses</span></div>
               <div class="breakdown-row" style="color: #0d9488;"><span><strong>TOTAL</strong></span><span><strong>₱${totalPayout.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></span></div>
           </div>
 
@@ -7244,11 +7744,11 @@ if (!isConfirmed) return;
               // Make sure currentEgmComputation has the latest numbers
               renderEgmComputation();
               if (!currentEgmComputation) return '';
-              const { onlineSalesBalance, totalA, totalB, splits } = currentEgmComputation;
+              const { onlineSalesBalance, totalA, totalB, totalC, splits } = currentEgmComputation;
               let rowsHtml = '';
               splits.forEach(s => {
                   const aShare = totalA * s.pct;
-                  const bShare = totalB * s.pct;
+                  const bShare = totalB * s.pct; // Removed totalC
                   const diff = aShare - bShare;
                   const isLeft = diff >= 0;
                   const color = isLeft ? '#16a34a' : '#dc2626';
@@ -7260,7 +7760,7 @@ if (!isConfirmed) return;
                       <td class="text-right" style="color: ${color}; font-weight: bold;">₱${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${label}</td>
                   </tr>`;
               });
-              const grandDiff = totalA - totalB;
+              const grandDiff = totalA - totalB; // Removed totalC
               const grandColor = grandDiff >= 0 ? '#16a34a' : '#dc2626';
               const grandLabel = grandDiff >= 0 ? 'left' : 'deficit';
               return `
@@ -7271,7 +7771,7 @@ if (!isConfirmed) return;
                       <tr>
                           <th>Owner</th>
                           <th class="text-right">Sales In Share</th>
-                          <th class="text-right">Payout Share</th>
+                          <th class="text-right">Deductions Share</th>
                           <th class="text-right">Balance</th>
                       </tr>
                   </thead>
@@ -7287,7 +7787,8 @@ if (!isConfirmed) return;
               </table>
               <p style="margin-top: 15px; font-size: 0.85em; color: #666; font-style: italic;">
                   <strong>Total A:</strong> All Cash, Check & Online Transfer payments for events in this cutoff period.<br>
-                  <strong>Total B:</strong> All payouts assigned to Edgar (EGM) fund source.
+                  <strong>Total B:</strong> All base payouts & misc assigned to Edgar (EGM).<br>
+                  <strong>Total C:</strong> All expenses assigned to Edgar (EGM) or CreatED Expenses.
               </p>`;
           })()}
 
@@ -7317,7 +7818,6 @@ function markPayrollEdited() {
 // EGM FUND SOURCE COMPUTATION (Online Sales Balance + Total A vs Total B)
 // ==============================================================================
 
-
 function renderEgmComputation() {
     const container = document.getElementById('egmComputationContainer');
     const start = document.getElementById('prStartDate').value;
@@ -7331,19 +7831,43 @@ function renderEgmComputation() {
         return;
     }
 
+    // 🟢 Group by Event ID and extract ONLY the Main Day / Payment Doc
+    const uniquePayDocs = {};
+    const grouped = {};
+    
+    rawEvents.forEach(item => {
+        if (item['Event Name'] === 'Crew Leave') return;
+        if (item['Event Status'] === 'Cancelled' || item['Event Status'] === 'Pencil Booked') return;
+        
+        const id = item['Event ID'];
+        if (!grouped[id]) grouped[id] = [];
+        grouped[id].push(item);
+    });
+
+    for (let id in grouped) {
+        let days = grouped[id];
+        days.sort((a, b) => {
+            let dateA = a['Event Date'] || '9999-99-99';
+            let dateB = b['Event Date'] || '9999-99-99';
+            if (dateA !== dateB) return dateA.localeCompare(dateB);
+            let timeA = to24Hour(a['Event Start Time']) || to24Hour(a['Call Time']) || "99:99";
+            let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
+            return timeA.localeCompare(timeB);
+        });
+        // Grab the document holding the payment info, or fallback to Day 1
+        let payDoc = days.find(d => d['Payment Type']) || days[0];
+        uniquePayDocs[id] = payDoc;
+    }
+
+    // Filter the unique projects by the cutoff dates
+    const validProjects = Object.values(uniquePayDocs).filter(e => {
+        return e['Event Date'] >= start && e['Event Date'] <= end;
+    });
+
     // ---- Total A: Cash + Check + Online Transfer payments in cutoff window ----
-    // Skips Crew Leave, Cancelled, Pencil Booked. Counts each Event ID only once.
-    // STRICT RULE: Only includes events with a 'Paid' Billing Status.
-    const seenEventIds = new Set();
     let totalA = 0;
 
-    rawEvents.forEach(e => {
-        if (seenEventIds.has(e['Event ID'])) return;
-        if (e['Event Name'] === 'Crew Leave') return;
-        if (e['Event Status'] === 'Cancelled' || e['Event Status'] === 'Pencil Booked') return;
-        if (!e['Event Date'] || e['Event Date'] < start || e['Event Date'] > end) return;
-        
-        // --- NEW STATUS CHECK ADDED HERE ---
+    validProjects.forEach(e => {
         if (e['Billing Status'] !== 'Paid') return; 
 
         const pType = e['Payment Type'] || '';
@@ -7355,48 +7879,49 @@ function renderEgmComputation() {
         if (isQualified) {
             const amt = parseFloat(e['Amount']) || 0;
             if (amt > 0) {
-                seenEventIds.add(e['Event ID']);
                 totalA += amt;
-                
-                // 🟢 NEW: Build the breakdown row for this event
-                htmlTotalABreakdown += `<tr>
-                    <td class="fw-bold text-dark">${e['Event Name']}</td>
-                    <td><span class="badge bg-light text-dark border">${pType}</span></td>
-                    <td class="text-end fw-bold text-success">₱${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                </tr>`;
             }
         }
     });
 
-    // ---- Total B: All payouts assigned to Edgar (EGM) fund source only ----
+    // ---- Total B & C: Isolate Payouts vs Expenses ----
     let totalB = 0;
+    let totalC = 0; 
     Object.keys(currentPayrollData).forEach(pName => {
         const person = currentPayrollData[pName];
+        
         person.events.forEach(ev => {
             if (ev.payer === 'Edgar(EGM)') {
                 totalB += (ev.basePay || 0) + (ev.extraPay || 0);
+            } else if (ev.payer === 'CreatED Expenses') {
+                totalC += (ev.basePay || 0) + (ev.extraPay || 0); // Route to Total C
             }
         });
-        if (person.expensePayer === 'Edgar(EGM)') totalB += person.expenses || 0;
-        if (person.miscPayer === 'Edgar(EGM)') totalB += person.misc || 0;
+        
+        if (person.expensePayer === 'Edgar(EGM)' || person.expensePayer === 'CreatED Expenses') {
+            totalC += person.expenses || 0;
+        }
+        
+        if (person.miscPayer === 'Edgar(EGM)') {
+            totalB += person.misc || 0; 
+        } else if (person.miscPayer === 'CreatED Expenses') {
+            totalC += person.misc || 0; // Route to Total C
+        }
     });
 
     // ---- Service allocation per person (used for Sales In Share) ----
     let tA_Edgar = 0, tA_Francis = 0, tA_Tina = 0, tA_Grace = 0;
     let t6_TranspoSum = 0;
     let htmlT6 = '';
-    let htmlTotalABreakdown = ''; // 🟢 NEW: Stores the correct breakdown rows
+    
+    // 🟢 THE FIX: Moved the breakdown HTML generator back to the Service Allocations loop
+    let htmlTotalABreakdown = ''; 
     const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2});
 
-    rawEvents.forEach(ev => {
-        if (ev['Event Name'] === 'Crew Leave') return;
-        if (ev['Event Status'] === 'Cancelled' || ev['Event Status'] === 'Pencil Booked') return;
-        if (!ev['Event Date'] || ev['Event Date'] < start || ev['Event Date'] > end) return;
-        
+    // Use the validProjects array to iterate ONLY ONCE per project
+    validProjects.forEach(ev => {
         // Exclude 'Billing' events from the Sales In distribution
         if (ev['Payment Type'] === 'Billing') return;
-
-        // 🟢 NEW: Only include events that are actually marked as 'Paid'
         if (ev['Billing Status'] !== 'Paid') return;
 
         let amts = {};
@@ -7412,6 +7937,7 @@ function renderEgmComputation() {
         const photoQR    = parseFloat(amts['amt_PhotoQR'])     || 0;
         const frameToken = parseFloat(amts['amt_FrameToken'])  || 0;
         const photoStudio= parseFloat(amts['amt_PhotoStudio']) || 0;
+        
         const photoGroup = photo + photoQR + frameToken + photoStudio;
         const vidOther   = doc + high + vstudio;
 
@@ -7426,7 +7952,7 @@ function renderEgmComputation() {
         tA_Tina    += tA_tina_row;
         tA_Grace   += tA_grace_row;
 
-        // 🟢 NEW: Build the breakdown row
+        // 🟢 THE FIX: Row HTML is now generated based on the service allocations, restoring the missing rows!
         if (tA_row_total > 0) {
             htmlTotalABreakdown += `<tr>
                 <td class="fw-bold text-dark">${ev['Event Name']}</td>
@@ -7445,6 +7971,8 @@ function renderEgmComputation() {
     });
 
     const tA_Total = tA_Edgar + tA_Francis + tA_Tina + tA_Grace;
+    
+    // ... Leave everything below this exactly as it was ...
     const salesShareMap = { 'Edgar': tA_Edgar, 'Francis': tA_Francis, 'Tina': tA_Tina, 'Grace': tA_Grace };
 
     const splits = [
@@ -7456,7 +7984,7 @@ function renderEgmComputation() {
 
     currentEgmComputation = {
         onlineSalesBalance: currentOnlineSalesBalance,
-        totalA, totalB, splits
+        totalA, totalB, totalC, splits
     };
 
     // Build the computation card
@@ -7469,16 +7997,22 @@ function renderEgmComputation() {
         </div>
 
         <div class="row g-3 mb-3">
-            <div class="col-6 col-md-6">
+            <div class="col-12 col-md-4">
                 <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
                     <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total A (Sales In)</div>
                     <div class="fw-bold fs-5 text-success">₱${tA_Total.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
                 </div>
             </div>
-            <div class="col-6 col-md-6">
+            <div class="col-6 col-md-4">
                 <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
                     <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total B (Payouts)</div>
                     <div class="fw-bold fs-5 text-danger">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4">
+                <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
+                    <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total C (Expenses)</div>
+                    <div class="fw-bold fs-5 text-warning">₱${totalC.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
                 </div>
             </div>
         </div>
@@ -7510,7 +8044,7 @@ function renderEgmComputation() {
                     <tr>
                         <th class="py-2">Owner</th>
                         <th class="py-2 text-end">Sales In Share</th>
-                        <th class="py-2 text-end">Payouts Share</th>
+                        <th class="py-2 text-end">Deductions Share</th>
                         <th class="py-2 text-end">Balance</th>
                     </tr>
                 </thead>
@@ -7518,7 +8052,7 @@ function renderEgmComputation() {
 
     splits.forEach(s => {
         const aShare = salesShareMap[s.name] || 0;
-        const bShare = totalB * s.pct;
+        const bShare = totalB * s.pct; // Removed totalC
         const diff = aShare - bShare;
         const isLeft = diff >= 0;
         const colorClass = isLeft ? 'text-success' : 'text-danger';
@@ -7533,7 +8067,7 @@ function renderEgmComputation() {
         </tr>`;
     });
 
-    const grandDiff = tA_Total - totalB;
+    const grandDiff = tA_Total - totalB; // Removed totalC
     const isGrandLeft = grandDiff >= 0;
     const grandColorClass = isGrandLeft ? 'text-success' : 'text-danger';
     const grandLabel = isGrandLeft ? 'left' : 'deficit';
@@ -7680,7 +8214,7 @@ async function runPayrollEngine(forceNewRates = false) {
 
             currentPayrollData[personName].misc = existingData[personName].misc || 0;
             currentPayrollData[personName].isTentative = existingData[personName].isTentative || false;
-            currentPayrollData[personName].expensePayer = existingData[personName].expensePayer || "Edgar(EGM)";
+            currentPayrollData[personName].expensePayer = existingData[personName].expensePayer || "CreatED Expenses";
             currentPayrollData[personName].miscPayer = existingData[personName].miscPayer || "Edgar(EGM)";
 
             // Smartly update the notes: combine old manual notes with new auto notes
@@ -7699,7 +8233,7 @@ async function runPayrollEngine(forceNewRates = false) {
             currentPayrollData[personName].autoExpenseAmount = newAutoExp; 
             currentPayrollData[personName].misc = 0;
             currentPayrollData[personName].isTentative = false;
-            currentPayrollData[personName].expensePayer = "Edgar(EGM)";
+            currentPayrollData[personName].expensePayer = "CreatED Expenses";
             currentPayrollData[personName].miscPayer = "Edgar(EGM)";
             
             if (newAutoNotes) {
@@ -7715,7 +8249,7 @@ async function runPayrollEngine(forceNewRates = false) {
     
     let jenBase = (oldJen && !forceNewRates) ? oldJen.basePay : 7500; 
     let jenExtra = oldJen ? oldJen.extraPay : 0; 
-    let jenPayer = oldJen ? (oldJen.payer || 'Edgar(EGM)') : 'Edgar(EGM)';
+    let jenPayer = oldJen ? (oldJen.payer || 'CreatED Expenses') : 'CreatED Expenses';
 
     currentPayrollData['Jenielyn'].events.push({
         doc: { 'Event ID': 'FIXED', 'Event Name': 'Bi-monthly Base Allowance', 'Event Date': start },
@@ -7848,7 +8382,7 @@ function initPayrollPerson(name) {
     if(!currentPayrollData[name]) {
         currentPayrollData[name] = { 
             events: [], totalBase: 0, expenses: 0, misc: 0, finalTotal: 0,
-            payslipNote: "", isTentative: false, expensePayer: "Edgar(EGM)", miscPayer: "Edgar(EGM)",
+            payslipNote: "", isTentative: false, expensePayer: "CreatED Expenses", miscPayer: "Edgar(EGM)",
             payerBreakdown: {}
         };
     }
@@ -7982,7 +8516,7 @@ function renderPayrollTable() {
         const shootCount = data.events.filter(e => e.role === 'Crew').length;
         const editCount = data.events.filter(e => e.role === 'Editor').length;
         
-        const isFullyExempt = owners.includes(name) && name !== 'Francis' && data.totalBase === 0 && editCount === 0;
+        const isFullyExempt = owners.includes(name) && name !== 'Francis' && name !== 'Tina' && data.totalBase === 0 && editCount === 0;
         const estBasePayHtml = isFullyExempt ? '<span class="badge bg-secondary text-white shadow-sm">N/A (Exempt)</span>' : `₱${data.finalTotal.toLocaleString()}`;
         
         // 🔴 NEW: Color the row and add a badge if it is marked as Tentative!
@@ -8282,7 +8816,7 @@ async function processExpenseAction(docId, newStatus) {
       }
 
       document.getElementById('prModalName').innerText = name + (isHistorical ? ' (Historical)' : '');
-      const isFullyExempt = owners.includes(name) && name !== 'Francis' && !data.events.some(e => e.role === 'Editor');
+      const isFullyExempt = owners.includes(name) && name !== 'Francis' && name !== 'Tina' && !data.events.some(e => e.role === 'Editor');
       
       if (!isHistorical) {
           const start = document.getElementById('prStartDate').value;
@@ -8298,6 +8832,7 @@ async function processExpenseAction(docId, newStatus) {
                           <input type="number" id="prGlobalExpenses" class="form-control fw-bold text-success" value="${data.expenses || 0}" oninput="markPayrollEdited(); calculateLivePayslipTotals()">
                       </div>
                       <select id="prExpensePayer" class="form-select form-select-sm text-secondary fw-bold shadow-sm" onchange="markPayrollEdited(); calculateLivePayslipTotals()">
+                          <option value="CreatED Expenses" ${data.expensePayer === 'CreatED Expenses' || !data.expensePayer ? 'selected' : ''}>Source: CreatED Expenses</option>
                           <option value="Edgar(EGM)" ${data.expensePayer === 'Edgar(EGM)' ? 'selected' : ''}>Source: Edgar</option>
                           <option value="Francis" ${data.expensePayer === 'Francis' ? 'selected' : ''}>Source: Francis</option>
                           <option value="Tina" ${data.expensePayer === 'Tina' ? 'selected' : ''}>Source: Tina</option>
@@ -8317,6 +8852,7 @@ async function processExpenseAction(docId, newStatus) {
                           <option value="Tina" ${data.miscPayer === 'Tina' ? 'selected' : ''}>Source: Tina</option>
                           <option value="Grace" ${data.miscPayer === 'Grace' ? 'selected' : ''}>Source: Grace</option>
                           <option value="SDE" ${data.miscPayer === 'SDE' ? 'selected' : ''}>Source: SDE (Split 3)</option>
+                          <option value="CreatED Expenses" ${data.miscPayer === 'CreatED Expenses' ? 'selected' : ''}>Source: CreatED Expenses</option>
                       </select>
                   </div>
               </div>
@@ -8407,6 +8943,7 @@ async function processExpenseAction(docId, newStatus) {
                       <option value="Tina" ${item.payer === 'Tina' ? 'selected' : ''}>Tina</option>
                       <option value="Grace" ${item.payer === 'Grace' ? 'selected' : ''}>Grace</option>
                       <option value="SDE" ${item.payer === 'SDE' ? 'selected' : ''}>SDE</option>
+                      <option value="CreatED Expenses" ${item.payer === 'CreatED Expenses' ? 'selected' : ''}>CreatED</option>
                   </select>`;
           }
 
@@ -8470,7 +9007,7 @@ window.savePayrollModalChanges = function() {
       if(!activePayrollPerson) return;
       const data = currentPayrollData[activePayrollPerson];
       
-      let breakdown = { 'Edgar(EGM)': 0, 'Francis': 0, 'Tina': 0, 'Grace': 0 };
+      let breakdown = { 'Edgar(EGM)': 0, 'Francis': 0, 'Tina': 0, 'Grace': 0, 'CreatED Expenses': 0 };
 
       document.querySelectorAll('.pr-event-base').forEach(input => {
           data.events[input.getAttribute('data-index')].basePay = parseFloat(input.value) || 0;
@@ -8568,6 +9105,7 @@ window.savePayrollModalChanges = function() {
       // Calculate exactly how many pixels we need BEFORE creating the canvas
       let dynamicHeight = 215; // Top header down to the first item
       dynamicHeight += (collapsedItems.length * 40); // 40px per item row
+      dynamicHeight += 45; // NEW: Space for the explicit 'Total Base Pay' subtotal line
       if (data.expenses > 0) dynamicHeight += 30; // 30px for expenses
       if (data.misc > 0) dynamicHeight += 30; // 30px for misc
       dynamicHeight += 60; // Space for the Total Net Pay line and text
@@ -8611,6 +9149,8 @@ window.savePayrollModalChanges = function() {
       let y = 215; 
       ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
 
+      let totalBasePaySum = 0; // Track the subtotal of just the events/allowances
+
       collapsedItems.forEach(item => {
           ctx.textAlign = 'left';
           let desc = item.id === 'FIXED' ? `${item.name} (${item.role})` : `#${item.id} - ${item.name} (${item.role})`;
@@ -8621,16 +9161,32 @@ window.savePayrollModalChanges = function() {
           let dateNote = item.dateString ? `${item.dateString} • ` : "";
           ctx.fillText(`${dateNote}Source: ${item.payer}`, 40, y + 14);
 
+          let rowTotal = item.basePay + item.extraPay;
+          totalBasePaySum += rowTotal;
+
           ctx.textAlign = 'right'; ctx.fillStyle = '#000000'; ctx.font = '14px Inter, sans-serif';
-          ctx.fillText('₱ ' + (item.basePay + item.extraPay).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}), 560, y);
+          ctx.fillText('₱ ' + rowTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}), 560, y);
           
           // Move Y down by exactly 40 pixels for the next row
           y += 40; 
       });
 
+      // --- Draw Subtotal (Total Base Pay) ---
+      ctx.beginPath(); ctx.moveTo(40, y - 10); ctx.lineTo(560, y - 10); ctx.strokeStyle = '#eeeeee'; ctx.stroke();
+      y += 15;
+      
+      ctx.textAlign = 'left'; ctx.font = 'bold 14px Inter, sans-serif'; ctx.fillStyle = '#333333';
+      ctx.fillText('Total Base Pay', 40, y);
+      
+      ctx.textAlign = 'right';
+      ctx.fillText('₱ ' + totalBasePaySum.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}), 560, y);
+      
+      y += 30;
+
       // --- Draw Add-ons ---
+      ctx.font = '14px Inter, sans-serif'; ctx.fillStyle = '#000000'; // Reset font back to normal weight
       if (data.expenses > 0) {
-          ctx.textAlign = 'left'; ctx.fillText('Reimbursements / Expenses', 40, y);
+          ctx.textAlign = 'left'; ctx.fillText('Total Expenses', 40, y);
           ctx.textAlign = 'right'; ctx.fillText('₱ ' + data.expenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}), 560, y);
           y += 30;
       }
@@ -9462,17 +10018,26 @@ function computeBillingSales() {
 
   function handleTemplateSelection() {
       const hasSelection = document.getElementById('boothTemplateList').selectedIndex !== -1;
-      document.getElementById('btnEditTemplate').style.display = hasSelection ? 'block' : 'none';
-      document.getElementById('btnRemoveTemplate').style.display = hasSelection ? 'block' : 'none';
-      document.getElementById('btnExportTemplate').style.display = hasSelection ? 'block' : 'none';
+      const canManageTemplates = currentBoothMode === 'new';
+      document.getElementById('btnEditTemplate').style.display = hasSelection && canManageTemplates ? 'block' : 'none';
+      document.getElementById('btnRemoveTemplate').style.display = hasSelection && canManageTemplates ? 'block' : 'none';
+      document.getElementById('btnExportTemplate').style.display = hasSelection && canManageTemplates ? 'block' : 'none';
   }
 
  function openNewTemplate() {
+    if (currentBoothMode !== 'new') {
+        showToast('Templates are edited in ProBooth after an event is created.', 'info');
+        return;
+    }
     window.templateToEdit = null; // Clear memory
     window.open('template-editor.html', '_blank', 'width=1200,height=800');
 }
 
 function editTemplate() {
+    if (currentBoothMode !== 'new') {
+        showToast('Templates are edited in ProBooth after an event is created.', 'info');
+        return;
+    }
     const idx = document.getElementById('boothTemplateList').value;
     if (idx === "") return;
     window.templateToEdit = boothTemplates[idx]; // Store directly in RAM! Bypasses 5MB limit.
@@ -9480,6 +10045,10 @@ function editTemplate() {
 }
 
   function removeTemplate() {
+      if (currentBoothMode !== 'new') {
+          showToast('Templates are edited in ProBooth after an event is created.', 'info');
+          return;
+      }
       const idx = document.getElementById('boothTemplateList').value;
       if (idx === "") return;
       boothTemplates.splice(idx, 1);
@@ -9487,6 +10056,10 @@ function editTemplate() {
   }
 
   function exportTemplate() {
+      if (currentBoothMode !== 'new') {
+          showToast('Templates are edited in ProBooth after an event is created.', 'info');
+          return;
+      }
       const idx = document.getElementById('boothTemplateList').value;
       if (idx === "") return;
       const t = boothTemplates[idx];
@@ -9498,6 +10071,11 @@ function editTemplate() {
   }
 
   function importTemplateFile(event) {
+      if (currentBoothMode !== 'new') {
+          showToast('Templates are edited in ProBooth after an event is created.', 'info');
+          event.target.value = '';
+          return;
+      }
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
@@ -9566,6 +10144,10 @@ function downloadEventJson(fileId) {
 }
   // CROSS-WINDOW BRIDGE: Direct memory function called by the Editor window
 window.receiveTemplateFromEditor = function(newTemplate) {
+    if (currentBoothMode !== 'new') {
+        showToast('Templates are edited in ProBooth after an event is created.', 'info');
+        return;
+    }
     if (newTemplate) {
         const existingIdx = boothTemplates.findIndex(t => t.Name === newTemplate.Name);
         if (existingIdx >= 0) boothTemplates[existingIdx] = newTemplate;
@@ -9850,6 +10432,116 @@ async function runExpenseRecompute() {
       ov.style.display = 'none';
       event.target.value = ''; 
   }
+
+  // ─── Manage Modal: Drag & Drop Upload ───────────────────────────────────────
+
+  let currentManagePrefix = '';
+
+  function handleManageDragOver(e) {
+    e.preventDefault();
+    document.getElementById('manageDropZone').classList.add('drag-over');
+  }
+
+  function handleManageDragLeave(e) {
+    document.getElementById('manageDropZone').classList.remove('drag-over');
+  }
+
+  function handleManageDrop(e) {
+    e.preventDefault();
+    document.getElementById('manageDropZone').classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.match(/image\/(jpeg|png|webp)/));
+    if (files.length === 0) return showToast('Only JPG, PNG, or WEBP images are supported.', 'warning');
+    uploadManageFiles(files);
+  }
+
+  function handleManageFileSelect(e) {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    uploadManageFiles(files);
+    e.target.value = '';
+  }
+
+  async function uploadManageFiles(files) {
+    if (!currentManagePrefix) return showToast('No booth prefix found.', 'danger');
+
+    const progress = document.getElementById('manageUploadProgress');
+    const bar = document.getElementById('manageUploadBar');
+    const statusText = document.getElementById('manageUploadStatusText');
+    progress.style.display = 'block';
+
+    let uploaded = 0;
+    let failed = 0;
+    for (const file of files) {
+      statusText.innerText = `Uploading ${uploaded + failed + 1} of ${files.length}…`;
+
+      try {
+        // Always encode as JPEG to avoid worker filename/MIME rejections
+        const filename = `upload_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+        const prefix = currentManagePrefix;
+
+        // Re-encode via canvas to guarantee JPEG output
+        const blob = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              canvas.getContext('2d').drawImage(img, 0, 0);
+              canvas.toBlob(b => b ? resolve(b) : reject(new Error('Canvas encode failed')), 'image/jpeg', 0.92);
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        // Get presigned URL
+        const signRes = await fetch(`${WORKER_URL}/api/sign-upload`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${BOOTH_AUTH_TOKEN}` },
+          body: JSON.stringify({ prefix, filename })
+        });
+        if (!signRes.ok) {
+          const errText = await signRes.text();
+          throw new Error(`Sign failed (${signRes.status}): ${errText}`);
+        }
+        const { uploadUrl } = await signRes.json();
+
+        // PUT blob directly to R2
+        const putRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'image/jpeg' },
+          body: blob
+        });
+        if (!putRes.ok) throw new Error(`R2 rejected upload (${putRes.status})`);
+
+        uploaded++;
+      } catch (e) {
+        failed++;
+        console.error('Manage upload error:', e);
+        showToast(`Failed to upload ${file.name}: ${e.message}`, 'danger');
+      }
+
+      bar.style.width = `${Math.round(((uploaded + failed) / files.length) * 100)}%`;
+    }
+
+    // Refresh the grid directly without re-calling openManageModal (avoids state conflicts)
+    try {
+      const res = await fetch(`${WORKER_URL}/api/gallery?prefix=${encodeURIComponent(currentManagePrefix)}`);
+      const result = await res.json();
+      if (result && result.status === 'success') {
+        managePhotosData = result.data;
+        renderManageGrid();
+      }
+    } catch (e) { /* silent — photos still uploaded */ }
+
+    statusText.innerText = `${uploaded} image${uploaded !== 1 ? 's' : ''} uploaded${failed ? `, ${failed} failed` : ''}!`;
+    setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0%'; }, 2500);
+  }
+
 
   async function deleteUserSticker(key) {
       if (!await egmConfirm("Are you sure you want to permanently delete this sticker?")) return;
