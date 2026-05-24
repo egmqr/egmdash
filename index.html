@@ -4042,7 +4042,6 @@ function generateSingleEventCard(e) {
     let pAmount = paymentDoc['Amount'] || 0;
     let amountHtml = '';
 
-<<<<<<< HEAD
     const isNonBillingPayment = pType && pType !== 'Billing';
     const isBillingPayment = pType === 'Billing';
 
@@ -4067,16 +4066,6 @@ function generateSingleEventCard(e) {
                 <strong class="text-success" style="font-size: 0.9rem;">₱${collectAmount.toLocaleString()}</strong>
             </div>
             ${breakdownPopup}
-=======
-    if (['Cash AR', 'Cash ORCR', 'Check AR', 'Check ORCR'].includes(pType)) {
-        amountHtml = `
-        <div class="bg-success bg-opacity-10 py-1 px-2 rounded-3 border border-success border-opacity-25 mb-2 shadow-sm d-flex align-items-center justify-content-between">
-            <div>
-                <i class="bi bi-cash-stack text-success fs-6 me-1 align-middle"></i> 
-                <span class="text-dark fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Collect (${pType})</span>
-            </div>
-            <strong class="text-success" style="font-size: 0.9rem;">₱${Number(pAmount).toLocaleString()}</strong>
->>>>>>> 11a2296 (R2 migration: route booth actions to Cloudflare Worker)
         </div>`;
     } else if (isBillingPayment && getUserRole() === 'superadmin') {
         // Billing amount: only visible to superadmin
@@ -6481,11 +6470,7 @@ window.recomputeARSales = function() {
               selectedExistingQrLogoId = details.qrLogoId || details.logoId || "";
 
               if (details.bgId) {
-<<<<<<< HEAD
                   document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.jpg`;
-=======
-                  document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.png`;
->>>>>>> 11a2296 (R2 migration: route booth actions to Cloudflare Worker)
                   document.getElementById('boothBgPreviewContainer').style.display = "flex";
               } else {
                   document.getElementById('boothBgPreviewContainer').style.display = "none";
@@ -6545,7 +6530,6 @@ window.recomputeARSales = function() {
                          <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qrUrl}')">Copy link</button>
                          <button class="booth-mini-btn" onclick="downloadBoothImage('${qrUrl}', '${fileName}')">Download</button>
                       `;
-<<<<<<< HEAD
                   } else {
                       // Fallback: generate QR on-the-fly (event predates R2 or QR upload failed)
                       let qcApiUrl = `https://quickchart.io/qr?size=1000&errorCorrectionLevel=H&text=${encodeURIComponent(mainGalleryUrl)}`;
@@ -6561,35 +6545,15 @@ window.recomputeARSales = function() {
                       
                       if (fallbackLogoUrl) qcApiUrl += `&centerImageUrl=${encodeURIComponent(fallbackLogoUrl)}&centerImageSizeRatio=0.22`;
                       
-=======
-                   } else {
-                      // Fallback: generate QR on-the-fly (event predates R2 or QR upload failed)
-                      let qcApiUrl = `https://quickchart.io/qr?size=1000&text=${encodeURIComponent(mainGalleryUrl)}`;
-                      if (details.logoId) qcApiUrl += `&centerImageUrl=${encodeURIComponent('https://cdn.createdbyegm.com/assets/logos/' + details.logoId + '.png')}&centerImageSizeRatio=0.15`;
->>>>>>> 11a2296 (R2 migration: route booth actions to Cloudflare Worker)
                       currentViewBooths.push({ boothNum, url: qcApiUrl, isDrive: false, filename: fileName });
                       qrCodeActionHtml = `
                          <button class="booth-mini-btn" onclick="copyBoothLink(this, '${qcApiUrl}')">Copy link</button>
                          <button class="booth-mini-btn" onclick="downloadBoothImage('${qcApiUrl}', '${fileName}')">Download</button>
                       `;
                    }
-<<<<<<< HEAD
                   const titleHtml = isCommunity ? `<i class="bi bi-people-fill text-primary me-2"></i>Virtual Booth` : `${dynamicFolderName}${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span>`;
 
                   const configRowHtml = '';
-=======
-                  const titleHtml = isCommunity ? `<i class="bi bi-people-fill text-primary me-2"></i>Community Booth` : `${dynamicFolderName}${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span>`;
-
-                  // 🟢 THE FIX: Dynamically remove the Config Row if it's the Community Booth
-                  const configRowHtml = isCommunity ? '' : `
-                     <div class="booth-link-row">
-                        <span>Event Config (.json)</span>
-                        <div class="booth-link-actions">
-                            ${configKeysArr[i] ? `<button class="booth-mini-btn" onclick="downloadBoothImage('https://cdn.createdbyegm.com/${configKeysArr[i]}', 'Booth${boothNum}.json')"><i class="bi bi-download me-1"></i>Download</button>` : `<span class="text-muted small fst-italic">Unavailable</span>`}
-                        </div>
-                     </div>
-                  `;
->>>>>>> 11a2296 (R2 migration: route booth actions to Cloudflare Worker)
 
                   const card = document.createElement('div');
                   card.className = 'booth-card';
@@ -6603,16 +6567,6 @@ window.recomputeARSales = function() {
                            <button class="booth-mini-btn" onclick="window.open('${mainGalleryUrl}', '_blank')">Go</button>
                         </div>
                      </div>
-<<<<<<< HEAD
-=======
-                      <div class="booth-link-row">
-                         <span>R2 Prefix</span>
-                         <div class="booth-link-actions">
-                            <button class="booth-mini-btn" onclick="copyBoothLink(this, '${boothPrefix}')">Copy prefix</button>
-                         </div>
-                      </div>
-                     </div>
->>>>>>> 11a2296 (R2 migration: route booth actions to Cloudflare Worker)
                      ${configRowHtml}
                      <div class="booth-link-row">
                         <span>QR Code</span>
