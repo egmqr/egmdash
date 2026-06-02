@@ -3415,10 +3415,6 @@ function handleAddCustomService(inputId, containerId) {
                 amtInput.style.setProperty('display', 'block', 'important');
             } else {
                 amtInput.style.setProperty('display', 'none', 'important');
-                // 🟢 THE FIX: Wipe the amount clean if the service is unchecked!
-                if (!cb.checked) {
-                    amtInput.value = '';
-                }
             }
         }
     });
@@ -7599,15 +7595,7 @@ if (!isConfirmed) return;
           renderExpenseQueue();
           
           try {
-              // 🟢 THE FIX: Safely check if it's a string that needs parsing, or if it's already an object!
-              if (typeof data.sessionData === 'string') {
-                  currentPayrollData = JSON.parse(data.sessionData || "{}");
-              } else if (typeof data.sessionData === 'object' && data.sessionData !== null) {
-                  currentPayrollData = data.sessionData;
-              } else {
-                  currentPayrollData = {};
-              }
-
+              currentPayrollData = JSON.parse(data.sessionData);
               currentOnlineSalesBalance = data.onlineSalesBalance || 0;
               lastComputedRange = `${data.startDate}_${data.endDate}`;
 
@@ -7616,9 +7604,7 @@ if (!isConfirmed) return;
               
               markPayrollEdited(); 
           } catch (e) {
-              // Log the exact cause to the console so we can inspect it if it fails again
-              console.error("Session Parse Error:", e, data.sessionData);
-              egmAlert("Error parsing saved session data: " + e.message);
+              egmAlert("Error parsing saved session data.");
           }
           
           // SAFETY SWEEPER: 400ms later, forcefully scrub the DOM of any stranded overlays
@@ -7859,16 +7845,58 @@ function renderEgmComputation() {
         return e['Event Date'] >= start && e['Event Date'] <= end;
     });
 
-    // ---- INITIALIZE ALLOCATIONS ----
-    let totalA_Raw = 0; // Total money collected
-    let totalA_Pool = 0; // Money to be split via percentages
-    
+    // ---- Total A: Cash + Check + Online Transfer payments in cutoff window ----
+    let totalA = 0;
+
+    validProjects.forEach(e => {
+        if (e['Billing Status'] !== 'Paid') return; 
+
+        const pType = e['Payment Type'] || '';
+        const isQualified =
+            pType.includes('Cash') ||
+            pType.includes('Check') ||
+            pType.includes('Online Transfer');
+
+        if (isQualified) {
+            const amt = parseFloat(e['Amount']) || 0;
+            if (amt > 0) {
+                totalA += amt;
+            }
+        }
+    });
+
+    // ---- Total B & C: Isolate Payouts vs Expenses ----
+    let totalB = 0;
+    let totalC = 0; 
+    Object.keys(currentPayrollData).forEach(pName => {
+        const person = currentPayrollData[pName];
+        
+        person.events.forEach(ev => {
+            if (ev.payer === 'Edgar(EGM)') {
+                totalB += (ev.basePay || 0) + (ev.extraPay || 0);
+            } else if (ev.payer === 'CreatED Expenses') {
+                totalC += (ev.basePay || 0) + (ev.extraPay || 0); // Route to Total C
+            }
+        });
+        
+        if (person.expensePayer === 'Edgar(EGM)' || person.expensePayer === 'CreatED Expenses') {
+            totalC += person.expenses || 0;
+        }
+        
+        if (person.miscPayer === 'Edgar(EGM)') {
+            totalB += person.misc || 0; 
+        } else if (person.miscPayer === 'CreatED Expenses') {
+            totalC += person.misc || 0; // Route to Total C
+        }
+    });
+
     // ---- Service allocation per person (used for Sales In Share) ----
     let tA_Edgar = 0, tA_Francis = 0, tA_Tina = 0, tA_Grace = 0;
     let t6_TranspoSum = 0;
     let htmlT6 = '';
+    
+    // 🟢 THE FIX: Moved the breakdown HTML generator back to the Service Allocations loop
     let htmlTotalABreakdown = ''; 
-    let tA_SalesIn_Pool = 0; // 🟢 Keeps track of pure Total A without the direct funnels
     const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2});
 
     // Use the validProjects array to iterate ONLY ONCE per project
@@ -7879,11 +7907,7 @@ function renderEgmComputation() {
 
         let amts = {};
         try { amts = JSON.parse(ev['Service Amounts JSON'] || '{}'); } catch(ex) {}
-        
-        const serviceTotal = Object.values(amts).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
-        const amt = serviceTotal > 0 ? serviceTotal : (parseFloat(ev['Amount']) || 0);
-
-        if (amt <= 0) return;
+        if (!Object.values(amts).some(v => parseFloat(v) > 0)) return;
 
         const sde        = parseFloat(amts['amt_VideoSDE'])    || 0;
         const doc        = parseFloat(amts['amt_VideoDoc'])    || 0;
@@ -7895,27 +7919,21 @@ function renderEgmComputation() {
         const frameToken = parseFloat(amts['amt_FrameToken'])  || 0;
         const photoStudio= parseFloat(amts['amt_PhotoStudio']) || 0;
         
-        // 🟢 Direct Funnels (Excluded from Total A)
-        const graceDirect = doc + high + vstudio;
-        const francisDirect = parseFloat(amts['amt_Francis']) || 0;
-        const tinaDirect = parseFloat(amts['amt_Tina']) || 0;
-
         const photoGroup = photo + photoQR + frameToken + photoStudio;
+        const vidOther   = doc + high + vstudio;
 
         const tA_edgar_row   = photoGroup * 0.40;
-        const tA_francis_row = photoGroup * 0.30 + (sde / 3);
-        const tA_tina_row    = photoGroup * 0.20 + (sde / 3);
-        const tA_grace_row   = photoGroup * 0.10 + (sde / 3);
-
+        const tA_francis_row = photoGroup * 0.30 + sde / 3;
+        const tA_tina_row    = photoGroup * 0.20 + sde / 3;
+        const tA_grace_row   = photoGroup * 0.10 + sde / 3 + vidOther;
         const tA_row_total   = tA_edgar_row + tA_francis_row + tA_tina_row + tA_grace_row;
-        
-        tA_SalesIn_Pool += tA_row_total; // 🟢 Pure pool tracking
 
         tA_Edgar   += tA_edgar_row;
-        tA_Francis += tA_francis_row + francisDirect;
-        tA_Tina    += tA_tina_row + tinaDirect;
-        tA_Grace   += tA_grace_row + graceDirect;
+        tA_Francis += tA_francis_row;
+        tA_Tina    += tA_tina_row;
+        tA_Grace   += tA_grace_row;
 
+        // 🟢 THE FIX: Row HTML is now generated based on the service allocations, restoring the missing rows!
         if (tA_row_total > 0) {
             htmlTotalABreakdown += `<tr>
                 <td class="fw-bold text-dark">${ev['Event Name']}</td>
@@ -7933,7 +7951,9 @@ function renderEgmComputation() {
         }
     });
 
-    const tA_Share_Sum = tA_Edgar + tA_Francis + tA_Tina + tA_Grace; // Sum of individuals
+    const tA_Total = tA_Edgar + tA_Francis + tA_Tina + tA_Grace;
+    
+    // ... Leave everything below this exactly as it was ...
     const salesShareMap = { 'Edgar': tA_Edgar, 'Francis': tA_Francis, 'Tina': tA_Tina, 'Grace': tA_Grace };
 
     const splits = [
@@ -7945,8 +7965,7 @@ function renderEgmComputation() {
 
     currentEgmComputation = {
         onlineSalesBalance: currentOnlineSalesBalance,
-        totalA: tA_Share_Sum, // Updated to pass full sum into export
-        totalB, totalC, splits
+        totalA, totalB, totalC, splits
     };
 
     // Build the computation card
@@ -7962,7 +7981,7 @@ function renderEgmComputation() {
             <div class="col-12 col-md-4">
                 <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
                     <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total A (Sales In)</div>
-                    <div class="fw-bold fs-5 text-success">₱${tA_SalesIn_Pool.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                    <div class="fw-bold fs-5 text-success">₱${tA_Total.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
                 </div>
             </div>
             <div class="col-6 col-md-4">
@@ -7993,7 +8012,7 @@ function renderEgmComputation() {
                     ${htmlTotalABreakdown || '<tr><td colspan="3" class="text-center text-muted py-3 fst-italic">No qualifying sales in for this period</td></tr>'}
                     <tr class="bg-success bg-opacity-10 fw-bold">
                         <td colspan="2" class="text-start py-2 text-dark">TOTAL SALES IN</td>
-                        <td class="text-end text-success py-2">₱${tA_SalesIn_Pool.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td class="text-end text-success py-2">₱${tA_Total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     </tr>
                 </tbody>
             </table>
@@ -8014,7 +8033,7 @@ function renderEgmComputation() {
 
     splits.forEach(s => {
         const aShare = salesShareMap[s.name] || 0;
-        const bShare = totalB * s.pct; 
+        const bShare = totalB * s.pct; // Removed totalC
         const diff = aShare - bShare;
         const isLeft = diff >= 0;
         const colorClass = isLeft ? 'text-success' : 'text-danger';
@@ -8029,7 +8048,7 @@ function renderEgmComputation() {
         </tr>`;
     });
 
-    const grandDiff = tA_Share_Sum - totalB; // 🟢 Use Share Sum to reflect direct additions
+    const grandDiff = tA_Total - totalB; // Removed totalC
     const isGrandLeft = grandDiff >= 0;
     const grandColorClass = isGrandLeft ? 'text-success' : 'text-danger';
     const grandLabel = isGrandLeft ? 'left' : 'deficit';
@@ -8037,7 +8056,7 @@ function renderEgmComputation() {
     html += `
                 <tr class="bg-secondary bg-opacity-10 fw-bold">
                     <td class="py-2">TOTAL</td>
-                    <td class="py-2 text-end">₱${fmt(tA_Share_Sum)}</td>
+                    <td class="py-2 text-end">₱${fmt(tA_Total)}</td>
                     <td class="py-2 text-end">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td class="py-2 text-end ${grandColorClass}">₱${Math.abs(grandDiff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${grandLabel}</td>
                 </tr>
@@ -9553,8 +9572,7 @@ function computeBillingSales() {
         // The Rest (Any field that isn't the specific ones above)
         let restTotal = 0;
         for (let key in amts) {
-            // 🟢 THE FIX: Exclude amt_Francis and amt_Tina so they don't fall into the 4-way split pool
-            if (!['amt_VideoSDE', 'amt_VideoDoc', 'amt_PreProd', 'amt_VideoHigh', 'amt_VideoStudio', 'amt_Transpo', 'amt_Francis', 'amt_Tina'].includes(key)) {
+            if (!['amt_VideoSDE', 'amt_VideoDoc', 'amt_PreProd', 'amt_VideoHigh', 'amt_VideoStudio', 'amt_Transpo'].includes(key)) {
                 restTotal += parseFloat(amts[key]) || 0;
             }
         }
@@ -9633,34 +9651,23 @@ function computeBillingSales() {
         }
 
         // TOTAL A: Fixed-percentage service allocation per event
-        const francisDirect = parseFloat(amts['amt_Francis']) || 0;
-        const tinaDirect = parseFloat(amts['amt_Tina']) || 0;
-        
-        // Grace's specific direct services
-        const graceDirect = doc + high + vstudio;
-
         const tA_edgar_row   = photoGroup * 0.40;
-        const tA_francis_row = photoGroup * 0.30 + (sde / 3);
-        const tA_tina_row    = photoGroup * 0.20 + (sde / 3);
-        const tA_grace_row   = photoGroup * 0.10 + (sde / 3);
-        
+        const tA_francis_row = photoGroup * 0.30 + sde / 3;
+        const tA_tina_row    = photoGroup * 0.20 + sde / 3;
+        const tA_grace_row   = photoGroup * 0.10 + sde / 3 + vidOther;
         const tA_row_total   = tA_edgar_row + tA_francis_row + tA_tina_row + tA_grace_row;
-        
         tA_Edgar   += tA_edgar_row;
-        tA_Francis += tA_francis_row + francisDirect;
-        tA_Tina    += tA_tina_row + tinaDirect;
-        tA_Grace   += tA_grace_row + graceDirect;
-        
-        const rowTotalDisplay = tA_row_total + francisDirect + tinaDirect + graceDirect;
-
-        if (rowTotalDisplay > 0) {
+        tA_Francis += tA_francis_row;
+        tA_Tina    += tA_tina_row;
+        tA_Grace   += tA_grace_row;
+        if (tA_row_total > 0) {
             htmlTA += `<tr>
                 <td class="text-start fw-bold">${e['Event Name']}</td>
                 <td>₱${tA_edgar_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td>₱${(tA_francis_row + francisDirect).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td>₱${(tA_tina_row + tinaDirect).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td>₱${(tA_grace_row + graceDirect).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td class="fw-bold">₱${rowTotalDisplay.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td>₱${tA_francis_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td>₱${tA_tina_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td>₱${tA_grace_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="fw-bold">₱${tA_row_total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             </tr>`;
         }
     });
