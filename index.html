@@ -9589,7 +9589,8 @@ function computeBillingSales() {
         // The Rest (Any field that isn't the specific ones above)
         let restTotal = 0;
         for (let key in amts) {
-            if (!['amt_VideoSDE', 'amt_VideoDoc', 'amt_PreProd', 'amt_VideoHigh', 'amt_VideoStudio', 'amt_Transpo'].includes(key)) {
+            // 🟢 THE FIX: Exclude amt_Francis and amt_Tina so they don't fall into the 4-way split pool
+            if (!['amt_VideoSDE', 'amt_VideoDoc', 'amt_PreProd', 'amt_VideoHigh', 'amt_VideoStudio', 'amt_Transpo', 'amt_Francis', 'amt_Tina'].includes(key)) {
                 restTotal += parseFloat(amts[key]) || 0;
             }
         }
@@ -9668,23 +9669,34 @@ function computeBillingSales() {
         }
 
         // TOTAL A: Fixed-percentage service allocation per event
+        const francisDirect = parseFloat(amts['amt_Francis']) || 0;
+        const tinaDirect = parseFloat(amts['amt_Tina']) || 0;
+        
+        // Grace's specific direct services
+        const graceDirect = doc + high + vstudio;
+
         const tA_edgar_row   = photoGroup * 0.40;
-        const tA_francis_row = photoGroup * 0.30 + sde / 3;
-        const tA_tina_row    = photoGroup * 0.20 + sde / 3;
-        const tA_grace_row   = photoGroup * 0.10 + sde / 3 + vidOther;
+        const tA_francis_row = photoGroup * 0.30 + (sde / 3);
+        const tA_tina_row    = photoGroup * 0.20 + (sde / 3);
+        const tA_grace_row   = photoGroup * 0.10 + (sde / 3);
+        
         const tA_row_total   = tA_edgar_row + tA_francis_row + tA_tina_row + tA_grace_row;
+        
         tA_Edgar   += tA_edgar_row;
-        tA_Francis += tA_francis_row;
-        tA_Tina    += tA_tina_row;
-        tA_Grace   += tA_grace_row;
-        if (tA_row_total > 0) {
+        tA_Francis += tA_francis_row + francisDirect;
+        tA_Tina    += tA_tina_row + tinaDirect;
+        tA_Grace   += tA_grace_row + graceDirect;
+        
+        const rowTotalDisplay = tA_row_total + francisDirect + tinaDirect + graceDirect;
+
+        if (rowTotalDisplay > 0) {
             htmlTA += `<tr>
                 <td class="text-start fw-bold">${e['Event Name']}</td>
                 <td>₱${tA_edgar_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td>₱${tA_francis_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td>₱${tA_tina_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td>₱${tA_grace_row.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td class="fw-bold">₱${tA_row_total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td>₱${(tA_francis_row + francisDirect).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td>₱${(tA_tina_row + tinaDirect).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td>₱${(tA_grace_row + graceDirect).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="fw-bold">₱${rowTotalDisplay.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             </tr>`;
         }
     });
