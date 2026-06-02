@@ -7871,7 +7871,15 @@ function renderEgmComputation() {
 
         if (!isQualified) return;
 
-        const amt = parseFloat(ev['Amount']) || 0;
+        let amts = {};
+        try { amts = JSON.parse(ev['Service Amounts JSON'] || '{}'); } catch(ex) {}
+        
+        // 🟢 THE FIX: Calculate the total from the specific service inputs first!
+        const serviceTotal = Object.values(amts).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+        
+        // The actual collected amount is either the sum of services OR the manual master amount
+        const amt = serviceTotal > 0 ? serviceTotal : (parseFloat(ev['Amount']) || 0);
+
         if (amt <= 0) return;
 
         totalA_Raw += amt;
@@ -7879,9 +7887,6 @@ function renderEgmComputation() {
         // Skip Service Allocation math for 'Billing' events
         if (pType === 'Billing') return;
 
-        let amts = {};
-        try { amts = JSON.parse(ev['Service Amounts JSON'] || '{}'); } catch(ex) {}
-        
         const sde        = parseFloat(amts['amt_VideoSDE'])    || 0;
         const transpo    = parseFloat(amts['amt_Transpo'])     || 0;
         const photo      = parseFloat(amts['amt_Photo'])       || 0;
@@ -7889,13 +7894,13 @@ function renderEgmComputation() {
         const frameToken = parseFloat(amts['amt_FrameToken'])  || 0;
         const photoStudio= parseFloat(amts['amt_PhotoStudio']) || 0;
         
-        // 🟢 THE FIX 2: Grace-Only services
+        // Grace-Only services
         const doc        = parseFloat(amts['amt_VideoDoc'])    || 0;
         const high       = parseFloat(amts['amt_VideoHigh'])   || 0;
         const vstudio    = parseFloat(amts['amt_VideoStudio']) || 0;
         const graceDirect = doc + high + vstudio;
 
-        // 🟢 THE FIX 3: Custom Assignee services
+        // Custom Assignee services
         // Hunt for custom services named exactly "Francis" or "Tina"
         const francisDirect = parseFloat(amts['amt_Francis']) || 0;
         const tinaDirect = parseFloat(amts['amt_Tina']) || 0;
@@ -7915,7 +7920,7 @@ function renderEgmComputation() {
         tA_Tina    += tA_tina_row;
         tA_Grace   += tA_grace_row;
 
-        // 🟢 Subtract the direct funnels from the main Total A pool so they aren't double counted!
+        // Subtract the direct funnels from the main Total A pool so they aren't double counted!
         // The remaining amount represents the actual shared service pool.
         totalA_Pool += (amt - graceDirect - francisDirect - tinaDirect);
 
