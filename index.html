@@ -3415,6 +3415,10 @@ function handleAddCustomService(inputId, containerId) {
                 amtInput.style.setProperty('display', 'block', 'important');
             } else {
                 amtInput.style.setProperty('display', 'none', 'important');
+                // 🟢 THE FIX: Wipe the amount clean if the service is unchecked!
+                if (!cb.checked) {
+                    amtInput.value = '';
+                }
             }
         }
     });
@@ -7890,55 +7894,81 @@ function renderEgmComputation() {
         }
     });
 
-    // ---- Service allocation per person (used for Sales In Share) ----
+    // ---- INITIALIZE ALLOCATIONS ----
+    let totalA_Raw = 0; // Total money collected
+    let totalA_Pool = 0; // Money to be split via percentages
+    
     let tA_Edgar = 0, tA_Francis = 0, tA_Tina = 0, tA_Grace = 0;
     let t6_TranspoSum = 0;
     let htmlT6 = '';
-    
-    // 🟢 THE FIX: Moved the breakdown HTML generator back to the Service Allocations loop
     let htmlTotalABreakdown = ''; 
     const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2});
 
-    // Use the validProjects array to iterate ONLY ONCE per project
+    // We process the Sales In AND Service Allocations in a single unified loop
     validProjects.forEach(ev => {
-        // Exclude 'Billing' events from the Sales In distribution
-        if (ev['Payment Type'] === 'Billing') return;
         if (ev['Billing Status'] !== 'Paid') return;
+
+        const pType = ev['Payment Type'] || '';
+        const isQualified =
+            pType.includes('Cash') ||
+            pType.includes('Check') ||
+            pType.includes('Online Transfer');
+
+        if (!isQualified) return;
+
+        const amt = parseFloat(ev['Amount']) || 0;
+        if (amt <= 0) return;
+
+        totalA_Raw += amt;
+
+        // Skip Service Allocation math for 'Billing' events
+        if (pType === 'Billing') return;
 
         let amts = {};
         try { amts = JSON.parse(ev['Service Amounts JSON'] || '{}'); } catch(ex) {}
-        if (!Object.values(amts).some(v => parseFloat(v) > 0)) return;
-
+        
         const sde        = parseFloat(amts['amt_VideoSDE'])    || 0;
-        const doc        = parseFloat(amts['amt_VideoDoc'])    || 0;
-        const high       = parseFloat(amts['amt_VideoHigh'])   || 0;
-        const vstudio    = parseFloat(amts['amt_VideoStudio']) || 0;
         const transpo    = parseFloat(amts['amt_Transpo'])     || 0;
         const photo      = parseFloat(amts['amt_Photo'])       || 0;
         const photoQR    = parseFloat(amts['amt_PhotoQR'])     || 0;
         const frameToken = parseFloat(amts['amt_FrameToken'])  || 0;
         const photoStudio= parseFloat(amts['amt_PhotoStudio']) || 0;
         
-        const photoGroup = photo + photoQR + frameToken + photoStudio;
-        const vidOther   = doc + high + vstudio;
+        // 🟢 THE FIX 2: Grace-Only services
+        const doc        = parseFloat(amts['amt_VideoDoc'])    || 0;
+        const high       = parseFloat(amts['amt_VideoHigh'])   || 0;
+        const vstudio    = parseFloat(amts['amt_VideoStudio']) || 0;
+        const graceDirect = doc + high + vstudio;
 
+        // 🟢 THE FIX 3: Custom Assignee services
+        // Hunt for custom services named exactly "Francis" or "Tina"
+        const francisDirect = parseFloat(amts['amt_Francis']) || 0;
+        const tinaDirect = parseFloat(amts['amt_Tina']) || 0;
+
+        const photoGroup = photo + photoQR + frameToken + photoStudio;
+
+        // Calculate standard percentages
         const tA_edgar_row   = photoGroup * 0.40;
-        const tA_francis_row = photoGroup * 0.30 + sde / 3;
-        const tA_tina_row    = photoGroup * 0.20 + sde / 3;
-        const tA_grace_row   = photoGroup * 0.10 + sde / 3 + vidOther;
-        const tA_row_total   = tA_edgar_row + tA_francis_row + tA_tina_row + tA_grace_row;
+        const tA_francis_row = photoGroup * 0.30 + (sde / 3) + francisDirect; // Funnel Francis Custom
+        const tA_tina_row    = photoGroup * 0.20 + (sde / 3) + tinaDirect;    // Funnel Tina Custom
+        const tA_grace_row   = photoGroup * 0.10 + (sde / 3) + graceDirect;   // Funnel Grace Direct
+
+        const totalRowAllocation = tA_edgar_row + tA_francis_row + tA_tina_row + tA_grace_row;
 
         tA_Edgar   += tA_edgar_row;
         tA_Francis += tA_francis_row;
         tA_Tina    += tA_tina_row;
         tA_Grace   += tA_grace_row;
 
-        // 🟢 THE FIX: Row HTML is now generated based on the service allocations, restoring the missing rows!
-        if (tA_row_total > 0) {
+        // 🟢 Subtract the direct funnels from the main Total A pool so they aren't double counted!
+        // The remaining amount represents the actual shared service pool.
+        totalA_Pool += (amt - graceDirect - francisDirect - tinaDirect);
+
+        if (totalRowAllocation > 0 || amt > 0) {
             htmlTotalABreakdown += `<tr>
                 <td class="fw-bold text-dark">${ev['Event Name']}</td>
-                <td><span class="badge bg-light text-dark border">${ev['Payment Type'] || 'N/A'}</span></td>
-                <td class="text-end fw-bold text-success">₱${tA_row_total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td><span class="badge bg-light text-dark border">${pType}</span></td>
+                <td class="text-end fw-bold text-success">₱${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             </tr>`;
         }
 
@@ -7951,9 +7981,12 @@ function renderEgmComputation() {
         }
     });
 
+    // The final Total A (Sales In) displayed to the user is the RAW amount
+    // but the distribution math uses the individual sums correctly
+    const totalA = totalA_Raw;
     const tA_Total = tA_Edgar + tA_Francis + tA_Tina + tA_Grace;
     
-    // ... Leave everything below this exactly as it was ...
+    // ---- Total B & C: Isolate Payouts vs Expenses ----
     const salesShareMap = { 'Edgar': tA_Edgar, 'Francis': tA_Francis, 'Tina': tA_Tina, 'Grace': tA_Grace };
 
     const splits = [
