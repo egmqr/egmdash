@@ -1054,10 +1054,13 @@
               </div>
               
               <div class="d-flex flex-wrap gap-2 justify-content-md-end align-items-end" style="max-width: 450px;">
-    <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" id="prComputeBtn" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
-    <button class="btn btn-outline-danger btn-sm fw-bold px-3 shadow-sm border-2" id="prRecomputeBtn" onclick="runExpenseRecompute()" style="display:none;" title="Superadmin: Refresh only the auto-pulled expenses without touching manual edits"><i class="bi bi-arrow-clockwise me-1"></i> SYNC EXPENSES</button>
-    <button id="prSyncARSalesBtn" class="btn btn-outline-primary btn-sm fw-bold px-3 shadow-sm border-2" onclick="recomputeARSales()" title="Refresh AR Sales data without touching manual payroll edits"><i class="bi bi-graph-up-arrow me-1"></i> SYNC AR SALES</button>
-    <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
+                  <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" id="prComputeBtn" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
+                  <button class="btn btn-outline-danger btn-sm fw-bold px-3 shadow-sm border-2" id="prRecomputeBtn" onclick="runExpenseRecompute()" style="display:none;" title="Superadmin: Refresh only the auto-pulled expenses without touching manual edits"><i class="bi bi-arrow-clockwise me-1"></i> SYNC EXPENSES</button>
+                  <button id="prSyncARSalesBtn" class="btn btn-outline-primary btn-sm fw-bold px-3 shadow-sm border-2" onclick="recomputeARSales()" title="Refresh AR Sales data without touching manual payroll edits"><i class="bi bi-graph-up-arrow me-1"></i> SYNC AR SALES</button>
+                  
+                  <button id="prSyncLateCrewBtn" class="btn btn-outline-success btn-sm fw-bold px-3 shadow-sm border-2" onclick="runLateCrewSync()" title="Refresh missing crew shifts without touching manual edits" style="display:none;"><i class="bi bi-person-lines-fill me-1"></i> SYNC LATE CREW</button>
+
+                  <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
                   <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
                   <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm" onclick="exportSessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> EXPORT</button>
                   <button class="btn btn-warning btn-sm fw-bold px-3 shadow-sm" id="prRatesBtn" onclick="openRatesModal()"><i class="bi bi-currency-dollar me-1"></i> RATES</button>
@@ -3108,7 +3111,7 @@ async function subscribeToNotifications() {
           }
       }
 
-      // 🟢 THE FIX: Lock both Sync buttons behind Superadmin access
+      // 🟢 THE FIX: Lock all Sync buttons behind Superadmin access
       const recomputeBtn = document.getElementById('prRecomputeBtn');
       if (recomputeBtn) {
           recomputeBtn.style.display = (actVal >= 4) ? 'inline-block' : 'none';
@@ -3117,6 +3120,11 @@ async function subscribeToNotifications() {
       const syncArBtn = document.getElementById('prSyncARSalesBtn');
       if (syncArBtn) {
           syncArBtn.style.display = (actVal >= 4) ? 'inline-block' : 'none';
+      }
+
+      const syncLateCrewBtn = document.getElementById('prSyncLateCrewBtn');
+      if (syncLateCrewBtn) {
+          syncLateCrewBtn.style.display = (actVal >= 4) ? 'inline-block' : 'none';
       }
   }
 
@@ -10603,6 +10611,168 @@ async function runExpenseRecompute() {
 
       ov.style.display = 'none';
   }
+  // ==============================================================================
+// SYNC LATE ADDED CREW (Superadmin only)
+// ==============================================================================
+async function runLateCrewSync() {
+    requireAuth(async () => {
+        const start = document.getElementById('prStartDate').value;
+        const end = document.getElementById('prEndDate').value;
+
+        if (!start || !end) return egmAlert("Please select a Start and End date for the cutoff.");
+        if (Object.keys(currentPayrollData).length === 0) return egmAlert("No active session. Please LOAD a saved session or click COMPUTE first.");
+
+        const confirmed = await egmConfirm(
+            `SYNC LATE ADDED CREW\n\nThis will safely scan the live database for any crew members or editors who were added to events AFTER you generated this session.\n\n✅ Will UPDATE:\n• Missing events for existing crew\n• Brand new crew members in this cutoff\n\n🔒 Will PRESERVE:\n• All existing manual base pay edits\n• Extra pay & payer assignments\n• Misc bonus pay\n• Custom expenses\n\nThe saved cloud session will be overwritten automatically.\n\nProceed?`,
+            "Sync Late Added Crew",
+            "Yes, Sync Crew",
+            "warning"
+        );
+
+        if (!confirmed) return;
+
+        const ov = document.getElementById('submitOverlay');
+        document.getElementById('overlayText').innerText = "Scanning for missing crew shifts...";
+        ov.style.display = 'flex';
+
+        try {
+            const validEvents = rawEvents.filter(e => {
+                return e['Event Date'] >= start && e['Event Date'] <= end &&
+                       e['Event Status'] === 'Confirmed' && e['Event Name'] !== 'Crew Leave';
+            });
+
+            validEvents.sort((a, b) => {
+                let dateA = a['Event Date'] || '9999-99-99';
+                let dateB = b['Event Date'] || '9999-99-99';
+                if (dateA !== dateB) return dateA.localeCompare(dateB);
+                return (a['Event Start Time'] || a['Call Time'] || "").localeCompare(b['Event Start Time'] || b['Call Time'] || "");
+            });
+
+            let eventTracker = {};
+            const standardStaff = [...baseCrew, "Athan", "Jovert", "May", "Tina", "Grace", "Jops"];
+            let savedRates = JSON.parse(localStorage.getItem('egm_crew_rates') || '{}');
+            let addedCount = 0;
+
+            validEvents.forEach(e => {
+                const isHalfDay = e['Half Day'] === 'true';
+                const evId = e['Event ID'];
+
+                if(!eventTracker[evId]) eventTracker[evId] = { 'Crew': new Set(), 'Editor': new Set() };
+
+                // 1. Process Crew
+                if (e['Manpower']) {
+                    const crewArray = e['Manpower'].split(',').map(c => c.trim()).filter(Boolean);
+                    crewArray.forEach(c => {
+                        let isSubsequent = false;
+                        if (eventTracker[evId]['Crew'].has(c)) {
+                            isSubsequent = true;
+                        } else {
+                            eventTracker[evId]['Crew'].add(c);
+                        }
+
+                        if (!currentPayrollData[c]) {
+                            initPayrollPerson(c);
+                        }
+
+                        // Check if this specific event/role already exists in memory
+                        const existingEvent = currentPayrollData[c].events.find(ev => ev.doc && ev.doc['Event ID'] === evId && ev.role === 'Crew');
+
+                        if (!existingEvent) {
+                            // Missing! Let's inject it.
+                            let rate = 0;
+                            let isCustom = !standardStaff.includes(c);
+
+                            if (isSubsequent) {
+                                rate = 0;
+                            } else if (owners.includes(c)) {
+                                rate = 0;
+                            } else if (isHalfDay) {
+                                rate = 0;
+                            } else if (isCustom && savedRates[c] === undefined) {
+                                rate = 0;
+                            } else {
+                                rate = getCrewRate(c, 'Crew');
+                            }
+
+                            currentPayrollData[c].events.push({
+                                doc: e, role: 'Crew', basePay: rate, extraPay: 0, payer: 'Edgar(EGM)',
+                                isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom
+                            });
+                            currentPayrollData[c].totalBase += rate;
+                            addedCount++;
+                        }
+                    });
+                }
+
+                // 2. Process Editor
+                if (e['Editor Assigned']) {
+                    const editor = e['Editor Assigned'].trim();
+                    let isSubsequent = false;
+
+                    if (eventTracker[evId]['Editor'].has(editor)) {
+                        isSubsequent = true;
+                    } else {
+                        eventTracker[evId]['Editor'].add(editor);
+                    }
+
+                    if (!currentPayrollData[editor]) {
+                        initPayrollPerson(editor);
+                    }
+
+                    const existingEvent = currentPayrollData[editor].events.find(ev => ev.doc && ev.doc['Event ID'] === evId && ev.role === 'Editor');
+
+                    if (!existingEvent) {
+                        let rate = 0;
+                        let isCustom = !standardStaff.includes(editor);
+
+                        if (isSubsequent || isHalfDay) {
+                            rate = 0;
+                        } else {
+                            rate = getCrewRate(editor, 'Editor');
+                        }
+
+                        currentPayrollData[editor].events.push({
+                            doc: e, role: 'Editor', basePay: rate, extraPay: 0, payer: 'Edgar(EGM)',
+                            isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom
+                        });
+                        currentPayrollData[editor].totalBase += rate;
+                        addedCount++;
+                    }
+                }
+            });
+
+            // Recalculate Final Totals for everyone
+            Object.keys(currentPayrollData).forEach(name => {
+                const data = currentPayrollData[name];
+                data.finalTotal = data.totalBase + data.expenses + data.misc + data.events.reduce((sum, ev) => sum + ev.extraPay, 0);
+            });
+
+            // Auto-save to cloud
+            await db.collection("payroll_sessions").doc(`${start}_${end}`).set({
+                startDate: start,
+                endDate: end,
+                sessionData: JSON.stringify(currentPayrollData),
+                onlineSalesBalance: currentOnlineSalesBalance,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastSyncedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            renderPayrollTable();
+            ov.style.display = 'none';
+
+            if (addedCount > 0) {
+                showToast(`Synced! Added ${addedCount} missing shift(s) to the session.`, "success");
+            } else {
+                showToast("No missing crew shifts found. Session is up-to-date.", "info");
+            }
+
+        } catch (err) {
+            ov.style.display = 'none';
+            console.error("Late Crew Sync Error:", err);
+            egmAlert("Error syncing late crew: " + err.message);
+        }
+    }, 'superadmin');
+}
 </script>
 </body>
 </html>
