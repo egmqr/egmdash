@@ -7817,7 +7817,7 @@ function renderEgmComputation() {
         return;
     }
 
-    // 🟢 Group by Event ID and extract ONLY the Main Day / Payment Doc
+    // Group by Event ID and extract ONLY the Main Day / Payment Doc
     const uniquePayDocs = {};
     const grouped = {};
     
@@ -7840,12 +7840,10 @@ function renderEgmComputation() {
             let timeB = to24Hour(b['Event Start Time']) || to24Hour(b['Call Time']) || "99:99";
             return timeA.localeCompare(timeB);
         });
-        // Grab the document holding the payment info, or fallback to Day 1
         let payDoc = days.find(d => d['Payment Type']) || days[0];
         uniquePayDocs[id] = payDoc;
     }
 
-    // Filter the unique projects by the cutoff dates
     const validProjects = Object.values(uniquePayDocs).filter(e => {
         return e['Event Date'] >= start && e['Event Date'] <= end;
     });
@@ -7880,7 +7878,7 @@ function renderEgmComputation() {
             if (ev.payer === 'Edgar(EGM)') {
                 totalB += (ev.basePay || 0) + (ev.extraPay || 0);
             } else if (ev.payer === 'CreatED Expenses') {
-                totalC += (ev.basePay || 0) + (ev.extraPay || 0); // Route to Total C
+                totalC += (ev.basePay || 0) + (ev.extraPay || 0); 
             }
         });
         
@@ -7891,22 +7889,20 @@ function renderEgmComputation() {
         if (person.miscPayer === 'Edgar(EGM)') {
             totalB += person.misc || 0; 
         } else if (person.miscPayer === 'CreatED Expenses') {
-            totalC += person.misc || 0; // Route to Total C
+            totalC += person.misc || 0; 
         }
     });
 
     // ---- Service allocation per person (used for Sales In Share) ----
     let tA_Edgar = 0, tA_Francis = 0, tA_Tina = 0, tA_Grace = 0;
+    let tA_StrictTotal = 0; 
     let t6_TranspoSum = 0;
     let htmlT6 = '';
     
-    // 🟢 THE FIX: Moved the breakdown HTML generator back to the Service Allocations loop
     let htmlTotalABreakdown = ''; 
     const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2});
 
-    // Use the validProjects array to iterate ONLY ONCE per project
     validProjects.forEach(ev => {
-        // Exclude 'Billing' events from the Sales In distribution
         if (ev['Payment Type'] === 'Billing') return;
         if (ev['Billing Status'] !== 'Paid') return;
 
@@ -7924,21 +7920,28 @@ function renderEgmComputation() {
         const frameToken = parseFloat(amts['amt_FrameToken'])  || 0;
         const photoStudio= parseFloat(amts['amt_PhotoStudio']) || 0;
         
+        // 🟢 Custom Credits
+        const francisCustom = parseFloat(amts['amt_Francis'])  || 0;
+        const tinaCustom = parseFloat(amts['amt_Tina'])        || 0;
+        
         const photoGroup = photo + photoQR + frameToken + photoStudio;
-        const vidOther   = doc + high + vstudio;
+        const vidOther   = doc + high + vstudio; // Grace only
 
         const tA_edgar_row   = photoGroup * 0.40;
-        const tA_francis_row = photoGroup * 0.30 + sde / 3;
-        const tA_tina_row    = photoGroup * 0.20 + sde / 3;
-        const tA_grace_row   = photoGroup * 0.10 + sde / 3 + vidOther;
-        const tA_row_total   = tA_edgar_row + tA_francis_row + tA_tina_row + tA_grace_row;
+        const tA_francis_row = photoGroup * 0.30 + (sde / 3) + francisCustom;
+        const tA_tina_row    = photoGroup * 0.20 + (sde / 3) + tinaCustom;
+        const tA_grace_row   = photoGroup * 0.10 + (sde / 3) + vidOther;
+        
+        // 🟢 STRICT TOTAL A: Only Photo + SDE
+        const tA_row_total   = photoGroup + sde; 
 
         tA_Edgar   += tA_edgar_row;
         tA_Francis += tA_francis_row;
         tA_Tina    += tA_tina_row;
         tA_Grace   += tA_grace_row;
+        tA_StrictTotal += tA_row_total; 
 
-        // 🟢 THE FIX: Row HTML is now generated based on the service allocations, restoring the missing rows!
+        // We only render this row in the "Total A Breakdown" if it has actual Total A value
         if (tA_row_total > 0) {
             htmlTotalABreakdown += `<tr>
                 <td class="fw-bold text-dark">${ev['Event Name']}</td>
@@ -7956,9 +7959,8 @@ function renderEgmComputation() {
         }
     });
 
-    const tA_Total = tA_Edgar + tA_Francis + tA_Tina + tA_Grace;
-    
-    // ... Leave everything below this exactly as it was ...
+    // Enforce the strict total logic to govern the AR Sales math display
+    const tA_Total = tA_StrictTotal; 
     const salesShareMap = { 'Edgar': tA_Edgar, 'Francis': tA_Francis, 'Tina': tA_Tina, 'Grace': tA_Grace };
 
     const splits = [
@@ -8038,7 +8040,7 @@ function renderEgmComputation() {
 
     splits.forEach(s => {
         const aShare = salesShareMap[s.name] || 0;
-        const bShare = totalB * s.pct; // Removed totalC
+        const bShare = totalB * s.pct; 
         const diff = aShare - bShare;
         const isLeft = diff >= 0;
         const colorClass = isLeft ? 'text-success' : 'text-danger';
@@ -8053,15 +8055,16 @@ function renderEgmComputation() {
         </tr>`;
     });
 
-    const grandDiff = tA_Total - totalB; // Removed totalC
+    const grandDiff = tA_Total - totalB; 
     const isGrandLeft = grandDiff >= 0;
     const grandColorClass = isGrandLeft ? 'text-success' : 'text-danger';
     const grandLabel = isGrandLeft ? 'left' : 'deficit';
 
+    // The denominator for the total Sales In Share now includes the bypassed Grace, Francis, and Tina totals
     html += `
                 <tr class="bg-secondary bg-opacity-10 fw-bold">
                     <td class="py-2">TOTAL</td>
-                    <td class="py-2 text-end">₱${fmt(tA_Total)}</td>
+                    <td class="py-2 text-end">₱${fmt(tA_Edgar + tA_Francis + tA_Tina + tA_Grace)}</td>
                     <td class="py-2 text-end">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td class="py-2 text-end ${grandColorClass}">₱${Math.abs(grandDiff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${grandLabel}</td>
                 </tr>
