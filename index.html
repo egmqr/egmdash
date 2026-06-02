@@ -3415,6 +3415,11 @@ function handleAddCustomService(inputId, containerId) {
                 amtInput.style.setProperty('display', 'block', 'important');
             } else {
                 amtInput.style.setProperty('display', 'none', 'important');
+                
+                // 🟢 NEW: Clear the amount when the service is unchecked!
+                if (!cb.checked) {
+                    amtInput.value = '';
+                }
             }
         }
     });
