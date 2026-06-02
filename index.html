@@ -7849,51 +7849,6 @@ function renderEgmComputation() {
         return e['Event Date'] >= start && e['Event Date'] <= end;
     });
 
-    // ---- Total A: Cash + Check + Online Transfer payments in cutoff window ----
-    let totalA = 0;
-
-    validProjects.forEach(e => {
-        if (e['Billing Status'] !== 'Paid') return; 
-
-        const pType = e['Payment Type'] || '';
-        const isQualified =
-            pType.includes('Cash') ||
-            pType.includes('Check') ||
-            pType.includes('Online Transfer');
-
-        if (isQualified) {
-            const amt = parseFloat(e['Amount']) || 0;
-            if (amt > 0) {
-                totalA += amt;
-            }
-        }
-    });
-
-    // ---- Total B & C: Isolate Payouts vs Expenses ----
-    let totalB = 0;
-    let totalC = 0; 
-    Object.keys(currentPayrollData).forEach(pName => {
-        const person = currentPayrollData[pName];
-        
-        person.events.forEach(ev => {
-            if (ev.payer === 'Edgar(EGM)') {
-                totalB += (ev.basePay || 0) + (ev.extraPay || 0);
-            } else if (ev.payer === 'CreatED Expenses') {
-                totalC += (ev.basePay || 0) + (ev.extraPay || 0); // Route to Total C
-            }
-        });
-        
-        if (person.expensePayer === 'Edgar(EGM)' || person.expensePayer === 'CreatED Expenses') {
-            totalC += person.expenses || 0;
-        }
-        
-        if (person.miscPayer === 'Edgar(EGM)') {
-            totalB += person.misc || 0; 
-        } else if (person.miscPayer === 'CreatED Expenses') {
-            totalC += person.misc || 0; // Route to Total C
-        }
-    });
-
     // ---- INITIALIZE ALLOCATIONS ----
     let totalA_Raw = 0; // Total money collected
     let totalA_Pool = 0; // Money to be split via percentages
@@ -7987,6 +7942,30 @@ function renderEgmComputation() {
     const tA_Total = tA_Edgar + tA_Francis + tA_Tina + tA_Grace;
     
     // ---- Total B & C: Isolate Payouts vs Expenses ----
+    let totalB = 0;
+    let totalC = 0; 
+    Object.keys(currentPayrollData).forEach(pName => {
+        const person = currentPayrollData[pName];
+        
+        person.events.forEach(ev => {
+            if (ev.payer === 'Edgar(EGM)') {
+                totalB += (ev.basePay || 0) + (ev.extraPay || 0);
+            } else if (ev.payer === 'CreatED Expenses') {
+                totalC += (ev.basePay || 0) + (ev.extraPay || 0); // Route to Total C
+            }
+        });
+        
+        if (person.expensePayer === 'Edgar(EGM)' || person.expensePayer === 'CreatED Expenses') {
+            totalC += person.expenses || 0;
+        }
+        
+        if (person.miscPayer === 'Edgar(EGM)') {
+            totalB += person.misc || 0; 
+        } else if (person.miscPayer === 'CreatED Expenses') {
+            totalC += person.misc || 0; // Route to Total C
+        }
+    });
+
     const salesShareMap = { 'Edgar': tA_Edgar, 'Francis': tA_Francis, 'Tina': tA_Tina, 'Grace': tA_Grace };
 
     const splits = [
