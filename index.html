@@ -1056,7 +1056,7 @@
               <div class="d-flex flex-wrap gap-2 justify-content-md-end align-items-end" style="max-width: 450px;">
     <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" id="prComputeBtn" onclick="runPayrollEngine()"><i class="bi bi-calculator me-1"></i> COMPUTE</button>
     <button class="btn btn-outline-danger btn-sm fw-bold px-3 shadow-sm border-2" id="prRecomputeBtn" onclick="runExpenseRecompute()" style="display:none;" title="Superadmin: Refresh only the auto-pulled expenses without touching manual edits"><i class="bi bi-arrow-clockwise me-1"></i> SYNC EXPENSES</button>
-    <button class="btn btn-outline-primary btn-sm fw-bold px-3 shadow-sm border-2" onclick="recomputeARSales()" title="Refresh AR Sales data without touching manual payroll edits"><i class="bi bi-graph-up-arrow me-1"></i> SYNC AR SALES</button>
+    <button id="prSyncARSalesBtn" class="btn btn-outline-primary btn-sm fw-bold px-3 shadow-sm border-2" onclick="recomputeARSales()" title="Refresh AR Sales data without touching manual payroll edits"><i class="bi bi-graph-up-arrow me-1"></i> SYNC AR SALES</button>
     <button class="btn btn-info btn-sm fw-bold px-3 shadow-sm text-dark" onclick="savePayrollSession()"><i class="bi bi-floppy me-1"></i> SAVE</button>
                   <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" onclick="openLoadSessionModal()"><i class="bi bi-folder2-open me-1"></i> LOAD</button>
                   <button class="btn btn-dark btn-sm fw-bold px-3 shadow-sm" onclick="exportSessionPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> EXPORT</button>
@@ -3107,11 +3107,17 @@ async function subscribeToNotifications() {
               btnModeNew.style.display = 'none';
           }
       }
-    // 🟢 NEW: Show Sync Expenses button only for Superadmins
-const recomputeBtn = document.getElementById('prRecomputeBtn');
-if (recomputeBtn) {
-    recomputeBtn.style.display = (actVal >= 4) ? 'inline-block' : 'none';
-}
+
+      // 🟢 THE FIX: Lock both Sync buttons behind Superadmin access
+      const recomputeBtn = document.getElementById('prRecomputeBtn');
+      if (recomputeBtn) {
+          recomputeBtn.style.display = (actVal >= 4) ? 'inline-block' : 'none';
+      }
+      
+      const syncArBtn = document.getElementById('prSyncARSalesBtn');
+      if (syncArBtn) {
+          syncArBtn.style.display = (actVal >= 4) ? 'inline-block' : 'none';
+      }
   }
 
   function signOut() {
