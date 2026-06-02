@@ -8070,6 +8070,8 @@ async function runPayrollEngine(forceNewRates = false) {
     const currentRange = `${start}_${end}`;
 
     // OVERLAP PROTECTION LOGIC
+    let existingData = {};
+
     if (!forceNewRates) {
         const ov = document.getElementById('submitOverlay');
         document.getElementById('overlayText').innerText = "Validating Cutoff Period...";
@@ -8079,21 +8081,48 @@ async function runPayrollEngine(forceNewRates = false) {
             const snapshot = await db.collection("payroll_sessions").get();
             let overlapFound = false;
             let overlapRange = "";
+            let overlapSessionData = null;
 
             snapshot.forEach(doc => {
                 const data = doc.data();
                 if (start <= data.endDate && end >= data.startDate) {
                     overlapFound = true;
                     overlapRange = `${data.startDate} to ${data.endDate}`;
+                    overlapSessionData = data.sessionData;
                 }
             });
 
             if (overlapFound) {
                 ov.style.display = 'none';
-                const loadIt = await egmConfirm(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session to prevent duplicate accounting.\n\nClick OK to open the Load Menu and view the existing session.`);
+                const role = getUserRole();
                 
-                if (loadIt) openLoadSessionModal();
-                return;
+                // 🟢 THE FIX: Allow Superadmin to bypass the block and merge the data
+                if (role === 'superadmin') {
+                    const proceed = await egmConfirm(
+                        `OVERLAPPING SESSION DETECTED:\n\nA saved session already exists for ${overlapRange}.\n\nAs a Superadmin, you can force a recompute. This will pull in any newly added events or crew members while PRESERVING your existing manual edits (custom pay, extra pay, manual expenses, notes).\n\nDo you want to recompute and merge new data?`, 
+                        "Recompute & Merge", 
+                        "Yes, Merge Data", 
+                        "warning"
+                    );
+                    
+                    if (!proceed) return;
+                    
+                    ov.style.display = 'flex';
+                    document.getElementById('overlayText').innerText = "Merging Session Data...";
+                    
+                    // User chose to merge! Load the cloud session data as our baseline.
+                    if (overlapSessionData) {
+                        existingData = JSON.parse(overlapSessionData);
+                    } else {
+                        existingData = JSON.parse(JSON.stringify(currentPayrollData || {}));
+                    }
+                    lastComputedRange = currentRange; // Align so the rest of the script treats it as a merge
+                } else {
+                    const loadIt = await egmConfirm(`COMPUTATION BLOCKED:\n\nA saved payroll session already exists for the dates ${overlapRange}.\n\nYour selected range (${start} to ${end}) overlaps with this existing session to prevent duplicate accounting.\n\nClick OK to open the Load Menu and view the existing session.`);
+                    
+                    if (loadIt) openLoadSessionModal();
+                    return;
+                }
             }
         } catch (e) {
             ov.style.display = 'none';
@@ -8104,10 +8133,12 @@ async function runPayrollEngine(forceNewRates = false) {
     }
 
 
-    // 1. THE FIX: ONLY SAVE EXISTING DATA IF RE-COMPUTING THE EXACT SAME DATES
-    let existingData = {};
+    // 1. THE FIX: ONLY SAVE EXISTING DATA IF RE-COMPUTING THE EXACT SAME DATES OR MERGING
     if (lastComputedRange === currentRange) {
-        existingData = JSON.parse(JSON.stringify(currentPayrollData || {}));
+        // If existingData wasn't already populated by the cloud merge above, pull from live UI memory
+        if (Object.keys(existingData).length === 0) {
+            existingData = JSON.parse(JSON.stringify(currentPayrollData || {}));
+        }
     } else {
         // Dates changed! Unlock the Rates button and start fresh.
         hasManualPayrollEdits = false;
@@ -8321,6 +8352,38 @@ async function runPayrollEngine(forceNewRates = false) {
         if (!currentPayrollData[name]) {
             initPayrollPerson(name);
             restorePersonGlobals(name);
+        }
+    });
+
+    // 🟢 THE FIX: Restore MANUAL events and MANUAL edits for people who had no valid auto-events
+    Object.keys(existingData).forEach(name => {
+        const oldData = existingData[name];
+        
+        // 1. Restore any MANUAL salary events
+        if (oldData && oldData.events) {
+            oldData.events.forEach(ev => {
+                if (ev.doc && ev.doc['Event ID'] === 'MANUAL') {
+                    if (!currentPayrollData[name]) {
+                        initPayrollPerson(name);
+                        restorePersonGlobals(name);
+                    }
+                    currentPayrollData[name].events.push(ev);
+                    currentPayrollData[name].totalBase += (ev.basePay || 0);
+                }
+            });
+        }
+        
+        // 2. Restore people who ONLY had manual expenses/misc/notes
+        if (!currentPayrollData[name]) {
+            const hasManualExp = (oldData.expenses || 0) - (oldData.autoExpenseAmount || 0) > 0;
+            const hasMisc = (oldData.misc || 0) > 0;
+            const isTentative = oldData.isTentative;
+            const hasManualNote = oldData.payslipNote && oldData.payslipNote.trim() !== '';
+            
+            if (hasManualExp || hasMisc || isTentative || hasManualNote) {
+                initPayrollPerson(name);
+                restorePersonGlobals(name);
+            }
         }
     });
 
