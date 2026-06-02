@@ -7853,82 +7853,64 @@ function renderEgmComputation() {
     let totalA_Raw = 0; // Total money collected
     let totalA_Pool = 0; // Money to be split via percentages
     
+    // ---- Service allocation per person (used for Sales In Share) ----
     let tA_Edgar = 0, tA_Francis = 0, tA_Tina = 0, tA_Grace = 0;
     let t6_TranspoSum = 0;
     let htmlT6 = '';
     let htmlTotalABreakdown = ''; 
+    let tA_SalesIn_Pool = 0; // 🟢 Keeps track of pure Total A without the direct funnels
     const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2});
 
-    // We process the Sales In AND Service Allocations in a single unified loop
+    // Use the validProjects array to iterate ONLY ONCE per project
     validProjects.forEach(ev => {
+        // Exclude 'Billing' events from the Sales In distribution
+        if (ev['Payment Type'] === 'Billing') return;
         if (ev['Billing Status'] !== 'Paid') return;
-
-        const pType = ev['Payment Type'] || '';
-        const isQualified =
-            pType.includes('Cash') ||
-            pType.includes('Check') ||
-            pType.includes('Online Transfer');
-
-        if (!isQualified) return;
 
         let amts = {};
         try { amts = JSON.parse(ev['Service Amounts JSON'] || '{}'); } catch(ex) {}
         
-        // 🟢 THE FIX: Calculate the total from the specific service inputs first!
         const serviceTotal = Object.values(amts).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
-        
-        // The actual collected amount is either the sum of services OR the manual master amount
         const amt = serviceTotal > 0 ? serviceTotal : (parseFloat(ev['Amount']) || 0);
 
         if (amt <= 0) return;
 
-        totalA_Raw += amt;
-
-        // Skip Service Allocation math for 'Billing' events
-        if (pType === 'Billing') return;
-
         const sde        = parseFloat(amts['amt_VideoSDE'])    || 0;
+        const doc        = parseFloat(amts['amt_VideoDoc'])    || 0;
+        const high       = parseFloat(amts['amt_VideoHigh'])   || 0;
+        const vstudio    = parseFloat(amts['amt_VideoStudio']) || 0;
         const transpo    = parseFloat(amts['amt_Transpo'])     || 0;
         const photo      = parseFloat(amts['amt_Photo'])       || 0;
         const photoQR    = parseFloat(amts['amt_PhotoQR'])     || 0;
         const frameToken = parseFloat(amts['amt_FrameToken'])  || 0;
         const photoStudio= parseFloat(amts['amt_PhotoStudio']) || 0;
         
-        // Grace-Only services
-        const doc        = parseFloat(amts['amt_VideoDoc'])    || 0;
-        const high       = parseFloat(amts['amt_VideoHigh'])   || 0;
-        const vstudio    = parseFloat(amts['amt_VideoStudio']) || 0;
+        // 🟢 Direct Funnels (Excluded from Total A)
         const graceDirect = doc + high + vstudio;
-
-        // Custom Assignee services
-        // Hunt for custom services named exactly "Francis" or "Tina"
         const francisDirect = parseFloat(amts['amt_Francis']) || 0;
         const tinaDirect = parseFloat(amts['amt_Tina']) || 0;
 
         const photoGroup = photo + photoQR + frameToken + photoStudio;
 
-        // Calculate standard percentages
         const tA_edgar_row   = photoGroup * 0.40;
-        const tA_francis_row = photoGroup * 0.30 + (sde / 3) + francisDirect; // Funnel Francis Custom
-        const tA_tina_row    = photoGroup * 0.20 + (sde / 3) + tinaDirect;    // Funnel Tina Custom
-        const tA_grace_row   = photoGroup * 0.10 + (sde / 3) + graceDirect;   // Funnel Grace Direct
+        const tA_francis_row = photoGroup * 0.30 + (sde / 3);
+        const tA_tina_row    = photoGroup * 0.20 + (sde / 3);
+        const tA_grace_row   = photoGroup * 0.10 + (sde / 3);
 
-        const totalRowAllocation = tA_edgar_row + tA_francis_row + tA_tina_row + tA_grace_row;
+        const tA_row_total   = tA_edgar_row + tA_francis_row + tA_tina_row + tA_grace_row;
+        
+        tA_SalesIn_Pool += tA_row_total; // 🟢 Pure pool tracking
 
         tA_Edgar   += tA_edgar_row;
-        tA_Francis += tA_francis_row;
-        tA_Tina    += tA_tina_row;
-        tA_Grace   += tA_grace_row;
+        tA_Francis += tA_francis_row + francisDirect;
+        tA_Tina    += tA_tina_row + tinaDirect;
+        tA_Grace   += tA_grace_row + graceDirect;
 
-        // Subtract the direct funnels from the main Total A pool so they aren't double counted!
-        // The remaining amount represents the actual shared service pool.
-        totalA_Pool += (amt - graceDirect - francisDirect - tinaDirect);
-
-        if (totalRowAllocation > 0 || amt > 0) {
+        if (tA_row_total > 0) {
             htmlTotalABreakdown += `<tr>
                 <td class="fw-bold text-dark">${ev['Event Name']}</td>
-                <td><span class="badge bg-light text-dark border">${pType}</span></td>
-                <td class="text-end fw-bold text-success">₱${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td><span class="badge bg-light text-dark border">${ev['Payment Type'] || 'N/A'}</span></td>
+                <td class="text-end fw-bold text-success">₱${tA_row_total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             </tr>`;
         }
 
@@ -7941,36 +7923,7 @@ function renderEgmComputation() {
         }
     });
 
-    // The final Total A (Sales In) displayed to the user is the RAW amount
-    // but the distribution math uses the individual sums correctly
-    const totalA = totalA_Raw;
-    const tA_Total = tA_Edgar + tA_Francis + tA_Tina + tA_Grace;
-    
-    // ---- Total B & C: Isolate Payouts vs Expenses ----
-    let totalB = 0;
-    let totalC = 0; 
-    Object.keys(currentPayrollData).forEach(pName => {
-        const person = currentPayrollData[pName];
-        
-        person.events.forEach(ev => {
-            if (ev.payer === 'Edgar(EGM)') {
-                totalB += (ev.basePay || 0) + (ev.extraPay || 0);
-            } else if (ev.payer === 'CreatED Expenses') {
-                totalC += (ev.basePay || 0) + (ev.extraPay || 0); // Route to Total C
-            }
-        });
-        
-        if (person.expensePayer === 'Edgar(EGM)' || person.expensePayer === 'CreatED Expenses') {
-            totalC += person.expenses || 0;
-        }
-        
-        if (person.miscPayer === 'Edgar(EGM)') {
-            totalB += person.misc || 0; 
-        } else if (person.miscPayer === 'CreatED Expenses') {
-            totalC += person.misc || 0; // Route to Total C
-        }
-    });
-
+    const tA_Share_Sum = tA_Edgar + tA_Francis + tA_Tina + tA_Grace; // Sum of individuals
     const salesShareMap = { 'Edgar': tA_Edgar, 'Francis': tA_Francis, 'Tina': tA_Tina, 'Grace': tA_Grace };
 
     const splits = [
@@ -7982,7 +7935,8 @@ function renderEgmComputation() {
 
     currentEgmComputation = {
         onlineSalesBalance: currentOnlineSalesBalance,
-        totalA, totalB, totalC, splits
+        totalA: tA_Share_Sum, // Updated to pass full sum into export
+        totalB, totalC, splits
     };
 
     // Build the computation card
@@ -7998,7 +7952,7 @@ function renderEgmComputation() {
             <div class="col-12 col-md-4">
                 <div class="p-3 bg-light border rounded-3 text-center shadow-sm h-100">
                     <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total A (Sales In)</div>
-                    <div class="fw-bold fs-5 text-success">₱${tA_Total.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                    <div class="fw-bold fs-5 text-success">₱${tA_SalesIn_Pool.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
                 </div>
             </div>
             <div class="col-6 col-md-4">
@@ -8029,7 +7983,7 @@ function renderEgmComputation() {
                     ${htmlTotalABreakdown || '<tr><td colspan="3" class="text-center text-muted py-3 fst-italic">No qualifying sales in for this period</td></tr>'}
                     <tr class="bg-success bg-opacity-10 fw-bold">
                         <td colspan="2" class="text-start py-2 text-dark">TOTAL SALES IN</td>
-                        <td class="text-end text-success py-2">₱${tA_Total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td class="text-end text-success py-2">₱${tA_SalesIn_Pool.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     </tr>
                 </tbody>
             </table>
@@ -8050,7 +8004,7 @@ function renderEgmComputation() {
 
     splits.forEach(s => {
         const aShare = salesShareMap[s.name] || 0;
-        const bShare = totalB * s.pct; // Removed totalC
+        const bShare = totalB * s.pct; 
         const diff = aShare - bShare;
         const isLeft = diff >= 0;
         const colorClass = isLeft ? 'text-success' : 'text-danger';
@@ -8065,7 +8019,7 @@ function renderEgmComputation() {
         </tr>`;
     });
 
-    const grandDiff = tA_Total - totalB; // Removed totalC
+    const grandDiff = tA_Share_Sum - totalB; // 🟢 Use Share Sum to reflect direct additions
     const isGrandLeft = grandDiff >= 0;
     const grandColorClass = isGrandLeft ? 'text-success' : 'text-danger';
     const grandLabel = isGrandLeft ? 'left' : 'deficit';
@@ -8073,7 +8027,7 @@ function renderEgmComputation() {
     html += `
                 <tr class="bg-secondary bg-opacity-10 fw-bold">
                     <td class="py-2">TOTAL</td>
-                    <td class="py-2 text-end">₱${fmt(tA_Total)}</td>
+                    <td class="py-2 text-end">₱${fmt(tA_Share_Sum)}</td>
                     <td class="py-2 text-end">₱${totalB.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td class="py-2 text-end ${grandColorClass}">₱${Math.abs(grandDiff).toLocaleString(undefined, {minimumFractionDigits: 2})} ${grandLabel}</td>
                 </tr>
