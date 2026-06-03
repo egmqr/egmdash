@@ -7600,7 +7600,15 @@ if (!isConfirmed) return;
           renderExpenseQueue();
           
           try {
-              currentPayrollData = JSON.parse(data.sessionData);
+              // 🟢 THE FIX: Safely check if it's a string that needs parsing, or if it's already an object!
+              if (typeof data.sessionData === 'string') {
+                  currentPayrollData = JSON.parse(data.sessionData || "{}");
+              } else if (typeof data.sessionData === 'object' && data.sessionData !== null) {
+                  currentPayrollData = data.sessionData;
+              } else {
+                  currentPayrollData = {};
+              }
+
               currentOnlineSalesBalance = data.onlineSalesBalance || 0;
               lastComputedRange = `${data.startDate}_${data.endDate}`;
 
@@ -7609,7 +7617,9 @@ if (!isConfirmed) return;
               
               markPayrollEdited(); 
           } catch (e) {
-              egmAlert("Error parsing saved session data.");
+              // Log the exact cause to the console so we can inspect it if it fails again
+              console.error("Session Parse Error:", e, data.sessionData);
+              egmAlert("Error parsing saved session data: " + e.message);
           }
           
           // SAFETY SWEEPER: 400ms later, forcefully scrub the DOM of any stranded overlays
