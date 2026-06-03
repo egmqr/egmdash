@@ -7839,7 +7839,7 @@ function renderEgmComputation() {
         return;
     }
 
-    // Group by Event ID and extract ONLY the Main Day / Payment Doc
+    // 🟢 Group by Event ID and extract ONLY the Main Day / Payment Doc
     const uniquePayDocs = {};
     const grouped = {};
     
@@ -7870,67 +7870,27 @@ function renderEgmComputation() {
         return e['Event Date'] >= start && e['Event Date'] <= end;
     });
 
-    // ---- Total A: Cash + Check + Online Transfer payments in cutoff window ----
-    let totalA = 0;
-
-    validProjects.forEach(e => {
-        if (e['Billing Status'] !== 'Paid') return; 
-
-        const pType = e['Payment Type'] || '';
-        const isQualified =
-            pType.includes('Cash') ||
-            pType.includes('Check') ||
-            pType.includes('Online Transfer');
-
-        if (isQualified) {
-            const amt = parseFloat(e['Amount']) || 0;
-            if (amt > 0) {
-                totalA += amt;
-            }
-        }
-    });
-
-    // ---- Total B & C: Isolate Payouts vs Expenses ----
-    let totalB = 0;
-    let totalC = 0; 
-    Object.keys(currentPayrollData).forEach(pName => {
-        const person = currentPayrollData[pName];
-        
-        person.events.forEach(ev => {
-            if (ev.payer === 'Edgar(EGM)') {
-                totalB += (ev.basePay || 0) + (ev.extraPay || 0);
-            } else if (ev.payer === 'CreatED Expenses') {
-                totalC += (ev.basePay || 0) + (ev.extraPay || 0); 
-            }
-        });
-        
-        if (person.expensePayer === 'Edgar(EGM)' || person.expensePayer === 'CreatED Expenses') {
-            totalC += person.expenses || 0;
-        }
-        
-        if (person.miscPayer === 'Edgar(EGM)') {
-            totalB += person.misc || 0; 
-        } else if (person.miscPayer === 'CreatED Expenses') {
-            totalC += person.misc || 0; 
-        }
-    });
-
-    // ---- Service allocation per person (used for Sales In Share) ----
-    let tA_Edgar = 0, tA_Francis = 0, tA_Tina = 0, tA_Grace = 0;
-    let tA_StrictTotal = 0; 
+    // ---- INITIALIZE ALLOCATIONS ----
+    let tA_Edgar_Base = 0, tA_Francis_Base = 0, tA_Tina_Base = 0, tA_Grace_Base = 0;
+    let tA_Francis_Dir = 0, tA_Tina_Dir = 0, tA_Grace_Dir = 0;
     let t6_TranspoSum = 0;
     let htmlT6 = '';
-    
     let htmlTotalABreakdown = ''; 
+    let tA_SalesIn_Pool = 0; 
     const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2});
 
+    // Use the validProjects array to iterate ONLY ONCE per project
     validProjects.forEach(ev => {
         if (ev['Payment Type'] === 'Billing') return;
         if (ev['Billing Status'] !== 'Paid') return;
 
         let amts = {};
         try { amts = JSON.parse(ev['Service Amounts JSON'] || '{}'); } catch(ex) {}
-        if (!Object.values(amts).some(v => parseFloat(v) > 0)) return;
+        
+        const serviceTotal = Object.values(amts).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+        const amt = serviceTotal > 0 ? serviceTotal : (parseFloat(ev['Amount']) || 0);
+
+        if (amt <= 0) return;
 
         const sde        = parseFloat(amts['amt_VideoSDE'])    || 0;
         const doc        = parseFloat(amts['amt_VideoDoc'])    || 0;
@@ -7942,33 +7902,31 @@ function renderEgmComputation() {
         const frameToken = parseFloat(amts['amt_FrameToken'])  || 0;
         const photoStudio= parseFloat(amts['amt_PhotoStudio']) || 0;
         
-        // 🟢 Custom Credits
-        const francisCustom = parseFloat(amts['amt_Francis'])  || 0;
-        const tinaCustom = parseFloat(amts['amt_Tina'])        || 0;
+        // 🟢 The 40/30/20/10 Shared Pool (Now includes SDE!)
+        const sharedPool = photo + photoQR + frameToken + photoStudio + sde; 
         
-        const photoGroup = photo + photoQR + frameToken + photoStudio;
-        const vidOther   = doc + high + vstudio; // Grace only
+        // 🟢 Direct Funnels (Excluded from Shared Pool)
+        const graceDirect = doc + high + vstudio;
+        const francisDirect = parseFloat(amts['amt_Francis']) || 0;
+        const tinaDirect = parseFloat(amts['amt_Tina']) || 0;
 
-        const tA_edgar_row   = photoGroup * 0.40;
-        const tA_francis_row = photoGroup * 0.30 + (sde / 3) + francisCustom;
-        const tA_tina_row    = photoGroup * 0.20 + (sde / 3) + tinaCustom;
-        const tA_grace_row   = photoGroup * 0.10 + (sde / 3) + vidOther;
-        
-        // 🟢 STRICT TOTAL A: Only Photo + SDE
-        const tA_row_total   = photoGroup + sde; 
+        const tA_edgar_row   = sharedPool * 0.40;
+        const tA_francis_row = sharedPool * 0.30;
+        const tA_tina_row    = sharedPool * 0.20;
+        const tA_grace_row   = sharedPool * 0.10;
 
-        tA_Edgar   += tA_edgar_row;
-        tA_Francis += tA_francis_row;
-        tA_Tina    += tA_tina_row;
-        tA_Grace   += tA_grace_row;
-        tA_StrictTotal += tA_row_total; 
+        tA_SalesIn_Pool += sharedPool; 
 
-        // We only render this row in the "Total A Breakdown" if it has actual Total A value
-        if (tA_row_total > 0) {
+        tA_Edgar_Base   += tA_edgar_row;
+        tA_Francis_Base += tA_francis_row; tA_Francis_Dir += francisDirect;
+        tA_Tina_Base    += tA_tina_row;    tA_Tina_Dir    += tinaDirect;
+        tA_Grace_Base   += tA_grace_row;   tA_Grace_Dir   += graceDirect;
+
+        if (sharedPool > 0 || francisDirect > 0 || tinaDirect > 0 || graceDirect > 0) {
             htmlTotalABreakdown += `<tr>
                 <td class="fw-bold text-dark">${ev['Event Name']}</td>
                 <td><span class="badge bg-light text-dark border">${ev['Payment Type'] || 'N/A'}</span></td>
-                <td class="text-end fw-bold text-success">₱${tA_row_total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="text-end fw-bold text-success">₱${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             </tr>`;
         }
 
@@ -7981,20 +7939,40 @@ function renderEgmComputation() {
         }
     });
 
-    // Enforce the strict total logic to govern the AR Sales math display
-    const tA_Total = tA_StrictTotal; 
-    const salesShareMap = { 'Edgar': tA_Edgar, 'Francis': tA_Francis, 'Tina': tA_Tina, 'Grace': tA_Grace };
+    // Sum of all final shares
+    const tA_Share_Sum = (tA_Edgar_Base) + (tA_Francis_Base + tA_Francis_Dir) + (tA_Tina_Base + tA_Tina_Dir) + (tA_Grace_Base + tA_Grace_Dir); 
+    
+    const salesShareMap = { 
+        'Edgar': tA_Edgar_Base, 
+        'Francis': tA_Francis_Base + tA_Francis_Dir, 
+        'Tina': tA_Tina_Base + tA_Tina_Dir, 
+        'Grace': tA_Grace_Base + tA_Grace_Dir 
+    };
+
+    // ---- Total B & C: Isolate Payouts vs Expenses ----
+    let totalB = 0;
+    let totalC = 0; 
+    Object.keys(currentPayrollData).forEach(pName => {
+        const person = currentPayrollData[pName];
+        person.events.forEach(ev => {
+            if (ev.payer === 'Edgar(EGM)') totalB += (ev.basePay || 0) + (ev.extraPay || 0);
+            else if (ev.payer === 'CreatED Expenses') totalC += (ev.basePay || 0) + (ev.extraPay || 0); 
+        });
+        if (person.expensePayer === 'Edgar(EGM)' || person.expensePayer === 'CreatED Expenses') totalC += person.expenses || 0;
+        if (person.miscPayer === 'Edgar(EGM)') totalB += person.misc || 0; 
+        else if (person.miscPayer === 'CreatED Expenses') totalC += person.misc || 0;
+    });
 
     const splits = [
-        { name: 'Edgar',   pct: 0.40 },
-        { name: 'Francis', pct: 0.30 },
-        { name: 'Tina',    pct: 0.20 },
-        { name: 'Grace',   pct: 0.10 }
+        { name: 'Edgar',   base: tA_Edgar_Base,   dir: 0,              pct: 0.40 },
+        { name: 'Francis', base: tA_Francis_Base, dir: tA_Francis_Dir, pct: 0.30 },
+        { name: 'Tina',    base: tA_Tina_Base,    dir: tA_Tina_Dir,    pct: 0.20 },
+        { name: 'Grace',   base: tA_Grace_Base,   dir: tA_Grace_Dir,   pct: 0.10 }
     ];
 
     currentEgmComputation = {
         onlineSalesBalance: currentOnlineSalesBalance,
-        totalA: tA_SalesIn_Pool, // 🟢 Master Total A is strictly the Shared Pool
+        totalA: tA_SalesIn_Pool, // Keep master Total A accurate for PDF
         totalB, totalC, splits, salesShareMap
     };
 
