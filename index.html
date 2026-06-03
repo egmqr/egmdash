@@ -7902,27 +7902,30 @@ function renderEgmComputation() {
         const frameToken = parseFloat(amts['amt_FrameToken'])  || 0;
         const photoStudio= parseFloat(amts['amt_PhotoStudio']) || 0;
         
-        // 🟢 The 40/30/20/10 Shared Pool (Now includes SDE!)
-        const sharedPool = photo + photoQR + frameToken + photoStudio + sde; 
+        // 🟢 The Base Shared Pool (Photo Group only - 40/30/20/10)
+        const photoGroup = photo + photoQR + frameToken + photoStudio;
         
+        // 🟢 The SDE Pool (Split 3 ways: Francis, Tina, Grace)
+        const sdeThird = sde / 3;
+
         // 🟢 Direct Funnels (Excluded from Shared Pool)
         const graceDirect = doc + high + vstudio;
         const francisDirect = parseFloat(amts['amt_Francis']) || 0;
         const tinaDirect = parseFloat(amts['amt_Tina']) || 0;
 
-        const tA_edgar_row   = sharedPool * 0.40;
-        const tA_francis_row = sharedPool * 0.30;
-        const tA_tina_row    = sharedPool * 0.20;
-        const tA_grace_row   = sharedPool * 0.10;
+        const tA_edgar_row   = photoGroup * 0.40;
+        const tA_francis_row = (photoGroup * 0.30) + sdeThird;
+        const tA_tina_row    = (photoGroup * 0.20) + sdeThird;
+        const tA_grace_row   = (photoGroup * 0.10) + sdeThird;
 
-        tA_SalesIn_Pool += sharedPool; 
+        tA_SalesIn_Pool += (photoGroup + sde); // Keeps master Total A accurate
 
         tA_Edgar_Base   += tA_edgar_row;
         tA_Francis_Base += tA_francis_row; tA_Francis_Dir += francisDirect;
         tA_Tina_Base    += tA_tina_row;    tA_Tina_Dir    += tinaDirect;
         tA_Grace_Base   += tA_grace_row;   tA_Grace_Dir   += graceDirect;
 
-        if (sharedPool > 0 || francisDirect > 0 || tinaDirect > 0 || graceDirect > 0) {
+        if ((photoGroup + sde) > 0 || francisDirect > 0 || tinaDirect > 0 || graceDirect > 0) {
             htmlTotalABreakdown += `<tr>
                 <td class="fw-bold text-dark">${ev['Event Name']}</td>
                 <td><span class="badge bg-light text-dark border">${ev['Payment Type'] || 'N/A'}</span></td>
