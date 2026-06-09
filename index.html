@@ -6827,8 +6827,6 @@ async function fetchExistingLogos(forceRefresh = false) {
           return;
       }
       let html = '';
-      // 👇 NEW: Added a check to hide 'egm_fav copy'
-      const jsArg = (value) => JSON.stringify(String(value || ''));
       const htmlAttr = (value) => String(value || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
       visibleLogos.forEach(logo => {
           const qrId = logo.qrId || (logo.id.startsWith('logo_') ? logo.id.replace(/^logo_/, 'qrlogo_') : logo.id);
@@ -6837,11 +6835,17 @@ async function fetchExistingLogos(forceRefresh = false) {
           const logoName = htmlAttr(logo.name || 'logo');
           html += `
             <div class="logo-gallery-item-wrapper">
-              <img src="${logo.url}" class="logo-gallery-item" title="${logoName}" onclick="selectExistingLogo(${jsArg(logo.id)}, ${jsArg(qrId)}, this)">
-              <button type="button" class="logo-delete-badge" title="Delete logo" aria-label="Delete ${logoName}" onclick="deleteExistingLogo(${jsArg(logoKey)}, ${jsArg(qrKey)}, ${jsArg(logo.id)}, event)">&times;</button>
+              <img src="${htmlAttr(logo.url)}" class="logo-gallery-item" title="${logoName}" data-logo-id="${htmlAttr(logo.id)}" data-qr-id="${htmlAttr(qrId)}">
+              <button type="button" class="logo-delete-badge" title="Delete logo" aria-label="Delete ${logoName}" data-logo-key="${htmlAttr(logoKey)}" data-qr-key="${htmlAttr(qrKey)}" data-logo-id="${htmlAttr(logo.id)}">&times;</button>
             </div>`;
       });
       container.innerHTML = html;
+      container.querySelectorAll('.logo-gallery-item').forEach(img => {
+          img.addEventListener('click', () => selectExistingLogo(img.dataset.logoId, img.dataset.qrId, img));
+      });
+      container.querySelectorAll('.logo-delete-badge').forEach(btn => {
+          btn.addEventListener('click', (event) => deleteExistingLogo(btn.dataset.logoKey, btn.dataset.qrKey, btn.dataset.logoId, event));
+      });
   }
 
   async function deleteExistingLogo(logoKey, qrKey, logoId, event) {
