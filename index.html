@@ -312,6 +312,10 @@
     .logo-gallery-item { width: 40px; height: 40px; flex-shrink: 0; border: 2px solid transparent; border-radius: 8px; cursor: pointer; object-fit: contain; background: #fff; padding: 2px; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .logo-gallery-item:hover { border-color: #cbd5e1; transform: translateY(-2px);}
     .logo-gallery-item.selected { border-color: #0d9488; }
+    .logo-gallery-item-wrapper { position: relative; flex: 0 0 auto; width: 44px; height: 44px; }
+    .logo-gallery-item-wrapper .logo-gallery-item { width: 100%; height: 100%; display: block; }
+    .logo-delete-badge { position: absolute; top: -7px; right: -7px; width: 19px; height: 19px; border: 2px solid #fff; border-radius: 999px; background: #dc2626; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(15,23,42,0.3); padding: 0; transition: 0.15s ease; }
+    .logo-delete-badge:hover { background: #b91c1c; transform: scale(1.08); }
     
     /* =============================================
        MODERNIZED BUTTON COLORS — Pastel / Muted
@@ -498,6 +502,7 @@
     .dark-mode .booth-mini-btn:hover { background-color: #2e3340; }
     .dark-mode .logo-gallery-item { background: #2e3340; }
     .dark-mode .logo-gallery-item.selected { border-color: #0d9488; }
+    .dark-mode .logo-delete-badge { border-color: #1c1f26; }
 
     /* --- Calendar lightbox event card --- */
     #eventCardModal .card { background-color: #ffffff !important; opacity: 1 !important; color: #334155 !important; }
@@ -6816,16 +6821,58 @@ async function fetchExistingLogos(forceRefresh = false) {
 
   function renderExistingLogos(logos) {
       const container = document.getElementById('existingLogoGallery');
-      if (logos.length === 0) {
+      const visibleLogos = logos.filter(logo => logo.id && logo.id.trim() !== '' && !logo.id.includes('egm_fav copy'));
+      if (visibleLogos.length === 0) {
           container.innerHTML = '<span class="small text-muted fst-italic">No existing logos found.</span>';
           return;
       }
       let html = '';
       // 👇 NEW: Added a check to hide 'egm_fav copy'
-      logos.filter(logo => logo.id && logo.id.trim() !== '' && !logo.id.includes('egm_fav copy')).forEach(logo => {
-          html += `<img src="${logo.url}" class="logo-gallery-item" title="${logo.name}" onclick="selectExistingLogo('${logo.id}', '${logo.qrId}', this)">`;
+      const jsArg = (value) => JSON.stringify(String(value || ''));
+      const htmlAttr = (value) => String(value || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+      visibleLogos.forEach(logo => {
+          const qrId = logo.qrId || (logo.id.startsWith('logo_') ? logo.id.replace(/^logo_/, 'qrlogo_') : logo.id);
+          const logoKey = logo.key || `assets/logos/${logo.id}.png`;
+          const qrKey = logo.qrKey || `assets/qr-logos/${qrId}.png`;
+          const logoName = htmlAttr(logo.name || 'logo');
+          html += `
+            <div class="logo-gallery-item-wrapper">
+              <img src="${logo.url}" class="logo-gallery-item" title="${logoName}" onclick="selectExistingLogo(${jsArg(logo.id)}, ${jsArg(qrId)}, this)">
+              <button type="button" class="logo-delete-badge" title="Delete logo" aria-label="Delete ${logoName}" onclick="deleteExistingLogo(${jsArg(logoKey)}, ${jsArg(qrKey)}, ${jsArg(logo.id)}, event)">&times;</button>
+            </div>`;
       });
       container.innerHTML = html;
+  }
+
+  async function deleteExistingLogo(logoKey, qrKey, logoId, event) {
+      if (event) event.stopPropagation();
+      if (!logoKey || !confirm('Delete this logo from Booth QR?')) return;
+
+      const ov = document.getElementById('submitOverlay');
+      document.getElementById('overlayText').innerText = 'Deleting logo...';
+      ov.style.display = 'flex';
+
+      try {
+          const keysToDelete = [...new Set([logoKey, qrKey].filter(Boolean))];
+          for (const key of keysToDelete) {
+              const res = await callWorkerApi('/api/dashboard/delete-file', { key }, true);
+              if (!res || !res.success) throw new Error(res ? res.error : `Failed to delete ${key}`);
+          }
+
+          existingLogosCache = existingLogosCache.filter(logo => logo.id !== logoId);
+          if (selectedExistingLogoId === logoId) {
+              selectedExistingLogoId = "";
+              selectedExistingQrLogoId = "";
+              document.getElementById('boothLogoFileName').innerText = "No file selected";
+              document.getElementById('boothLogoFileName').style.color = "#64748b";
+          }
+          renderExistingLogos(existingLogosCache);
+          showToast('Logo deleted', 'success');
+      } catch (err) {
+          showToast(`Failed to delete logo: ${err.message}`, 'danger');
+      } finally {
+          ov.style.display = 'none';
+      }
   }
 
   function selectExistingLogo(id, qrId, el) {
