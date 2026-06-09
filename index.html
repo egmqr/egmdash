@@ -312,9 +312,9 @@
     .logo-gallery-item { width: 40px; height: 40px; flex-shrink: 0; border: 2px solid transparent; border-radius: 8px; cursor: pointer; object-fit: contain; background: #fff; padding: 2px; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .logo-gallery-item:hover { border-color: #cbd5e1; transform: translateY(-2px);}
     .logo-gallery-item.selected { border-color: #0d9488; }
-    .logo-gallery-item-wrapper { position: relative; flex: 0 0 auto; width: 44px; height: 44px; }
-    .logo-gallery-item-wrapper .logo-gallery-item { width: 100%; height: 100%; display: block; }
-    .logo-delete-badge { position: absolute; top: -7px; right: -7px; width: 19px; height: 19px; border: 2px solid #fff; border-radius: 999px; background: #dc2626; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(15,23,42,0.3); padding: 0; transition: 0.15s ease; }
+    .logo-gallery-item-wrapper { position: relative; flex: 0 0 auto; width: 44px; height: 44px; overflow: visible; }
+    .logo-gallery-item-wrapper .logo-gallery-item { width: 100%; height: 100%; display: block; position: relative; z-index: 1; }
+    .logo-delete-badge { position: absolute; top: -7px; right: -7px; z-index: 5; width: 19px; height: 19px; border: 2px solid #fff; border-radius: 999px; background: #dc2626; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(15,23,42,0.3); padding: 0; transition: 0.15s ease; pointer-events: auto; }
     .logo-delete-badge:hover { background: #b91c1c; transform: scale(1.08); }
     
     /* =============================================
@@ -6874,6 +6874,7 @@ async function fetchExistingLogos(forceRefresh = false) {
           ov.style.display = 'none';
       }
   }
+  window.deleteExistingLogo = deleteExistingLogo;
 
   function selectExistingLogo(id, qrId, el) {
       selectedExistingLogoId = id;
