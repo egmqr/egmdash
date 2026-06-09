@@ -1174,13 +1174,17 @@
                           <label class="form-label-sm text-secondary">Event ID</label>
                           <input type="text" id="boothEventId" class="form-control form-control-sm fw-bold text-muted" placeholder="e.g. egm0015" disabled>
                       </div>
-                      <div class="col-12 col-md-8">
-                          <label class="form-label-sm text-secondary">Page Title</label>
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm text-secondary">Event Name</label>
                           <input type="text" id="boothEventName" class="form-control form-control-sm fw-bold" required>
+                      </div>
+                      <div class="col-12 col-md-4">
+                          <label class="form-label-sm text-secondary">Web Gallery Page Title</label>
+                          <input type="text" id="boothPageTitle" class="form-control form-control-sm fw-bold">
                       </div>
                   </div>
 
-                  <!-- Folder Name auto-synced from Page Title; hidden from UI -->
+                  <!-- Folder Name auto-synced from Event Name; hidden from UI -->
                   <input type="hidden" id="boothFolderName">
                   
                   <div class="mb-4 pb-4 border-bottom">
@@ -6067,6 +6071,7 @@ async function uploadAndScanInvoice(prefix) {
           
           document.getElementById('boothEventId').value = eventId;
           document.getElementById('boothEventName').value = eventName;
+          document.getElementById('boothPageTitle').value = eventName;
           document.getElementById('boothCountInput').value = booths;
           
           // 🟢 THE FIX: Make the Folder Name exactly match the Event Name / Page Title!
@@ -6116,7 +6121,7 @@ window.recomputeARSales = function() {
           document.getElementById('btnModeNew').style.display = 'block';
       }
 
-      document.getElementById('boothFolderName').value = ""; document.getElementById('boothEventName').value = "";
+      document.getElementById('boothFolderName').value = ""; document.getElementById('boothEventName').value = ""; document.getElementById('boothPageTitle').value = "";
       if(mode !== 'new') document.getElementById('boothCountInput').value = ""; 
       
       document.getElementById('boothFontColor').value = "#ffffff"; document.getElementById('boothFontColorPicker').value = "#ffffff"; 
@@ -6208,6 +6213,7 @@ window.recomputeARSales = function() {
       // 🟢 THE FIX: Permanently disable Folder Name during Edit Setup!
       document.getElementById('boothFolderName').disabled = isEditMode ? true : !isEnabled;
       document.getElementById('boothEventName').disabled = !isEnabled;
+      document.getElementById('boothPageTitle').disabled = !isEnabled;
       
       document.getElementById('boothFontColorPicker').disabled = !isEnabled;
       document.getElementById('boothFontColor').disabled = !isEnabled;
@@ -6475,6 +6481,7 @@ window.recomputeARSales = function() {
               document.getElementById('boothEventId').value = selectedId;
               document.getElementById('boothFolderName').value = details.folderName || "";
               document.getElementById('boothEventName').value = details.eventName || "";
+              document.getElementById('boothPageTitle').value = details.pageTitle || details.eventName || "";
               document.getElementById('boothCountInput').value = details.boothCount || "";
                 
               document.getElementById('boothLogoOnMain').checked = details.logoOnMain === true;
@@ -6520,7 +6527,7 @@ window.recomputeARSales = function() {
               toggleBoothEditFields(true);
               
           } else if (currentBoothMode === 'view') {
-              document.getElementById('viewBoothTitle').innerText = details.eventName || "Unnamed Event";
+              document.getElementById('viewBoothTitle').innerText = details.pageTitle || details.eventName || "Unnamed Event";
               document.getElementById('viewBoothId').innerText = "ID: " + details.id;
               
               const boothList = document.getElementById('boothCardsList');
@@ -6895,8 +6902,9 @@ async function fetchExistingLogos(forceRefresh = false) {
           document.getElementById('boothEventId').value = eventId;
       }
 
-      const folderName = document.getElementById('boothFolderName').value.trim();
+      let folderName = document.getElementById('boothFolderName').value.trim();
       const eventName = document.getElementById('boothEventName').value.trim();
+      const pageTitle = document.getElementById('boothPageTitle').value.trim() || eventName;
       const communityOnly = document.getElementById('boothCommunityOnly').checked;
       
       // 🟢 THE FIX: Safely default boothCount to "1" if it is empty (disabled for admins, or missing during edit)
@@ -6907,9 +6915,12 @@ async function fetchExistingLogos(forceRefresh = false) {
       
       // 🟢 Updated validation to stop checking the empty booth count
       // Auto-sync folderName from eventName (field is now hidden)
-      if (!folderName) document.getElementById('boothFolderName').value = eventName;
+      if (!folderName) {
+          folderName = eventName;
+          document.getElementById('boothFolderName').value = eventName;
+      }
       if (!eventName || !eventId) {
-          egmAlert("Required fields missing! Ensure the Page Title is set.");
+          egmAlert("Required fields missing! Ensure the Event Name is set.");
           return;
       }
 
@@ -6930,7 +6941,7 @@ async function fetchExistingLogos(forceRefresh = false) {
       const enableCommunity = document.getElementById('boothEnableCommunity').checked;
 
       const payload = {
-          action: actionName, eventId, folderName, eventName, boothCount,
+          action: actionName, eventId, folderName, eventName, pageTitle, boothCount,
           existingBgId: resolvedBgId,
           logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
           fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
