@@ -1,0 +1,32 @@
+name = "egm-api"
+main = "src/index.js"
+account_id = "2550e2e7fded3508b2ffa7995ae3732b"  # e.g., "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p"
+compatibility_date = "2026-05-04"
+workers_dev = true
+route = "https://api.createdbyegm.com/*"  # Your custom domain route
+
+# Custom domain → set up as Worker route in CF dashboard:
+#   api.createdbyegm.com/* → egm-api
+# Public R2 bucket → bind cdn.createdbyegm.com to the bucket in R2 settings.
+
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "egm-photos"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "de65a1348801490fb7db00da693a26c1"   # `wrangler kv:namespace create SESSIONS` then paste here
+
+# All secrets via `wrangler secret put <NAME>`:
+#   FIREBASE_PROJECT_ID
+#   FIREBASE_API_KEY
+#   FIREBASE_EMAIL
+#   FIREBASE_PASSWORD
+#   R2_ACCOUNT_ID
+#   R2_ACCESS_KEY_ID
+#   R2_SECRET_ACCESS_KEY
+#   BOOTH_AUTH_TOKEN          # shared secret WPF sends on /api/sign-upload
+#   PUBLIC_CDN_BASE           # e.g. https://cdn.createdbyegm.com
+
+[vars]
+BUCKET_NAME = "egm-photos"
