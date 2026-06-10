@@ -753,7 +753,11 @@
         onclick="selectAllManagePhotos()">Select All</button>
       <button class="btn btn-danger btn-sm fw-bold"
         onclick="deleteSelectedManagePhotos()">Delete Selected</button>
-      <button class="btn btn-sm fw-bold" style="background: #0d9488; color: #fff; margin-left: auto;"
+      <button class="btn btn-sm fw-bold" style="background: #2563eb; color: #fff; margin-left: auto;"
+        onclick="downloadSelectedManagePhotos()">Download Selected</button>
+      <button class="btn btn-sm fw-bold" style="background: #7c3aed; color: #fff;"
+        onclick="downloadUnmarkedManagePhotos()">Download Unmarked</button>
+      <button class="btn btn-sm fw-bold" style="background: #0d9488; color: #fff;"
         onclick="downloadAllManagePhotos()">Download All</button>
     </div>
     <div id="manageUploadSection" style="padding: 12px 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
@@ -6667,9 +6671,50 @@ window.recomputeARSales = function() {
   // MANAGE PHOTOS MODAL (R2 Gallery)
   // ==========================================
   let managePhotosData = [];
+  let manageDownloadedPhotoKeys = new Set();
+  const MANAGE_DOWNLOADED_STORAGE_PREFIX = 'egmdash_manage_downloaded_photos:';
+
+  function getManageDownloadedStorageKey() {
+    return `${MANAGE_DOWNLOADED_STORAGE_PREFIX}${currentManagePrefix || 'default'}`;
+  }
+
+  function loadManageDownloadedState() {
+    try {
+      const saved = localStorage.getItem(getManageDownloadedStorageKey());
+      manageDownloadedPhotoKeys = new Set(saved ? JSON.parse(saved) : []);
+    } catch (e) {
+      manageDownloadedPhotoKeys = new Set();
+    }
+  }
+
+  function saveManageDownloadedState() {
+    try {
+      localStorage.setItem(getManageDownloadedStorageKey(), JSON.stringify([...manageDownloadedPhotoKeys]));
+    } catch (e) { /* Download badges are best-effort browser-local state. */ }
+  }
+
+  function markManagePhotosDownloaded(photos) {
+    photos.forEach(item => {
+      if (item && item[0]) manageDownloadedPhotoKeys.add(item[0]);
+    });
+    saveManageDownloadedState();
+    renderManageGrid();
+  }
+
+  function unmarkDeletedManagePhoto(key) {
+    if (!manageDownloadedPhotoKeys.has(key)) return;
+    manageDownloadedPhotoKeys.delete(key);
+    saveManageDownloadedState();
+  }
+
+  function getManagePhotoFilename(item, index) {
+    const url = item && item[2] ? item[2] : '';
+    return url.split('/').pop().split('?')[0] || `photo_${index}.jpg`;
+  }
 
   async function openManageModal(prefix) {
     currentManagePrefix = prefix;
+    loadManageDownloadedState();
     document.getElementById('manageUploadProgress').style.display = 'none';
     document.getElementById('manageUploadBar').style.width = '0%';
     document.getElementById('manageModal').style.display = 'flex';
@@ -6700,10 +6745,12 @@ window.recomputeARSales = function() {
     managePhotosData.forEach((item, index) => {
       const key = item[0];
       const url = item[2];
+      const isDownloaded = manageDownloadedPhotoKeys.has(key);
       html += `
       <div class="manage-item" style="position: relative; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; background: #000; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
           <img src="${url}?w=400" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer; opacity: 0.9; transition: opacity 0.2s;" onclick="toggleManageSelection(${index})" onload="this.style.opacity=1">
-          <input type="checkbox" id="manage_cb_${index}" data-key="${key}" data-url="${url}" style="position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; cursor: pointer; accent-color: #3b82f6;">
+          <input type="checkbox" id="manage_cb_${index}" data-index="${index}" data-key="${key}" data-url="${url}" style="position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; cursor: pointer; accent-color: #3b82f6;">
+          ${isDownloaded ? '<span style="position: absolute; top: 9px; right: 9px; background: rgba(22, 163, 74, 0.94); color: #fff; border-radius: 999px; padding: 4px 7px; font-size: 10px; font-weight: 800; line-height: 1; letter-spacing: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.28);"><i class="bi bi-check2-circle" style="font-size: 11px; margin-right: 3px;"></i>Downloaded</span>' : ''}
           <button onclick="deleteSingleManagePhoto('${key}')" style="position: absolute; bottom: 10px; right: 10px; background: rgba(239, 68, 68, 0.92); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 13px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"><i class="bi bi-trash"></i></button>
       </div>`;
     });
@@ -6735,6 +6782,7 @@ window.recomputeARSales = function() {
     const res = await callWorkerApi('/api/dashboard/delete-file', { key });
     if (res && res.success) {
       managePhotosData = managePhotosData.filter(item => item[0] !== key);
+      unmarkDeletedManagePhoto(key);
       renderManageGrid();
       showToast('Photo deleted', 'success');
     } else {
@@ -6756,6 +6804,7 @@ window.recomputeARSales = function() {
       const key = cb.getAttribute('data-key');
       await callWorkerApi('/api/dashboard/delete-file', { key });
       managePhotosData = managePhotosData.filter(item => item[0] !== key);
+      unmarkDeletedManagePhoto(key);
     }
     renderManageGrid();
     ov.style.display = 'none';
@@ -6775,21 +6824,38 @@ window.recomputeARSales = function() {
     }
   }
 
-  async function downloadAllManagePhotos() {
-    if (!managePhotosData || managePhotosData.length === 0) return showToast('No photos to download', 'warning');
+  async function downloadManagePhotos(photos, emptyMessage) {
+    if (!photos || photos.length === 0) return showToast(emptyMessage, 'warning');
 
     const ov = document.getElementById('submitOverlay');
-    document.getElementById('overlayText').innerText = `Downloading ${managePhotosData.length} photos...`;
+    document.getElementById('overlayText').innerText = `Downloading ${photos.length} photo${photos.length !== 1 ? 's' : ''}...`;
     ov.style.display = 'flex';
 
-    for (let i = 0; i < managePhotosData.length; i++) {
-      const url = managePhotosData[i][2];
-      const filename = url.split('/').pop().split('?')[0] || `photo_${i}.jpg`;
+    for (let i = 0; i < photos.length; i++) {
+      const url = photos[i][2];
+      const filename = getManagePhotoFilename(photos[i], i);
       await downloadImageSilent(url, filename);
       await new Promise(r => setTimeout(r, 600));
     }
     ov.style.display = 'none';
+    markManagePhotosDownloaded(photos);
     showToast('Downloads complete', 'success');
+  }
+
+  async function downloadAllManagePhotos() {
+    await downloadManagePhotos(managePhotosData, 'No photos to download');
+  }
+
+  async function downloadUnmarkedManagePhotos() {
+    const unmarkedPhotos = managePhotosData.filter(item => !manageDownloadedPhotoKeys.has(item[0]));
+    await downloadManagePhotos(unmarkedPhotos, 'No unmarked photos to download');
+  }
+
+  async function downloadSelectedManagePhotos() {
+    const selectedPhotos = [...document.querySelectorAll('input[id^="manage_cb_"]:checked')]
+      .map(cb => managePhotosData[Number(cb.getAttribute('data-index'))])
+      .filter(Boolean);
+    await downloadManagePhotos(selectedPhotos, 'No photos selected');
   }
 
   function openLightbox(src) {
