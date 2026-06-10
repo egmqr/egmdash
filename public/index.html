@@ -798,9 +798,18 @@
     min-height: 32px;
     white-space: nowrap;
   }
-  .manage-download-selected { background: #2563eb; color: #fff; }
-  .manage-download-unmarked { background: #7c3aed; color: #fff; }
-  .manage-download-all { background: #0d9488; color: #fff; }
+  .manage-download-selected,
+  .manage-download-selected:hover,
+  .manage-download-selected:focus,
+  .manage-download-selected:active { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .manage-download-unmarked,
+  .manage-download-unmarked:hover,
+  .manage-download-unmarked:focus,
+  .manage-download-unmarked:active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+  .manage-download-all,
+  .manage-download-all:hover,
+  .manage-download-all:focus,
+  .manage-download-all:active { background: #0d9488; border-color: #0d9488; color: #fff; }
 
   @media (min-width: 768px) {
     #manageGrid {
