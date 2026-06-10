@@ -58,7 +58,7 @@ export async function handleDashboardRoutes(request, env, ctx) {
 
   // ── /api/dashboard/booth-details ────────────────────────────────────
   if (path === '/api/dashboard/booth-details') {
-    return json(await getBoothDetails(env, body.eventId));
+    return json(await getBoothDetails(env, body.eventId, { includeTemplates: body.includeTemplates === true }));
   }
 
   // ── /api/dashboard/delete-booth ─────────────────────────────────────
@@ -401,7 +401,7 @@ async function renameEventName(env, body) {
   return { success: true, message: 'Event renamed.' };
 }
 
-async function getBoothDetails(env, eventId) {
+async function getBoothDetails(env, eventId, options = {}) {
   const res = await firestoreFetch(env, `/events/${eventId}`);
   if (!res.ok) return { success: false, error: 'Firebase fetch error' };
   const doc = await res.json();
@@ -411,7 +411,7 @@ async function getBoothDetails(env, eventId) {
   const configKeysStr = f.configKeys?.stringValue || '';
   const firstConfigKey = configKeysStr.split('|').find(k => k && k.length > 5) || '';
   let templates = [];
-  if (firstConfigKey) {
+  if (options.includeTemplates === true && firstConfigKey) {
     try {
       const obj = await env.PHOTOS.get(firstConfigKey);
       if (obj) {
@@ -444,7 +444,7 @@ async function getBoothDetails(env, eventId) {
     boothPrefixesStr: f.boothPrefixes?.stringValue || '',
     enableCommunity: f.enableCommunity?.booleanValue || false,
     communityOnly: f.communityOnly?.booleanValue || false,
-    templatesStr: JSON.stringify(templates)
+    templatesStr: options.includeTemplates === true ? JSON.stringify(templates) : ''
   };
 }
 

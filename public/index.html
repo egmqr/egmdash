@@ -6421,6 +6421,7 @@ window.recomputeARSales = function() {
   }
 
   async function fetchBoothEvents(forceRefresh = false) {
+    if (forceRefresh) boothDetailsCache = {};
     if (!forceRefresh && allFetchedBoothEvents.length > 0) {
         if (currentBoothMode === 'edit' || currentBoothMode === 'view') {
             renderBoothDropdown(allFetchedBoothEvents);
@@ -6493,6 +6494,28 @@ window.recomputeARSales = function() {
       renderBoothDropdown(filtered);
   }
 
+  function renderBoothTemplatesFromDetails(details) {
+      try {
+          boothTemplates = JSON.parse(details.templatesStr || "[]");
+          if (!Array.isArray(boothTemplates)) boothTemplates = [];
+      } catch (e) { boothTemplates = []; }
+
+      if (document.getElementById('boothTemplateList')) renderTemplateList();
+  }
+
+  async function hydrateBoothTemplatesInBackground(eventId) {
+      const cachedDetails = boothDetailsCache[eventId];
+      if (!cachedDetails || cachedDetails.templatesStr) return;
+
+      const templateDetails = await callWorkerApi('/api/dashboard/booth-details', { eventId, includeTemplates: true }, true);
+      if (!templateDetails || templateDetails.success === false) return;
+
+      boothDetailsCache[eventId] = { ...cachedDetails, templatesStr: templateDetails.templatesStr || "[]" };
+      if (currentBoothMode === 'view' && document.getElementById('boothEventSelect').value === eventId) {
+          renderBoothTemplatesFromDetails(boothDetailsCache[eventId]);
+      }
+  }
+
   async function loadBoothEventDetails() {
       const selectedId = document.getElementById('boothEventSelect').value;
       if (!selectedId) { setBoothMode(currentBoothMode); return; }
@@ -6501,12 +6524,20 @@ window.recomputeARSales = function() {
       if (boothDetailsCache[selectedId]) {
           details = boothDetailsCache[selectedId];
       } else {
+          const isViewMode = currentBoothMode === 'view';
           const ov = document.getElementById('submitOverlay');
-          document.getElementById('overlayText').innerText = "Loading details...";
-          ov.style.display = 'flex';
+          if (isViewMode) {
+              document.getElementById('viewBoothTitle').innerText = "Loading details...";
+              document.getElementById('viewBoothId').innerText = "";
+              document.getElementById('boothCardsList').innerHTML = '<div class="text-center text-secondary py-4"><div class="spinner-border text-primary mb-2" role="status"></div><div class="fw-bold">Loading booth links...</div></div>';
+              document.getElementById('boothDownloadAllQRsBtn').style.display = 'none';
+          } else {
+              document.getElementById('overlayText').innerText = "Loading details...";
+              ov.style.display = 'flex';
+          }
           
-          details = await callWorkerApi('/api/dashboard/booth-details', { eventId: selectedId }, false);
-          ov.style.display = 'none';
+          details = await callWorkerApi('/api/dashboard/booth-details', { eventId: selectedId, includeTemplates: !isViewMode }, true);
+          if (!isViewMode) ov.style.display = 'none';
           
           if (details && details.success !== false) {
               boothDetailsCache[selectedId] = details;
@@ -6516,12 +6547,7 @@ window.recomputeARSales = function() {
       if (details && details.success === false) return;
 
       if (details) {
-          try {
-              boothTemplates = JSON.parse(details.templatesStr || "[]");
-              if (!Array.isArray(boothTemplates)) boothTemplates = [];
-          } catch (e) { boothTemplates = []; }
-          
-          if (document.getElementById('boothTemplateList')) renderTemplateList();
+          renderBoothTemplatesFromDetails(details);
 
           const boothsStr = details.boothsStr || '';
           const hasRealFolderId = /folderId=[^&]{5,}/.test(boothsStr);
@@ -6595,7 +6621,7 @@ window.recomputeARSales = function() {
               const boothsArr = details.boothsStr ? details.boothsStr.split('|') : [];
               const qrUrlsArr = details.qrUrlsStr ? details.qrUrlsStr.split('|') : [];
               const configKeysArr = details.configKeysStr ? details.configKeysStr.split('|') : [];
-              const dynamicFolderName = details.folderName || 'Booth ';
+              const dynamicFolderName = details.eventName || details.pageTitle || details.folderName || 'Booth ';
               
               const hadCommunity = (details.communityOnly === true || details.enableCommunity === true); 
               
@@ -6678,6 +6704,8 @@ window.recomputeARSales = function() {
               
               if (boothsArr.length > 1) document.getElementById('boothDownloadAllQRsBtn').style.display = 'block'; 
               else document.getElementById('boothDownloadAllQRsBtn').style.display = 'none'; 
+
+              hydrateBoothTemplatesInBackground(selectedId);
           }
       }
   }
@@ -7156,11 +7184,9 @@ async function fetchExistingLogos(forceRefresh = false) {
       }
       
       // 🟢 Updated validation to stop checking the empty booth count
-      // Auto-sync folderName from eventName (field is now hidden)
-      if (!folderName) {
-          folderName = eventName;
-          document.getElementById('boothFolderName').value = eventName;
-      }
+      // Folder Name is hidden; keep it synced with the current Event Name.
+      folderName = eventName;
+      document.getElementById('boothFolderName').value = eventName;
       if (!eventName || !eventId) {
           egmAlert("Required fields missing! Ensure the Event Name is set.");
           return;
@@ -7250,7 +7276,7 @@ async function fetchExistingLogos(forceRefresh = false) {
       }
       if (result.success === false) {
         console.error('Worker error:', result.error);
-        egmAlert('Worker Error: ' + (result.error || 'Unknown error'));
+        if (!isSilent) egmAlert('Worker Error: ' + (result.error || 'Unknown error'));
         return null;
       }
       return result;
@@ -7260,7 +7286,7 @@ async function fetchExistingLogos(forceRefresh = false) {
         if (loader) loader.style.display = 'none';
       }
       console.error('Worker API error:', error);
-      egmAlert('Network Error: ' + error.message);
+      if (!isSilent) egmAlert('Network Error: ' + error.message);
       return null;
     }
   }
