@@ -2452,8 +2452,9 @@
     </div>
   </div>
 </div>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
@@ -6600,6 +6601,8 @@ window.recomputeARSales = function() {
                       `;
                    }
                   const titleHtml = isCommunity ? `<i class="bi bi-people-fill text-primary me-2"></i>Virtual Booth` : `${dynamicFolderName}${boothNum} <span class="badge bg-light text-dark ms-1">Booth ${boothNum}</span>`;
+                  const manageEventName = details.pageTitle || details.eventName || "event";
+                  const manageBoothName = isCommunity ? 'community' : `booth${boothNum}`;
 
                   const configRowHtml = '';
 
@@ -6611,7 +6614,7 @@ window.recomputeARSales = function() {
                         <span>Main Gallery</span>
                         <div class="booth-link-actions">
                            <button class="booth-mini-btn" onclick="copyBoothLink(this, '${mainGalleryUrl}')">Copy link</button>
-                           <button class="booth-mini-btn backup" onclick="openManageModal('${boothPrefix}')">Manage</button>
+                           <button class="booth-mini-btn backup" onclick="openManageModal(decodeURIComponent('${encodeURIComponent(boothPrefix)}'), decodeURIComponent('${encodeURIComponent(manageEventName)}'), decodeURIComponent('${encodeURIComponent(manageBoothName)}'))">Manage</button>
                            <button class="booth-mini-btn" onclick="window.open('${mainGalleryUrl}', '_blank')">Go</button>
                         </div>
                      </div>
@@ -6672,6 +6675,8 @@ window.recomputeARSales = function() {
   // ==========================================
   let managePhotosData = [];
   let manageDownloadedPhotoKeys = new Set();
+  let currentManageEventName = 'event';
+  let currentManageBoothName = 'booth';
   const MANAGE_DOWNLOADED_STORAGE_PREFIX = 'egmdash_manage_downloaded_photos:';
 
   function getManageDownloadedStorageKey() {
@@ -6712,8 +6717,34 @@ window.recomputeARSales = function() {
     return url.split('/').pop().split('?')[0] || `photo_${index}.jpg`;
   }
 
-  async function openManageModal(prefix) {
+  function getSafeArchivePart(value, fallback) {
+    return String(value || fallback)
+      .trim()
+      .replace(/[^a-z0-9_-]+/gi, '_')
+      .replace(/^_+|_+$/g, '')
+      .substring(0, 60) || fallback;
+  }
+
+  function getManageArchiveName() {
+    const eventName = getSafeArchivePart(currentManageEventName, 'event');
+    const boothName = getSafeArchivePart(currentManageBoothName, 'booth');
+    return `${eventName}-${boothName}.zip`;
+  }
+
+  function triggerBlobDownload(blob, filename) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  async function openManageModal(prefix, eventName = 'event', boothName = 'booth') {
     currentManagePrefix = prefix;
+    currentManageEventName = eventName;
+    currentManageBoothName = boothName;
     loadManageDownloadedState();
     document.getElementById('manageUploadProgress').style.display = 'none';
     document.getElementById('manageUploadBar').style.width = '0%';
@@ -6815,10 +6846,7 @@ window.recomputeARSales = function() {
     try {
       const r = await fetch(url);
       const b = await r.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(b);
-      a.download = f;
-      a.click();
+      triggerBlobDownload(b, f);
     } catch (e) {
       window.open(url, '_blank');
     }
@@ -6826,17 +6854,55 @@ window.recomputeARSales = function() {
 
   async function downloadManagePhotos(photos, emptyMessage) {
     if (!photos || photos.length === 0) return showToast(emptyMessage, 'warning');
+    const isArchive = photos.length > 1;
+    if (isArchive && typeof JSZip === 'undefined') {
+      return showToast('ZIP download library is still loading. Please try again in a moment.', 'warning');
+    }
 
     const ov = document.getElementById('submitOverlay');
-    document.getElementById('overlayText').innerText = `Downloading ${photos.length} photo${photos.length !== 1 ? 's' : ''}...`;
+    document.getElementById('overlayText').innerText = isArchive
+      ? `Creating archive for ${photos.length} photos...`
+      : 'Downloading photo...';
     ov.style.display = 'flex';
 
-    for (let i = 0; i < photos.length; i++) {
-      const url = photos[i][2];
-      const filename = getManagePhotoFilename(photos[i], i);
-      await downloadImageSilent(url, filename);
-      await new Promise(r => setTimeout(r, 600));
+    try {
+      if (!isArchive) {
+        await downloadImageSilent(photos[0][2], getManagePhotoFilename(photos[0], 0));
+      } else {
+        const zip = new JSZip();
+        const usedNames = new Set();
+
+        for (let i = 0; i < photos.length; i++) {
+          const url = photos[i][2];
+          let filename = getManagePhotoFilename(photos[i], i);
+          const dotIndex = filename.lastIndexOf('.');
+          const baseName = dotIndex > 0 ? filename.substring(0, dotIndex) : filename;
+          const extension = dotIndex > 0 ? filename.substring(dotIndex) : '.jpg';
+          let uniqueName = filename;
+          let duplicateCount = 2;
+
+          while (usedNames.has(uniqueName.toLowerCase())) {
+            uniqueName = `${baseName}_${duplicateCount}${extension}`;
+            duplicateCount++;
+          }
+          usedNames.add(uniqueName.toLowerCase());
+
+          document.getElementById('overlayText').innerText = `Adding photo ${i + 1} of ${photos.length}...`;
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`Failed to fetch ${filename}`);
+          zip.file(uniqueName, await response.blob());
+        }
+
+        document.getElementById('overlayText').innerText = 'Preparing ZIP download...';
+        const archiveBlob = await zip.generateAsync({ type: 'blob' });
+        triggerBlobDownload(archiveBlob, getManageArchiveName());
+      }
+    } catch (e) {
+      ov.style.display = 'none';
+      console.error('Manage download error:', e);
+      return showToast('Failed to download photos', 'danger');
     }
+
     ov.style.display = 'none';
     markManagePhotosDownloaded(photos);
     showToast('Downloads complete', 'success');
