@@ -747,17 +747,16 @@
       <button onclick="closeManageModal()"
         style="background: none; border: none; color: #64748b; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
-    <div
-      style="padding: 10px 20px; border-bottom: 1px solid #e2e8f0; display: flex; gap: 8px; background: #f8fafc; flex-wrap: wrap;">
+    <div class="manage-toolbar">
       <button class="btn btn-outline-secondary btn-sm fw-bold"
         onclick="selectAllManagePhotos()">Select All</button>
       <button class="btn btn-danger btn-sm fw-bold"
         onclick="deleteSelectedManagePhotos()">Delete Selected</button>
-      <button class="btn btn-sm fw-bold" style="background: #2563eb; color: #fff; margin-left: auto;"
+      <button class="btn btn-sm fw-bold manage-download-selected"
         onclick="downloadSelectedManagePhotos()">Download Selected</button>
-      <button class="btn btn-sm fw-bold" style="background: #7c3aed; color: #fff;"
+      <button class="btn btn-sm fw-bold manage-download-unmarked"
         onclick="downloadUnmarkedManagePhotos()">Download Unmarked</button>
-      <button class="btn btn-sm fw-bold" style="background: #0d9488; color: #fff;"
+      <button class="btn btn-sm fw-bold manage-download-all"
         onclick="downloadAllManagePhotos()">Download All</button>
     </div>
     <div id="manageUploadSection" style="padding: 12px 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
@@ -785,12 +784,52 @@
   </div>
 </div>
 <style>
+  .manage-toolbar {
+    padding: 10px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    display: grid;
+    grid-template-columns: max-content max-content 1fr 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+    background: #f8fafc;
+  }
+  .manage-toolbar .btn {
+    min-height: 32px;
+    white-space: nowrap;
+  }
+  .manage-download-selected { background: #2563eb; color: #fff; }
+  .manage-download-unmarked { background: #7c3aed; color: #fff; }
+  .manage-download-all { background: #0d9488; color: #fff; }
+
   @media (min-width: 768px) {
     #manageGrid {
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
       grid-auto-rows: 200px !important;
       gap: 12px !important;
       padding: 20px !important;
+    }
+  }
+  @media (max-width: 575px) {
+    .manage-toolbar {
+      padding: 9px 14px 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .manage-toolbar .btn {
+      width: 100%;
+      min-width: 0;
+      padding-left: 8px;
+      padding-right: 8px;
+      font-size: 12px;
+      line-height: 1.15;
+    }
+    .manage-download-selected,
+    .manage-download-unmarked,
+    .manage-download-all {
+      min-height: 34px;
+    }
+    .manage-download-all {
+      grid-column: 1 / -1;
     }
   }
   .manage-item img { transition: opacity 0.2s; }
