@@ -22,6 +22,7 @@ export default {
       if (path.startsWith('/api/gallery') ||
           path.startsWith('/api/stream') ||  // <-- ADD THIS LINE
           path.startsWith('/api/template') ||
+          path.startsWith('/api/download-photo') ||
           path.startsWith('/api/upload-community')) {
         return cors(await handleGalleryRoutes(request, env, ctx));
       }

@@ -34,12 +34,33 @@ export async function handleGalleryRoutes(request, env, ctx) {
           o.key,                    // id (was: file.id)
           filename,                 // name
           `${cdn}/${o.key}`,        // full-resolution URL (used for grid AND viewer)
-          o.uploaded.getTime()      // sort time
+          o.uploaded.getTime(),     // sort time
+          `/api/download-photo?key=${encodeURIComponent(o.key)}&filename=${encodeURIComponent(filename)}`
         ];
       })
       .sort((a, b) => b[3] - a[3]);
 
     return json({ status: 'success', data });
+  }
+
+  // Streams an R2 photo through the worker with Content-Disposition: attachment.
+  if (path === '/api/download-photo' && request.method === 'GET') {
+    const key = safePrefix(url.searchParams.get('key'));
+    if (!key || !/\.(jpe?g|png|webp)$/i.test(key)) {
+      return json({ status: 'error', message: 'Invalid photo key' }, 400);
+    }
+
+    const obj = await env.PHOTOS.get(key);
+    if (!obj) return json({ status: 'error', message: 'Photo not found' }, 404);
+
+    const filename = sanitizeFilename(url.searchParams.get('filename') || key.split('/').pop() || 'photo.jpg');
+    return new Response(obj.body, {
+      headers: {
+        'content-type': obj.httpMetadata?.contentType || 'application/octet-stream',
+        'content-disposition': `attachment; filename="${filename.replace(/"/g, '')}"`,
+        'cache-control': 'private, max-age=60'
+      }
+    });
   }
 
   // ── GET /api/template?prefix=events/egm0228/config/ ───────────────────
@@ -169,6 +190,7 @@ async function streamLiveUpdates(env, prefix, writer, encoder) {
               id: file.key,
               name: file.key.split('/').pop(),
               baseUrl: `${cdn}/${file.key}`,
+              downloadUrl: `/api/download-photo?key=${encodeURIComponent(file.key)}&filename=${encodeURIComponent(file.key.split('/').pop())}`,
               time: file.uploaded.getTime()
             };
             await writer.write(encoder.encode(`event: new_photo\ndata: ${JSON.stringify(data)}\n\n`));
