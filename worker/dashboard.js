@@ -102,6 +102,11 @@ export async function handleDashboardRoutes(request, env, ctx) {
     }
   }
 
+  if (path === '/api/dashboard/download-file') {
+    if (!body.key) return json({ success: false, error: 'No key provided' }, 400);
+    return downloadFile(env, body.key);
+  }
+
   return json({ error: 'Not found' }, 404);
 }
 
@@ -549,6 +554,24 @@ async function uploadAsset(env, body) {
 // Queries the Firestore events collection for the highest egm##### ID,
 // increments it, and returns the next one. Shared counter between Dashboard
 // and ProBooth so IDs never collide.
+async function downloadFile(env, key) {
+  if (/^\//.test(key) || /\.\./.test(key) || !/^[A-Za-z0-9._/-]+$/.test(key)) {
+    return json({ success: false, error: 'Invalid key' }, 400);
+  }
+
+  const obj = await env.PHOTOS.get(key);
+  if (!obj) return json({ success: false, error: 'File not found' }, 404);
+
+  const filename = key.split('/').pop() || 'photo.jpg';
+  return new Response(obj.body, {
+    headers: {
+      'content-type': obj.httpMetadata?.contentType || 'application/octet-stream',
+      'content-disposition': `attachment; filename="${filename.replace(/"/g, '')}"`,
+      'cache-control': 'private, max-age=60'
+    }
+  });
+}
+
 async function mintNextEventId(env) {
   try {
     const projectId = env.FIREBASE_PROJECT_ID;

@@ -6922,14 +6922,26 @@ window.recomputeARSales = function() {
     showToast('Selected photos deleted', 'success');
   }
 
-  async function downloadImageSilent(url, f) {
-    try {
-      const r = await fetch(url);
-      const b = await r.blob();
-      triggerBlobDownload(b, f);
-    } catch (e) {
-      window.open(url, '_blank');
-    }
+  async function fetchManagePhotoBlob(item) {
+    const key = item && item[0] ? item[0] : '';
+    if (!key) throw new Error('Missing photo key');
+
+    const response = await fetch(`${WORKER_URL}/api/dashboard/download-file`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${BOOTH_AUTH_TOKEN}`
+      },
+      body: JSON.stringify({ key })
+    });
+
+    if (!response.ok) throw new Error(`Download failed (${response.status})`);
+    return response.blob();
+  }
+
+  async function downloadImageSilent(item, index) {
+    const blob = await fetchManagePhotoBlob(item);
+    triggerBlobDownload(blob, getManagePhotoFilename(item, index));
   }
 
   async function downloadManagePhotos(photos, emptyMessage) {
@@ -6947,13 +6959,12 @@ window.recomputeARSales = function() {
 
     try {
       if (!isArchive) {
-        await downloadImageSilent(photos[0][2], getManagePhotoFilename(photos[0], 0));
+        await downloadImageSilent(photos[0], 0);
       } else {
         const zip = new JSZip();
         const usedNames = new Set();
 
         for (let i = 0; i < photos.length; i++) {
-          const url = photos[i][2];
           let filename = getManagePhotoFilename(photos[i], i);
           const dotIndex = filename.lastIndexOf('.');
           const baseName = dotIndex > 0 ? filename.substring(0, dotIndex) : filename;
@@ -6968,9 +6979,7 @@ window.recomputeARSales = function() {
           usedNames.add(uniqueName.toLowerCase());
 
           document.getElementById('overlayText').innerText = `Adding photo ${i + 1} of ${photos.length}...`;
-          const response = await fetch(url);
-          if (!response.ok) throw new Error(`Failed to fetch ${filename}`);
-          zip.file(uniqueName, await response.blob());
+          zip.file(uniqueName, await fetchManagePhotoBlob(photos[i]));
         }
 
         document.getElementById('overlayText').innerText = 'Preparing ZIP download...';
