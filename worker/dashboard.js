@@ -147,8 +147,8 @@ async function generateBoothSetup(env, p) {
     showSearchBar, showTime, customTerm
   } = p;
 
-  const includeCommunity = enableCommunity === true;
   const isOnlyCommunity = communityOnly === true;
+  const includeCommunity = enableCommunity === true || isOnlyCommunity;
   const actualNumBooths = isOnlyCommunity ? 0 : (parseInt(boothCount, 10) || 0);
   if (actualNumBooths <= 0 && !isOnlyCommunity) {
     return { success: false, error: 'Invalid booth count.' };
@@ -262,6 +262,28 @@ async function generateBoothSetup(env, p) {
     const tabParam = (actualNumBooths + 1).toString();
     const prefix = `events/${eventId}/community`;
     const mainGalleryUrl = `${NETLIFY_BASE_URL}?id=${eventId}&tab=${tabParam}&isCommunity=true`;
+    const cloudLink = `https://webqr.createdbyegm.com/gallery?prefix=${encodeURIComponent(prefix)}`;
+    const eventConfig = {
+      Settings: {
+        EventName: `${eventName}-VirtualBooth`,
+        CanvasWidth: cWidth,
+        CanvasHeight: cHeight,
+        PrinterName: null,
+        CloudLink: cloudLink,
+        MainGalleryLink: mainGalleryUrl,
+        R2KeyPrefix: prefix,
+        StaticBoothPreviewSeconds: 30,
+        TemplatePaths: [],
+        IsStaticBoothMode: false,
+        StaticBoothCountdownSeconds: 10
+      },
+      Templates: templates || []
+    };
+    const configKey = `events/${eventId}/config/Booth${tabParam}.json`;
+    await env.PHOTOS.put(configKey, JSON.stringify(eventConfig, null, 2), {
+      httpMetadata: { contentType: 'application/json' }
+    });
+    configKeys.push(configKey);
 
     boothPrefixes.push(prefix);
     qrUrls.push(await generateDashboardQr(
@@ -328,6 +350,20 @@ async function updateBoothSetup(env, p) {
         }
       }
     } catch { /* no existing config — use defaults */ }
+  }
+
+  if (!preservedTemplates && (p.enableCommunity === true || p.communityOnly === true)) {
+    const communityIndex = actualNumBooths + 1;
+    const configKey = `events/${eventId}/config/Booth${communityIndex}.json`;
+    try {
+      const obj = await env.PHOTOS.get(configKey);
+      if (obj) {
+        const existing = JSON.parse(await obj.text());
+        if (Array.isArray(existing?.Templates)) {
+          preservedTemplates = existing.Templates;
+        }
+      }
+    } catch { /* no community config yet; use payload templates */ }
   }
 
   // Patch the payload with preserved settings so generateBoothSetup uses them
