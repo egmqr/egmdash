@@ -219,6 +219,10 @@
 
     .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;}
     .submit-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
+    .overlay-progress-wrap { display: none; width: min(320px, calc(100vw - 48px)); margin-top: 10px; }
+    .overlay-progress-track { height: 8px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
+    .overlay-progress-bar { height: 100%; width: 0%; border-radius: inherit; background: #0d9488; transition: width 0.2s ease; }
+    .overlay-progress-label { margin-top: 6px; font-size: 0.78rem; font-weight: 700; color: #64748b; text-align: center; }
     .bg-sync-indicator { font-size: 0.7rem; color: #94a3b8; display: none; align-items: center; gap: 5px; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     .spin-anim { animation: spin 1s linear infinite; }
@@ -850,6 +854,12 @@
 <div id="submitOverlay" class="submit-overlay">
   <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
   <h5 class="mt-3 fw-bold text-secondary" id="overlayText">Processing...</h5>
+  <div id="overlayProgressWrap" class="overlay-progress-wrap">
+    <div class="overlay-progress-track">
+      <div id="overlayProgressBar" class="overlay-progress-bar"></div>
+    </div>
+    <div id="overlayProgressLabel" class="overlay-progress-label"></div>
+  </div>
 </div>
 
 <div id="boothLightbox" class="booth-lightbox" onclick="closeLightbox()">
@@ -6818,6 +6828,26 @@ window.recomputeARSales = function() {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
+  function resetOverlayProgress() {
+    const wrap = document.getElementById('overlayProgressWrap');
+    const bar = document.getElementById('overlayProgressBar');
+    const label = document.getElementById('overlayProgressLabel');
+    if (wrap) wrap.style.display = 'none';
+    if (bar) bar.style.width = '0%';
+    if (label) label.innerText = '';
+  }
+
+  function updateOverlayProgress(done, total, labelPrefix = 'Processed') {
+    const wrap = document.getElementById('overlayProgressWrap');
+    const bar = document.getElementById('overlayProgressBar');
+    const label = document.getElementById('overlayProgressLabel');
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    if (wrap) wrap.style.display = 'block';
+    if (bar) bar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+    if (label) label.innerText = `${labelPrefix} ${done} of ${total} (${pct}%)`;
+  }
+
   async function openManageModal(prefix, eventName = 'event', boothName = 'booth') {
     currentManagePrefix = prefix;
     currentManageEventName = eventName;
@@ -6909,15 +6939,21 @@ window.recomputeARSales = function() {
 
     const ov = document.getElementById('submitOverlay');
     document.getElementById('overlayText').innerText = 'Deleting files from R2...';
+    updateOverlayProgress(0, checkboxes.length, 'Deleted');
     ov.style.display = 'flex';
 
+    let deletedCount = 0;
     for (const cb of checkboxes) {
       const key = cb.getAttribute('data-key');
       await callWorkerApi('/api/dashboard/delete-file', { key });
       managePhotosData = managePhotosData.filter(item => item[0] !== key);
       unmarkDeletedManagePhoto(key);
+      deletedCount++;
+      document.getElementById('overlayText').innerText = `Deleting ${deletedCount} of ${checkboxes.length} photos...`;
+      updateOverlayProgress(deletedCount, checkboxes.length, 'Deleted');
     }
     renderManageGrid();
+    resetOverlayProgress();
     ov.style.display = 'none';
     showToast('Selected photos deleted', 'success');
   }
@@ -6952,9 +6988,11 @@ window.recomputeARSales = function() {
     }
 
     const ov = document.getElementById('submitOverlay');
+    resetOverlayProgress();
     document.getElementById('overlayText').innerText = isArchive
       ? `Creating archive for ${photos.length} photos...`
       : 'Downloading photo...';
+    if (isArchive) updateOverlayProgress(0, photos.length, 'Added');
     ov.style.display = 'flex';
 
     try {
@@ -6980,18 +7018,22 @@ window.recomputeARSales = function() {
 
           document.getElementById('overlayText').innerText = `Adding photo ${i + 1} of ${photos.length}...`;
           zip.file(uniqueName, await fetchManagePhotoBlob(photos[i]));
+          updateOverlayProgress(i + 1, photos.length, 'Added');
         }
 
         document.getElementById('overlayText').innerText = 'Preparing ZIP download...';
+        updateOverlayProgress(photos.length, photos.length, 'Added');
         const archiveBlob = await zip.generateAsync({ type: 'blob' });
         triggerBlobDownload(archiveBlob, getManageArchiveName());
       }
     } catch (e) {
+      resetOverlayProgress();
       ov.style.display = 'none';
       console.error('Manage download error:', e);
       return showToast('Failed to download photos', 'danger');
     }
 
+    resetOverlayProgress();
     ov.style.display = 'none';
     markManagePhotosDownloaded(photos);
     showToast('Downloads complete', 'success');
