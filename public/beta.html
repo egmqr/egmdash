@@ -572,7 +572,7 @@
         <li class="nav-item"><a class="nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
         <li class="nav-item"><a class="nav-link" id="eq-tab" onclick="handleTabClick('editqueue')"><i class="bi bi-film me-1"></i> Editing Queue</a></li>
         <li class="nav-item"><a class="nav-link" id="ex-tab" onclick="handleTabClick('expenses')"><i class="bi bi-receipt me-1"></i> Expenses</a></li>
-        <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR</a></li>
+        <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
         <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), true)"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
         <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), true)"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
        <li class="nav-item"><a class="nav-link" id="bs-tab" onclick="requireAuth(() => handleTabClick('billingsales'), 'superadmin')"><i class="bi bi-shield-lock-fill" style="font-size:0.75rem;"></i></a></li>
@@ -4103,7 +4103,7 @@ async function uploadAndScanInvoice(prefix) {
     if (tabName === 'payments') requireAuth(() => switchTab('payments'), 'admin'); 
     else if (tabName === 'payroll') requireAuth(() => switchTab('payroll'), 'admin'); 
     else if (tabName === 'billingsales') requireAuth(() => switchTab('billingsales'), 'superadmin'); // NEW
-    else if (tabName === 'booth') switchTab('booth'); 
+    else if (tabName === 'booth') requireAuth(() => switchTab('booth'), 'editor');
     else switchTab(tabName); 
 }
 
@@ -5474,6 +5474,10 @@ async function uploadAndScanInvoice(prefix) {
   // ==============================================================================
 
   function goToBoothQR(eventId, booths, eventName) {
+      requireAuth(() => openBoothQRForEvent(eventId, booths, eventName), 'editor');
+  }
+
+  function openBoothQRForEvent(eventId, booths, eventName) {
       // Instantly close the Event Card modal if it's open
       const cardModalEl = document.getElementById('eventCardModal');
       if (cardModalEl) {
@@ -6235,8 +6239,15 @@ window.onload = () => {
               const urlParams = new URLSearchParams(window.location.search);
               const currentUrlTab = urlParams.get('tab');
               
-              // If the URL says payments or payroll, and they don't have a valid Admin session, redirect!
-              if ((currentUrlTab === 'payments' || currentUrlTab === 'payroll') && (role !== 'admin' || isExpired)) {
+              const requiredRoleByTab = {
+                  booth: 'editor',
+                  payments: 'admin',
+                  payroll: 'admin',
+                  billingsales: 'superadmin'
+              };
+              const requiredRole = requiredRoleByTab[currentUrlTab];
+
+              if (requiredRole && (isExpired || getRoleValue(role) < getRoleValue(requiredRole))) {
                   window.location.href = "https://dashboard.createdbyegm.com/?tab=events";
               }
           });
