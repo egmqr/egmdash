@@ -56,6 +56,10 @@ export async function handleDashboardRoutes(request, env, ctx) {
     return json(await renameEventName(env, body));
   }
 
+  if (path === '/api/dashboard/sync-config-templates') {
+    return json(await syncConfigTemplates(env, body));
+  }
+
   // ── /api/dashboard/booth-details ────────────────────────────────────
   if (path === '/api/dashboard/booth-details') {
     return json(await getBoothDetails(env, body.eventId, { includeTemplates: body.includeTemplates === true }));
@@ -415,11 +419,6 @@ async function renameEventName(env, body) {
     if (!match) continue;
 
     const boothNum = match[1];
-    if (physicalBoothCount !== null && parseInt(boothNum, 10) > physicalBoothCount) {
-      await env.PHOTOS.delete(`hotfolder/${eventId}_Booth${boothNum}.json`);
-      continue;
-    }
-
     try {
       const configObj = await env.PHOTOS.get(obj.key);
       if (!configObj) continue;
@@ -427,19 +426,77 @@ async function renameEventName(env, body) {
       const pkg = JSON.parse(await configObj.text());
       if (!pkg.Settings) pkg.Settings = {};
 
+      const isVirtualBooth =
+        (pkg.Settings.EventName || '').includes('-VirtualBooth') ||
+        (pkg.Settings.R2KeyPrefix || '').includes('/community') ||
+        (pkg.Settings.R2KeyPrefix || '').includes('/virtual');
+      if (physicalBoothCount !== null && parseInt(boothNum, 10) > physicalBoothCount && !isVirtualBooth) {
+        await env.PHOTOS.delete(`hotfolder/${eventId}_Booth${boothNum}.json`);
+        continue;
+      }
+
       const oldName = pkg.Settings.EventName || '';
-      const oldSuffix = (oldName.match(/-Booth\d+$/i) || [`-Booth${boothNum}`])[0];
+      const oldSuffix = (oldName.match(/-(?:Booth\d+|VirtualBooth)$/i) || [`-Booth${boothNum}`])[0];
       pkg.Settings.EventName = `${newEventName}${oldSuffix}`;
 
       const configJson = JSON.stringify(pkg, null, 2);
       await env.PHOTOS.put(obj.key, configJson, {
         httpMetadata: { contentType: 'application/json' }
       });
-      await putHotfolderConfig(env, `${eventId}_Booth${boothNum}.json`, configJson);
+      if (!isVirtualBooth) {
+        await putHotfolderConfig(env, `${eventId}_Booth${boothNum}.json`, configJson);
+      }
     } catch { }
   }
 
   return { success: true, message: 'Event renamed.' };
+}
+
+async function syncConfigTemplates(env, body) {
+  const { eventId, templates } = body;
+  if (!eventId || !Array.isArray(templates)) {
+    return { success: false, error: 'eventId and templates array required' };
+  }
+
+  let cursor;
+  let updatedCount = 0;
+  let hotfolderCount = 0;
+
+  do {
+    const page = await env.PHOTOS.list({ prefix: `events/${eventId}/config/`, limit: 1000, cursor });
+    await Promise.all((page.objects || []).map(async obj => {
+      if (!obj.key.endsWith('.json')) return;
+
+      try {
+        const configObj = await env.PHOTOS.get(obj.key);
+        if (!configObj) return;
+
+        const pkg = JSON.parse(await configObj.text());
+        pkg.Templates = templates;
+
+        const configJson = JSON.stringify(pkg, null, 2);
+        await env.PHOTOS.put(obj.key, configJson, {
+          httpMetadata: { contentType: 'application/json' }
+        });
+        updatedCount++;
+
+        const eventName = pkg?.Settings?.EventName || '';
+        const r2Prefix = pkg?.Settings?.R2KeyPrefix || '';
+        const isVirtualBooth = eventName.includes('-VirtualBooth') ||
+          r2Prefix.includes('/community') ||
+          r2Prefix.includes('/virtual');
+        const boothMatch = obj.key.match(/Booth(\d+)\.json$/i);
+        if (!isVirtualBooth && boothMatch) {
+          await putHotfolderConfig(env, `${eventId}_Booth${boothMatch[1]}.json`, configJson);
+          hotfolderCount++;
+        }
+      } catch { }
+    }));
+
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+
+  return { success: true, updatedCount, hotfolderCount };
 }
 
 async function getBoothDetails(env, eventId, options = {}) {
