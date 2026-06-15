@@ -6181,6 +6181,8 @@ window.recomputeARSales = function() {
   }
 
   function setBoothMode(mode) {
+      const eventSelectDropdown = document.getElementById('boothEventSelect');
+      const selectedEventId = eventSelectDropdown ? eventSelectDropdown.value : '';
       currentBoothMode = mode;
       document.getElementById('boothEnableCommunity').checked = true;
       
@@ -6214,8 +6216,7 @@ window.recomputeARSales = function() {
       handleCommunityToggle(); 
       handleUserStickersToggle(); // 🟢 Ensure manager hides on reset
       
-      const eventSelectDropdown = document.getElementById('boothEventSelect');
-      if(eventSelectDropdown) eventSelectDropdown.value = "";
+      if (mode === 'new' && eventSelectDropdown) eventSelectDropdown.value = "";
 
       document.getElementById('btnModeNew').classList.remove('active');
       document.getElementById('btnModeEdit').classList.remove('active');
@@ -6263,8 +6264,18 @@ window.recomputeARSales = function() {
               document.getElementById('boothDownloadAllQRsBtn').style.display = 'none';
           }
 
-          if (allFetchedBoothEvents.length > 0) { renderBoothDropdown(allFetchedBoothEvents); } 
-          else { fetchBoothEvents(); }
+          const restoreSelectedEvent = () => {
+              if (!selectedEventId || !eventSelectDropdown) return;
+              eventSelectDropdown.value = selectedEventId;
+              if (eventSelectDropdown.value === selectedEventId) loadBoothEventDetails();
+          };
+
+          if (allFetchedBoothEvents.length > 0) {
+              renderBoothDropdown(allFetchedBoothEvents);
+              restoreSelectedEvent();
+          } else {
+              fetchBoothEvents().then(restoreSelectedEvent);
+          }
       }
   }
 
