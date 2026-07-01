@@ -3033,6 +3033,8 @@ async function subscribeToNotifications() {
   let originalLogoFilename = "";
   let selectedExistingLogoId = "";
   let selectedExistingQrLogoId = "";
+  let selectedExistingLogoKey = null;
+  let selectedExistingQrLogoKey = null;
   let existingLogosCache = null;
 
   // HIERARCHICAL ACCESS CONTROL 🟢
@@ -6211,6 +6213,7 @@ window.recomputeARSales = function() {
       document.getElementById('boothBgPreviewContainer').style.display = "none";
       document.getElementById('boothLogoPreviewContainer').style.display = "none";
       selectedExistingLogoId = ""; selectedExistingQrLogoId = "";
+      selectedExistingLogoKey = null; selectedExistingQrLogoKey = null;
       document.querySelectorAll('.logo-gallery-item').forEach(el => el.classList.remove('selected'));
       
       if (mode === 'new' || mode === 'edit') { fetchExistingLogos(); }
@@ -6620,6 +6623,10 @@ window.recomputeARSales = function() {
               currentBoothBgId = details.bgId || null;
               selectedExistingLogoId = details.logoId || "";
               selectedExistingQrLogoId = details.qrLogoId || details.logoId || "";
+              selectedExistingLogoKey = details.logoId ? `assets/logos/${details.logoId}.png` : null;
+              selectedExistingQrLogoKey = details.qrLogoId
+                  ? `${(details.qrLogoId.startsWith('qrlogo_') || details.qrLogoId.startsWith('qr-logo_')) ? 'assets/qr-logos' : 'assets/logos'}/${details.qrLogoId}.png`
+                  : selectedExistingLogoKey;
 
               if (details.bgId) {
                   document.getElementById('boothBgPreview').src = `https://cdn.createdbyegm.com/assets/backgrounds/${details.bgId}.jpg`;
@@ -6688,7 +6695,7 @@ window.recomputeARSales = function() {
                       
                       let fallbackLogoUrl = '';
                       if (details.qrLogoId) {
-                          fallbackLogoUrl = details.qrLogoId.startsWith('qrlogo_') 
+                          fallbackLogoUrl = (details.qrLogoId.startsWith('qrlogo_') || details.qrLogoId.startsWith('qr-logo_'))
                               ? `https://cdn.createdbyegm.com/assets/qr-logos/${details.qrLogoId}.png`
                               : `https://cdn.createdbyegm.com/assets/logos/${details.qrLogoId}.png`;
                       } else if (details.logoId) {
@@ -7192,13 +7199,13 @@ async function fetchExistingLogos(forceRefresh = false) {
           const logoName = htmlAttr(logo.name || 'logo');
           html += `
             <div class="logo-gallery-item-wrapper">
-              <img src="${htmlAttr(logo.url)}" class="logo-gallery-item" title="${logoName}" data-logo-id="${htmlAttr(logo.id)}" data-qr-id="${htmlAttr(qrId)}">
+              <img src="${htmlAttr(logo.url)}" class="logo-gallery-item" title="${logoName}" data-logo-id="${htmlAttr(logo.id)}" data-qr-id="${htmlAttr(qrId)}" data-logo-key="${htmlAttr(logoKey)}" data-qr-key="${htmlAttr(qrKey)}">
               <button type="button" class="logo-delete-badge" title="Delete logo" aria-label="Delete ${logoName}" data-logo-key="${htmlAttr(logoKey)}" data-qr-key="${htmlAttr(qrKey)}" data-logo-id="${htmlAttr(logo.id)}">&times;</button>
             </div>`;
       });
       container.innerHTML = html;
       container.querySelectorAll('.logo-gallery-item').forEach(img => {
-          img.addEventListener('click', () => selectExistingLogo(img.dataset.logoId, img.dataset.qrId, img));
+          img.addEventListener('click', () => selectExistingLogo(img.dataset.logoId, img.dataset.qrId, img.dataset.logoKey, img.dataset.qrKey, img));
       });
       container.querySelectorAll('.logo-delete-badge').forEach(btn => {
           btn.addEventListener('click', (event) => deleteExistingLogo(btn.dataset.logoKey, btn.dataset.qrKey, btn.dataset.logoId, event));
@@ -7224,6 +7231,8 @@ async function fetchExistingLogos(forceRefresh = false) {
           if (selectedExistingLogoId === logoId) {
               selectedExistingLogoId = "";
               selectedExistingQrLogoId = "";
+              selectedExistingLogoKey = null;
+              selectedExistingQrLogoKey = null;
               document.getElementById('boothLogoFileName').innerText = "No file selected";
               document.getElementById('boothLogoFileName').style.color = "#64748b";
           }
@@ -7237,9 +7246,11 @@ async function fetchExistingLogos(forceRefresh = false) {
   }
   window.deleteExistingLogo = deleteExistingLogo;
 
-  function selectExistingLogo(id, qrId, el) {
+  function selectExistingLogo(id, qrId, logoKey, qrKey, el) {
       selectedExistingLogoId = id;
       selectedExistingQrLogoId = qrId;
+      selectedExistingLogoKey = logoKey || `assets/logos/${id}.png`;
+      selectedExistingQrLogoKey = qrKey || `assets/qr-logos/${qrId}.png`;
       document.querySelectorAll('.logo-gallery-item').forEach(img => img.classList.remove('selected'));
       el.classList.add('selected');
       
@@ -7253,6 +7264,8 @@ async function fetchExistingLogos(forceRefresh = false) {
       const file = event.target.files[0];
       if (!file) return;
       originalLogoFilename = file.name;
+      selectedExistingLogoId = ""; selectedExistingQrLogoId = "";
+      selectedExistingLogoKey = null; selectedExistingQrLogoKey = null;
       const reader = new FileReader();
       reader.onload = (e) => {
           const image = document.getElementById('imageToCrop');
@@ -7273,14 +7286,18 @@ async function fetchExistingLogos(forceRefresh = false) {
       document.getElementById('boothLogoFileName').innerText = "No file chosen";
       document.getElementById('boothLogoFileName').style.color = "#64748b";
       croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
+      selectedExistingLogoId = ""; selectedExistingQrLogoId = "";
+      selectedExistingLogoKey = null; selectedExistingQrLogoKey = null;
   }
 
-  function applyCrop() {
+  async function applyCrop() {
       if (!cropper) return;
       let baseName = originalLogoFilename.substring(0, originalLogoFilename.lastIndexOf('.')) || originalLogoFilename;
-      const canvasTrans = cropper.getCroppedCanvas({ width: 250, height: 250 });
+      const assetTimestamp = Date.now();
+      const logoId = `logo_${assetTimestamp}`;
+      const qrLogoId = `qrlogo_${assetTimestamp}`;
+      const canvasTrans = cropper.getCroppedCanvas({ width: 250, height: 250, fillColor: 'transparent' });
       const base64Trans = canvasTrans.toDataURL('image/png').split(',')[1];
-      croppedLogoPayload = { filename: baseName + '_transparent.png', mimeType: 'image/png', base64: base64Trans };
 
       const canvasWhite = document.createElement('canvas');
       canvasWhite.width = 250; canvasWhite.height = 250;
@@ -7288,18 +7305,50 @@ async function fetchExistingLogos(forceRefresh = false) {
       ctx.fillStyle = '#ffffff'; 
       ctx.fillRect(0, 0, 250, 250);
       ctx.drawImage(canvasTrans, 0, 0); 
-      
-      // THE FIX: Exporting as image/jpeg completely strips the alpha channel, flattening it permanently.
       const base64White = canvasWhite.toDataURL('image/jpeg', 0.95).split(',')[1];
-      croppedQrLogoPayload = { filename: baseName + '_qr_whitebg.png', mimeType: 'image/jpeg', base64: base64White };
 
       document.getElementById('cropModal').style.display = 'none';
       cropper.destroy(); cropper = null;
-      document.getElementById('boothLogoFileName').innerText = baseName + "_cropped (250x250)";
-      document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
-      
-      selectedExistingLogoId = ""; selectedExistingQrLogoId = "";
-      document.querySelectorAll('.logo-gallery-item').forEach(el => el.classList.remove('selected'));
+      document.getElementById('boothLogoFileName').innerText = "Uploading...";
+      document.getElementById('boothLogoFileName').style.color = "#64748b";
+
+      try {
+          const [logoRes, qrRes] = await Promise.all([
+              callWorkerApi('/api/dashboard/upload-asset', {
+                  kind: 'logo', id: logoId, filename: baseName + '_transparent.png',
+                  mimeType: 'image/png', base64Data: base64Trans
+              }, true),
+              callWorkerApi('/api/dashboard/upload-asset', {
+                  kind: 'qr-logo', id: qrLogoId, filename: baseName + '_qr_whitebg.png',
+                  mimeType: 'image/jpeg', base64Data: base64White
+              }, true)
+          ]);
+
+          if (!logoRes?.success) throw new Error('Logo upload failed');
+
+          selectedExistingLogoId = logoRes.id;
+          selectedExistingLogoKey = logoRes.key;
+          selectedExistingQrLogoId = qrRes?.success ? qrRes.id : logoRes.id;
+          selectedExistingQrLogoKey = qrRes?.success ? qrRes.key : logoRes.key;
+          croppedLogoPayload = null;
+          croppedQrLogoPayload = null;
+
+          document.getElementById('boothLogoFileName').innerText = baseName + "_cropped (250x250)";
+          document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
+          document.getElementById('boothLogoPreview').src = logoRes.url;
+          document.getElementById('boothLogoPreviewContainer').style.display = "flex";
+          document.querySelectorAll('.logo-gallery-item').forEach(el => el.classList.remove('selected'));
+          await fetchExistingLogos(true);
+      } catch (err) {
+          console.error('Logo upload failed:', err);
+          croppedLogoPayload = { filename: baseName + '_transparent.png', mimeType: 'image/png', base64: base64Trans };
+          croppedQrLogoPayload = { filename: baseName + '_qr_whitebg.png', mimeType: 'image/jpeg', base64: base64White };
+          selectedExistingLogoId = ""; selectedExistingQrLogoId = "";
+          selectedExistingLogoKey = null; selectedExistingQrLogoKey = null;
+          document.getElementById('boothLogoFileName').innerText = baseName + "_cropped (250x250)";
+          document.getElementById('boothLogoFileName').style.color = "var(--bs-primary)";
+          showToast('Logo upload failed. It will be saved when you save the booth.', 'warning');
+      }
   }
 
   async function executeBoothAction(actionName) {
@@ -7353,6 +7402,7 @@ async function fetchExistingLogos(forceRefresh = false) {
           logoData: croppedLogoPayload, qrLogoData: croppedQrLogoPayload, logoOnMain,
           fontColor: document.getElementById('boothFontColor').value, bgColor: document.getElementById('boothBgColor').value,
           existingLogoId: selectedExistingLogoId, existingQrLogoId: selectedExistingQrLogoId,
+          existingLogoKey: selectedExistingLogoKey || '', existingQrLogoKey: selectedExistingQrLogoKey || '',
           templates: actionName === 'generateBoothSetup' ? boothTemplates : [],
           enableCommunity: enableCommunity, 
           communityOnly: communityOnly,

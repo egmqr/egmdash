@@ -144,6 +144,7 @@ async function generateBoothSetup(env, p) {
     eventId, folderName, eventName, pageTitle, boothCount,
     logoData, qrLogoData,
     existingLogoId, existingQrLogoId, existingBgId,
+    existingLogoKey, existingQrLogoKey,
     fontColor, bgColor, logoOnMain,
     templates,
     enableCommunity, communityOnly,
@@ -184,12 +185,15 @@ async function generateBoothSetup(env, p) {
     } else {
       qrLogoId = logoId;
     }
+  } else if (existingLogoKey) {
+    logoId = assetIdFromKey(existingLogoKey) || logoId;
+    qrLogoId = existingQrLogoKey ? (assetIdFromKey(existingQrLogoKey) || qrLogoId) : logoId;
   }
 
   // 1b. Smartly determine the correct folder based on the ID prefix
   let logoUrlForQr = '';
   if (qrLogoId) {
-    logoUrlForQr = qrLogoId.startsWith('qrlogo_')
+    logoUrlForQr = isQrLogoId(qrLogoId)
       ? `${cdn}/assets/qr-logos/${qrLogoId}.png`
       : `${cdn}/assets/logos/${qrLogoId}.png`;
   } else if (logoId) {
@@ -632,7 +636,9 @@ async function uploadAsset(env, body) {
   const prefix = map[kind];
   if (!prefix) return { success: false, error: 'Invalid kind' };
 
-  const id = `${kind}_${Date.now()}`;
+  const requestedId = String(body.id || '').trim();
+  const defaultId = kind === 'qr-logo' ? `qrlogo_${Date.now()}` : `${kind}_${Date.now()}`;
+  const id = /^[A-Za-z0-9_-]+$/.test(requestedId) ? requestedId : defaultId;
   const ext = (body.filename || '').match(/\.[a-z0-9]+$/i)?.[0] || '.png';
   const key = `${prefix}/${id}${ext}`;
   await env.PHOTOS.put(key, decodeBase64(body.base64Data), {
@@ -647,6 +653,14 @@ async function uploadAsset(env, body) {
 // Queries the Firestore events collection for the highest egm##### ID,
 // increments it, and returns the next one. Shared counter between Dashboard
 // and ProBooth so IDs never collide.
+function assetIdFromKey(key) {
+  return String(key || '').split('/').pop()?.replace(/\.[^.]+$/, '') || '';
+}
+
+function isQrLogoId(id) {
+  return String(id || '').startsWith('qrlogo_') || String(id || '').startsWith('qr-logo_');
+}
+
 async function downloadFile(env, key) {
   if (/^\//.test(key) || /\.\./.test(key) || !/^[A-Za-z0-9._/-]+$/.test(key)) {
     return json({ success: false, error: 'Invalid key' }, 400);
