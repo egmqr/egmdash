@@ -14,8 +14,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
   
   <style>
     .sticker-manager-grid { display: flex; flex-wrap: wrap; gap: 10px; max-height: 250px; overflow-y: auto; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; }
@@ -690,6 +688,446 @@
   }
   .dark-mode .svc-breakdown-wrap.down .svc-breakdown-popup::after { border-bottom-color: #2e3340; }
   .dark-mode .svc-breakdown-wrap.down .svc-breakdown-popup::before { border-bottom-color: #1c1f26; }
+
+  /* Cloudflare-inspired app shell */
+  :root {
+    --app-sidebar-width: 268px;
+    --app-topbar-height: 72px;
+    --app-bg: #f6f7f9;
+    --app-surface: #ffffff;
+    --app-surface-2: #f9fafb;
+    --app-border: #dde1e7;
+    --app-text: #111827;
+    --app-muted: #6b7280;
+    --app-accent: #f6821f;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    padding: 0 !important;
+    padding-bottom: 0 !important;
+    background: var(--app-bg);
+    color: var(--app-text);
+    overflow-x: hidden;
+  }
+
+  .app-shell {
+    min-height: 100vh;
+    display: flex;
+    background: var(--app-bg);
+  }
+
+  .app-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: var(--app-sidebar-width);
+    z-index: 1040;
+    display: flex;
+    flex-direction: column;
+    background: var(--app-surface);
+    border-right: 1px solid var(--app-border);
+    transform: translateX(0);
+    transition: transform 0.24s ease, box-shadow 0.24s ease;
+  }
+
+  .app-sidebar-header {
+    min-height: var(--app-topbar-height);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--app-border);
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--app-accent);
+    background: #fff4ea;
+    font-size: 1.2rem;
+    flex: 0 0 auto;
+  }
+
+  .brand-copy {
+    min-width: 0;
+    line-height: 1.1;
+  }
+
+  .brand-title {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--app-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .brand-subtitle {
+    margin-top: 3px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--app-muted);
+    letter-spacing: 0;
+  }
+
+  .sidebar-close-btn {
+    margin-left: auto;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--app-muted);
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar-close-btn:hover { background: var(--app-surface-2); color: var(--app-text); }
+
+  .app-sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 12px 18px;
+  }
+
+  .quick-search-btn {
+    width: 100%;
+    height: 36px;
+    border: 1px solid var(--app-border);
+    border-radius: 8px;
+    background: var(--app-surface-2);
+    color: var(--app-muted);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-align: left;
+  }
+
+  .quick-search-btn kbd {
+    margin-left: auto;
+    border: 1px solid var(--app-border);
+    border-radius: 5px;
+    background: var(--app-surface);
+    color: var(--app-muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 1px 6px;
+  }
+
+  .quick-search-btn:hover { border-color: #c6ccd5; color: var(--app-text); }
+
+  .app-nav-section { margin-top: 18px; }
+  .app-nav-heading {
+    padding: 0 10px 6px;
+    color: var(--app-muted);
+    font-size: 0.73rem;
+    font-weight: 800;
+  }
+
+  .app-nav-link {
+    min-height: 36px;
+    border-radius: 8px !important;
+    padding: 0 10px !important;
+    color: #384252 !important;
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    font-weight: 750;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.16s ease, color 0.16s ease;
+  }
+
+  .app-nav-link i:first-child {
+    width: 18px;
+    color: #6b7280;
+    text-align: center;
+    font-size: 0.95rem;
+  }
+
+  .app-nav-link .lock-dot {
+    margin-left: auto;
+    color: #98a2b3;
+    font-size: 0.72rem;
+  }
+
+  .app-nav-link:hover { background: #f1f3f5; color: #111827 !important; }
+  .app-nav-link.active {
+    background: #f0f2f5 !important;
+    color: #0f172a !important;
+    box-shadow: inset 3px 0 0 var(--app-accent);
+  }
+  .app-nav-link.active i:first-child { color: var(--app-accent); }
+
+  .sidebar-divider {
+    margin: 18px 10px;
+    border-top: 1px solid var(--app-border);
+  }
+
+  .app-sidebar-footer {
+    padding: 12px;
+    border-top: 1px solid var(--app-border);
+  }
+
+  .sidebar-footer-action {
+    width: 100%;
+    min-height: 36px;
+    border: 0;
+    background: transparent;
+    color: #384252;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    font-weight: 750;
+    font-size: 0.82rem;
+  }
+
+  .sidebar-footer-action:hover { background: #f1f3f5; }
+
+  .app-main {
+    width: 100%;
+    min-width: 0;
+    margin-left: var(--app-sidebar-width);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sticky-header.app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1010;
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--app-border);
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .topbar-row {
+    min-height: var(--app-topbar-height);
+    padding: 12px clamp(16px, 3vw, 32px);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .mobile-menu-btn,
+  .icon-action-btn {
+    width: 38px;
+    height: 36px;
+    border: 1px solid var(--app-border);
+    border-radius: 8px;
+    background: var(--app-surface);
+    color: #475467;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+  }
+
+  .mobile-menu-btn { display: none; }
+  .mobile-menu-btn:hover,
+  .icon-action-btn:hover { background: #f4f6f8; color: #111827; }
+
+  .app-title-block { min-width: 0; flex: 1; }
+  .app-title {
+    margin: 0;
+    color: var(--app-text);
+    font-size: clamp(1.05rem, 1.5vw, 1.4rem);
+    font-weight: 820;
+    line-height: 1.15;
+  }
+  .app-subtitle {
+    display: block;
+    margin-top: 3px;
+    color: var(--app-muted);
+    font-size: 0.78rem;
+    font-weight: 650;
+  }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .topbar-actions .btn {
+    box-shadow: none !important;
+  }
+
+  .notification-control {
+    max-width: 205px !important;
+  }
+
+  .filter-toolbar {
+    padding: 0 clamp(16px, 3vw, 32px) 16px;
+  }
+
+  .filter-panel {
+    border-radius: 10px;
+    box-shadow: none;
+  }
+
+  .app-content {
+    width: min(100%, 1480px);
+    margin: 0 auto;
+    padding: 22px clamp(16px, 3vw, 32px) 56px;
+  }
+
+  .app-content > div[id$="-view"] > h4:first-child {
+    font-size: 1rem;
+  }
+
+  .card { border-radius: 10px; box-shadow: 0 1px 2px rgba(16,24,40,0.04); }
+  .table-custom, .calendar-container { border-radius: 10px; box-shadow: none !important; }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1030;
+    background: rgba(15, 23, 42, 0.52);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  body.sidebar-open .sidebar-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #booth-view > .card {
+    max-width: 920px !important;
+  }
+
+  #expenses-view > .card {
+    max-width: 720px !important;
+  }
+
+  body.dark-mode {
+    --app-bg: #0b0d10;
+    --app-surface: #111418;
+    --app-surface-2: #171a20;
+    --app-border: #272c35;
+    --app-text: #f3f4f6;
+    --app-muted: #98a2b3;
+    background: var(--app-bg);
+  }
+
+  .dark-mode .app-shell,
+  .dark-mode .app-main { background: var(--app-bg); }
+  .dark-mode .app-sidebar,
+  .dark-mode .sticky-header.app-topbar {
+    background: rgba(17,20,24,0.94);
+    border-color: var(--app-border);
+  }
+  .dark-mode .brand-mark { background: rgba(246,130,31,0.14); color: #ff9b49; }
+  .dark-mode .brand-title,
+  .dark-mode .app-title { color: var(--app-text); }
+  .dark-mode .quick-search-btn,
+  .dark-mode .mobile-menu-btn,
+  .dark-mode .icon-action-btn {
+    background: var(--app-surface-2);
+    border-color: var(--app-border);
+    color: #cbd5e1;
+  }
+  .dark-mode .quick-search-btn kbd {
+    background: #111418;
+    border-color: var(--app-border);
+    color: #98a2b3;
+  }
+  .dark-mode .app-nav-link { color: #cbd5e1 !important; }
+  .dark-mode .app-nav-link i:first-child { color: #98a2b3; }
+  .dark-mode .app-nav-link:hover,
+  .dark-mode .app-nav-link.active,
+  .dark-mode .sidebar-footer-action:hover {
+    background: #1b2028 !important;
+    color: #f3f4f6 !important;
+  }
+  .dark-mode .sidebar-footer-action { color: #cbd5e1; }
+
+  @media (max-width: 1399.98px) {
+    .notification-control {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 991.98px) {
+    .app-sidebar {
+      transform: translateX(-100%);
+      box-shadow: none;
+    }
+    body.sidebar-open .app-sidebar {
+      transform: translateX(0);
+      box-shadow: 20px 0 60px rgba(0,0,0,0.22);
+    }
+    body.sidebar-open {
+      overflow: hidden;
+    }
+    .app-main {
+      margin-left: 0;
+    }
+    .mobile-menu-btn,
+    .sidebar-close-btn {
+      display: inline-flex;
+    }
+    .topbar-row {
+      min-height: 56px;
+      padding: 10px 12px;
+      gap: 10px;
+    }
+    .app-subtitle { display: none; }
+    .topbar-actions {
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+    .topbar-actions .btn,
+    .topbar-actions .input-group {
+      width: 36px !important;
+      height: 34px !important;
+      min-width: 36px;
+    }
+    .topbar-actions .notification-control {
+      display: none !important;
+    }
+    .filter-toolbar {
+      padding: 0 12px 12px;
+    }
+    .app-content {
+      padding: 18px 12px 44px;
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .app-title {
+      font-size: 1rem;
+      max-width: 42vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .filter-panel {
+      padding: 12px;
+    }
+    #booth-view .card,
+    #expenses-view .card {
+      max-width: none !important;
+    }
+  }
   </style>
 </head>
 <body>
@@ -881,35 +1319,94 @@
   </div>
 </div>
 
-<div class="px-2 px-md-0">
-  <div class="sticky-header">
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-      
-      <div class="d-flex align-items-center">
-          <i class="bi bi-arrow-repeat text-primary" id="syncIcon" style="cursor: pointer; font-size: 1.5rem;" onclick="forceSync()" title="Refresh App"></i>
-          <span id="bgSyncIndicator" class="bg-sync-indicator ms-3"><div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 0.8rem; height: 0.8rem; border-width: 0.15em;"></div> Syncing</span>
+<div class="app-shell">
+  <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+  <aside class="app-sidebar" id="appSidebar" aria-label="Primary navigation">
+    <div class="app-sidebar-header">
+      <div class="brand-mark"><i class="bi bi-cloud-fill"></i></div>
+      <div class="brand-copy">
+        <div class="brand-title">Createdby.egm</div>
+        <div class="brand-subtitle">Operations</div>
       </div>
-      
-      <div class="d-flex align-items-center gap-2 ms-auto">
-          <button id="newEntryBtn" class="btn btn-primary btn-sm fw-bold shadow-sm d-flex align-items-center justify-content-center" onclick="requireAuth(() => openNewEventModal(), true)" title="New Entry" style="width: 38px; height: 34px;">
+      <button class="sidebar-close-btn" type="button" onclick="closeSidebar()" aria-label="Close navigation">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="app-sidebar-scroll">
+      <button class="quick-search-btn" type="button" onclick="focusGlobalSearch()">
+        <i class="bi bi-search"></i>
+        <span>Quick search...</span>
+        <kbd>Ctrl K</kbd>
+      </button>
+
+      <nav id="appTabs" class="app-nav-section">
+        <div class="app-nav-heading">Operate</div>
+        <a class="app-nav-link nav-link active" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-house-door"></i><span>Events</span></a>
+        <a class="app-nav-link nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar3"></i><span>Calendar</span></a>
+        <a class="app-nav-link nav-link" id="eq-tab" onclick="handleTabClick('editqueue')"><i class="bi bi-film"></i><span>Editing Queue</span></a>
+        <a class="app-nav-link nav-link" id="ex-tab" onclick="handleTabClick('expenses')"><i class="bi bi-receipt"></i><span>Expenses</span></a>
+
+        <div class="app-nav-section">
+          <div class="app-nav-heading">Studio Tools</div>
+          <a class="app-nav-link nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code"></i><span>Booth QR</span><i class="bi bi-lock-fill lock-dot"></i></a>
+        </div>
+
+        <div class="app-nav-section">
+          <div class="app-nav-heading">Finance</div>
+          <a class="app-nav-link nav-link" id="p-tab" onclick="handleTabClick('payments')"><i class="bi bi-wallet2"></i><span>Payments</span><i class="bi bi-lock-fill lock-dot"></i></a>
+          <a class="app-nav-link nav-link" id="pr-tab" onclick="handleTabClick('payroll')"><i class="bi bi-cash-coin"></i><span>Payroll</span><i class="bi bi-lock-fill lock-dot"></i></a>
+          <a class="app-nav-link nav-link" id="bs-tab" onclick="handleTabClick('billingsales')"><i class="bi bi-graph-up-arrow"></i><span>Billing Sales</span><i class="bi bi-lock-fill lock-dot"></i></a>
+        </div>
+      </nav>
+    </div>
+    <div class="app-sidebar-footer">
+      <button class="sidebar-footer-action" type="button" onclick="openSignInModal()">
+        <i class="bi bi-gear"></i>
+        <span>Manage account</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="app-main">
+  <div class="sticky-header app-topbar">
+    <div class="topbar-row">
+      <button class="mobile-menu-btn" type="button" onclick="openSidebar()" aria-label="Open navigation">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <div class="app-title-block">
+        <h1 class="app-title" id="appPageTitle">Events</h1>
+        <span class="app-subtitle" id="appPageSubtitle">Upcoming work and client operations</span>
+      </div>
+
+      <div class="topbar-actions">
+          <button id="newEntryBtn" class="btn btn-primary btn-sm fw-bold d-flex align-items-center justify-content-center" onclick="requireAuth(() => openNewEventModal(), true)" title="New Entry" style="width: 38px; height: 34px;">
             <i class="bi bi-plus-lg fs-5"></i>
           </button>
-          
-          <button id="themeToggleBtn" class="btn btn-light border-secondary-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center" onclick="toggleTheme()" title="Toggle Dark Mode" style="width: 38px; height: 34px;">
+          <button class="icon-action-btn" id="syncIcon" onclick="forceSync()" title="Refresh App" type="button">
+            <i class="bi bi-arrow-repeat"></i>
+          </button>
+          <span id="bgSyncIndicator" class="bg-sync-indicator"><div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 0.8rem; height: 0.8rem; border-width: 0.15em;"></div> Syncing</span>
+          <button id="themeToggleBtn" class="btn btn-light border-secondary-subtle btn-sm d-flex align-items-center justify-content-center" onclick="toggleTheme()" title="Toggle Dark Mode" style="width: 38px; height: 34px;">
             <i id="themeIcon" class="bi bi-moon-fill text-secondary"></i>
           </button>
-          
-          <button id="installAppBtn" class="btn btn-warning border-warning-subtle btn-sm shadow-sm d-flex align-items-center justify-content-center gap-1 fw-bold" style="display: none !important; height: 34px;">
+          <button id="copyFilterLinkBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center justify-content-center" onclick="copyCurrentUrl()" title="Copy link with active filters" style="width: 38px; height: 34px;">
+            <i class="bi bi-link-45deg fs-6"></i>
+          </button>
+          <button id="filterToggleBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center justify-content-center" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" title="Toggle filters" style="width: 38px; height: 34px;">
+            <i class="bi bi-sliders"></i>
+          </button>
+          <button id="installAppBtn" class="btn btn-warning border-warning-subtle btn-sm d-flex align-items-center justify-content-center gap-1 fw-bold" style="display: none !important; height: 34px;">
             <i class="bi bi-download"></i>
           </button>
-          <button id="loginBtn" class="btn btn-outline-primary btn-sm shadow-sm align-items-center justify-content-center" onclick="openSignInModal()" title="Sign In" style="width: 38px; height: 34px;">
-                <i class="bi bi-person-lock fs-6"></i>
-              </button>
-          <button id="logoutBtn" class="btn btn-outline-danger btn-sm shadow-sm align-items-center justify-content-center" onclick="signOut()" title="Sign Out / Switch Account" style="width: 38px; height: 34px; display: none;">
+          <button id="loginBtn" class="btn btn-outline-primary btn-sm align-items-center justify-content-center" onclick="openSignInModal()" title="Sign In" style="width: 38px; height: 34px;">
+            <i class="bi bi-person-lock fs-6"></i>
+          </button>
+          <button id="logoutBtn" class="btn btn-outline-danger btn-sm align-items-center justify-content-center" onclick="signOut()" title="Sign Out / Switch Account" style="width: 38px; height: 34px; display: none;">
             <i class="bi bi-box-arrow-right fs-6"></i>
           </button>
 
-          <div class="input-group input-group-sm shadow-sm" style="max-width: 150px; height: 34px;">
+          <div class="input-group input-group-sm notification-control" style="height: 34px;">
               <select id="pushCrewName" class="form-select fw-bold border-primary" style="font-size: 0.8rem; padding-right: 20px;">
                   <option value="">Name...</option>
                   <option value="Edgar">Edgar</option>
@@ -934,31 +1431,9 @@
               </button>
           </div>
       </div>
-
     </div>
 
-    <div class="d-flex justify-content-between align-items-center pb-2">
-     <ul class="nav nav-pills" id="appTabs">
-        <li class="nav-item"><a class="nav-link active" id="e-tab" onclick="handleTabClick('events')"><i class="bi bi-card-list me-1"></i> Events</a></li>
-        <li class="nav-item"><a class="nav-link" id="c-tab" onclick="handleTabClick('calendar')"><i class="bi bi-calendar-event me-1"></i> Calendar</a></li>
-        <li class="nav-item"><a class="nav-link" id="eq-tab" onclick="handleTabClick('editqueue')"><i class="bi bi-film me-1"></i> Editing Queue</a></li>
-        <li class="nav-item"><a class="nav-link" id="ex-tab" onclick="handleTabClick('expenses')"><i class="bi bi-receipt me-1"></i> Expenses</a></li>
-        <li class="nav-item"><a class="nav-link" id="b-tab" onclick="handleTabClick('booth')"><i class="bi bi-qr-code me-1"></i> Booth QR <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
-        <li class="nav-item"><a class="nav-link" id="p-tab" onclick="requireAuth(() => handleTabClick('payments'), 'upperadmin')"><i class="bi bi-wallet2 me-1"></i> Payments <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
-        <li class="nav-item"><a class="nav-link" id="pr-tab" onclick="requireAuth(() => handleTabClick('payroll'), 'upperadmin')"><i class="bi bi-cash-coin me-1"></i> Payroll <i class="bi bi-lock-fill ms-1" style="font-size:0.75rem;"></i></a></li>
-       <li class="nav-item"><a class="nav-link" id="bs-tab" onclick="requireAuth(() => handleTabClick('billingsales'), 'superadmin')"><i class="bi bi-shield-lock-fill" style="font-size:0.75rem;"></i></a></li>
-      </ul>
-      <div class="d-flex gap-2">
-        <button id="copyFilterLinkBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" onclick="copyCurrentUrl()" title="Copy link with active filters">
-          <i class="bi bi-link-45deg fs-6"></i>
-        </button>
-        <button id="filterToggleBtn" class="btn btn-light border-secondary-subtle btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">
-          <i class="bi bi-sliders"></i>
-        </button>
-      </div>
-    </div>
-
-    <div class="collapse show mt-2 mb-2" id="filterCollapse">
+    <div class="collapse show filter-toolbar" id="filterCollapse">
       <div class="filter-panel" id="eventFilters">
   <div class="row g-2 align-items-end">
     
@@ -1060,7 +1535,7 @@
       <div class="mt-2 fw-bold small text-muted">Loading initially...</div>
   </div>
   
-  <div class="px-2 px-md-0">
+  <div class="app-content">
       <div id="editqueue-view" style="display:none;">
           <h4 class="fw-bold mb-4 mt-2 d-flex justify-content-between align-items-center">Editing Queue</h4>
           <div class="table-custom bg-white shadow-sm"><div class="table-responsive">
@@ -1536,6 +2011,7 @@
             </div>
       </div>
   </div>
+  </main>
 </div>
 
 <div class="modal fade" id="authModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-dark text-white border-0"><h6 class="fw-bold mb-0 text-uppercase letter-spacing-1"><i class="bi bi-shield-lock me-2"></i> Admin Access</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center">
@@ -3248,6 +3724,99 @@ async function subscribeToNotifications() {
   
   // Run this exactly once when the page loads
   applySavedTheme();
+
+  const APP_VIEW_META = {
+      events: { title: 'Events', subtitle: 'Upcoming work and client operations' },
+      calendar: { title: 'Calendar', subtitle: 'Month view for booked and tentative work' },
+      editqueue: { title: 'Editing Queue', subtitle: 'RAW, backup, edit, and client delivery status' },
+      expenses: { title: 'Expenses', subtitle: 'Crew reimbursements and receipt submission' },
+      booth: { title: 'Booth QR', subtitle: 'Gallery links, QR assets, and booth setup' },
+      payments: { title: 'Payments', subtitle: 'Billing status, invoices, GR, and collections' },
+      payroll: { title: 'Payroll', subtitle: 'Cutoff computation, sessions, and payout history' },
+      billingsales: { title: 'Billing Sales', subtitle: 'Owner split reports and processed billing' }
+  };
+
+  let cropperAssetsPromise = null;
+
+  function openSidebar() {
+      document.body.classList.add('sidebar-open');
+  }
+
+  function closeSidebar() {
+      document.body.classList.remove('sidebar-open');
+  }
+
+  function closeSidebarOnMobile() {
+      if (window.matchMedia('(max-width: 991.98px)').matches) closeSidebar();
+  }
+
+  function syncAppChrome(tabName) {
+      const meta = APP_VIEW_META[tabName] || APP_VIEW_META.events;
+      const title = document.getElementById('appPageTitle');
+      const subtitle = document.getElementById('appPageSubtitle');
+      if (title) title.textContent = meta.title;
+      if (subtitle) subtitle.textContent = meta.subtitle;
+      document.querySelectorAll('.app-nav-link').forEach(link => {
+          link.setAttribute('aria-current', link.classList.contains('active') ? 'page' : 'false');
+      });
+  }
+
+  function focusGlobalSearch() {
+      const searchByTab = {
+          events: 'fName',
+          calendar: 'fName',
+          editqueue: 'fEqSearch',
+          payments: 'fPaySearch',
+          booth: 'boothSearch'
+      };
+      const input = document.getElementById(searchByTab[currentTab] || 'fName');
+      if (!input) return;
+
+      const filterCollapseEl = document.getElementById('filterCollapse');
+      if (filterCollapseEl && !filterCollapseEl.classList.contains('show') && ['events', 'calendar', 'editqueue', 'payments'].includes(currentTab)) {
+          bootstrap.Collapse.getOrCreateInstance(filterCollapseEl, { toggle: false }).show();
+      }
+
+      closeSidebarOnMobile();
+      setTimeout(() => {
+          input.focus();
+          if (typeof input.select === 'function') input.select();
+      }, 80);
+  }
+
+  function loadCropperAssets() {
+      if (window.Cropper) return Promise.resolve();
+      if (cropperAssetsPromise) return cropperAssetsPromise;
+
+      cropperAssetsPromise = new Promise((resolve, reject) => {
+          const existingCss = document.querySelector('link[data-egm-cropper-css]');
+          if (!existingCss) {
+              const css = document.createElement('link');
+              css.rel = 'stylesheet';
+              css.href = 'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css';
+              css.dataset.egmCropperCss = 'true';
+              document.head.appendChild(css);
+          }
+
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js';
+          script.async = true;
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('Cropper failed to load. Please check your connection and try again.'));
+          document.head.appendChild(script);
+      });
+
+      return cropperAssetsPromise;
+  }
+
+  document.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+          event.preventDefault();
+          focusGlobalSearch();
+      }
+      if (event.key === 'Escape') closeSidebar();
+  });
+
   function copyCurrentUrl() {
       navigator.clipboard.writeText(window.location.href).then(() => {
           const btn = document.getElementById('copyFilterLinkBtn');
@@ -3950,8 +4519,9 @@ function handleEqSearch() {
     const filterBtn = document.getElementById('filterToggleBtn');
     const filterCollapseEl = document.getElementById('filterCollapse');
     const copyLinkBtn = document.getElementById('copyFilterLinkBtn');
+    const hasFilters = ['events', 'calendar', 'editqueue', 'payments'].includes(t);
 
-    if (t === 'booth' || t === 'expenses') {
+    if (!hasFilters) {
         filterBtn.classList.remove('d-flex'); filterBtn.classList.add('d-none');
         if(copyLinkBtn) { copyLinkBtn.classList.remove('d-flex'); copyLinkBtn.classList.add('d-none'); }
         if (filterCollapseEl.classList.contains('show')) {
@@ -3976,6 +4546,8 @@ function handleEqSearch() {
     document.getElementById('pr-tab').classList.toggle('active', t==='payroll');
     document.getElementById('b-tab').classList.toggle('active', t==='booth');
     document.getElementById('ex-tab').classList.toggle('active', t==='expenses');
+    closeSidebarOnMobile();
+    syncAppChrome(t);
     
     if (t === 'booth') {
       if (currentBoothMode === 'new') { setBoothMode('view'); } 
@@ -7260,9 +7832,16 @@ async function fetchExistingLogos(forceRefresh = false) {
       croppedLogoPayload = null; croppedQrLogoPayload = null; originalLogoFilename = "";
   }
 
-  function handleBoothLogoSelect(event) {
+  async function handleBoothLogoSelect(event) {
       const file = event.target.files[0];
       if (!file) return;
+      try {
+          await loadCropperAssets();
+      } catch (err) {
+          showToast(err.message, 'danger');
+          event.target.value = '';
+          return;
+      }
       originalLogoFilename = file.name;
       selectedExistingLogoId = ""; selectedExistingQrLogoId = "";
       selectedExistingLogoKey = null; selectedExistingQrLogoKey = null;
