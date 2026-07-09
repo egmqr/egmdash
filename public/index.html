@@ -745,15 +745,20 @@
   .brand-mark {
     width: 34px;
     height: 34px;
-    border-radius: 9px;
+    border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
-    background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
-    box-shadow: 0 2px 6px rgba(13, 148, 136, 0.35), inset 0 1px 0 rgba(255,255,255,0.25);
-    font-size: 1.15rem;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
     flex: 0 0 auto;
+  }
+
+  .brand-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 
   .brand-copy {
@@ -1042,7 +1047,7 @@
     background: rgba(17,20,24,0.94);
     border-color: var(--app-border);
   }
-  .dark-mode .brand-mark { background: linear-gradient(135deg, #0d9488 0%, #115e59 100%); color: #ccfbf1; box-shadow: 0 2px 8px rgba(13, 148, 136, 0.28), inset 0 1px 0 rgba(255,255,255,0.12); }
+  .dark-mode .brand-mark { box-shadow: 0 2px 8px rgba(13, 148, 136, 0.28); }
   .dark-mode .brand-title,
   .dark-mode .app-title { color: var(--app-text); }
   .dark-mode .quick-search-btn,
@@ -1399,9 +1404,9 @@
   <div class="sidebar-overlay" onclick="closeSidebar()"></div>
   <aside class="app-sidebar" id="appSidebar" aria-label="Primary navigation">
     <div class="app-sidebar-header">
-      <div class="brand-mark"><i class="bi bi-aperture"></i></div>
+      <div class="brand-mark"><img src="/egm192.png" alt="EGM logo"></div>
       <div class="brand-copy">
-        <div class="brand-title">Createdby.egm</div>
+        <div class="brand-title">EGM</div>
         <div class="brand-subtitle">Operations</div>
       </div>
       <button class="sidebar-close-btn" type="button" onclick="closeSidebar()" aria-label="Close navigation">
