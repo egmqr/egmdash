@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="/egm192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   
@@ -135,7 +135,7 @@
     .form-control:focus, .form-select:focus { border-color: #0d9488; box-shadow: 0 0 0 0.25rem rgba(13, 148, 136, 0.1); }
     .edit-trigger:hover { color: #0d9488; }
     
-    .card { transition: all 0.3s ease; border: 1px solid #e8edf3; border-radius: 16px; box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.06), 0 1px 3px -1px rgba(0, 0, 0, 0.04); height: 100%; background: #ffffff; }
+    .card { transition: box-shadow 0.16s ease, border-color 0.16s ease, transform 0.16s ease, background-color 0.3s ease; border: 1px solid #e8edf3; border-radius: 16px; box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.06), 0 1px 3px -1px rgba(0, 0, 0, 0.04); height: 100%; background: #ffffff; }
     .leave-card { background-color: #fff1f2; border-color: #fecaca; }
 
     .badge-soft-dark { background-color: #f1f5f9; color: #475569; font-weight: 600; border: 1px solid #e2e8f0;}
@@ -699,7 +699,10 @@
     --app-border: #dde1e7;
     --app-text: #111827;
     --app-muted: #6b7280;
-    --app-accent: #f6821f;
+    --app-accent: #0d9488;
+    --app-accent-strong: #0f766e;
+    --app-accent-soft: #f0fdfa;
+    --app-accent-ring: rgba(13, 148, 136, 0.25);
   }
 
   html { scroll-behavior: smooth; }
@@ -742,13 +745,14 @@
   .brand-mark {
     width: 34px;
     height: 34px;
-    border-radius: 8px;
+    border-radius: 9px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--app-accent);
-    background: #fff4ea;
-    font-size: 1.2rem;
+    color: #ffffff;
+    background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+    box-shadow: 0 2px 6px rgba(13, 148, 136, 0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+    font-size: 1.15rem;
     flex: 0 0 auto;
   }
 
@@ -822,7 +826,8 @@
     padding: 1px 6px;
   }
 
-  .quick-search-btn:hover { border-color: #c6ccd5; color: var(--app-text); }
+  .quick-search-btn { transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; }
+  .quick-search-btn:hover { border-color: var(--app-accent); color: var(--app-text); box-shadow: 0 0 0 3px var(--app-accent-ring); }
 
   .app-nav-section { margin-top: 18px; }
   .app-nav-heading {
@@ -841,7 +846,7 @@
     align-items: center;
     gap: 10px;
     font-size: 0.85rem;
-    font-weight: 750;
+    font-weight: 700;
     text-decoration: none;
     cursor: pointer;
     transition: background 0.16s ease, color 0.16s ease;
@@ -862,11 +867,12 @@
 
   .app-nav-link:hover { background: #f1f3f5; color: #111827 !important; }
   .app-nav-link.active {
-    background: #f0f2f5 !important;
-    color: #0f172a !important;
+    background: var(--app-accent-soft) !important;
+    color: var(--app-accent-strong) !important;
     box-shadow: inset 3px 0 0 var(--app-accent);
   }
   .app-nav-link.active i:first-child { color: var(--app-accent); }
+  .app-nav-link.active .lock-dot { color: var(--app-accent); opacity: 0.7; }
 
   .sidebar-divider {
     margin: 18px 10px;
@@ -889,7 +895,7 @@
     align-items: center;
     gap: 10px;
     padding: 0 10px;
-    font-weight: 750;
+    font-weight: 700;
     font-size: 0.82rem;
   }
 
@@ -946,15 +952,16 @@
     margin: 0;
     color: var(--app-text);
     font-size: clamp(1.05rem, 1.5vw, 1.4rem);
-    font-weight: 820;
+    font-weight: 800;
     line-height: 1.15;
+    letter-spacing: -0.01em;
   }
   .app-subtitle {
     display: block;
     margin-top: 3px;
     color: var(--app-muted);
     font-size: 0.78rem;
-    font-weight: 650;
+    font-weight: 600;
   }
 
   .topbar-actions {
@@ -1035,7 +1042,7 @@
     background: rgba(17,20,24,0.94);
     border-color: var(--app-border);
   }
-  .dark-mode .brand-mark { background: rgba(246,130,31,0.14); color: #ff9b49; }
+  .dark-mode .brand-mark { background: linear-gradient(135deg, #0d9488 0%, #115e59 100%); color: #ccfbf1; box-shadow: 0 2px 8px rgba(13, 148, 136, 0.28), inset 0 1px 0 rgba(255,255,255,0.12); }
   .dark-mode .brand-title,
   .dark-mode .app-title { color: var(--app-text); }
   .dark-mode .quick-search-btn,
@@ -1053,11 +1060,16 @@
   .dark-mode .app-nav-link { color: #cbd5e1 !important; }
   .dark-mode .app-nav-link i:first-child { color: #98a2b3; }
   .dark-mode .app-nav-link:hover,
-  .dark-mode .app-nav-link.active,
   .dark-mode .sidebar-footer-action:hover {
     background: #1b2028 !important;
     color: #f3f4f6 !important;
   }
+  .dark-mode .app-nav-link.active {
+    background: rgba(13, 148, 136, 0.14) !important;
+    color: #5eead4 !important;
+  }
+  .dark-mode .app-nav-link.active i:first-child { color: #2dd4bf; }
+  .dark-mode .app-nav-link.active .lock-dot { color: #2dd4bf; }
   .dark-mode .sidebar-footer-action { color: #cbd5e1; }
 
   @media (max-width: 1399.98px) {
@@ -1127,6 +1139,70 @@
     #expenses-view .card {
       max-width: none !important;
     }
+  }
+
+  /* ── Snappy polish layer ── */
+
+  /* Accessible teal focus rings */
+  :focus-visible {
+    outline: 2px solid var(--app-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .btn:focus-visible,
+  .form-control:focus-visible,
+  .form-select:focus-visible { outline: none; }
+
+  /* Fast, targeted button feedback */
+  .btn {
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  }
+  .btn:active:not(:disabled),
+  .icon-action-btn:active,
+  .mobile-menu-btn:active,
+  .booth-mini-btn:active { transform: scale(0.96); }
+  .icon-action-btn,
+  .mobile-menu-btn {
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
+
+  /* View switch fade (opacity only — keeps sticky headers stable) */
+  @keyframes viewFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .app-content > div[id$="-view"] { animation: viewFadeIn 0.18s ease; }
+
+  /* Slim, unobtrusive scrollbars */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+  .dark-mode ::-webkit-scrollbar-thumb { background-color: #3a4150; }
+  .dark-mode ::-webkit-scrollbar-thumb:hover { background-color: #4b5563; }
+
+  /* Modal depth + calmer backdrop */
+  .modal-content {
+    border-radius: 16px;
+    border: 1px solid var(--app-border);
+    box-shadow: 0 24px 48px -12px rgba(16, 24, 40, 0.18);
+  }
+  .modal-backdrop.show { background-color: #0f172a; opacity: 0.55; }
+
+  /* Table row hover */
+  .table-custom tbody tr { transition: background-color 0.12s ease; }
+  .table-custom tbody tr:hover td { background-color: #f8fafc; }
+
+  /* Honor reduced-motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    html { scroll-behavior: auto; }
   }
   </style>
 </head>
@@ -1323,7 +1399,7 @@
   <div class="sidebar-overlay" onclick="closeSidebar()"></div>
   <aside class="app-sidebar" id="appSidebar" aria-label="Primary navigation">
     <div class="app-sidebar-header">
-      <div class="brand-mark"><i class="bi bi-cloud-fill"></i></div>
+      <div class="brand-mark"><i class="bi bi-aperture"></i></div>
       <div class="brand-copy">
         <div class="brand-title">Createdby.egm</div>
         <div class="brand-subtitle">Operations</div>
