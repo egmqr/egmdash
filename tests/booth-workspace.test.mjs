@@ -20,7 +20,7 @@ test('keeps workspace actions together in the header', () => {
     assert.match(header, new RegExp(`id="${id}"`));
     assert.equal((page.match(new RegExp(`id="${id}"`, 'g')) || []).length, 1);
   }
-  assert.match(page, /\.booth-workspace-actions \.btn \{ flex: 0 0 156px; width: 156px; min-height: 42px; white-space: nowrap; \}/);
+  assert.match(page, /\.booth-workspace-actions \.btn \{ display: inline-flex; align-items: center; justify-content: center; flex: 0 0 156px; width: 156px; min-height: 42px; white-space: nowrap; \}/);
 });
 
 test('keeps existing booth backend actions while pairing setup with live links', () => {
@@ -74,7 +74,7 @@ test('uses two setup columns for new events and hides the workspace by default',
 
 test('keeps the Booth workspace responsive on mobile', () => {
   assert.match(page, /@media \(max-width: 700px\) \{[\s\S]*?\.booth-workspace-card \{ width: 100%; padding: 12px !important; \}/);
-  assert.match(page, /\.booth-workspace-actions \.btn \{ flex: 0 0 156px; width: 156px; min-height: 42px; white-space: nowrap; \}/);
+  assert.match(page, /\.booth-workspace-actions \.btn \{ display: inline-flex; align-items: center; justify-content: center; flex: 0 0 156px; width: 156px; min-height: 42px; white-space: nowrap; \}/);
   assert.match(page, /\.booth-workspace-segment \.booth-custom-file-row \{ width: 100%; min-width: 0; \}/);
   assert.match(page, /#boothEventSegment \.row \{ margin-right: 0; margin-left: 0; row-gap: 14px; \}/);
   assert.match(page, /#boothEventSegment \.row > \[class\*="col-"\] \{ width: 100%; max-width: 100%; padding-right: 0; padding-left: 0; \}/);
