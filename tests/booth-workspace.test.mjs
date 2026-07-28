@@ -20,6 +20,7 @@ test('keeps workspace actions together in the header', () => {
     assert.match(header, new RegExp(`id="${id}"`));
     assert.equal((page.match(new RegExp(`id="${id}"`, 'g')) || []).length, 1);
   }
+  assert.match(page, /\.booth-workspace-actions \.btn \{ flex: 0 0 124px; width: 124px; min-height: 42px; \}/);
 });
 
 test('keeps existing booth backend actions while pairing setup with live links', () => {
@@ -39,6 +40,21 @@ test('groups Booth QR into Event, Web Gallery, and Manage zones', () => {
   assert.match(page, /id="boothShowTime" style="cursor: pointer;"/);
   assert.match(page, /function clearBoothManageContainer\(\)/);
   assert.match(page, /clearBoothManageContainer\(\);[\s\S]*?setBoothMode\('new'\);/);
+  const eventSegment = page.slice(page.indexOf('id="boothEventSegment"'), page.indexOf('id="boothWebGallerySegment"'));
+  const gallerySegment = page.slice(page.indexOf('id="boothWebGallerySegment"'), page.indexOf('id="boothViewContainer"'));
+  assert.doesNotMatch(eventSegment, /Web Gallery Page Title/);
+  assert.match(gallerySegment, /Web Gallery Page Title/);
+});
+
+test('lets the app shell own redundant tab titles', () => {
+  const editQueue = page.slice(page.indexOf('id="editqueue-view"'), page.indexOf('id="payroll-view"'));
+  const payroll = page.slice(page.indexOf('id="payroll-view"'), page.indexOf('id="booth-view"'));
+  const expenses = page.slice(page.indexOf('id="expenses-view"'), page.indexOf('id="billingsales-view"'));
+  const billingSales = page.slice(page.indexOf('id="billingsales-view"'), page.indexOf('id="payments-view"'));
+  assert.doesNotMatch(editQueue, /<h4[^>]*>Editing Queue<\/h4>/);
+  assert.doesNotMatch(payroll, /<h4[^>]*>[^<]*Payroll Engine<\/h4>/);
+  assert.doesNotMatch(expenses, /<h4[^>]*>Log an Expense<\/h4>/);
+  assert.doesNotMatch(billingSales, /Billing Sales Reports/);
 });
 
 test('uses Event as a full-width row above Web Gallery and Manage on desktop', () => {
@@ -58,7 +74,7 @@ test('uses two setup columns for new events and hides the workspace by default',
 
 test('keeps the Booth workspace responsive on mobile', () => {
   assert.match(page, /@media \(max-width: 700px\) \{[\s\S]*?\.booth-workspace-card \{ width: 100%; padding: 12px !important; \}/);
-  assert.match(page, /\.booth-workspace-actions \.btn \{ flex: 1 1 calc\(50% - 4px\); min-height: 42px; \}/);
+  assert.match(page, /\.booth-workspace-actions \.btn \{ flex: 0 0 124px; width: 124px; min-height: 42px; \}/);
   assert.match(page, /\.booth-workspace-segment \.booth-custom-file-row \{ width: 100%; min-width: 0; \}/);
   assert.match(page, /#boothEventSegment \.row \{ margin-right: 0; margin-left: 0; row-gap: 14px; \}/);
   assert.match(page, /#boothEventSegment \.row > \[class\*="col-"\] \{ width: 100%; max-width: 100%; padding-right: 0; padding-left: 0; \}/);

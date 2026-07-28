@@ -1212,6 +1212,7 @@
     border-bottom: 1px solid var(--app-border);
   }
   .booth-workspace-actions { display: flex; flex-wrap: wrap; gap: 8px; flex: 0 0 auto; }
+  .booth-workspace-actions .btn { flex: 0 0 124px; width: 124px; min-height: 42px; }
   .booth-workspace-picker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 0.75fr); gap: 10px; }
   .booth-mode-legacy { display: none !important; }
   #boothFormFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; min-width: 0; }
@@ -1228,7 +1229,7 @@
     .booth-workspace-card { width: 100%; padding: 12px !important; }
     .booth-workspace-header { align-items: stretch; flex-direction: column; margin-bottom: 16px; }
     .booth-workspace-actions { width: 100%; }
-    .booth-workspace-actions .btn { flex: 1 1 calc(50% - 4px); min-height: 42px; }
+    .booth-workspace-actions .btn { flex: 0 0 124px; width: 124px; min-height: 42px; }
     .booth-workspace-picker { grid-template-columns: 1fr; }
     .booth-workspace-segment { padding: 18px; }
     .booth-workspace-segment .booth-custom-file-row { width: 100%; min-width: 0; }
@@ -1662,7 +1663,6 @@
   
   <div class="app-content">
       <div id="editqueue-view" style="display:none;">
-          <h4 class="fw-bold mb-4 mt-2 d-flex justify-content-between align-items-center">Editing Queue</h4>
           <div class="table-custom bg-white shadow-sm"><div class="table-responsive">
               <table class="table table-hover mb-0 align-middle">
                   <thead><tr><th class="py-3 px-3">Event Info</th><th class="py-3">Editor</th><th class="py-3">RAW Status</th><th class="py-3">Completed Status</th><th class="py-3">48h Deadline</th></tr></thead>
@@ -1709,7 +1709,6 @@
           <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 mt-2 gap-3">
               
               <div>
-                  <h4 class="fw-bold mb-0 text-danger d-flex align-items-center"><i class="bi bi-cash-coin me-2"></i> Payroll Engine</h4>
                   <span class="text-muted small fw-bold d-block mt-1 mb-3" style="font-size: 0.75rem;"><i class="bi bi-info-circle-fill opacity-50 me-1"></i>Always set rates first, you won't be able to edit the rates once manual payroll edits are applied.</span>
                   
                   <div class="bg-white p-2 rounded-3 border shadow-sm d-inline-flex gap-2">
@@ -1851,17 +1850,13 @@
                   <section id="boothEventSegment" class="booth-workspace-segment" data-dashboard-segment="Event">
                   <h2>Event</h2>
                   <div class="row g-3 mb-3">
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-6">
                           <label class="form-label-sm text-secondary">Event ID</label>
                           <input type="text" id="boothEventId" class="form-control form-control-sm fw-bold text-muted" placeholder="e.g. egm0015" disabled>
                       </div>
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-6">
                           <label class="form-label-sm text-secondary">Event Name</label>
                           <input type="text" id="boothEventName" class="form-control form-control-sm fw-bold" required>
-                      </div>
-                      <div class="col-12 col-md-4">
-                          <label class="form-label-sm text-secondary">Web Gallery Page Title</label>
-                          <input type="text" id="boothPageTitle" class="form-control form-control-sm fw-bold">
                       </div>
                   </div>
 
@@ -1891,6 +1886,10 @@
 
                   <section id="boothWebGallerySegment" class="booth-workspace-segment" data-dashboard-segment="Web Gallery">
                   <h2>Web Gallery</h2>
+                  <div class="mb-4">
+                      <label class="form-label-sm text-secondary">Web Gallery Page Title</label>
+                      <input type="text" id="boothPageTitle" class="form-control form-control-sm fw-bold">
+                  </div>
                   <div class="mt-3 mb-4 p-3 bg-light border border-secondary-subtle rounded-3">
                       <div class="form-check form-switch mb-2">
                           <input class="form-check-input" type="checkbox" id="boothEnableCommunity" onchange="handleCommunityToggle()" style="cursor: pointer;">
@@ -2047,7 +2046,6 @@
           </div>
       </div>
       <div id="expenses-view" style="display:none;">
-          <h4 class="fw-bold mb-4 mt-2">Log an Expense</h4>
           <div class="card p-3 p-md-4" style="max-width: 600px; margin: 0 auto;">
               <form id="expenseForm">
                   <div class="row g-3 mb-3">
@@ -2112,13 +2110,6 @@
           </div>
       </div>
       <div id="billingsales-view" style="display:none;">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 mt-2 gap-3">
-            <div>
-                <h4 class="fw-bold mb-0 text-primary d-flex align-items-center"><i class="bi bi-graph-up-arrow me-2"></i> Billing Sales Reports</h4>
-                <span class="text-muted small fw-bold d-block mt-1">Configure splits and select a processing date to generate tables.</span>
-            </div>
-        </div>
-
         <div class="card p-3 p-md-4 mb-4 shadow-sm bg-light border-secondary-subtle">
             <div class="row g-3 align-items-end">
                 <div class="col-12 col-md-3">
