@@ -1211,20 +1211,19 @@
     padding-bottom: 18px;
     border-bottom: 1px solid var(--app-border);
   }
-  .booth-workspace-header-copy { min-width: 0; }
-  .booth-workspace-header h4 { margin: 0 0 4px; font-size: 1rem; font-weight: 750; color: var(--app-text); }
-  .booth-workspace-header p { margin: 0; color: var(--app-muted); font-size: 0.78rem; }
-  .booth-workspace-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+  .booth-workspace-actions { display: flex; flex-wrap: wrap; gap: 8px; flex: 0 0 auto; }
   .booth-workspace-picker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 0.75fr); gap: 10px; }
   .booth-mode-legacy { display: none !important; }
-  #boothViewContainer { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--app-border); }
+  .booth-workspace-segment { margin-top: 20px; padding: 24px; border: 1px solid var(--app-border); border-radius: 10px; background: var(--app-surface); }
+  .booth-workspace-segment h2 { margin: 0 0 20px; color: var(--app-text); font-size: 1rem; font-weight: 750; }
   .dark-mode .booth-workspace-header,
-  .dark-mode #boothViewContainer { border-color: var(--app-border); }
+  .dark-mode .booth-workspace-segment { border-color: var(--app-border); background: var(--app-surface); }
   @media (max-width: 700px) {
     .booth-workspace-header { align-items: stretch; flex-direction: column; }
     .booth-workspace-actions { width: 100%; }
     .booth-workspace-actions .btn { flex: 1; }
     .booth-workspace-picker { grid-template-columns: 1fr; }
+    .booth-workspace-segment { padding: 18px; }
   }
 
   /* Honor reduced-motion preferences */
@@ -1800,15 +1799,14 @@
       </div>
 
       <div id="booth-view" style="display:none;">
-          <div class="card p-3 p-md-4 booth-workspace-card" style="max-width: 600px; margin: 0 auto;">
+          <div class="p-3 p-md-4 booth-workspace-card" style="max-width: 600px; margin: 0 auto;">
               
               <div class="booth-workspace-header">
-                  <div class="booth-workspace-header-copy">
-                      <h4>Booth workspace</h4>
-                      <p>Configure an event and manage its live gallery links in one place.</p>
-                  </div>
                   <div class="booth-workspace-actions">
                       <button type="button" class="btn btn-primary btn-sm fw-bold px-3" id="boothNewWorkspaceBtn" onclick="startNewBoothWorkspace()"><i class="bi bi-plus-lg me-1"></i> New event</button>
+                      <button type="button" class="btn btn-primary btn-sm fw-bold px-3" id="boothGenerateBtn" onclick="runBoothGeneration()"><i class="bi bi-magic me-1"></i> Generate</button>
+                      <button type="button" class="btn btn-warning btn-sm fw-bold px-3" id="boothSaveBtn" style="display:none;" onclick="runBoothUpdate()"><i class="bi bi-cloud-arrow-up me-1"></i> Save</button>
+                      <button type="button" class="btn btn-outline-danger btn-sm fw-bold px-3" id="boothDeleteBtn" style="display:none;" onclick="runBoothDelete()"><i class="bi bi-trash3 me-1"></i> Delete</button>
                   </div>
               </div>
 
@@ -1832,6 +1830,8 @@
               </div>
 
               <div id="boothFormFields" style="display:none;">
+                  <section id="boothEventSegment" class="booth-workspace-segment" data-dashboard-segment="Event">
+                  <h2>Event</h2>
                   <div class="row g-3 mb-3">
                       <div class="col-12 col-md-4">
                           <label class="form-label-sm text-secondary">Event ID</label>
@@ -1869,6 +1869,10 @@
                           <input type="file" id="importTemplateFile" style="display:none;" accept=".json" onchange="importTemplateFile(event)">
                       </div>
                   </div>
+                  </section>
+
+                  <section id="boothWebGallerySegment" class="booth-workspace-segment" data-dashboard-segment="Web Gallery">
+                  <h2>Web Gallery</h2>
                   <div class="mt-3 mb-4 p-3 bg-light border border-secondary-subtle rounded-3">
                       <div class="form-check form-switch mb-2">
                           <input class="form-check-input" type="checkbox" id="boothEnableCommunity" onchange="handleCommunityToggle()" style="cursor: pointer;">
@@ -1986,13 +1990,12 @@
                           <label class="form-check-label small fw-bold text-dark" for="boothLogoOnMain">Show logo as custom branding</label>
                       </div>
                   </div>
+                  </section>
 
-                  <button id="boothGenerateBtn" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" onclick="runBoothGeneration()"><i class="bi bi-magic me-1"></i> GENERATE BOOTH SETUP</button>
-                  <button id="boothSaveBtn" class="btn btn-warning w-100 py-3 fw-bold shadow-sm mb-2" style="display:none;" onclick="runBoothUpdate()"><i class="bi bi-cloud-arrow-up me-1"></i> SAVE CHANGES</button>
-                  <button id="boothDeleteBtn" class="btn btn-outline-danger w-100 py-2 fw-bold shadow-sm" style="display:none;" onclick="runBoothDelete()"><i class="bi bi-trash3 me-1"></i> DELETE BOOTH SETUP</button>
               </div>
 
-              <div id="boothViewContainer" style="display: none;">
+              <section id="boothViewContainer" class="booth-workspace-segment" data-dashboard-segment="Manage" style="display: none;">
+                  <h2>Manage</h2>
                   <div class="p-3 bg-light border border-secondary-subtle rounded mb-4">
                       <h5 id="viewBoothTitle" class="fw-bold text-dark mb-1 mt-1">Select an event above</h5>
                       <span id="viewBoothId" class="badge bg-secondary opacity-75 fw-normal"></span>
@@ -2001,7 +2004,7 @@
                  <div id="boothCardsList"></div>
                   
                   <button id="boothDownloadAllQRsBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mt-2" style="display:none;" onclick="downloadAllBoothQRs()"><i class="bi bi-download me-1"></i> Download All QR Codes</button>
-              </div>
+              </section>
 
           </div>
       </div>
@@ -6931,6 +6934,8 @@ window.recomputeARSales = function() {
       document.getElementById('boothEnableCommunity').checked = false;
       document.getElementById('boothCommunityOnly').checked = false;
       document.getElementById('boothUserStickers').checked = false;
+      document.getElementById('boothShowSearchBar').checked = false;
+      document.getElementById('boothShowTime').checked = false;
       
       handleCommunityToggle(); 
       handleUserStickersToggle(); // 🟢 Ensure manager hides on reset
@@ -8202,6 +8207,14 @@ async function fetchExistingLogos(forceRefresh = false) {
 
   function runBoothGeneration() { executeBoothAction("generateBoothSetup"); }
   function runBoothUpdate() { executeBoothAction("updateBoothSetup"); }
+
+  function clearBoothManageContainer() {
+      document.getElementById('viewBoothTitle').innerText = 'Select an event above';
+      document.getElementById('viewBoothId').innerText = '';
+      document.getElementById('boothCardsList').innerHTML = '';
+      document.getElementById('boothDownloadAllQRsBtn').style.display = 'none';
+      document.getElementById('boothViewContainer').style.display = 'none';
+  }
   
   async function runBoothDelete() {
       const selectedId = document.getElementById('boothEventSelect').value;
@@ -8222,8 +8235,9 @@ async function fetchExistingLogos(forceRefresh = false) {
       
       if (res && res.success) {
           boothDetailsCache = {}; // Wipe the details memory
+          clearBoothManageContainer();
           fetchBoothEvents(true); // Force the dropdown to remove the deleted project!
-          setBoothMode('edit');
+          setBoothMode('new');
       } else {
           egmAlert("Error: " + (res ? res.error || res.message : "Failed to delete."));
       }

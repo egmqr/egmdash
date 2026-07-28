@@ -14,6 +14,14 @@ test('uses one Booth QR workspace instead of visible setup modes', () => {
   assert.doesNotMatch(page, />\s*View Event\s*</);
 });
 
+test('keeps workspace actions together in the header', () => {
+  const header = page.match(/<div class="booth-workspace-actions">([\s\S]*?)<\/div>/)?.[1] || '';
+  for (const id of ['boothNewWorkspaceBtn', 'boothGenerateBtn', 'boothSaveBtn', 'boothDeleteBtn']) {
+    assert.match(header, new RegExp(`id="${id}"`));
+    assert.equal((page.match(new RegExp(`id="${id}"`, 'g')) || []).length, 1);
+  }
+});
+
 test('keeps existing booth backend actions while pairing setup with live links', () => {
   assert.match(page, /function openBoothWorkspaceEvent\(\)/);
   assert.match(page, /document\.getElementById\('boothViewContainer'\)\.style\.display = 'block';/);
@@ -21,4 +29,14 @@ test('keeps existing booth backend actions while pairing setup with live links',
   assert.match(page, /'\/api\/dashboard\/generate-booth'/);
   assert.match(page, /'\/api\/dashboard\/update-booth'/);
   assert.match(page, /'\/api\/dashboard\/delete-booth'/);
+});
+
+test('groups Booth QR into Event, Web Gallery, and Manage zones', () => {
+  for (const zone of ['Event', 'Web Gallery', 'Manage']) {
+    assert.match(page, new RegExp(`data-dashboard-segment="${zone}"`));
+  }
+  assert.match(page, /id="boothShowSearchBar" style="cursor: pointer;"/);
+  assert.match(page, /id="boothShowTime" style="cursor: pointer;"/);
+  assert.match(page, /function clearBoothManageContainer\(\)/);
+  assert.match(page, /clearBoothManageContainer\(\);[\s\S]*?setBoothMode\('new'\);/);
 });
