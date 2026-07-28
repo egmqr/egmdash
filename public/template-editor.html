@@ -283,15 +283,26 @@
         body.dark-mode .layer-item:hover { background: #252831; }
         body.dark-mode .layer-item.active { background: #0d2e2b; color: #5eead4; }
 
-        .layer-arrows span {
-            cursor: pointer;
+        .layer-reorder-hint {
+            margin: -7px 0 8px;
             color: var(--text-faint);
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            transition: color 0.15s;
+            font-size: 0.72rem;
         }
-        .layer-arrows span:hover { color: var(--teal); }
+
+        .layer-item.drag-over-before { box-shadow: inset 0 2px 0 var(--teal); }
+        .layer-item.drag-over-after { box-shadow: inset 0 -2px 0 var(--teal); }
+
+        .layer-inline-actions { margin-left: auto; display: flex; gap: 2px; }
+        .layer-inline-btn {
+            width: 28px; height: 28px;
+            display: grid; place-items: center;
+            border: 0; border-radius: 6px;
+            background: transparent; color: var(--text-faint);
+            cursor: pointer; font-size: 0.86rem;
+            transition: background 0.15s, color 0.15s;
+        }
+        .layer-inline-btn:hover { background: var(--teal-light); color: var(--teal-hover); }
+        .layer-inline-btn.delete:hover { color: var(--red); }
 
         /* ── Action panel ── */
         .action-panel { display: flex; gap: 8px; margin-bottom: 14px; }
@@ -322,6 +333,24 @@
         .handle-sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
         .handle-se { bottom: -7px; right: -7px; cursor: nwse-resize; }
 
+        .rotation-stem { position: absolute; top: -30px; left: 50%; height: 18px; border-left: 2px solid var(--teal); }
+        .rotation-handle {
+            position: absolute;
+            top: -46px; left: calc(50% - 12px);
+            width: 24px; height: 24px;
+            border: 2px solid var(--teal);
+            border-radius: 50%;
+            background: var(--bg-panel);
+            color: var(--teal-hover);
+            cursor: grab;
+            font-size: 0.85rem;
+            font-weight: 800;
+            pointer-events: auto;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+        }
+        .rotation-handle:active { cursor: grabbing; }
+        body.dark-mode .rotation-handle { background: var(--dm-panel); color: #5eead4; }
+
         /* ── Canvas element ── */
         .canvas-element { position: absolute; transform-origin: center center; cursor: move; user-select: none; }
         .canvas-element img { width: 100%; height: 100%; pointer-events: none; }
@@ -335,12 +364,43 @@
             letter-spacing: 0.03em;
         }
 
-        /* ── Dark mode toggle ── */
-        .dm-toggle {
-            font-size: 0.75rem;
-            gap: 5px;
-            padding: 7px 11px;
+        /* On phones, keep the live preview above an independently scrollable control deck. */
+        @media (max-width: 767px) {
+            body, html { overflow: hidden; }
+            .app-container {
+                display: grid;
+                grid-template-rows: minmax(280px, 44svh) minmax(0, 56svh);
+                height: 100svh;
+                min-height: 100svh;
+            }
+            .canvas-area {
+                min-width: 0;
+                min-height: 0;
+                border-right: 0;
+                border-bottom: 1px solid var(--border);
+            }
+            body.dark-mode .canvas-area { border-color: var(--dm-border); }
+            .canvas-toolbar { top: 10px; left: 10px; }
+            .toolbar-btn { min-height: 38px; padding: 8px 11px; }
+            .sidebar {
+                width: 100%;
+                min-height: 0;
+                border-left: 0;
+            }
+            .sidebar-content {
+                min-height: 0;
+                padding: 16px;
+                padding-bottom: 24px;
+                overscroll-behavior: contain;
+            }
+            .save-btn {
+                flex: 0 0 auto;
+                min-height: 56px;
+                padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+            }
+            .layer-list { max-height: 180px; }
         }
+
     </style>
 </head>
 <body class="dark-mode">
@@ -349,7 +409,6 @@
     <div class="canvas-area" id="canvasWrapper">
         <div class="canvas-toolbar">
             <button class="toolbar-btn close" onclick="window.close()">✕ Close</button>
-            <button class="toolbar-btn dm-toggle" onclick="document.body.classList.toggle('dark-mode')" title="Toggle dark mode">🌙 Theme</button>
         </div>
 
         <div id="designCanvas">
@@ -358,6 +417,8 @@
                 <div class="resize-handle handle-ne" data-pos="ne"></div>
                 <div class="resize-handle handle-sw" data-pos="sw"></div>
                 <div class="resize-handle handle-se" data-pos="se"></div>
+                <div class="rotation-stem"></div>
+                <button type="button" class="rotation-handle" id="canvasRotationHandle" title="Drag to rotate" aria-label="Drag to rotate">↻</button>
             </div>
         </div>
     </div>
@@ -404,17 +465,14 @@
                 </button>
             </div>
 
+            <p class="layer-reorder-hint">⋮⋮ Drag a layer to reorder</p>
             <div class="layer-list" id="layersList"></div>
 
             <div id="layerActionsPanel" style="display: none;">
                 <div class="action-panel">
-                    <button class="btn btn-secondary btn-icon" id="btnToggleLock" onclick="toggleLock()" title="Toggle lock">🔓</button>
+                    <button class="btn btn-secondary btn-icon" id="undoBtn" onclick="undo()" disabled title="Undo last change" aria-label="Undo last change">↶</button>
                     <button class="btn btn-primary" style="flex:1;" onclick="scaleToCanvas()">📐 Scale to Canvas</button>
-                    <button class="btn btn-danger-soft btn-icon" onclick="deleteLayer()" title="Delete layer">🗑️</button>
                 </div>
-
-                <label>Rotation (degrees)</label>
-                <input type="range" id="sldRotation" min="-180" max="180" value="0" oninput="updateLayerProperty('rotation', this.value)">
 
                 <label>Element Size (px)</label>
                 <div class="grid-2">
@@ -439,9 +497,32 @@
     
     let selectedLayerId = null;
     let dragState = null;
+    let undoStack = [];
+    let layerDragState = null;
 
     const designCanvas = document.getElementById('designCanvas');
     const canvasWrapper = document.getElementById('canvasWrapper');
+
+    function selectionOverlayMarkup() {
+        return '<div id="selectionOverlay"><div class="resize-handle handle-nw" data-pos="nw"></div><div class="resize-handle handle-ne" data-pos="ne"></div><div class="resize-handle handle-sw" data-pos="sw"></div><div class="resize-handle handle-se" data-pos="se"></div><div class="rotation-stem"></div><button type="button" class="rotation-handle" id="canvasRotationHandle" title="Drag to rotate" aria-label="Drag to rotate">↻</button></div>';
+    }
+
+    function snapshotLayers() { return templateState.Layers.map(({ domElement, ...layer }) => ({ ...layer })); }
+    function recordUndo() {
+        undoStack.push({ layers: snapshotLayers(), selectedLayerId });
+        if (undoStack.length > 120) undoStack.shift();
+        document.getElementById('undoBtn').disabled = false;
+    }
+    function undo() {
+        const snapshot = undoStack.pop();
+        if (!snapshot) return;
+        designCanvas.querySelectorAll('.canvas-element').forEach(element => element.remove());
+        templateState.Layers = snapshot.layers;
+        templateState.Layers.forEach(createDOMElement);
+        selectedLayerId = snapshot.selectedLayerId;
+        refreshLayers(); selectLayer(selectedLayerId);
+        document.getElementById('undoBtn').disabled = undoStack.length === 0;
+    }
 
     function wireHandles() {
         document.querySelectorAll('.resize-handle').forEach(handle => {
@@ -457,6 +538,11 @@
             newHandle.addEventListener('mousedown', startDrag);
             newHandle.addEventListener('touchstart', startDrag, { passive: false });
         });
+        const rotationHandle = document.getElementById('canvasRotationHandle');
+        if (rotationHandle) {
+            rotationHandle.addEventListener('mousedown', handleRotationStart);
+            rotationHandle.addEventListener('touchstart', handleRotationStart, { passive: false });
+        }
     }
 
     function onCanvasClick(e) {
@@ -466,6 +552,12 @@
     }
 
     async function init() {
+        if (window.opener) {
+            try {
+                document.body.classList.toggle('dark-mode', window.opener.document.body.classList.contains('dark-mode'));
+            } catch (_) {}
+        }
+
         if (window.opener && window.opener.templateToEdit) {
             const source = window.opener.templateToEdit;
             const loadedTemplate = {
@@ -509,7 +601,7 @@
         document.getElementById('txtCanvasWidth').value = data.CanvasWidth;
         document.getElementById('txtCanvasHeight').value = data.CanvasHeight;
 
-        designCanvas.innerHTML = '<div id="selectionOverlay"><div class="resize-handle handle-nw" data-pos="nw"></div><div class="resize-handle handle-ne" data-pos="ne"></div><div class="resize-handle handle-sw" data-pos="sw"></div><div class="resize-handle handle-se" data-pos="se"></div></div>';
+        designCanvas.innerHTML = selectionOverlayMarkup();
         templateState.Layers = [];
 
         const layersToLoad = [...data.Layers].reverse();
@@ -591,6 +683,7 @@
     }
 
     async function addPhotoSlot() {
+        recordUndo();
         let slotCount = templateState.Layers.filter(l => l.LayerType === 'PhotoSlot').length;
         const theme = getSlotTheme(slotCount);
         
@@ -713,7 +806,7 @@
 
         const pos = getPointerPos(e);
         dragState = {
-            layer, isResize: isGlobalResize, handle: handlePos,
+            layer, isResize: isGlobalResize, handle: handlePos, undoRecorded: false,
             startX: pos.x, startY: pos.y,
             startW: layer.Width, startH: layer.Height,
             startLeft: layer.X, startTop: layer.Y,
@@ -727,12 +820,47 @@
         document.addEventListener('touchend', handleMouseUp);
     }
 
+    function handleRotationStart(e) {
+        const layer = templateState.Layers.find(l => l.id === selectedLayerId);
+        if (!layer || layer.isLocked) return;
+        e.stopPropagation();
+        if (e.cancelable) e.preventDefault();
+        const pointer = getPointerPos(e);
+        const canvasRect = designCanvas.getBoundingClientRect();
+        const scale = canvasRect.width / templateState.CanvasWidth;
+        const centerX = canvasRect.left + (layer.X + layer.Width / 2) * scale;
+        const centerY = canvasRect.top + (layer.Y + layer.Height / 2) * scale;
+        dragState = {
+            layer, isRotate: true, undoRecorded: false,
+            centerX, centerY,
+            startAngle: Math.atan2(pointer.y - centerY, pointer.x - centerX) * 180 / Math.PI,
+            startRotation: layer.Rotation
+        };
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('touchmove', handleMouseMove, { passive: false });
+        document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('touchend', handleMouseUp);
+    }
+
     function handleMouseMove(e) {
         if (!dragState) return;
         if (e.cancelable) e.preventDefault(); 
 
         const l = dragState.layer;
+        if (dragState.isRotate) {
+            const pointer = getPointerPos(e);
+            const angle = Math.atan2(pointer.y - dragState.centerY, pointer.x - dragState.centerX) * 180 / Math.PI;
+            if (!dragState.undoRecorded) { recordUndo(); dragState.undoRecorded = true; }
+            const rawRotation = dragState.startRotation + angle - dragState.startAngle;
+            const snappedRotation = Math.round(rawRotation / 45) * 45;
+            const finalRotation = Math.abs(rawRotation - snappedRotation) <= 5 ? snappedRotation : rawRotation;
+            l.Rotation = ((Math.round(finalRotation) + 180) % 360) - 180;
+            applyTransform(l.domElement, l);
+            syncPropertyPanel(l);
+            return;
+        }
         const lockRatio = (l.LayerType === 'PhotoSlot') ? true : document.getElementById('chkLockAspectRatio').checked;
+        if (!dragState.undoRecorded) { recordUndo(); dragState.undoRecorded = true; }
 
         if (e.touches && e.touches.length === 2) {
             const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -816,16 +944,54 @@
         templateState.Layers.forEach((layer, index) => {
             const div = document.createElement('div');
             div.className = `layer-item ${layer.id === selectedLayerId ? 'active' : ''}`;
+            div.draggable = true;
+            div.addEventListener('dragstart', (event) => {
+                layerDragState = { id: layer.id, snapshot: snapshotLayers() };
+                event.dataTransfer.effectAllowed = 'move';
+            });
+            const updateDropCue = (event) => {
+                event.preventDefault();
+                if (!layerDragState || layerDragState.id === layer.id) return;
+                const rect = div.getBoundingClientRect();
+                const dropAfter = event.clientY > rect.top + rect.height / 2;
+                layerDragState.dropTargetId = layer.id;
+                layerDragState.dropAfter = dropAfter;
+                div.classList.toggle('drag-over-before', !dropAfter);
+                div.classList.toggle('drag-over-after', dropAfter);
+            };
+            div.addEventListener('dragenter', updateDropCue);
+            div.addEventListener('dragover', updateDropCue);
+            div.addEventListener('dragleave', () => div.classList.remove('drag-over-before', 'drag-over-after'));
+            div.addEventListener('drop', (event) => {
+                event.preventDefault();
+                div.classList.remove('drag-over-before', 'drag-over-after');
+                if (!layerDragState || layerDragState.id === layer.id) return;
+                const from = templateState.Layers.findIndex(item => item.id === layerDragState.id);
+                const [moving] = templateState.Layers.splice(from, 1);
+                const targetIndex = templateState.Layers.findIndex(item => item.id === layer.id);
+                const dropAfter = layerDragState.dropTargetId === layer.id && layerDragState.dropAfter;
+                const insertionIndex = dropAfter ? targetIndex + 1 : targetIndex;
+                templateState.Layers.splice(insertionIndex, 0, moving);
+                undoStack.push({ layers: layerDragState.snapshot, selectedLayerId });
+                if (undoStack.length > 120) undoStack.shift();
+                document.getElementById('undoBtn').disabled = false;
+                layerDragState = null;
+                refreshLayers();
+            });
+            div.addEventListener('dragend', () => { layerDragState = null; });
             
             const nameSpan = document.createElement('span');
             nameSpan.innerText = (layer.isLocked ? '🔒 ' : '') + layer.DisplayName;
             div.appendChild(nameSpan);
 
-            const controls = document.createElement('div');
-            controls.className = 'layer-arrows';
-            if (index > 0) controls.innerHTML += `<span onclick="moveLayer('${layer.id}', -1, event)" title="Move up">▲</span>`;
-            if (index < templateState.Layers.length - 1) controls.innerHTML += `<span onclick="moveLayer('${layer.id}', 1, event)" title="Move down">▼</span>`;
-            div.appendChild(controls);
+            const actions = document.createElement('div');
+            actions.className = 'layer-inline-actions';
+            actions.innerHTML = `
+                <button type="button" class="layer-inline-btn" title="${layer.isLocked ? 'Unlock' : 'Lock'} layer">${layer.isLocked ? '🔒' : '🔓'}</button>
+                <button type="button" class="layer-inline-btn delete" title="Delete layer">🗑️</button>`;
+            actions.children[0].onclick = (event) => { event.stopPropagation(); toggleLayerLock(layer.id); };
+            actions.children[1].onclick = (event) => { event.stopPropagation(); deleteLayerById(layer.id); };
+            div.appendChild(actions);
             div.onclick = () => selectLayer(layer.id);
             list.appendChild(div);
             layer.domElement.style.zIndex = templateState.Layers.length - index;
@@ -843,6 +1009,16 @@
             templateState.Layers[targetIndex] = temp;
             refreshLayers();
         }
+    }
+
+    function moveSelectedLayer(direction) {
+        const index = templateState.Layers.findIndex(l => l.id === selectedLayerId);
+        const targetIndex = index + direction;
+        if (index < 0 || targetIndex < 0 || targetIndex >= templateState.Layers.length) return;
+        const layer = templateState.Layers[index];
+        templateState.Layers[index] = templateState.Layers[targetIndex];
+        templateState.Layers[targetIndex] = layer;
+        refreshLayers();
     }
 
     function selectLayer(id) {
@@ -873,9 +1049,6 @@
                 btnRotate.style.display = 'none';
             }
 
-            const btnLock = document.getElementById('btnToggleLock');
-            btnLock.innerText = layer.isLocked ? "🔒" : "🔓";
-            btnLock.className = layer.isLocked ? 'btn btn-danger-soft btn-icon' : 'btn btn-secondary btn-icon';
         } else {
             document.getElementById('layerActionsPanel').style.display = 'none';
             chkLock.disabled = false;
@@ -898,12 +1071,12 @@
     function syncPropertyPanel(layer) {
         document.getElementById('txtLayerWidth').value = layer.Width;
         document.getElementById('txtLayerHeight').value = layer.Height;
-        document.getElementById('sldRotation').value = layer.Rotation;
     }
 
     function updateLayerProperty(prop, value) {
         const layer = templateState.Layers.find(l => l.id === selectedLayerId);
         if (!layer || layer.isLocked) return;
+        recordUndo();
         let newValue = parseFloat(value);
         if (isNaN(newValue)) return;
         const lockRatio = (layer.LayerType === 'PhotoSlot') || document.getElementById('chkLockAspectRatio').checked;
@@ -924,35 +1097,31 @@
     function scaleToCanvas() {
         const layer = templateState.Layers.find(l => l.id === selectedLayerId);
         if (!layer || layer.isLocked) return;
-        const lockRatio = (layer.LayerType === 'PhotoSlot') || document.getElementById('chkLockAspectRatio').checked;
-        const currentRatio = layer.Width / layer.Height;
+        recordUndo();
         layer.X = 0; layer.Y = 0; layer.Rotation = 0;
-        if (lockRatio) {
-            layer.Width = templateState.CanvasWidth;
-            layer.Height = Math.round(templateState.CanvasWidth / currentRatio);
-        } else {
-            layer.Width = templateState.CanvasWidth;
-            layer.Height = templateState.CanvasHeight;
-        }
+        layer.Width = templateState.CanvasWidth;
+        layer.Height = templateState.CanvasHeight;
         applyTransform(layer.domElement, layer);
         syncPropertyPanel(layer);
     }
 
-    function toggleLock() {
-        const layer = templateState.Layers.find(l => l.id === selectedLayerId);
+    function toggleLayerLock(id) {
+        const layer = templateState.Layers.find(l => l.id === id);
         if (!layer) return;
+        recordUndo();
         layer.isLocked = !layer.isLocked;
         layer.domElement.style.pointerEvents = layer.isLocked ? 'none' : 'auto';
         selectLayer(layer.id);
     }
 
-    function deleteLayer() {
-        const index = templateState.Layers.findIndex(l => l.id === selectedLayerId);
+    function deleteLayerById(id) {
+        const index = templateState.Layers.findIndex(l => l.id === id);
         if (index < 0) return;
+        recordUndo();
         const layer = templateState.Layers[index];
         layer.domElement.remove();
         templateState.Layers.splice(index, 1);
-        selectLayer(templateState.Layers.length > 0 ? templateState.Layers[0].id : null);
+        selectLayer(templateState.Layers.length > 0 ? (selectedLayerId === id ? templateState.Layers[0].id : selectedLayerId) : null);
     }
 
     async function saveTemplate() {
