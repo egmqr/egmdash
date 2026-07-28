@@ -40,3 +40,13 @@ test('groups Booth QR into Event, Web Gallery, and Manage zones', () => {
   assert.match(page, /function clearBoothManageContainer\(\)/);
   assert.match(page, /clearBoothManageContainer\(\);[\s\S]*?setBoothMode\('new'\);/);
 });
+
+test('uses Event as a full-width row above Web Gallery and Manage on desktop', () => {
+  assert.match(page, /#boothFormFields \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); gap: 20px; \}/);
+  assert.match(page, /#boothEventSegment \{ grid-column: 1 \/ -1; \}/);
+  assert.match(page, /@media \(max-width: 900px\) \{[\s\S]*?#boothFormFields \{ grid-template-columns: 1fr; \}/);
+});
+
+test('keeps legacy Pro events on the Manage zone without breaking the grid', () => {
+  assert.match(page, /boothFormFields'\)\.style\.display = 'grid';[\s\S]*?boothEventSegment'\)\.style\.display = 'none';[\s\S]*?boothWebGallerySegment'\)\.style\.display = 'none';/);
+});

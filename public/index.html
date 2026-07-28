@@ -1214,7 +1214,10 @@
   .booth-workspace-actions { display: flex; flex-wrap: wrap; gap: 8px; flex: 0 0 auto; }
   .booth-workspace-picker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 0.75fr); gap: 10px; }
   .booth-mode-legacy { display: none !important; }
+  #boothFormFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
   .booth-workspace-segment { margin-top: 20px; padding: 24px; border: 1px solid var(--app-border); border-radius: 10px; background: var(--app-surface); }
+  #boothEventSegment { grid-column: 1 / -1; }
+  #boothWebGallerySegment, #boothViewContainer { margin-top: 0; }
   .booth-workspace-segment h2 { margin: 0 0 20px; color: var(--app-text); font-size: 1rem; font-weight: 750; }
   .dark-mode .booth-workspace-header,
   .dark-mode .booth-workspace-segment { border-color: var(--app-border); background: var(--app-surface); }
@@ -1224,6 +1227,10 @@
     .booth-workspace-actions .btn { flex: 1; }
     .booth-workspace-picker { grid-template-columns: 1fr; }
     .booth-workspace-segment { padding: 18px; }
+  }
+  @media (max-width: 900px) {
+    #boothFormFields { grid-template-columns: 1fr; }
+    #boothEventSegment { grid-column: auto; }
   }
 
   /* Honor reduced-motion preferences */
@@ -1992,8 +1999,6 @@
                   </div>
                   </section>
 
-              </div>
-
               <section id="boothViewContainer" class="booth-workspace-segment" data-dashboard-segment="Manage" style="display: none;">
                   <h2>Manage</h2>
                   <div class="p-3 bg-light border border-secondary-subtle rounded mb-4">
@@ -2005,6 +2010,8 @@
                   
                   <button id="boothDownloadAllQRsBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mt-2" style="display:none;" onclick="downloadAllBoothQRs()"><i class="bi bi-download me-1"></i> Download All QR Codes</button>
               </section>
+
+              </div>
 
           </div>
       </div>
@@ -6949,7 +6956,9 @@ window.recomputeARSales = function() {
       if (mode === 'new') {
           document.getElementById('btnModeNew').classList.add('active');
           document.getElementById('boothSelectContainer').style.display = 'grid';
-          document.getElementById('boothFormFields').style.display = 'block';
+          document.getElementById('boothFormFields').style.display = 'grid';
+          document.getElementById('boothEventSegment').style.display = 'block';
+          document.getElementById('boothWebGallerySegment').style.display = 'block';
           document.getElementById('boothViewContainer').style.display = 'none';
           document.getElementById('boothTemplatesBlock').style.display = 'block';
           document.getElementById('boothGenerateBtn').style.display = 'block';
@@ -6967,7 +6976,9 @@ window.recomputeARSales = function() {
           document.getElementById('btnModeView').classList.toggle('active', mode === 'view');
           
           document.getElementById('boothSelectContainer').style.display = 'grid';
-          document.getElementById('boothFormFields').style.display = mode === 'edit' ? 'block' : 'none';
+          document.getElementById('boothFormFields').style.display = mode === 'edit' ? 'grid' : 'none';
+          document.getElementById('boothEventSegment').style.display = 'block';
+          document.getElementById('boothWebGallerySegment').style.display = 'block';
           document.getElementById('boothViewContainer').style.display = 'block';
           document.getElementById('boothTemplatesBlock').style.display = mode === 'edit' ? 'none' : 'block';
           
@@ -7301,7 +7312,9 @@ window.recomputeARSales = function() {
           
           if (isProBoothEvent && currentBoothMode === 'edit') {
               currentBoothMode = 'view';
-              document.getElementById('boothFormFields').style.display = 'none';
+              document.getElementById('boothFormFields').style.display = 'grid';
+              document.getElementById('boothEventSegment').style.display = 'none';
+              document.getElementById('boothWebGallerySegment').style.display = 'none';
               document.getElementById('boothViewContainer').style.display = 'block';
               document.getElementById('boothGenerateBtn').style.display = 'none';
               document.getElementById('boothSaveBtn').style.display = 'none';
