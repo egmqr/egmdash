@@ -47,6 +47,20 @@ test('uses Event as a full-width row above Web Gallery and Manage on desktop', (
   assert.match(page, /@media \(max-width: 900px\) \{[\s\S]*?#boothFormFields \{ grid-template-columns: 1fr; \}/);
 });
 
+test('uses two setup columns for new events and hides the workspace by default', () => {
+  assert.match(page, /#boothFormFields\.new-workspace #boothEventSegment \{ grid-column: auto; \}/);
+  assert.match(page, /function setBoothMode\(mode, activateWorkspace = false\)/);
+  assert.match(page, /boothFormFields'\)\.style\.display = activateWorkspace \? 'grid' : 'none';/);
+  assert.match(page, /boothGenerateBtn'\)\.style\.display = activateWorkspace \? 'block' : 'none';/);
+  assert.match(page, /boothFormFields'\)\.style\.display = mode === 'edit' && hasSelectedEvent \? 'grid' : 'none';/);
+});
+
+test('keeps the Booth workspace responsive on mobile', () => {
+  assert.match(page, /@media \(max-width: 700px\) \{[\s\S]*?\.booth-workspace-card \{ width: 100%; padding: 12px !important; \}/);
+  assert.match(page, /\.booth-workspace-actions \.btn \{ flex: 1 1 calc\(50% - 4px\); min-height: 42px; \}/);
+  assert.match(page, /\.booth-workspace-segment \.booth-custom-file-row \{ width: 100%; min-width: 0; \}/);
+});
+
 test('keeps legacy Pro events on the Manage zone without breaking the grid', () => {
   assert.match(page, /boothFormFields'\)\.style\.display = 'grid';[\s\S]*?boothEventSegment'\)\.style\.display = 'none';[\s\S]*?boothWebGallerySegment'\)\.style\.display = 'none';/);
 });

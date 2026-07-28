@@ -1217,20 +1217,26 @@
   #boothFormFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
   .booth-workspace-segment { margin-top: 20px; padding: 24px; border: 1px solid var(--app-border); border-radius: 10px; background: var(--app-surface); }
   #boothEventSegment { grid-column: 1 / -1; }
+  #boothFormFields.new-workspace #boothEventSegment { grid-column: auto; }
   #boothWebGallerySegment, #boothViewContainer { margin-top: 0; }
   .booth-workspace-segment h2 { margin: 0 0 20px; color: var(--app-text); font-size: 1rem; font-weight: 750; }
   .dark-mode .booth-workspace-header,
   .dark-mode .booth-workspace-segment { border-color: var(--app-border); background: var(--app-surface); }
   @media (max-width: 700px) {
-    .booth-workspace-header { align-items: stretch; flex-direction: column; }
+    .booth-workspace-card { width: 100%; padding: 12px !important; }
+    .booth-workspace-header { align-items: stretch; flex-direction: column; margin-bottom: 16px; }
     .booth-workspace-actions { width: 100%; }
-    .booth-workspace-actions .btn { flex: 1; }
+    .booth-workspace-actions .btn { flex: 1 1 calc(50% - 4px); min-height: 42px; }
     .booth-workspace-picker { grid-template-columns: 1fr; }
     .booth-workspace-segment { padding: 18px; }
+    .booth-workspace-segment .booth-custom-file-row { width: 100%; min-width: 0; }
+    .booth-workspace-segment .booth-file-name { min-width: 0; }
+    #boothWebGallerySegment > .mb-3 > .d-flex, #boothWebGallerySegment > .mb-4 > .d-flex { flex-wrap: wrap; gap: 10px; }
+    #boothWebGallerySegment .booth-thumbnail-container { margin-left: 0 !important; }
   }
   @media (max-width: 900px) {
     #boothFormFields { grid-template-columns: 1fr; }
-    #boothEventSegment { grid-column: auto; }
+    #boothEventSegment, #boothFormFields.new-workspace #boothEventSegment { grid-column: auto; }
   }
 
   /* Honor reduced-motion preferences */
@@ -6844,7 +6850,7 @@ async function uploadAndScanInvoice(prefix) {
       } else {
           // SCENARIO B: No booth exists yet. Jump to New Setup.
           document.getElementById('btnModeNew').style.display = 'block';
-          setBoothMode('new');
+          setBoothMode('new', true);
           
           document.getElementById('boothEventId').value = eventId;
           document.getElementById('boothEventName').value = eventName;
@@ -6893,7 +6899,7 @@ window.recomputeARSales = function() {
           showToast('Only superadmins can create booth events.', 'warning');
           return;
       }
-      setBoothMode('new');
+      setBoothMode('new', true);
   }
 
   function openBoothWorkspaceEvent() {
@@ -6904,11 +6910,12 @@ window.recomputeARSales = function() {
       setBoothMode('edit');
   }
 
-  function setBoothMode(mode) {
+function setBoothMode(mode, activateWorkspace = false) {
       // The workspace keeps setup and live links together. "view" remains for locked legacy events.
       if (mode === 'view') mode = 'edit';
       const eventSelectDropdown = document.getElementById('boothEventSelect');
       const selectedEventId = eventSelectDropdown ? eventSelectDropdown.value : '';
+      const hasSelectedEvent = Boolean(selectedEventId);
       currentBoothMode = mode;
       document.getElementById('boothEnableCommunity').checked = true;
       const newWorkspaceBtn = document.getElementById('boothNewWorkspaceBtn');
@@ -6954,14 +6961,15 @@ window.recomputeARSales = function() {
       document.getElementById('btnModeView').classList.remove('active');
 
       if (mode === 'new') {
+          document.getElementById('boothFormFields').classList.toggle('new-workspace', activateWorkspace);
           document.getElementById('btnModeNew').classList.add('active');
           document.getElementById('boothSelectContainer').style.display = 'grid';
-          document.getElementById('boothFormFields').style.display = 'grid';
+          document.getElementById('boothFormFields').style.display = activateWorkspace ? 'grid' : 'none';
           document.getElementById('boothEventSegment').style.display = 'block';
           document.getElementById('boothWebGallerySegment').style.display = 'block';
           document.getElementById('boothViewContainer').style.display = 'none';
           document.getElementById('boothTemplatesBlock').style.display = 'block';
-          document.getElementById('boothGenerateBtn').style.display = 'block';
+          document.getElementById('boothGenerateBtn').style.display = activateWorkspace ? 'block' : 'none';
           document.getElementById('boothSaveBtn').style.display = 'none';
           document.getElementById('boothDeleteBtn').style.display = 'none';
           
@@ -6972,19 +6980,20 @@ window.recomputeARSales = function() {
           if (document.getElementById('boothTemplateList')) renderTemplateList();
           
       } else if (mode === 'edit' || mode === 'view') {
+          document.getElementById('boothFormFields').classList.remove('new-workspace');
           document.getElementById('btnModeEdit').classList.toggle('active', mode === 'edit');
           document.getElementById('btnModeView').classList.toggle('active', mode === 'view');
           
           document.getElementById('boothSelectContainer').style.display = 'grid';
-          document.getElementById('boothFormFields').style.display = mode === 'edit' ? 'grid' : 'none';
+          document.getElementById('boothFormFields').style.display = mode === 'edit' && hasSelectedEvent ? 'grid' : 'none';
           document.getElementById('boothEventSegment').style.display = 'block';
           document.getElementById('boothWebGallerySegment').style.display = 'block';
-          document.getElementById('boothViewContainer').style.display = 'block';
+          document.getElementById('boothViewContainer').style.display = hasSelectedEvent ? 'block' : 'none';
           document.getElementById('boothTemplatesBlock').style.display = mode === 'edit' ? 'none' : 'block';
           
           document.getElementById('boothGenerateBtn').style.display = 'none';
-          document.getElementById('boothSaveBtn').style.display = mode === 'edit' ? 'block' : 'none';
-          document.getElementById('boothDeleteBtn').style.display = mode === 'edit' ? 'block' : 'none';
+          document.getElementById('boothSaveBtn').style.display = mode === 'edit' && hasSelectedEvent ? 'block' : 'none';
+          document.getElementById('boothDeleteBtn').style.display = mode === 'edit' && hasSelectedEvent ? 'block' : 'none';
           
           if (mode === 'edit') {
               document.getElementById('boothCountInput').disabled = true;
