@@ -1200,6 +1200,33 @@
   .table-custom tbody tr { transition: background-color 0.12s ease; }
   .table-custom tbody tr:hover td { background-color: #f8fafc; }
 
+  /* Booth QR is one event workspace: setup stays beside its live sharing output. */
+  .booth-workspace-card { max-width: 920px !important; }
+  .booth-workspace-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--app-border);
+  }
+  .booth-workspace-header-copy { min-width: 0; }
+  .booth-workspace-header h4 { margin: 0 0 4px; font-size: 1rem; font-weight: 750; color: var(--app-text); }
+  .booth-workspace-header p { margin: 0; color: var(--app-muted); font-size: 0.78rem; }
+  .booth-workspace-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+  .booth-workspace-picker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 0.75fr); gap: 10px; }
+  .booth-mode-legacy { display: none !important; }
+  #boothViewContainer { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--app-border); }
+  .dark-mode .booth-workspace-header,
+  .dark-mode #boothViewContainer { border-color: var(--app-border); }
+  @media (max-width: 700px) {
+    .booth-workspace-header { align-items: stretch; flex-direction: column; }
+    .booth-workspace-actions { width: 100%; }
+    .booth-workspace-actions .btn { flex: 1; }
+    .booth-workspace-picker { grid-template-columns: 1fr; }
+  }
+
   /* Honor reduced-motion preferences */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -1773,26 +1800,35 @@
       </div>
 
       <div id="booth-view" style="display:none;">
-          <div class="card p-3 p-md-4" style="max-width: 600px; margin: 0 auto;">
+          <div class="card p-3 p-md-4 booth-workspace-card" style="max-width: 600px; margin: 0 auto;">
               
-              <ul class="nav nav-pills mb-4" id="boothModeTabs">
-                  <li class="nav-item">
-                      <a class="nav-link" id="btnModeNew" onclick="setBoothMode('new')" style="display:none;"><i class="bi bi-magic me-1"></i> New Setup</a>
-                  </li>
-                  <li class="nav-item">
-                      <a class="nav-link active" id="btnModeEdit" onclick="handleEditSetupClick()"><i class="bi bi-pencil me-1"></i> Edit Setup</a>
-                  </li>
-                  <li class="nav-item">
-                      <a class="nav-link" id="btnModeView" onclick="setBoothMode('view')"><i class="bi bi-eye me-1"></i> View Event</a>
-                  </li>
-              </ul>
+              <div class="booth-workspace-header">
+                  <div class="booth-workspace-header-copy">
+                      <h4>Booth workspace</h4>
+                      <p>Configure an event and manage its live gallery links in one place.</p>
+                  </div>
+                  <div class="booth-workspace-actions">
+                      <button type="button" class="btn btn-primary btn-sm fw-bold px-3" id="boothNewWorkspaceBtn" onclick="startNewBoothWorkspace()"><i class="bi bi-plus-lg me-1"></i> New event</button>
+                  </div>
+              </div>
 
-              <div class="mb-4" id="boothSelectContainer">
-                  <label class="form-label-sm text-secondary">Search Generated Event</label>
-                  <input type="text" id="boothSearch" class="form-control form-control-sm mb-2" placeholder="Search by name or ID..." onkeyup="filterBoothEvents()">
-                  <select id="boothEventSelect" class="form-select form-select-sm fw-bold" onchange="loadBoothEventDetails()">
-                      <option value="">-- Loading Generated Booths... --</option>
-                  </select>
+              <div class="booth-mode-legacy" aria-hidden="true">
+                  <button type="button" id="btnModeNew" onclick="setBoothMode('new')"></button>
+                  <button type="button" id="btnModeEdit" onclick="handleEditSetupClick()"></button>
+                  <button type="button" id="btnModeView" onclick="setBoothMode('view')"></button>
+              </div>
+
+              <div class="mb-4 booth-workspace-picker" id="boothSelectContainer">
+                  <div>
+                      <label class="form-label-sm text-secondary">Find event</label>
+                      <input type="text" id="boothSearch" class="form-control form-control-sm" placeholder="Search by name or ID..." onkeyup="filterBoothEvents()">
+                  </div>
+                  <div>
+                      <label class="form-label-sm text-secondary">Current event</label>
+                      <select id="boothEventSelect" class="form-select form-select-sm fw-bold" onchange="openBoothWorkspaceEvent()">
+                          <option value="">-- Loading Generated Booths... --</option>
+                      </select>
+                  </div>
               </div>
 
               <div id="boothFormFields" style="display:none;">
@@ -6842,11 +6878,31 @@ window.recomputeARSales = function() {
       setBoothMode('edit');
   }
 
+  function startNewBoothWorkspace() {
+      if (getUserRole() !== 'superadmin') {
+          showToast('Only superadmins can create booth events.', 'warning');
+          return;
+      }
+      setBoothMode('new');
+  }
+
+  function openBoothWorkspaceEvent() {
+      if (!document.getElementById('boothEventSelect').value) {
+          setBoothMode('new');
+          return;
+      }
+      setBoothMode('edit');
+  }
+
   function setBoothMode(mode) {
+      // The workspace keeps setup and live links together. "view" remains for locked legacy events.
+      if (mode === 'view') mode = 'edit';
       const eventSelectDropdown = document.getElementById('boothEventSelect');
       const selectedEventId = eventSelectDropdown ? eventSelectDropdown.value : '';
       currentBoothMode = mode;
       document.getElementById('boothEnableCommunity').checked = true;
+      const newWorkspaceBtn = document.getElementById('boothNewWorkspaceBtn');
+      if (newWorkspaceBtn) newWorkspaceBtn.style.display = getUserRole() === 'superadmin' ? 'inline-flex' : 'none';
       
       if (mode !== 'new' && getUserRole() !== 'superadmin') {
           document.getElementById('btnModeNew').style.display = 'none';
@@ -6887,7 +6943,7 @@ window.recomputeARSales = function() {
 
       if (mode === 'new') {
           document.getElementById('btnModeNew').classList.add('active');
-          document.getElementById('boothSelectContainer').style.display = 'none';
+          document.getElementById('boothSelectContainer').style.display = 'grid';
           document.getElementById('boothFormFields').style.display = 'block';
           document.getElementById('boothViewContainer').style.display = 'none';
           document.getElementById('boothTemplatesBlock').style.display = 'block';
@@ -6905,9 +6961,9 @@ window.recomputeARSales = function() {
           document.getElementById('btnModeEdit').classList.toggle('active', mode === 'edit');
           document.getElementById('btnModeView').classList.toggle('active', mode === 'view');
           
-          document.getElementById('boothSelectContainer').style.display = 'block';
+          document.getElementById('boothSelectContainer').style.display = 'grid';
           document.getElementById('boothFormFields').style.display = mode === 'edit' ? 'block' : 'none';
-          document.getElementById('boothViewContainer').style.display = mode === 'view' ? 'block' : 'none';
+          document.getElementById('boothViewContainer').style.display = 'block';
           document.getElementById('boothTemplatesBlock').style.display = mode === 'edit' ? 'none' : 'block';
           
           document.getElementById('boothGenerateBtn').style.display = 'none';
@@ -7195,7 +7251,7 @@ window.recomputeARSales = function() {
       if (!templateDetails || templateDetails.success === false) return;
 
       boothDetailsCache[eventId] = { ...cachedDetails, templatesStr: templateDetails.templatesStr || "[]" };
-      if (currentBoothMode === 'view' && document.getElementById('boothEventSelect').value === eventId) {
+      if ((currentBoothMode === 'edit' || currentBoothMode === 'view') && document.getElementById('boothEventSelect').value === eventId) {
           renderBoothTemplatesFromDetails(boothDetailsCache[eventId]);
       }
   }
@@ -7240,6 +7296,8 @@ window.recomputeARSales = function() {
           
           if (isProBoothEvent && currentBoothMode === 'edit') {
               currentBoothMode = 'view';
+              document.getElementById('boothFormFields').style.display = 'none';
+              document.getElementById('boothViewContainer').style.display = 'block';
               document.getElementById('boothGenerateBtn').style.display = 'none';
               document.getElementById('boothSaveBtn').style.display = 'none';
               document.getElementById('boothDeleteBtn').style.display = 'block';
@@ -7299,7 +7357,9 @@ window.recomputeARSales = function() {
               
               toggleBoothEditFields(true);
               
-          } else if (currentBoothMode === 'view') {
+          }
+
+          if (currentBoothMode === 'edit' || currentBoothMode === 'view') {
               document.getElementById('viewBoothTitle').innerText = details.pageTitle || details.eventName || "Unnamed Event";
               document.getElementById('viewBoothId').innerText = "ID: " + details.id;
               
