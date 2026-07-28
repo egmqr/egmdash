@@ -42,7 +42,7 @@ test('groups Booth QR into Event, Web Gallery, and Manage zones', () => {
 });
 
 test('uses Event as a full-width row above Web Gallery and Manage on desktop', () => {
-  assert.match(page, /#boothFormFields \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); gap: 20px; \}/);
+  assert.match(page, /#boothFormFields \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); gap: 20px; min-width: 0; \}/);
   assert.match(page, /#boothFormFields > \.booth-workspace-segment \{ margin-top: 0; \}/);
   assert.match(page, /#boothEventSegment \{ grid-column: 1 \/ -1; \}/);
   assert.match(page, /@media \(max-width: 900px\) \{[\s\S]*?#boothFormFields \{ grid-template-columns: 1fr; \}/);
@@ -60,6 +60,8 @@ test('keeps the Booth workspace responsive on mobile', () => {
   assert.match(page, /@media \(max-width: 700px\) \{[\s\S]*?\.booth-workspace-card \{ width: 100%; padding: 12px !important; \}/);
   assert.match(page, /\.booth-workspace-actions \.btn \{ flex: 1 1 calc\(50% - 4px\); min-height: 42px; \}/);
   assert.match(page, /\.booth-workspace-segment \.booth-custom-file-row \{ width: 100%; min-width: 0; \}/);
+  assert.match(page, /#boothEventSegment \.row \{ margin-right: 0; margin-left: 0; row-gap: 14px; \}/);
+  assert.match(page, /#boothEventSegment \.row > \[class\*="col-"\] \{ width: 100%; max-width: 100%; padding-right: 0; padding-left: 0; \}/);
 });
 
 test('keeps legacy Pro events on the Manage zone without breaking the grid', () => {
