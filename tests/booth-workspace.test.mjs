@@ -43,6 +43,7 @@ test('groups Booth QR into Event, Web Gallery, and Manage zones', () => {
 
 test('uses Event as a full-width row above Web Gallery and Manage on desktop', () => {
   assert.match(page, /#boothFormFields \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); gap: 20px; \}/);
+  assert.match(page, /#boothFormFields > \.booth-workspace-segment \{ margin-top: 0; \}/);
   assert.match(page, /#boothEventSegment \{ grid-column: 1 \/ -1; \}/);
   assert.match(page, /@media \(max-width: 900px\) \{[\s\S]*?#boothFormFields \{ grid-template-columns: 1fr; \}/);
 });
