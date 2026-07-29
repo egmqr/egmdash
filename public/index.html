@@ -10872,14 +10872,18 @@ function computeBillingSales() {
         const sdeThird = sde / 3;
         
         // JiniCis Rows (T2 Share + SDE Share)
-        htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${ji_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        if (ji_rest > 0) {
+            htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${ji_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        }
         if (sdeThird > 0) {
             htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }
         t3_JiniSum += (ji_rest + sdeThird);
 
         // TinaLex Rows (T2 Share + SDE Share)
-        htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${t_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        if (t_rest > 0) {
+            htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']}</td><td class="fw-bold text-success">₱${t_rest.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        }
         if (sdeThird > 0) {
             htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }

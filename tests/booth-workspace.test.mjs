@@ -80,6 +80,13 @@ test('keeps the Booth workspace responsive on mobile', () => {
   assert.match(page, /#boothEventSegment \.row > \[class\*="col-"\] \{ width: 100%; max-width: 100%; padding-right: 0; padding-left: 0; \}/);
 });
 
+test('hides zero detail rows for JiniCis and TinaLex without changing Total B', () => {
+  const billingSales = page.slice(page.indexOf('function computeBillingSales()'));
+  assert.match(billingSales, /if \(ji_rest > 0\) \{[\s\S]*?htmlT3 \+=/);
+  assert.match(billingSales, /if \(t_rest > 0\) \{[\s\S]*?htmlT4 \+=/);
+  assert.match(billingSales, /\$\{htmlT2\}/);
+});
+
 test('keeps legacy Pro events on the Manage zone without breaking the grid', () => {
   assert.match(page, /boothFormFields'\)\.style\.display = 'grid';[\s\S]*?boothEventSegment'\)\.style\.display = 'none';[\s\S]*?boothWebGallerySegment'\)\.style\.display = 'none';/);
 });
