@@ -87,6 +87,17 @@ test('hides zero detail rows for JiniCis and TinaLex without changing Total B', 
   assert.match(billingSales, /\$\{htmlT2\}/);
 });
 
+test('credits direct custom services to their assigned Billing Sales owners', () => {
+  const billingSales = page.slice(page.indexOf('function computeBillingSales()'));
+  assert.match(billingSales, /const francis = parseFloat\(amts\['amt_Francis'\]\) \|\| 0;/);
+  assert.match(billingSales, /const tina = parseFloat\(amts\['amt_Tina'\]\) \|\| 0;/);
+  assert.match(billingSales, /const grace = parseFloat\(amts\['amt_Grace'\]\) \|\| 0;/);
+  assert.match(billingSales, /const netVat = sde \+ doc \+ preprod \+ high \+ vstudio \+ transpo \+ restTotal \+ francis \+ tina \+ grace;/);
+  assert.match(billingSales, /t3_JiniSum \+= \(ji_rest \+ sdeThird \+ francis\)/);
+  assert.match(billingSales, /t4_TinaSum \+= \(t_rest \+ sdeThird \+ tina\)/);
+  assert.match(billingSales, /t5_JGSum \+= \(jgSpecificOther \+ sdeThird \+ grace\)/);
+});
+
 test('keeps legacy Pro events on the Manage zone without breaking the grid', () => {
   assert.match(page, /boothFormFields'\)\.style\.display = 'grid';[\s\S]*?boothEventSegment'\)\.style\.display = 'none';[\s\S]*?boothWebGallerySegment'\)\.style\.display = 'none';/);
 });

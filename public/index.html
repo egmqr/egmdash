@@ -2292,6 +2292,9 @@
 <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video highlights" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Video highlights</label></div><input type="number" name="amt_VideoHigh" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
 <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video studio" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Video studio</label></div><input type="number" name="amt_VideoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
 <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Transpo" onchange="toggleServiceAmounts('new')"> <label class="form-check-label fw-bold text-primary">Transpo</label></div><input type="number" name="amt_Transpo" class="form-control form-control-sm mt-1 superadmin-billing-amt border-primary" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Francis" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Francis</label></div><input type="number" name="amt_Francis" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Tina" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Tina</label></div><input type="number" name="amt_Tina" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Grace" onchange="toggleServiceAmounts('new')"> <label class="form-check-label">Grace</label></div><input type="number" name="amt_Grace" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
     </div>
     
     <div class="row px-2 g-2 m-0 p-0" id="newAvpServices" style="display:none;">
@@ -2774,6 +2777,9 @@
 <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video highlights" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Video highlights</label></div><input type="number" name="amt_VideoHigh" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
 <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Video studio" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Video studio</label></div><input type="number" name="amt_VideoStudio" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
 <div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Transpo" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label fw-bold text-primary">Transpo</label></div><input type="number" name="amt_Transpo" class="form-control form-control-sm mt-1 superadmin-billing-amt border-primary" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Francis" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Francis</label></div><input type="number" name="amt_Francis" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Tina" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Tina</label></div><input type="number" name="amt_Tina" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
+<div class="col-6 col-md-4 small mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="Grace" onchange="toggleServiceAmounts('edit')"> <label class="form-check-label">Grace</label></div><input type="number" name="amt_Grace" class="form-control form-control-sm mt-1 superadmin-billing-amt" placeholder="Amount ₱" style="display:none; max-width: 120px;"></div>
     </div>
     
     <div class="row px-2 g-2 m-0 p-0" id="editAvpServices" style="display:none;">
@@ -4742,7 +4748,10 @@ function buildServiceBreakdown(serviceAmountsJson, totalAmt, colorClass, directi
         'amt_VideoHigh': 'Video Highlights',
         'amt_VideoStudio': 'Video Studio',
         'amt_Transpo': 'Transpo',
-        'amt_PreProd': 'Pre-Prod'
+        'amt_PreProd': 'Pre-Prod',
+        'amt_Francis': 'Francis',
+        'amt_Tina': 'Tina',
+        'amt_Grace': 'Grace'
     };
 
     const entries = Object.entries(amts)
@@ -10811,6 +10820,9 @@ function computeBillingSales() {
         const high = parseFloat(amts['amt_VideoHigh']) || 0;
         const vstudio = parseFloat(amts['amt_VideoStudio']) || 0;
         const transpo = parseFloat(amts['amt_Transpo']) || 0;
+        const francis = parseFloat(amts['amt_Francis']) || 0;
+        const tina = parseFloat(amts['amt_Tina']) || 0;
+        const grace = parseFloat(amts['amt_Grace']) || 0;
         // Photo group (Total A)
         const photo = parseFloat(amts['amt_Photo']) || 0;
         const photoQR = parseFloat(amts['amt_PhotoQR']) || 0;
@@ -10822,13 +10834,13 @@ function computeBillingSales() {
         // The Rest (Any field that isn't the specific ones above)
         let restTotal = 0;
         for (let key in amts) {
-            if (!['amt_VideoSDE', 'amt_VideoDoc', 'amt_PreProd', 'amt_VideoHigh', 'amt_VideoStudio', 'amt_Transpo'].includes(key)) {
+            if (!['amt_VideoSDE', 'amt_VideoDoc', 'amt_PreProd', 'amt_VideoHigh', 'amt_VideoStudio', 'amt_Transpo', 'amt_Francis', 'amt_Tina', 'amt_Grace'].includes(key)) {
                 restTotal += parseFloat(amts[key]) || 0;
             }
         }
 
         // TABLE 1 MATH (With "No Withheld" Bypass Logic)
-        const netVat = sde + doc + preprod + high + vstudio + transpo + restTotal; // Column 2
+        const netVat = sde + doc + preprod + high + vstudio + transpo + restTotal + francis + tina + grace; // Column 2
         const noWithheld = e['No Withheld'] === true;
         
         // 🟢 THE FIX: Always calculate VAT! Only zero out the 2% Withholding if the switch is ON.
@@ -10878,7 +10890,10 @@ function computeBillingSales() {
         if (sdeThird > 0) {
             htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }
-        t3_JiniSum += (ji_rest + sdeThird);
+        if (francis > 0) {
+            htmlT3 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Francis)</span></td><td class="fw-bold text-success">₱${francis.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        }
+        t3_JiniSum += (ji_rest + sdeThird + francis);
 
         // TinaLex Rows (T2 Share + SDE Share)
         if (t_rest > 0) {
@@ -10887,7 +10902,10 @@ function computeBillingSales() {
         if (sdeThird > 0) {
             htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }
-        t4_TinaSum += (t_rest + sdeThird);
+        if (tina > 0) {
+            htmlT4 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Tina)</span></td><td class="fw-bold text-success">₱${tina.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        }
+        t4_TinaSum += (t_rest + sdeThird + tina);
 
         // JG Rows (Specific Services + SDE Share)
         const jgSpecificOther = doc + preprod + high + vstudio;
@@ -10897,7 +10915,10 @@ function computeBillingSales() {
         if (sdeThird > 0) {
             htmlT5 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Video SDE)</span></td><td class="fw-bold text-success">₱${sdeThird.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
         }
-        t5_JGSum += (jgSpecificOther + sdeThird);
+        if (grace > 0) {
+            htmlT5 += `<tr><td class="text-start fw-bold">${e['Event Name']} <span class="text-info fw-normal" style="font-size: 0.75rem;">(Grace)</span></td><td class="fw-bold text-success">₱${grace.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+        }
+        t5_JGSum += (jgSpecificOther + sdeThird + grace);
 
         if (transpo > 0) {
             t6_TranspoSum += transpo;
