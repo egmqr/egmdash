@@ -108,6 +108,14 @@ test('applies payroll source rules for SDE, Grace, and Edgar deductions', () => 
   assert.match(payroll, /const graceDirect = doc \+ high \+ vstudio \+ \(parseFloat\(amts\['amt_Grace'\]\) \|\| 0\);/);
 });
 
+test('shows owner sales and payout breakdown before Transpo', () => {
+  const payroll = page.slice(page.indexOf('function renderEgmComputation()'), page.indexOf('function getDefaultPayrollPayer'));
+  assert.match(payroll, /Sales In &amp; Payout Breakdown/);
+  assert.match(payroll, /Deductions Share \(Payouts\)/);
+  assert.ok(payroll.indexOf('Sales In &amp; Payout Breakdown') < payroll.indexOf('Transpo Total'));
+  assert.match(payroll, /splits\.map\(s =>[\s\S]*?fmt\(s\.base\)[\s\S]*?fmt\(s\.deduction\)/);
+});
+
 test('keeps legacy Pro events on the Manage zone without breaking the grid', () => {
   assert.match(page, /boothFormFields'\)\.style\.display = 'grid';[\s\S]*?boothEventSegment'\)\.style\.display = 'none';[\s\S]*?boothWebGallerySegment'\)\.style\.display = 'none';/);
 });

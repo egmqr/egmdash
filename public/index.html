@@ -9345,6 +9345,32 @@ function renderEgmComputation() {
     </div>
     </div>`;
 
+    html += `<div class="card p-3 p-md-4 shadow-sm mt-3">
+        <h5 class="fw-bold text-dark mb-3">Sales In &amp; Payout Breakdown</h5>
+        <div class="table-responsive"><table class="table table-bordered table-hover align-middle mb-0">
+            <thead class="table-dark"><tr>
+                <th class="text-start border-0">Owner</th>
+                <th class="text-end border-0">Sales In Share</th>
+                <th class="text-end border-0">Unique Credits</th>
+                <th class="text-end border-0">Deductions Share (Payouts)</th>
+            </tr></thead>
+            <tbody>
+                ${splits.map(s => `<tr>
+                    <td class="fw-bold">${s.name}</td>
+                    <td class="text-end text-success">₱${fmt(s.base)}</td>
+                    <td class="text-end text-primary">₱${fmt(s.dir)}</td>
+                    <td class="text-end text-danger">₱${fmt(s.deduction)}</td>
+                </tr>`).join('')}
+                <tr class="bg-secondary bg-opacity-10 fw-bold">
+                    <td class="text-start">Total</td>
+                    <td class="text-end text-success">₱${fmt(tA_SalesIn_Pool)}</td>
+                    <td class="text-end text-primary">₱${fmt(totalUniqueCredits)}</td>
+                    <td class="text-end text-danger">₱${fmt(totalB)}</td>
+                </tr>
+            </tbody>
+        </table></div>
+    </div>`;
+
     if (t6_TranspoSum > 0) {
         const tblClass = 'table table-bordered table-hover align-middle mb-0';
         html += `<div class="card p-3 p-md-4 shadow-sm mt-3">
