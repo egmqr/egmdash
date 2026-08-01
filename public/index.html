@@ -8985,7 +8985,7 @@ if (!isConfirmed) return;
                   const uCredit = s.dir;
                   totalUnique += uCredit;
                   
-                  const bShare = totalB * s.pct; 
+                  const bShare = s.deduction;
                   const diff = (aShare + uCredit) - bShare;
                   
                   const isLeft = diff >= 0;
@@ -9145,7 +9145,7 @@ function renderEgmComputation() {
         const sdeThird = sde / 3;
 
         // 🟢 Direct Funnels (Excluded from Shared Pool)
-        const graceDirect = doc + high + vstudio;
+        const graceDirect = doc + high + vstudio + (parseFloat(amts['amt_Grace']) || 0);
         const francisDirect = parseFloat(amts['amt_Francis']) || 0;
         const tinaDirect = parseFloat(amts['amt_Tina']) || 0;
 
@@ -9191,22 +9191,43 @@ function renderEgmComputation() {
     // ---- Total B & C: Isolate Payouts vs Expenses ----
     let totalB = 0;
     let totalC = 0; 
+    const deductions = { Edgar: 0, Francis: 0, Tina: 0, Grace: 0 };
+
+    function allocateDeduction(amount, payer) {
+        if (!amount) return;
+        totalB += amount;
+        if (payer === 'SDE') {
+            const split = amount / 3;
+            deductions.Francis += split;
+            deductions.Tina += split;
+            deductions.Grace += split;
+        } else if (payer === 'Francis' || payer === 'Tina' || payer === 'Grace') {
+            deductions[payer] += amount;
+        } else {
+            deductions.Edgar += amount * 0.40;
+            deductions.Francis += amount * 0.30;
+            deductions.Tina += amount * 0.20;
+            deductions.Grace += amount * 0.10;
+        }
+    }
+
     Object.keys(currentPayrollData).forEach(pName => {
         const person = currentPayrollData[pName];
         person.events.forEach(ev => {
-            if (ev.payer === 'Edgar(EGM)') totalB += (ev.basePay || 0) + (ev.extraPay || 0);
-            else if (ev.payer === 'CreatED Expenses') totalC += (ev.basePay || 0) + (ev.extraPay || 0); 
+            const amount = (ev.basePay || 0) + (ev.extraPay || 0);
+            if (ev.payer === 'CreatED Expenses') totalC += amount;
+            else allocateDeduction(amount, ev.payer);
         });
         if (person.expensePayer === 'Edgar(EGM)' || person.expensePayer === 'CreatED Expenses') totalC += person.expenses || 0;
-        if (person.miscPayer === 'Edgar(EGM)') totalB += person.misc || 0; 
-        else if (person.miscPayer === 'CreatED Expenses') totalC += person.misc || 0;
+        if (person.miscPayer === 'CreatED Expenses') totalC += person.misc || 0;
+        else allocateDeduction(person.misc || 0, person.miscPayer);
     });
 
     const splits = [
-        { name: 'Edgar',   base: tA_Edgar_Base,   dir: 0,              pct: 0.40 },
-        { name: 'Francis', base: tA_Francis_Base, dir: tA_Francis_Dir, pct: 0.30 },
-        { name: 'Tina',    base: tA_Tina_Base,    dir: tA_Tina_Dir,    pct: 0.20 },
-        { name: 'Grace',   base: tA_Grace_Base,   dir: tA_Grace_Dir,   pct: 0.10 }
+        { name: 'Edgar',   base: tA_Edgar_Base,   dir: 0,              deduction: deductions.Edgar },
+        { name: 'Francis', base: tA_Francis_Base, dir: tA_Francis_Dir, deduction: deductions.Francis },
+        { name: 'Tina',    base: tA_Tina_Base,    dir: tA_Tina_Dir,    deduction: deductions.Tina },
+        { name: 'Grace',   base: tA_Grace_Base,   dir: tA_Grace_Dir,   deduction: deductions.Grace }
     ];
 
     currentEgmComputation = {
@@ -9286,7 +9307,7 @@ function renderEgmComputation() {
         const uCredit = s.dir;
         totalUniqueCredits += uCredit;
         
-        const bShare = totalB * s.pct; 
+        const bShare = s.deduction;
         
         // 🟢 Balance Math: Base Share + Unique Credits - Deductions
         const diff = (aShare + uCredit) - bShare;
@@ -9347,6 +9368,24 @@ function renderEgmComputation() {
 }
 
 // Engine: Aggregate the data using the Dynamic Rates (With Auto-Expenses & Overlap Protection!)
+function getDefaultPayrollPayer(name, event) {
+    const serviceAmounts = (() => {
+        try { return JSON.parse(event['Service Amounts JSON'] || '{}'); } catch (error) { return {}; }
+    })();
+    const services = String(event['Services'] || '').toLowerCase();
+    const hasSde = services.includes('video sde') || (parseFloat(serviceAmounts.amt_VideoSDE) || 0) > 0;
+    const hasGraceService = services.includes('video documentation') || services.includes('video highlights') ||
+        services.includes('video studio') || services.split(/\s*,\s*/).includes('grace') ||
+        (parseFloat(serviceAmounts.amt_VideoDoc) || 0) > 0 ||
+        (parseFloat(serviceAmounts.amt_VideoHigh) || 0) > 0 ||
+        (parseFloat(serviceAmounts.amt_VideoStudio) || 0) > 0 ||
+        (parseFloat(serviceAmounts.amt_Grace) || 0) > 0;
+
+    if (hasSde && ['Joram', 'Jun', 'Tatalino', 'Roy', 'Smile'].includes(name)) return 'SDE';
+    if (hasGraceService) return 'Grace';
+    return 'Edgar(EGM)';
+}
+
 async function runPayrollEngine(forceNewRates = false) {
     const start = document.getElementById('prStartDate').value;
     const end = document.getElementById('prEndDate').value;
@@ -9583,7 +9622,7 @@ async function runPayrollEngine(forceNewRates = false) {
                 }
 
                 let oldEv = getOldEvent(c, evId, 'Crew');
-                let payer = 'Edgar(EGM)';
+                let payer = getDefaultPayrollPayer(c, e);
                 if (oldEv) {
                     if (!forceNewRates) rate = oldEv.basePay; 
                     extra = oldEv.extraPay; 

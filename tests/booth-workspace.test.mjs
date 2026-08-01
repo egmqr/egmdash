@@ -98,6 +98,15 @@ test('credits direct custom services to their assigned Billing Sales owners', ()
   assert.match(billingSales, /t5_JGSum \+= \(jgSpecificOther \+ sdeThird \+ grace\)/);
 });
 
+test('applies payroll source rules for SDE, Grace, and Edgar deductions', () => {
+  const payroll = page.slice(page.indexOf('function renderEgmComputation()'), page.indexOf('function initPayrollPerson(name)'));
+  assert.match(payroll, /if \(payer === 'SDE'\) \{[\s\S]*?deductions\.Francis \+= split;[\s\S]*?deductions\.Tina \+= split;[\s\S]*?deductions\.Grace \+= split;/);
+  assert.match(payroll, /deductions\.Edgar \+= amount \* 0\.40;[\s\S]*?deductions\.Francis \+= amount \* 0\.30;[\s\S]*?deductions\.Tina \+= amount \* 0\.20;[\s\S]*?deductions\.Grace \+= amount \* 0\.10;/);
+  assert.match(payroll, /function getDefaultPayrollPayer\(name, event\)[\s\S]*?if \(hasSde && \['Joram', 'Jun', 'Tatalino', 'Roy', 'Smile'\]\.includes\(name\)\) return 'SDE';[\s\S]*?if \(hasGraceService\) return 'Grace';/);
+  assert.match(payroll, /let payer = getDefaultPayrollPayer\(c, e\);/);
+  assert.match(payroll, /const graceDirect = doc \+ high \+ vstudio \+ \(parseFloat\(amts\['amt_Grace'\]\) \|\| 0\);/);
+});
+
 test('keeps legacy Pro events on the Manage zone without breaking the grid', () => {
   assert.match(page, /boothFormFields'\)\.style\.display = 'grid';[\s\S]*?boothEventSegment'\)\.style\.display = 'none';[\s\S]*?boothWebGallerySegment'\)\.style\.display = 'none';/);
 });
