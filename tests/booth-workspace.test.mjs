@@ -102,7 +102,7 @@ test('applies payroll source rules for SDE, Grace, and Edgar deductions', () => 
   const payroll = page.slice(page.indexOf('function renderEgmComputation()'), page.indexOf('function initPayrollPerson(name)'));
   assert.match(payroll, /if \(payer === 'SDE'\) \{[\s\S]*?deductions\.Francis \+= split;[\s\S]*?deductions\.Tina \+= split;[\s\S]*?deductions\.Grace \+= split;/);
   assert.match(payroll, /deductions\.Edgar \+= amount \* 0\.40;[\s\S]*?deductions\.Francis \+= amount \* 0\.30;[\s\S]*?deductions\.Tina \+= amount \* 0\.20;[\s\S]*?deductions\.Grace \+= amount \* 0\.10;/);
-  assert.match(payroll, /function getDefaultPayrollPayer\(name, event\)[\s\S]*?if \(hasSde && \['Joram', 'Jun', 'Tatalino', 'Roy', 'Smile'\]\.includes\(name\)\) return 'SDE';[\s\S]*?if \(hasGraceService\) return 'Grace';/);
+  assert.match(payroll, /const sourceCrew = \['Joram', 'Jun', 'Tatalino', 'Roy', 'Smile'\];[\s\S]*?if \(hasSde && sourceCrew\.includes\(name\)\) return 'SDE';[\s\S]*?if \(hasGraceService && sourceCrew\.includes\(name\)\) return 'Grace';/);
   assert.match(payroll, /let payer = getDefaultPayrollPayer\(c, e\);/);
   assert.match(payroll, /if \(oldEv\.payer && oldEv\.payer !== 'Edgar\(EGM\)'\) payer = oldEv\.payer;/);
   assert.match(payroll, /const graceDirect = doc \+ high \+ vstudio \+ \(parseFloat\(amts\['amt_Grace'\]\) \|\| 0\);/);

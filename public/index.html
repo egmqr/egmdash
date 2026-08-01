@@ -9381,8 +9381,9 @@ function getDefaultPayrollPayer(name, event) {
         (parseFloat(serviceAmounts.amt_VideoStudio) || 0) > 0 ||
         (parseFloat(serviceAmounts.amt_Grace) || 0) > 0;
 
-    if (hasSde && ['Joram', 'Jun', 'Tatalino', 'Roy', 'Smile'].includes(name)) return 'SDE';
-    if (hasGraceService) return 'Grace';
+    const sourceCrew = ['Joram', 'Jun', 'Tatalino', 'Roy', 'Smile'];
+    if (hasSde && sourceCrew.includes(name)) return 'SDE';
+    if (hasGraceService && sourceCrew.includes(name)) return 'Grace';
     return 'Edgar(EGM)';
 }
 
