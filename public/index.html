@@ -9626,7 +9626,8 @@ async function runPayrollEngine(forceNewRates = false) {
                 if (oldEv) {
                     if (!forceNewRates) rate = oldEv.basePay; 
                     extra = oldEv.extraPay; 
-                    payer = oldEv.payer || 'Edgar(EGM)';
+                    // Legacy payrolls used Edgar by default. Reapply new service defaults on merge.
+                    if (oldEv.payer && oldEv.payer !== 'Edgar(EGM)') payer = oldEv.payer;
                 }
 
                 currentPayrollData[c].events.push({ doc: e, role: 'Crew', basePay: rate, extraPay: extra, payer: payer, isHalfDay: isHalfDay, isSubsequent: isSubsequent, isCustom: isCustom });

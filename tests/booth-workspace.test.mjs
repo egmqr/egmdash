@@ -104,6 +104,7 @@ test('applies payroll source rules for SDE, Grace, and Edgar deductions', () => 
   assert.match(payroll, /deductions\.Edgar \+= amount \* 0\.40;[\s\S]*?deductions\.Francis \+= amount \* 0\.30;[\s\S]*?deductions\.Tina \+= amount \* 0\.20;[\s\S]*?deductions\.Grace \+= amount \* 0\.10;/);
   assert.match(payroll, /function getDefaultPayrollPayer\(name, event\)[\s\S]*?if \(hasSde && \['Joram', 'Jun', 'Tatalino', 'Roy', 'Smile'\]\.includes\(name\)\) return 'SDE';[\s\S]*?if \(hasGraceService\) return 'Grace';/);
   assert.match(payroll, /let payer = getDefaultPayrollPayer\(c, e\);/);
+  assert.match(payroll, /if \(oldEv\.payer && oldEv\.payer !== 'Edgar\(EGM\)'\) payer = oldEv\.payer;/);
   assert.match(payroll, /const graceDirect = doc \+ high \+ vstudio \+ \(parseFloat\(amts\['amt_Grace'\]\) \|\| 0\);/);
 });
 
