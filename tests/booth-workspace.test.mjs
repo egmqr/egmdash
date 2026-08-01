@@ -100,20 +100,20 @@ test('credits direct custom services to their assigned Billing Sales owners', ()
 
 test('applies payroll source rules for SDE, Grace, and Edgar deductions', () => {
   const payroll = page.slice(page.indexOf('function renderEgmComputation()'), page.indexOf('function initPayrollPerson(name)'));
-  assert.match(payroll, /if \(payer === 'SDE'\) \{[\s\S]*?deductions\.Francis \+= split;[\s\S]*?deductions\.Tina \+= split;[\s\S]*?deductions\.Grace \+= split;/);
-  assert.match(payroll, /deductions\.Edgar \+= amount \* 0\.40;[\s\S]*?deductions\.Francis \+= amount \* 0\.30;[\s\S]*?deductions\.Tina \+= amount \* 0\.20;[\s\S]*?deductions\.Grace \+= amount \* 0\.10;/);
+  assert.match(payroll, /if \(payer === 'SDE'\) \{[\s\S]*?target\.Francis \+= split;[\s\S]*?target\.Tina \+= split;[\s\S]*?target\.Grace \+= split;/);
+  assert.match(payroll, /target\.Edgar \+= amount \* 0\.40;[\s\S]*?target\.Francis \+= amount \* 0\.30;[\s\S]*?target\.Tina \+= amount \* 0\.20;[\s\S]*?target\.Grace \+= amount \* 0\.10;/);
   assert.match(payroll, /const sourceCrew = \['Joram', 'Jun', 'Tatalino', 'Roy', 'Smile'\];[\s\S]*?if \(hasSde && sourceCrew\.includes\(name\)\) return 'SDE';[\s\S]*?if \(hasGraceService && sourceCrew\.includes\(name\)\) return 'Grace';/);
   assert.match(payroll, /let payer = getDefaultPayrollPayer\(c, e\);/);
   assert.match(payroll, /if \(oldEv\.payer && oldEv\.payer !== 'Edgar\(EGM\)'\) payer = oldEv\.payer;/);
   assert.match(payroll, /const graceDirect = doc \+ high \+ vstudio \+ \(parseFloat\(amts\['amt_Grace'\]\) \|\| 0\);/);
 });
 
-test('shows owner sales and payout breakdown before Transpo', () => {
+test('shows per-event sales and payout breakdown before Transpo', () => {
   const payroll = page.slice(page.indexOf('function renderEgmComputation()'), page.indexOf('function getDefaultPayrollPayer'));
-  assert.match(payroll, /Sales In &amp; Payout Breakdown/);
+  assert.match(payroll, /Per-Event Sales In &amp; Payout Breakdown/);
   assert.match(payroll, /Deductions Share \(Payouts\)/);
-  assert.ok(payroll.indexOf('Sales In &amp; Payout Breakdown') < payroll.indexOf('Transpo Total'));
-  assert.match(payroll, /splits\.map\(s =>[\s\S]*?fmt\(s\.base\)[\s\S]*?fmt\(s\.deduction\)/);
+  assert.ok(payroll.indexOf('Per-Event Sales In &amp; Payout Breakdown') < payroll.indexOf('Transpo Total'));
+  assert.match(payroll, /eventBreakdownRows[\s\S]*?event\.sales\[name\][\s\S]*?event\.deductions\[name\]/);
 });
 
 test('keeps legacy Pro events on the Manage zone without breaking the grid', () => {

@@ -9114,6 +9114,39 @@ function renderEgmComputation() {
     let htmlTotalABreakdown = ''; 
     let tA_SalesIn_Pool = 0; 
     const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2});
+    const ownerNames = ['Edgar', 'Francis', 'Tina', 'Grace'];
+    const eventBreakdowns = {};
+
+    function getEventBreakdown(event) {
+        const id = event['Event ID'];
+        if (!id) return null;
+        if (!eventBreakdowns[id]) {
+            eventBreakdowns[id] = {
+                date: event['Event Date'] || '', name: event['Event Name'] || 'Unnamed Event',
+                sales: { Edgar: 0, Francis: 0, Tina: 0, Grace: 0 },
+                credits: { Edgar: 0, Francis: 0, Tina: 0, Grace: 0 },
+                deductions: { Edgar: 0, Francis: 0, Tina: 0, Grace: 0 }
+            };
+        }
+        return eventBreakdowns[id];
+    }
+
+    function distributeDeduction(target, amount, payer) {
+        if (!amount) return;
+        if (payer === 'SDE') {
+            const split = amount / 3;
+            target.Francis += split;
+            target.Tina += split;
+            target.Grace += split;
+        } else if (payer === 'Francis' || payer === 'Tina' || payer === 'Grace') {
+            target[payer] += amount;
+        } else {
+            target.Edgar += amount * 0.40;
+            target.Francis += amount * 0.30;
+            target.Tina += amount * 0.20;
+            target.Grace += amount * 0.10;
+        }
+    }
 
     // Use the validProjects array to iterate ONLY ONCE per project
     validProjects.forEach(ev => {
@@ -9153,6 +9186,14 @@ function renderEgmComputation() {
         const tA_francis_row = (photoGroup * 0.30) + sdeThird;
         const tA_tina_row    = (photoGroup * 0.20) + sdeThird;
         const tA_grace_row   = (photoGroup * 0.10) + sdeThird;
+        const eventBreakdown = getEventBreakdown(ev);
+        eventBreakdown.sales.Edgar += tA_edgar_row;
+        eventBreakdown.sales.Francis += tA_francis_row;
+        eventBreakdown.sales.Tina += tA_tina_row;
+        eventBreakdown.sales.Grace += tA_grace_row;
+        eventBreakdown.credits.Francis += francisDirect;
+        eventBreakdown.credits.Tina += tinaDirect;
+        eventBreakdown.credits.Grace += graceDirect;
 
         tA_SalesIn_Pool += (photoGroup + sde); // Keeps master Total A accurate
 
@@ -9196,19 +9237,7 @@ function renderEgmComputation() {
     function allocateDeduction(amount, payer) {
         if (!amount) return;
         totalB += amount;
-        if (payer === 'SDE') {
-            const split = amount / 3;
-            deductions.Francis += split;
-            deductions.Tina += split;
-            deductions.Grace += split;
-        } else if (payer === 'Francis' || payer === 'Tina' || payer === 'Grace') {
-            deductions[payer] += amount;
-        } else {
-            deductions.Edgar += amount * 0.40;
-            deductions.Francis += amount * 0.30;
-            deductions.Tina += amount * 0.20;
-            deductions.Grace += amount * 0.10;
-        }
+        distributeDeduction(deductions, amount, payer);
     }
 
     Object.keys(currentPayrollData).forEach(pName => {
@@ -9216,7 +9245,11 @@ function renderEgmComputation() {
         person.events.forEach(ev => {
             const amount = (ev.basePay || 0) + (ev.extraPay || 0);
             if (ev.payer === 'CreatED Expenses') totalC += amount;
-            else allocateDeduction(amount, ev.payer);
+            else {
+                allocateDeduction(amount, ev.payer);
+                const eventBreakdown = ev.doc && getEventBreakdown(ev.doc);
+                if (eventBreakdown) distributeDeduction(eventBreakdown.deductions, amount, ev.payer);
+            }
         });
         if (person.expensePayer === 'Edgar(EGM)' || person.expensePayer === 'CreatED Expenses') totalC += person.expenses || 0;
         if (person.miscPayer === 'CreatED Expenses') totalC += person.misc || 0;
@@ -9345,8 +9378,18 @@ function renderEgmComputation() {
     </div>
     </div>`;
 
+    const eventBreakdownRows = Object.values(eventBreakdowns)
+        .sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name))
+        .map(event => `<tr class="table-secondary"><td colspan="4" class="fw-bold text-dark">${event.date} · ${event.name}</td></tr>
+            ${ownerNames.map(name => `<tr>
+                <td class="ps-4 fw-bold">${name}</td>
+                <td class="text-end text-success">₱${fmt(event.sales[name])}</td>
+                <td class="text-end text-primary">₱${fmt(event.credits[name])}</td>
+                <td class="text-end text-danger">₱${fmt(event.deductions[name])}</td>
+            </tr>`).join('')}`).join('');
+
     html += `<div class="card p-3 p-md-4 shadow-sm mt-3">
-        <h5 class="fw-bold text-dark mb-3">Sales In &amp; Payout Breakdown</h5>
+        <h5 class="fw-bold text-dark mb-3">Per-Event Sales In &amp; Payout Breakdown</h5>
         <div class="table-responsive"><table class="table table-bordered table-hover align-middle mb-0">
             <thead class="table-dark"><tr>
                 <th class="text-start border-0">Owner</th>
@@ -9355,18 +9398,7 @@ function renderEgmComputation() {
                 <th class="text-end border-0">Deductions Share (Payouts)</th>
             </tr></thead>
             <tbody>
-                ${splits.map(s => `<tr>
-                    <td class="fw-bold">${s.name}</td>
-                    <td class="text-end text-success">₱${fmt(s.base)}</td>
-                    <td class="text-end text-primary">₱${fmt(s.dir)}</td>
-                    <td class="text-end text-danger">₱${fmt(s.deduction)}</td>
-                </tr>`).join('')}
-                <tr class="bg-secondary bg-opacity-10 fw-bold">
-                    <td class="text-start">Total</td>
-                    <td class="text-end text-success">₱${fmt(tA_SalesIn_Pool)}</td>
-                    <td class="text-end text-primary">₱${fmt(totalUniqueCredits)}</td>
-                    <td class="text-end text-danger">₱${fmt(totalB)}</td>
-                </tr>
+                ${eventBreakdownRows || '<tr><td colspan="4" class="text-center text-muted py-3 fst-italic">No event breakdown available for this period</td></tr>'}
             </tbody>
         </table></div>
     </div>`;
