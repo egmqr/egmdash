@@ -9378,6 +9378,25 @@ function renderEgmComputation() {
     </div>
     </div>`;
 
+    if (t6_TranspoSum > 0) {
+        const tblClass = 'table table-bordered table-hover align-middle mb-0';
+        html += `<div class="card p-3 p-md-4 shadow-sm mt-3">
+        <h5 class="fw-bold text-dark mb-3">Transpo Total</h5>
+        <div class="table-responsive"><table class="${tblClass}">
+            <thead class="table-dark"><tr>
+                <th class="text-start border-0">Event Name</th>
+                <th class="border-0">Transpo Amount</th>
+            </tr></thead>
+            <tbody>
+                ${htmlT6}
+                <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td>
+                    <td class="text-success fw-bold">₱${fmt(t6_TranspoSum)}</td>
+                </tr>
+            </tbody>
+        </table></div>
+        </div>`;
+    }
+
     const eventBreakdownRows = Object.values(eventBreakdowns)
         .sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name))
         .map(event => `<tr class="table-secondary"><td colspan="4" class="fw-bold text-dark">${event.date} · ${event.name}</td></tr>
@@ -9402,25 +9421,6 @@ function renderEgmComputation() {
             </tbody>
         </table></div>
     </div>`;
-
-    if (t6_TranspoSum > 0) {
-        const tblClass = 'table table-bordered table-hover align-middle mb-0';
-        html += `<div class="card p-3 p-md-4 shadow-sm mt-3">
-        <h5 class="fw-bold text-dark mb-3">Transpo Total</h5>
-        <div class="table-responsive"><table class="${tblClass}">
-            <thead class="table-dark"><tr>
-                <th class="text-start border-0">Event Name</th>
-                <th class="border-0">Transpo Amount</th>
-            </tr></thead>
-            <tbody>
-                ${htmlT6}
-                <tr class="bg-success bg-opacity-10 fw-bold"><td class="text-start">Total</td>
-                    <td class="text-success fw-bold">₱${fmt(t6_TranspoSum)}</td>
-                </tr>
-            </tbody>
-        </table></div>
-        </div>`;
-    }
 
     container.innerHTML = html;
 }

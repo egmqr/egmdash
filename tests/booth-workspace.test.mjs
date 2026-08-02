@@ -112,7 +112,7 @@ test('shows per-event sales and payout breakdown before Transpo', () => {
   const payroll = page.slice(page.indexOf('function renderEgmComputation()'), page.indexOf('function getDefaultPayrollPayer'));
   assert.match(payroll, /Per-Event Sales In &amp; Payout Breakdown/);
   assert.match(payroll, /Deductions Share \(Payouts\)/);
-  assert.ok(payroll.indexOf('Per-Event Sales In &amp; Payout Breakdown') < payroll.indexOf('Transpo Total'));
+  assert.ok(payroll.indexOf('Transpo Total') < payroll.indexOf('Per-Event Sales In &amp; Payout Breakdown'));
   assert.match(payroll, /eventBreakdownRows[\s\S]*?event\.sales\[name\][\s\S]*?event\.deductions\[name\]/);
 });
 
