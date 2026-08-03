@@ -2,6 +2,7 @@
 // in Gallery/index.html doesn't need to change beyond pointing API_URL here.
 
 import { json, decodeBase64, safePrefix } from './util.js';
+import { compareTimeline, timelineForObject } from './timeline.js';
 
 // GLOBAL MEMORY CACHE: Prevents R2 billing spikes by sharing the 
 // photo list across all guests connected to this Cloudflare node.
@@ -28,17 +29,18 @@ export async function handleGalleryRoutes(request, env, ctx) {
         const tail = o.key.slice(prefix.length + 1);
         return !tail.includes('/') && /\.(jpe?g|png|webp)$/i.test(o.key);
       })
+      .sort((a, b) => compareTimeline(b, a))
       .map(o => {
         const filename = o.key.split('/').pop();
+        const timeline = timelineForObject(o);
         return [
           o.key,                    // id (was: file.id)
           filename,                 // name
           `${cdn}/${o.key}`,        // full-resolution URL (used for grid AND viewer)
-          o.uploaded.getTime(),     // sort time
+          timeline.time,            // capture time (legacy: R2 upload time)
           `/api/download-photo?key=${encodeURIComponent(o.key)}&filename=${encodeURIComponent(filename)}`
         ];
-      })
-      .sort((a, b) => b[3] - a[3]);
+      });
 
     return json({ status: 'success', data });
   }
@@ -178,7 +180,9 @@ async function streamLiveUpdates(env, prefix, writer, encoder) {
         items = cache.items;
       }
 
-      const files = items.filter(o => !o.key.slice(prefix.length + 1).includes('/') && /\.(jpe?g|png|webp)$/i.test(o.key));
+      const files = items
+        .filter(o => !o.key.slice(prefix.length + 1).includes('/') && /\.(jpe?g|png|webp)$/i.test(o.key))
+        .sort(compareTimeline);
       const currentKeys = new Set(files.map(f => f.key)); // Store current keys for comparison
 
       if (!isFirstRun) {
@@ -191,7 +195,7 @@ async function streamLiveUpdates(env, prefix, writer, encoder) {
               name: file.key.split('/').pop(),
               baseUrl: `${cdn}/${file.key}`,
               downloadUrl: `/api/download-photo?key=${encodeURIComponent(file.key)}&filename=${encodeURIComponent(file.key.split('/').pop())}`,
-              time: file.uploaded.getTime()
+              time: timelineForObject(file).time
             };
             await writer.write(encoder.encode(`event: new_photo\ndata: ${JSON.stringify(data)}\n\n`));
           }

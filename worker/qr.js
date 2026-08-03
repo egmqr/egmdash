@@ -1,6 +1,7 @@
 // Replaces QR/Code.js. Uses KV for session/photo counters per prefix.
 
 import { json, safePrefix } from './util.js';
+import { compareTimeline, timelineForObject } from './timeline.js';
 
 export async function handleQRRoutes(request, env, ctx) {
   const url = new URL(request.url);
@@ -23,7 +24,7 @@ export async function handleQRRoutes(request, env, ctx) {
         const all = await listAll(env, prefix + '/');
         const sorted = all
           .filter(o => !o.key.slice(prefix.length + 1).includes('/'))
-          .sort((a, b) => a.uploaded - b.uploaded);
+          .sort(compareTimeline);
         if (sorted.length >= n && n > 0) {
           return json({ status: 'success', data: [photoUrls(env, prefix, sorted[n - 1].key)] });
         }
@@ -63,10 +64,10 @@ export async function handleQRRoutes(request, env, ctx) {
         const tail = o.key.slice(prefix.length + 1);
         return !tail.includes('/') && re.test(tail);
       })
-      .sort((a, b) => b.uploaded - a.uploaded)
+      .sort((a, b) => compareTimeline(b, a))
       .map(o => {
         const u = photoUrls(env, prefix, o.key);
-        const d = new Date(o.uploaded);
+        const d = new Date(timelineForObject(o).time);
         u.displayTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         return u;
       });
