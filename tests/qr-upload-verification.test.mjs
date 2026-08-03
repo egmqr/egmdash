@@ -69,6 +69,20 @@ test('verify upload rejects non-event key', async () => {
   assert.deepEqual(await response.json(), { error: 'Invalid key' });
 });
 
+test('verify upload rejects a non-string key', async () => {
+  const response = await handleSignedUpload(verifyRequest(1), envWithHead(true));
+
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'Invalid key' });
+});
+
+test('verify upload rejects a missing key', async () => {
+  const response = await handleSignedUpload(verifyRequest(undefined), envWithHead(true));
+
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'Invalid key' });
+});
+
 test('photo QR finds second-page object', async () => {
   const env = pagedEnvWithMatchOnSecondPage();
   const response = await handleQRRoutes(photoRequest('p0201'), env);
