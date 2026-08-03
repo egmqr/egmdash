@@ -42,7 +42,7 @@ export default {
       }
 
       // ── Booth presigned uploads (NEW — direct WPF→R2) ──────────────────
-      if (path === '/api/sign-upload') {
+      if (path === '/api/sign-upload' || path === '/api/verify-upload') {
         return cors(await handleSignedUpload(request, env));
       }
 

@@ -14,6 +14,12 @@ export async function handleSignedUpload(request, env) {
   }
 
   const body = await request.json();
+  if (new URL(request.url).pathname === '/api/verify-upload') {
+    const { key } = body;
+    if (typeof key !== 'string' || !key.startsWith('events/')) return json({ error: 'Invalid key' }, 400);
+    return json({ exists: Boolean(await env.PHOTOS.head(key)) });
+  }
+
   const prefix = safePrefix(body.prefix);
   if (!prefix) return json({ error: 'Invalid prefix' }, 400);
 
