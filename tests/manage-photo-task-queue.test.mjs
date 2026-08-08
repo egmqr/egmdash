@@ -52,3 +52,19 @@ test('renders task progress above Manage Photos controls', () => {
   assert.match(page, /Keep this window open\. Closing it interrupts active and queued tasks\./);
   assert.match(page, /function renderManageTaskQueue\(snapshot\)/);
 });
+
+test('routes every Manage Photos mutation through one queue', () => {
+  const deletionSection = page.slice(
+    page.indexOf('async function deleteSingleManagePhoto'),
+    page.indexOf('async function fetchManagePhotoBlob')
+  );
+  const uploadSection = page.slice(
+    page.indexOf('async function uploadManageFiles'),
+    page.indexOf('async function deleteUserSticker')
+  );
+
+  assert.equal((deletionSection.match(/managePhotoTaskQueue\.enqueue\(/g) || []).length, 2);
+  assert.match(uploadSection, /managePhotoTaskQueue\.enqueue\(/);
+  assert.doesNotMatch(deletionSection, /submitOverlay/);
+  assert.doesNotMatch(uploadSection, /submitOverlay/);
+});

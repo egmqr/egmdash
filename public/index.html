@@ -7761,46 +7761,54 @@ function setBoothMode(mode, activateWorkspace = false) {
 
   async function deleteSingleManagePhoto(key) {
     if (!confirm('Permanently delete this photo?')) return;
-    const ov = document.getElementById('submitOverlay');
-    document.getElementById('overlayText').innerText = 'Deleting...';
-    ov.style.display = 'flex';
-
-    const res = await callWorkerApi('/api/dashboard/delete-file', { key });
-    if (res && res.success) {
-      managePhotosData = managePhotosData.filter(item => item[0] !== key);
-      unmarkDeletedManagePhoto(key);
-      renderManageGrid();
-      showToast('Photo deleted', 'success');
-    } else {
-      showToast('Failed to delete photo', 'danger');
-    }
-    ov.style.display = 'none';
+    getManagePhotoTaskQueue();
+    const task = managePhotoTaskQueue.enqueue({
+      label: 'Delete 1 photo',
+      total: 1,
+      run: async (updateProgress) => {
+        const res = await callWorkerApi('/api/dashboard/delete-file', { key });
+        if (!res?.success) throw new Error('Failed to delete photo');
+        managePhotosData = managePhotosData.filter(item => item[0] !== key);
+        unmarkDeletedManagePhoto(key);
+        renderManageGrid();
+        updateProgress(1);
+        await refreshManagePhotos({ preserveSelection: true });
+        showToast('Photo deleted', 'success');
+      }
+    });
+    if (task.queuePosition > 1) showToast(`Queued behind ${task.queuePosition - 1} task(s).`, 'info');
+    task.catch(error => showToast(error.message, 'danger'));
   }
 
   async function deleteSelectedManagePhotos() {
     const checkboxes = document.querySelectorAll('input[id^="manage_cb_"]:checked');
     if (checkboxes.length === 0) return showToast('No photos selected', 'warning');
     if (!confirm(`Permanently delete ${checkboxes.length} selected photos?`)) return;
-
-    const ov = document.getElementById('submitOverlay');
-    document.getElementById('overlayText').innerText = 'Deleting files from R2...';
-    updateOverlayProgress(0, checkboxes.length, 'Deleted');
-    ov.style.display = 'flex';
-
-    let deletedCount = 0;
-    for (const cb of checkboxes) {
-      const key = cb.getAttribute('data-key');
-      await callWorkerApi('/api/dashboard/delete-file', { key });
-      managePhotosData = managePhotosData.filter(item => item[0] !== key);
-      unmarkDeletedManagePhoto(key);
-      deletedCount++;
-      document.getElementById('overlayText').innerText = `Deleting ${deletedCount} of ${checkboxes.length} photos...`;
-      updateOverlayProgress(deletedCount, checkboxes.length, 'Deleted');
-    }
-    renderManageGrid();
-    resetOverlayProgress();
-    ov.style.display = 'none';
-    showToast('Selected photos deleted', 'success');
+    const keys = [...checkboxes].map(cb => cb.getAttribute('data-key')).filter(Boolean);
+    getManagePhotoTaskQueue();
+    const task = managePhotoTaskQueue.enqueue({
+      label: `Delete ${keys.length} photo${keys.length === 1 ? '' : 's'}`,
+      total: keys.length,
+      run: async (updateProgress) => {
+        let failed = 0;
+        for (let index = 0; index < keys.length; index++) {
+          const res = await callWorkerApi('/api/dashboard/delete-file', { key: keys[index] });
+          if (res?.success) {
+            managePhotosData = managePhotosData.filter(item => item[0] !== keys[index]);
+            unmarkDeletedManagePhoto(keys[index]);
+          } else {
+            failed++;
+          }
+          updateProgress(index + 1);
+        }
+        renderManageGrid();
+        await refreshManagePhotos({ preserveSelection: true });
+        if (failed) throw new Error(`Failed to delete ${failed} photo${failed === 1 ? '' : 's'}`);
+        showToast('Selected photos deleted', 'success');
+      }
+    });
+    if (task.queuePosition > 1) showToast(`Queued behind ${task.queuePosition - 1} task(s).`, 'info');
+    task.catch(error => showToast(error.message, 'danger'));
   }
 
   async function fetchManagePhotoBlob(item) {
@@ -8279,6 +8287,12 @@ async function fetchExistingLogos(forceRefresh = false) {
     if (managePhotoTaskQueue || !window.ManagePhotoTaskQueue) return;
     managePhotoTaskQueue = new window.ManagePhotoTaskQueue({ onChange: renderManageTaskQueue });
     renderManageTaskQueue(managePhotoTaskQueue.snapshot());
+  }
+
+  function getManagePhotoTaskQueue() {
+    initializeManagePhotoTaskQueue();
+    if (!managePhotoTaskQueue) throw new Error('Photo task queue is unavailable. Please reload the page.');
+    return managePhotoTaskQueue;
   }
 
   window.addEventListener('manage-photo-task-queue-ready', initializeManagePhotoTaskQueue);
@@ -11922,20 +11936,20 @@ async function runExpenseRecompute() {
   async function uploadManageFiles(files) {
     if (!currentManagePrefix) return showToast('No booth prefix found.', 'danger');
 
-    const progress = document.getElementById('manageUploadProgress');
-    const bar = document.getElementById('manageUploadBar');
-    const statusText = document.getElementById('manageUploadStatusText');
-    progress.style.display = 'block';
+    const uploadPrefix = currentManagePrefix;
+    getManagePhotoTaskQueue();
+    const task = managePhotoTaskQueue.enqueue({
+      label: `Upload ${files.length} photo${files.length === 1 ? '' : 's'}`,
+      total: files.length,
+      run: async (updateProgress) => {
 
     let uploaded = 0;
     let failed = 0;
     for (const file of files) {
-      statusText.innerText = `Uploading ${uploaded + failed + 1} of ${files.length}…`;
-
       try {
         // Always encode as JPEG to avoid worker filename/MIME rejections
         const filename = `upload_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
-        const prefix = currentManagePrefix;
+        const prefix = uploadPrefix;
 
         // Re-encode via canvas to guarantee JPEG output
         const blob = await new Promise((resolve, reject) => {
@@ -11983,7 +11997,7 @@ async function runExpenseRecompute() {
         showToast(`Failed to upload ${file.name}: ${e.message}`, 'danger');
       }
 
-      bar.style.width = `${Math.round(((uploaded + failed) / files.length) * 100)}%`;
+      updateProgress(uploaded + failed);
     }
 
     // Refresh the grid directly without re-calling openManageModal (avoids state conflicts)
@@ -11991,8 +12005,12 @@ async function runExpenseRecompute() {
       await refreshManagePhotos({ preserveSelection: true });
     } catch (e) { /* silent — photos still uploaded */ }
 
-    statusText.innerText = `${uploaded} image${uploaded !== 1 ? 's' : ''} uploaded${failed ? `, ${failed} failed` : ''}!`;
-    setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0%'; }, 2500);
+    if (failed) throw new Error(`${failed} upload${failed === 1 ? '' : 's'} failed`);
+    showToast(`${uploaded} image${uploaded === 1 ? '' : 's'} uploaded`, 'success');
+      }
+    });
+    if (task.queuePosition > 1) showToast(`Queued behind ${task.queuePosition - 1} task(s).`, 'info');
+    task.catch(error => showToast(error.message, 'danger'));
   }
 
 
