@@ -1318,6 +1318,12 @@
       <button onclick="closeManageModal()"
         style="background: none; border: none; color: #64748b; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
+    <div id="manageTaskQueue" style="padding: 10px 20px; border-bottom: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a5f;">
+      <div id="manageTaskQueueStatus" style="font-size: 0.82rem; font-weight: 800;">No photo tasks running</div>
+      <div id="manageTaskQueuePending" style="margin-top: 3px; font-size: 0.75rem; color: #475569;"></div>
+      <div id="manageTaskQueueCompleted" style="margin-top: 3px; font-size: 0.75rem; color: #475569;"></div>
+      <div style="margin-top: 7px; font-size: 0.72rem; font-weight: 700; color: #9a3412;"><i class="bi bi-exclamation-triangle-fill"></i> Keep this window open. Closing it interrupts active and queued tasks.</div>
+    </div>
     <div class="manage-toolbar">
       <button class="btn btn-outline-secondary btn-sm fw-bold"
         onclick="selectAllManagePhotos()">Select All</button>
@@ -1354,6 +1360,7 @@
     </div>
   </div>
 </div>
+<script type="module" src="manage-photo-task-queue.mjs"></script>
 <style>
   .manage-toolbar {
     padding: 10px 20px;
@@ -8242,6 +8249,39 @@ async function fetchExistingLogos(forceRefresh = false) {
       document.getElementById('boothDownloadAllQRsBtn').style.display = 'none';
       document.getElementById('boothViewContainer').style.display = 'none';
   }
+
+  let managePhotoTaskQueue = null;
+
+  function renderManageTaskQueue(snapshot) {
+    const status = document.getElementById('manageTaskQueueStatus');
+    const pending = document.getElementById('manageTaskQueuePending');
+    const completed = document.getElementById('manageTaskQueueCompleted');
+    if (!status || !pending || !completed) return;
+
+    if (snapshot.active) {
+      const { label, done, total } = snapshot.active;
+      status.innerText = `${label} — ${done} of ${total}`;
+    } else {
+      status.innerText = 'No photo tasks running';
+    }
+
+    pending.innerText = snapshot.pending.length
+      ? `${snapshot.pending.length} queued: ${snapshot.pending.map(task => task.label).join(', ')}`
+      : '';
+
+    const latest = snapshot.completed[0];
+    completed.innerText = latest
+      ? `${latest.status === 'failed' ? 'Failed' : 'Completed'}: ${latest.label}${latest.error ? ` — ${latest.error}` : ''}`
+      : '';
+  }
+
+  function initializeManagePhotoTaskQueue() {
+    if (managePhotoTaskQueue || !window.ManagePhotoTaskQueue) return;
+    managePhotoTaskQueue = new window.ManagePhotoTaskQueue({ onChange: renderManageTaskQueue });
+    renderManageTaskQueue(managePhotoTaskQueue.snapshot());
+  }
+
+  window.addEventListener('manage-photo-task-queue-ready', initializeManagePhotoTaskQueue);
   
   async function runBoothDelete() {
       const selectedId = document.getElementById('boothEventSelect').value;

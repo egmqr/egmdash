@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { ManagePhotoTaskQueue } from '../public/manage-photo-task-queue.mjs';
+
+const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
 test('runs queued tasks in FIFO order', async () => {
   const order = [];
@@ -42,4 +45,10 @@ test('continues queued work after a failed task', async () => {
   await deletion;
 
   assert.deepEqual(order, ['delete']);
+});
+
+test('renders task progress above Manage Photos controls', () => {
+  assert.match(page, /id="manageTaskQueue"/);
+  assert.match(page, /Keep this window open\. Closing it interrupts active and queued tasks\./);
+  assert.match(page, /function renderManageTaskQueue\(snapshot\)/);
 });

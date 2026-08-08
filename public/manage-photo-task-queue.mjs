@@ -67,4 +67,5 @@ export class ManagePhotoTaskQueue {
 
 if (typeof window !== 'undefined') {
   window.ManagePhotoTaskQueue = ManagePhotoTaskQueue;
+  window.dispatchEvent(new Event('manage-photo-task-queue-ready'));
 }
